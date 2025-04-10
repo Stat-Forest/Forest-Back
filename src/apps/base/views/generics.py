@@ -1,6 +1,6 @@
 from rest_framework import generics
 
-from apps.base.serializers import EmptySerializer
+from src.apps.base.serializers import EmptySerializer
 
 
 class CustomGenericAPIView(generics.GenericAPIView):

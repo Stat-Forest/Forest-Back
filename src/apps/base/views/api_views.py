@@ -2,7 +2,7 @@ from rest_framework import views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 
-from apps.base.serializers import EmptySerializer
+from src.apps.base.serializers import EmptySerializer
 
 
 class BaseThrottle(UserRateThrottle):
