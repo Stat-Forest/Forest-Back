@@ -29,6 +29,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         JAPANESE = "jp", _("Japanese")
         OTHER = "ot", _("Other")
 
+    
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ["first_name"]
