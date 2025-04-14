@@ -1,49 +1,48 @@
 # 🌳 Statik-Urmon
 
-**Statik-Urmon** — bu Toshkentdagi O‘zbekiston Respublikasi Ekologiya, atrof-muhitni muhofaza qilish va iqlim o‘zgarishi vazirligi uchun ishlab chiqilgan raqamli monitoring va boshqaruv tizimi bo‘lib, shahar va shahar atrofi hududlaridagi sun’iy (statik) o‘rmonlarni nazorat qilish, xaritalash va boshqarishni maqsad qilgan.
+**Statik-Urmon** — is a digital monitoring and management system developed for the Ministry of Ecology, Environmental Protection and Climate Change of the Republic of Uzbekistan, specifically for the city of Tashkent. The goal of this system is to monitor, map, and manage artificial (static) forests located in and around urban areas.
 
 ---
 
-## 📌 Loyiha maqsadi
+## 📌 Project Purpose
 
-Ushbu tizim orqali ekologik holatni yaxshilash, yashil hududlarni nazorat ostida saqlash va ularni kengaytirish vazifalari avtomatlashtiriladi. Shu bilan birga:
+This system aims to improve the ecological condition by automating the processes of monitoring and expanding green areas. Key features include:
 
-- Statik o‘rmon hududlarini ro‘yxatdan o‘tkazish
-- GPS orqali geolokatsiyasini aniqlash
-- O‘rmonlarga oid statistikani yig‘ish
-- Hodimlar tomonidan o‘tkazilgan inspeksiyalarni qayd etish
-- Yashil hududlarni onlayn xaritada vizualizatsiya qilish
-
----
-
-## 🔧 Texnologiyalar
-
-- **Python** & **Django** – Backend logikasi uchun
-- **PostgreSQL** – Ma’lumotlar ombori
-- **Docker** – Loyihani konteynerlash
-- **Celery** & **Redis** – Asinxron vazifalar uchun
-- **GitHub Actions** – CI/CD integratsiyasi
-- **Mapbox / LeafletJS** – Xarita va geolokatsiyalar bilan ishlash
+- Registering static forest zones
+- Determining geolocation via GPS
+- Collecting forest-related statistics
+- Recording inspections carried out by employees
+- Visualizing green areas on an online map
 
 ---
 
-## 🗂️ Loyihaning asosiy modullari
+## 🔧 Technologies Used
 
-| Modul nomi | Tavsifi |
-|------------|---------|
-| `forests` | Statik o‘rmonlar bo‘yicha CRUD amallar |
-| `inspections` | O‘rmon holatini tekshiruvlar bo‘yicha hisobotlar |
-| `users` | Hodimlar va inspeksiya guruhlari boshqaruvi |
-| `reports` | Yillik va oylik statistik tahlillar |
-| `api` | Mobil ilovalar va tashqi tizimlar uchun API endpointlar |
+- **Python** & **Django** –  For backend logic
+- **PostgreSQL** – Database management
+- **Docker** –Containerization of the project
+- **Celery** & **Redis** – For asynchronous task handling
+- **GitHub Actions** – CI/CD integration
+- **Mapbox / LeafletJS** –  For mapping and geolocation features
 
 ---
 
-## 🚀 O‘rnatish (Local Development)
+## 🗂️ Main Project Modules
+
+| Module name   | Description |
+|---------------|---------|
+| `forests`     | CRUD operations for static forests |
+| `inspections` |Reports on forest condition inspections |
+| `users`       | Management of staff and inspection teams |
+| `reports`     | Annual and monthly statistical analyses |
+| `api`         | API endpoints for mobile applications and external systems|
+
+---
+
+## 🚀 Installation (Local Development)
 
 ```bash
 git clone https://github.com/YOUR_ORG/statik-urmon.git
 cd statik-urmon
 cp .env.example .env
 docker-compose up --build
-# Forest-Back
