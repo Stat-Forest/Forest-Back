@@ -1,12 +1,12 @@
 from django.conf import settings
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import UserManager
 
 
 User = settings.AUTH_USER_MODEL
 
 
-class CustomUserManager(UserManager):
+class CustomUserManager(BaseUserManager):
     """
     Custom user model manager where email is the unique identifier
     """
@@ -27,7 +27,7 @@ class CustomUserManager(UserManager):
         user.save(using=self._db)
         return user
 
-    def create_user(self, email=None, password=None, **extra_fields) -> User:  # type: ignore
+    def create_user(self, email, password=None, **extra_fields) -> User:  # type: ignore
         """
         Creates and saves a new user
         :param email: User's email address.
