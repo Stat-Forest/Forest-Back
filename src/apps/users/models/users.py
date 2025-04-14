@@ -1,3 +1,4 @@
+from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -9,11 +10,10 @@ from apps.users.manager import CustomUserManager
 from apps.users.validations.passport_number_validate import validate_passport_number
 
 
-class CustomUser(AbstractBaseModel, AbstractBaseUser):
+class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     class Gender(models.TextChoices):
         MALE = "male", _("Male")
         FEMALE = "female", _("Female")
-
 
     class Nation(models.TextChoices):
         UZBEK = "uz", _("Uzbek")
@@ -65,7 +65,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser):
                                     ])
     passport_number = models.CharField(max_length=9, validators=[validate_passport_number])
 
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(blank=True, null=True)
     date_of_place = models.CharField(max_length=250)
     address = models.CharField(max_length=250)
 
@@ -79,4 +79,9 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser):
             'Designates whether this user should be treated as active.'
             'Unselect this instead of deleting accounts.'
         ),
+    )
+    is_superuser = models.BooleanField(
+        _('superuser status'),
+        default=False,
+        help_text=_('Designates that this user has all permissions without explicitly assigning them.'),
     )
