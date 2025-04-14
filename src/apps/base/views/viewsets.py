@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 
-from src.apps.base.serializers import EmptySerializer
+from apps.base.serializers import EmptySerializer
 
 
 class CustomViewSet(viewsets.ViewSet):
