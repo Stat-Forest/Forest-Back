@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.base.models import AbstractBaseModel
 
 from apps.users.manager import CustomUserManager
+from apps.users.validations.passport_number_validate import validate_passport_number
 
 
 class CustomUser(AbstractBaseModel, AbstractBaseUser):
@@ -45,7 +46,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser):
                                    default=Nation.UZBEK
                                    )
 
-    is_disabled = models.BooleanField(default=False)
+    is_disabled = models.BooleanField(default=False, help_text="Nogiron")
 
 
     first_name = models.CharField(max_length=250)
@@ -62,7 +63,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser):
                                             code="uzb_phone_number_validation"
                                         )
                                     ])
-    passport_number = models.CharField(max_length=20)
+    passport_number = models.CharField(max_length=9, validators=[validate_passport_number])
 
     date_of_birth = models.DateField()
     date_of_place = models.CharField(max_length=250)
