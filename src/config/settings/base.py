@@ -30,6 +30,8 @@ INSTALLED_APPS += [
     'apps.authentications.apps.AuthenticationsConfig',
     'apps.base.apps.BaseConfig',
     'apps.users.apps.UsersConfig',
+    'apps.reports',
+    'apps.general',
 ]
 
 MIDDLEWARE = [
