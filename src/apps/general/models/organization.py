@@ -4,23 +4,10 @@ from django.utils.translation import gettext_lazy as _
 from apps.base.models import AbstractBaseModel
 from django.core.exceptions import ValidationError
 
+from apps.utils.services import RegionChoices
+
 
 class Organization(AbstractBaseModel):
-
-    class RegionChoices(models.TextChoices):
-        TASHKENT = 'TASH', _('Tashkent')
-        NAMANGAN = 'NAM', _('Namangan')
-        ANDIJON = 'AND', _('Andijon')
-        FARGONA = 'FAR', _('Fergana')
-        BUXORO = 'BUX', _('Bukhara')
-        SAMARQAND = 'SAM', _('Samarkand')
-        NAVOIY = 'NAV', _('Navoi')
-        QASHQADARYO = 'QASH', _('Qashqadarya')
-        SURXONDARYO = 'SUR', _('Surxondaryo')
-        XORAZM = 'XOR', _('Khorezm')
-        SIRDARYO = 'SIR', _('Sirdaryo')
-        JIZZAX = 'JIZ', _('Jizzakh')
-        QORAQALPAQSTAN = 'QRP', _('Karakalpakstan')
 
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
