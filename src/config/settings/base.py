@@ -33,6 +33,7 @@ INSTALLED_APPS += [
     'apps.users.apps.UsersConfig',
     'apps.reports.apps.ReportsConfig',
     'apps.general.apps.GeneralConfig',
+    'apps.human_resources.apps.HumanResourcesConfig',
 ]
 
 MIDDLEWARE = [
