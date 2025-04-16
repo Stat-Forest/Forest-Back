@@ -1,3 +1,4 @@
+-r base.txt
 asgiref==3.8.1
 Django==5.2
 django-modeltranslation==0.19.13
