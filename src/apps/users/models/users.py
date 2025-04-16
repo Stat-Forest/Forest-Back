@@ -35,8 +35,6 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    date_joined = models.DateField(auto_now_add=True)
-
     gender = models.CharField(_("Gender"),
                               max_length=10,
                               choices=Gender.choices
