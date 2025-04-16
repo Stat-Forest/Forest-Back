@@ -2,6 +2,14 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+class AllReportType(models.TextChoices):
+    JONATILGAN = 'sent', _('Jo‘natilgan hisobotlar')
+    QAYTARILGAN = 'rejected', _('Qaytarilgan hisobotlar')
+    QABUL_QILINGAN = 'accepted', _('Qabul qilingan hisobotlar')
+    MASUL_VAKILLAR = 'responsible', _('Mas’ul vakillar')
+    QORALAMA = 'draft', _('Qoralama')
+    HABARNOMALAR = 'notifications', _('Habarnomalar')
+
 class RegionChoices(models.TextChoices):
     TASHKENT = 'TASH', _('Tashkent')
     NAMANGAN = 'NAM', _('Namangan')

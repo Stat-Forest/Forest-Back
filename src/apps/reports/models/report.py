@@ -7,9 +7,8 @@ from apps.utils.services import StatementChoices, PeriodChoices, ReportType
 
 
 class Report(AbstractBaseModel):
-    organization = models.ForeignKey(
+    organization = models.ManyToManyField(
         Organization,
-        on_delete=models.CASCADE,
         related_name='reports'
     )
     statement = models.CharField(
@@ -39,4 +38,4 @@ class Report(AbstractBaseModel):
         verbose_name_plural = _('Reports')
 
     def __str__(self):
-        return f"{self.organization.name} - {self.statement} "
+        return self.statement

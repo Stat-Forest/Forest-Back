@@ -10,7 +10,6 @@ from apps.utils.services import RegionChoices
 class Organization(AbstractBaseModel):
 
     name = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
     region = models.CharField(max_length=10, choices=RegionChoices.choices)
 
     class Meta:
@@ -20,8 +19,3 @@ class Organization(AbstractBaseModel):
     def __str__(self):
         return self.name
 
-    def clean(self):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        if Organization.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
-            raise ValidationError({'name': _('An organization with this name already exists.')})
