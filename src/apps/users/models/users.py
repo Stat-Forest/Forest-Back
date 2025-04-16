@@ -1,11 +1,10 @@
-from django.contrib.auth.models import PermissionsMixin
-from django.core.validators import RegexValidator
 from django.db import models
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.base_user import AbstractBaseUser
 
 from apps.base.models import AbstractBaseModel
-
 from apps.users.manager import CustomUserManager
 from apps.users.validations.passport_number_validate import validate_passport_number
 
@@ -36,6 +35,8 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
+    date_joined = models.DateField(auto_now_add=True)
+
     gender = models.CharField(_("Gender"),
                               max_length=10,
                               choices=Gender.choices
@@ -47,7 +48,6 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
                                    )
 
     is_disabled = models.BooleanField(default=False, help_text="Nogiron")
-
 
     first_name = models.CharField(max_length=250)
     last_name = models.CharField(max_length=250)
@@ -80,8 +80,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
             'Unselect this instead of deleting accounts.'
         ),
     )
-    is_superuser = models.BooleanField(
-        _('superuser status'),
-        default=False,
-        help_text=_('Designates that this user has all permissions without explicitly assigning them.'),
-    )
+
+
+    def __str__(self):
+        return self.email
