@@ -1,15 +1,21 @@
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
 from apps.base.models import AbstractBaseModel
 from apps.utils.services import StatementChoices
 
 
 class StaffReport(AbstractBaseModel):
-
-
-    organization = models.ForeignKey('Organization', on_delete=models.CASCADE)
-    statement = models.CharField(max_length=30, choices=StatementChoices.choices)
-
+    report = models.ForeignKey(
+        'reports.Report',
+        on_delete=models.CASCADE,
+        related_name='reports',
+        null=True,
+        blank=True,
+        limit_choices_to= {
+            'statement': StatementChoices.HODIMLAR_HISOBI,
+        }
+    )
     # Workers
     all_workers = models.PositiveIntegerField(default=0)
     management_workers = models.PositiveIntegerField(default=0)
@@ -61,5 +67,10 @@ class StaffReport(AbstractBaseModel):
         verbose_name = "Staff Report"
         verbose_name_plural = "Staff Reports"
 
+    def clean(self):
+        super().clean()
+        if self.report and self.report.statement != StatementChoices.HODIMLAR_HISOBI:
+            raise ValidationError({'report': 'Faqat "Hodimlar hisobi" statementiga ega report tanlanishi mumkin.'})
+
     def __str__(self):
-        return f"{self.organization} - {self.get_statement_display()}"
+        return f"{self.report.organization} - {self.report.statement}"

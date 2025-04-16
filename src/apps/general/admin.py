@@ -4,10 +4,10 @@ from .models import Organization
 
 
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'get_region_display', 'created_at', 'updated_at')
+    list_display = ('name','get_region_display', 'created_at', 'updated_at')
     list_filter = ('region',)
     search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
+
     def get_region_display(self, obj):
         return obj.get_region_display()
 
