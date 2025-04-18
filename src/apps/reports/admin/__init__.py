@@ -1,3 +1,3 @@
-from .report import *
-from .all_reprort import *
-from .report_form import *
+from .deadline import *
+from .all_revievs import *
+from .deadline_form import *

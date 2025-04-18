@@ -5,8 +5,8 @@ from ..models import StaffReport
 class StaffReportAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'report',
-        'all_workers',
+        'user',
+        'organization',
         'management_workers',
         'expert_workers',
         'production_workers',
@@ -25,14 +25,8 @@ class StaffReportAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
-        'report__organization',
-        'report__statement',
         'created_at',
         'updated_at',
-    )
-
-    search_fields = (
-        'report__organization__name',
     )
 
     readonly_fields = (

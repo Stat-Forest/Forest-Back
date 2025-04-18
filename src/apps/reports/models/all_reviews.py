@@ -2,13 +2,13 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from apps.base.models import AbstractBaseModel
-from apps.utils.services import AllReportType
+from apps.utils.services import AllReviews
 
 
-class AllReport(AbstractBaseModel):
+class AllReview(AbstractBaseModel):
     title = models.CharField(
         max_length=120,
-        choices=AllReportType
+        choices=AllReviews
     )
     count = models.PositiveIntegerField(
         default=0,
