@@ -1,17 +1,19 @@
 from django import forms
-from apps.reports.models import Report, Organization
+
+from apps.general.models import Organization
+from apps.reports.models import Deadline
 
 
 class CustomSelectMultiple(forms.SelectMultiple):
     """SelectMultiple widget that disables 'All Organizations' option"""
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
-        if str(value) == ReportAdminForm.ALL_ORG_ID:
+        if str(value) == DeadlineAdminForm.ALL_ORG_ID:
             option['attrs']['disabled'] = True
         return option
 
 
-class ReportAdminForm(forms.ModelForm):
+class DeadlineAdminForm(forms.ModelForm):
     ALL_ORG_ID = "-1"
 
     organization = forms.ModelMultipleChoiceField(
@@ -21,7 +23,7 @@ class ReportAdminForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Report
+        model = Deadline
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):

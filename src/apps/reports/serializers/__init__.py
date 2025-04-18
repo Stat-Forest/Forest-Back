@@ -1,2 +1,2 @@
-from .report import *
-from .all_report import *
+from .review import *
+from .all_reviews import *

@@ -1,19 +1,16 @@
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.contrib import admin
-from .report_form import ReportAdminForm
-from ..models import Report
+from .deadline_form import DeadlineAdminForm
+from ..models import Deadline
 
 
-@admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
-    form = ReportAdminForm
-    list_display = ('organization_display', 'statement', 'period', 'sent_at', 'submission_at')
-    list_filter = ('status', 'period', 'statement')
-    readonly_fields = ('sent_at', 'status',)
+@admin.register(Deadline)
+class DeadlineAdmin(admin.ModelAdmin):
+    form = DeadlineAdminForm
+    list_display = ('organization_display', 'statement', 'period','submission_at',)
+    list_filter = ('period', 'statement')
     search_fields = ('organization__name',)
-    date_hierarchy = 'sent_at'
-    ordering = ('-sent_at',)
 
     def organization_display(self, obj):
         orgs = obj.organization.all()

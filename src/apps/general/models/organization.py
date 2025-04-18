@@ -16,6 +16,12 @@ class Organization(AbstractBaseModel):
         verbose_name = _('organization')
         verbose_name_plural = _('organizations')
 
+    def clean(self):
+        super().clean()
+        if self.region not in RegionChoices.choices:
+            raise ValidationError({
+                'region': _('This field is not a valid choice.'),
+            })
     def __str__(self):
         return self.name
 

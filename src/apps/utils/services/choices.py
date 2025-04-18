@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-class AllReportType(models.TextChoices):
+class AllReviews(models.TextChoices):
     JONATILGAN = 'sent', _('Jo‘natilgan hisobotlar')
     QAYTARILGAN = 'rejected', _('Qaytarilgan hisobotlar')
     QABUL_QILINGAN = 'accepted', _('Qabul qilingan hisobotlar')
