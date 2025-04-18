@@ -1,7 +1,12 @@
+import random
+
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+from apps.general.models import Organization
+from apps.reports.models import Review
+from apps.utils.services import RegionChoices
 from . import settings
 from .yasg import schema_view
 
@@ -17,3 +22,4 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # ================ Oybek`s URLS ================
+
