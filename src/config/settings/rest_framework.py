@@ -24,6 +24,8 @@ REST_FRAMEWORK = {
     # Generic view behavior
     'DEFAULT_PAGINATION_CLASS': 'apps.base.pagination.CustomPageNumberPagination',
 
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+
     # Pagination
     'PAGE_SIZE': 10,
 
