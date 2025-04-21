@@ -1,10 +1,12 @@
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 
 User = get_user_model()
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -19,7 +21,6 @@ class LoginSerializer(serializers.Serializer):
 
         try:
             user = User.objects.get(email=email)
-            print(user)
         except User.DoesNotExist:
             raise CustomExceptionError(code=404, detail="User not found.")
 
@@ -37,7 +38,3 @@ class LoginSerializer(serializers.Serializer):
             "user_id": user.id,
             "email": user.email,
         }
-
-    def create(self, validated_data):
-        salom = "hello"
-        self.data["salom"] = salom
