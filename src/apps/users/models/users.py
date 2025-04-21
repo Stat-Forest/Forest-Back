@@ -36,7 +36,6 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    organization = models.ForeignKey('general.Organization', on_delete=models.PROTECT)
     gender = models.CharField(_("Gender"),
                               max_length=10,
                               choices=Gender.choices
