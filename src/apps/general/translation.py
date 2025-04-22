@@ -1,5 +1,5 @@
-from modeltranslation.translator import register, TranslationOptions
 from apps.general.models import Organization
+from modeltranslation.translator import register, TranslationOptions
 
 @register(Organization)
 class OrganizationTranslationOptions(TranslationOptions):

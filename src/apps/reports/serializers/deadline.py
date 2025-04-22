@@ -1,7 +1,7 @@
-from rest_framework import serializers
 from apps.reports.models import Deadline
+from apps.base.serializers import CustomModelSerializer
 
-class DeadlineSerializer(serializers.ModelSerializer):
+class DeadlineSerializer(CustomModelSerializer):
     class Meta:
         model = Deadline
         fields = '__all__'
