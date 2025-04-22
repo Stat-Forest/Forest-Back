@@ -10,6 +10,14 @@ from apps.users.validations.passport_number_validate import validate_passport_nu
 
 
 class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
+    class Role(models.TextChoices):
+        SUPER_ADMIN = "super_admin", _("Super Admin")
+        RAHBARIYAT = "rahbariyat", _("Rahbariyat")
+        BOLIM_ADMIN = "bolim_admin", _("Bo`lim Admin")
+        TASHKILOT_RAHBARI = "tashkilot_rahbari", _("Tashkilot rahbari")
+        TASHKILOT_HODIMI = "tashkilot_hodimi", _("Tashkilot hodimi")
+        HUDUDIY_BOSHQARMA = "hududiy_boshqarma", _("Hududiy boshqarma")
+
     class Gender(models.TextChoices):
         MALE = "male", _("Male")
         FEMALE = "female", _("Female")
@@ -35,6 +43,8 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["first_name"]
 
     objects = CustomUserManager()
+
+    role = models.CharField(Role.choices, max_length=50)
 
     gender = models.CharField(_("Gender"),
                               max_length=10,
@@ -82,4 +92,3 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
