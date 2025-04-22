@@ -1,19 +1,24 @@
 from django.db import models
-from apps.base.models import AbstractBaseModel
 from django.utils.translation import gettext_lazy as _
-
+from apps.base.models import AbstractBaseModel
 from apps.utils.services import RegionChoices
 
 
 class Organization(AbstractBaseModel):
-
-    name = models.CharField(max_length=255)
-    region = models.CharField(max_length=50, choices=RegionChoices.choices)
+    name = models.CharField(
+        max_length=255,
+        verbose_name=_("Name")
+    )
+    region = models.CharField(
+        max_length=50,
+        choices=RegionChoices.choices,
+        verbose_name=_("Region")
+    )
 
     class Meta:
-        verbose_name = _('organization')
-        verbose_name_plural = _('organizations')
+        verbose_name = _("Organization")
+        verbose_name_plural = _("Organizations")
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
-

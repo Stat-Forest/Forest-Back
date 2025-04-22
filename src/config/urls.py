@@ -22,4 +22,5 @@ urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += [
     path('api/v1/reports/', include('apps.reports.urls')),
+    path('api/v1/general/', include('apps.general.urls')),
 ]
