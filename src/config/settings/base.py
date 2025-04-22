@@ -24,15 +24,16 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "rest_framework_simplejwt",
-    "drf_yasg"
+    "drf_yasg",
+    "django_filters",
 ]
 
 INSTALLED_APPS += [
     'apps.authentications.apps.AuthenticationsConfig',
     'apps.base.apps.BaseConfig',
     'apps.users.apps.UsersConfig',
-    'apps.reports',
-    'apps.general',
+    'apps.reports.apps.ReportsConfig',
+    'apps.general.apps.GeneralConfig',
 ]
 
 MIDDLEWARE = [
