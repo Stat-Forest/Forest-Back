@@ -83,22 +83,3 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-    from django.db import models
-
-    class AdditionalInfo(models.Model):
-        languages_known = models.CharField(max_length=255, verbose_name="Qanday tillarni biladi")
-        countries_visited = models.CharField(max_length=255, verbose_name="Qaysi davlatlarda bo‘lgan")
-        family_members_count = models.PositiveIntegerField(verbose_name="Oila a'zolari soni")
-        party_membership = models.CharField(max_length=255, blank=True, null=True, verbose_name="Partiyaviyligi")
-        deputy_member = models.CharField(max_length=255, blank=True, null=True, verbose_name="Deputat a'zosi")
-        state_awards = models.CharField(max_length=255, blank=True, null=True, verbose_name="Davlat mukofotlari")
-
-        military_service = models.BooleanField(choices=[(True, 'Ha'), (False, 'Yo‘q')], default=False,
-                                               verbose_name="Harbiy xizmatni o‘tganmi")
-        convicted = models.BooleanField(choices=[(True, 'Ha'), (False, 'Yo‘q')], default=False,
-                                        verbose_name="Sudlanganmi")
-
-        resume = models.FileField(upload_to='resumes/', blank=True, null=True, verbose_name="Resumeni yuklash")
-
-        def __str__(self):
-            return f"{self.languages_known} - {self.family_members_count} ta a'zo"
