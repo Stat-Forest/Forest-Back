@@ -1,5 +1,5 @@
-# views.py
 from rest_framework import generics
+
 from apps.reports.models import Statement
 from apps.reports.serializers import StatementSerializer
 

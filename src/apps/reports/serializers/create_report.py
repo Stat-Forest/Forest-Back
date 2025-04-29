@@ -4,6 +4,7 @@ from datetime import datetime
 from rest_framework import serializers
 from apps.reports.models import Report, ReportItem
 from apps.utils.services.choices import PeriodChoices
+from apps.base.exceptions.exception_files import CustomExceptionError
 
 
 class ReportItemCreateSerializer(serializers.ModelSerializer):
@@ -30,65 +31,99 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             adjusted_dom = today.day + first_day.weekday()
             return (adjusted_dom - 1) // 7 + 1
 
+        # Checking if organization is allowed for the selected deadline
         if not deadline.organizations.filter(id=organization.pk).exists():
-            raise serializers.ValidationError({
-                'organization': ['This organization is not allowed for the selected deadline.']
-            })
+            raise CustomExceptionError(
+                code=400,
+                detail={
+                    'organization': ['This organization is not allowed for the selected deadline.']
+                }
+            )
 
+        # Validate based on period types (daily, weekly, monthly, etc.)
         if deadline.statement.period == PeriodChoices.KUNLIK:
             if int(deadline.submit_at[-2::]) > date.today().day:
-                raise serializers.ValidationError({
-                    'submit_at': ['You can only submit before tomorrow.']
-                })
+                raise CustomExceptionError(
+                    code=400,
+                    detail={
+                        'submit_at': ['You can only submit before tomorrow.']
+                    }
+                )
 
         if deadline.statement.period == PeriodChoices.HAFTALIK:
             if int(deadline.submit_at[-1]) > get_week_of_month():
-                raise serializers.ValidationError({
-                    'submit_at': ['You can only submit before the next tomorrow.']
-                })
+                raise CustomExceptionError(
+                    code=400,
+                    detail={
+                        'submit_at': ['You can only submit before the next tomorrow.']
+                    }
+                )
+
         if deadline.statement.period == PeriodChoices.OYLIK:
             if int(deadline.submit_at[-2::]) > date.today().month:
-                raise serializers.ValidationError({
-                    'submit_at': ['You can only submit before next month.']
-                })
+                raise CustomExceptionError(
+                    code=400,
+                    detail={
+                        'submit_at': ['You can only submit before next month.']
+                    }
+                )
 
         if deadline.statement.period == PeriodChoices.CHORAKLIK:
             if int(deadline.submit_at[-1]) == 1:
                 if date.today().month in (1, 2):
-                    raise serializers.ValidationError({
-                        'submit_at': ['You can only create report after February.']
-                    })
+                    raise CustomExceptionError(
+                        code=400,
+                        detail={
+                            'submit_at': ['You can only create report after February.']
+                        }
+                    )
             if int(deadline.submit_at[-1]) == 2:
                 if date.today().month in (1, 2, 3, 4, 5):
-                    raise serializers.ValidationError({
-                        'submit_at': ['You can only create report  after May.']
-                    })
+                    raise CustomExceptionError(
+                        code=400,
+                        detail={
+                            'submit_at': ['You can only create report after May.']
+                        }
+                    )
 
             if int(deadline.submit_at[-1]) == 3:
                 if date.today().month in (1, 2, 3, 4, 5, 6, 7, 8):
-                    raise serializers.ValidationError({
-                        'submit_at': ['You can only create report after Avgust.']
-                    })
+                    raise CustomExceptionError(
+                        code=400,
+                        detail={
+                            'submit_at': ['You can only create report after August.']
+                        }
+                    )
             if int(deadline.submit_at[-1]) == 4:
                 if date.today().month in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11):
-                    raise serializers.ValidationError({
-                        'submit_at': ['You can only create report after November.']
-                    })
+                    raise CustomExceptionError(
+                        code=400,
+                        detail={
+                            'submit_at': ['You can only create report after November.']
+                        }
+                    )
 
         if deadline.statement.period == PeriodChoices.YILLIK:
             if int(deadline.submit_at) > date.today().year:
-                raise serializers.ValidationError({
-                    'submit_at': ['You can only submit before the next year.']
-                })
+                raise CustomExceptionError(
+                    code=400,
+                    detail={
+                        'submit_at': ['You can only submit before the next year.']
+                    }
+                )
 
+        # Check if report already exists for the given organization, statement, and deadline
         if Report.objects.filter(
                 organization=organization,
                 statement=statement,
                 deadline=deadline
         ).exists():
-            raise serializers.ValidationError({
-                'non_field_errors': ['This report already exists.']
-            })
+            raise CustomExceptionError(
+                code=400,
+                detail={
+                    'non_field_errors': ['This report already exists.']
+                }
+            )
 
         return attrs
 
