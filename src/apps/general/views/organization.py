@@ -8,7 +8,7 @@ from apps.general.serializers import OrganizationListSerializer
 class OrganizationListAPIView(CustomListAPIView):
     serializer_class = OrganizationListSerializer
     CACHE_KEY = 'organization_list_cache'
-    cache_timeout = 60 * 60
+    cache_timeout = 60
 
     def list(self, request, *args, **kwargs):
         cached_data = cache.get(self.CACHE_KEY)

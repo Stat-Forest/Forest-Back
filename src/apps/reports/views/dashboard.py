@@ -20,11 +20,11 @@ class DashboardStatListView(CustomGenericAPIView):
         new_stat = DashboardStat.objects.create(
             sent_reports=Report.objects.filter(status=Report.StatusChoices.SENT).count() or 0,
             returned_reports=Report.objects.filter(status=Report.StatusChoices.CANCELLED).count() or 0,
-            accepted_reports=Report.objects.filter(status=Report.StatusChoices.EXCEPTED).count() or 0,
-            draft_reports=Report.objects.filter(status=Report.StatusChoices.NEW).count() or 0,
+            accepted_reports=Report.objects.filter(status=Report.StatusChoices.ACCEPTED).count() or 0,
+            draft_reports=Report.objects.filter(status=Report.StatusChoices.SAVED).count() or 0,
             responsible_users=CustomUser.objects.count() or 0,
             deadlines=Deadline.objects.count() or 0,
         )
         serializer = DashboardStatSerializer(new_stat)
-        cache.set(CACHE_KEY, serializer.data, timeout=60*5)
+        cache.set(CACHE_KEY, serializer.data, timeout=5)
         return Response(serializer.data)

@@ -1,9 +1,11 @@
-from apps.base.serializers import CustomModelSerializer
 from apps.reports.models import ReportItem
 
+from rest_framework import serializers
 
-class ReportItemSerializer(CustomModelSerializer):
+class ReportItemSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=False)
+
     class Meta:
         model = ReportItem
-        fields = ['id', 'report', 'statement_column', 'value']
-        read_only_fields = ['report']
+        fields = ['id', 'statement_column', 'value']
+
