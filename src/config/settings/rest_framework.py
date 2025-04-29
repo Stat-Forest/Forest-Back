@@ -13,9 +13,9 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ],
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.DjangoModelPermissions',
-    # ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissions',
+    ],
     'DEFAULT_THROTTLE_CLASSES': [],
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'rest_framework.negotiation.DefaultContentNegotiation',
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
@@ -58,7 +58,7 @@ REST_FRAMEWORK = {
     'VIEW_DESCRIPTION_FUNCTION': 'rest_framework.views.get_view_description',
 
     # Exception handling
-    'EXCEPTION_HANDLER': 'apps.base.handlers.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'apps.reports.handler.custom_exception_handler',
     'NON_FIELD_ERRORS_KEY': 'non_field_errors',
 
     # Testing

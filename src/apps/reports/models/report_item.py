@@ -1,13 +1,13 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from apps.base.models import AbstractBaseModel
+
 
 
 class ReportItem(AbstractBaseModel):
     report = models.ForeignKey(
         "reports.Report",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="items",
         verbose_name=_("Report")
     )
@@ -23,7 +23,7 @@ class ReportItem(AbstractBaseModel):
     )
 
     def __str__(self):
-        return f"{self.report.id} - {self.statement_column.id}: {self.value}"
+        return f"{self.report.id} - {self.value}"
 
     class Meta:
         verbose_name = _("Report Item")

@@ -1,8 +1,8 @@
-from apps.base.serializers import CustomModelSerializer
+from rest_framework import serializers
 from apps.reports.models import DashboardStat
 
 
-class DashboardStatSerializer(CustomModelSerializer):
+class DashboardStatSerializer(serializers.ModelSerializer):
     class Meta:
         model = DashboardStat
         fields = [

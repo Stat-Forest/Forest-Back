@@ -1,34 +1,38 @@
+from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
+
 from apps.reports.models import Report
+from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.serializers import (
     ReportListSerializer,
     ReportCreateSerializer,
     ReportDetailSerializer,
-    ReportStatusUpdateSerializer
 )
 from apps.base.views import (
     CustomListAPIView,
     CustomCreateAPIView,
-    CustomRetrieveAPIView,
-    CustomUpdateAPIView
 )
 
 class ReportListAPIView(CustomListAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportListSerializer
+    filterset_fields = ['status']
+
 
 
 class ReportCreateAPIView(CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
+    # permission_classes = (CanCreateReport,)
 
 
-class ReportDetailAPIView(CustomRetrieveAPIView):
+class ReportDeleteAPIView(DestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
+    # permission_classes = (CanUpdateReport,)
     lookup_field = 'id'
 
-
-class ReportStatusUpdateAPIView(CustomUpdateAPIView):
+class ReportRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     queryset = Report.objects.all()
-    serializer_class = ReportStatusUpdateSerializer
+    serializer_class = ReportDetailSerializer
+    # permission_classes = (CanUpdateReport,)
     lookup_field = 'id'

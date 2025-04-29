@@ -1,8 +1,9 @@
+from rest_framework import serializers
+
 from apps.reports.models import StatementColumn
-from apps.base.serializers import CustomModelSerializer
 
 
-class StatementColumnListSerializer(CustomModelSerializer):
+class StatementColumnListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatementColumn
         fields = ['id', 'title', 'ordering', 'statement']

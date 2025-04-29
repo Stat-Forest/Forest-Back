@@ -1,19 +1,40 @@
 from django.urls import path
-from apps.reports.views import DeadlineListView, ReportListAPIView, ReportCreateAPIView, ReportDetailAPIView, \
-    ReportStatusUpdateAPIView, ReportItemListView, ReportItemDetailView
-from apps.reports.views import DashboardStatListView
-from apps.reports.views import StatementColumnListAPIView
+from apps.reports.views import (
+    DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
+    ReportCancelAPIView, ReportAcceptAPIView,
+    ReportCreateAPIView,StatementListAPIView,
+    ReportItemListAPIView, DashboardStatListView,
+    StatementColumnListAPIView,
+    ReportRetrieveUpdateAPIView, ReportDeleteAPIView
+)
 
 urlpatterns = [
+
+    # ====================  DASHBOARD URL   ====================
     path('dashboard/', DashboardStatListView.as_view(), name='dashboard'),
-    path('deadlines/', DeadlineListView.as_view(), name='deadline-list'),
+
+    # ====================  DEADLINE URL    ====================
+    path('deadlines/', DeadlineListAPIView.as_view(), name='deadline-list'),
+
+    # ====================  STATEMENT COLUMN URL    ====================
+    path('statements/', StatementListAPIView.as_view(), name='report-list'),
     path('statement-columns/', StatementColumnListAPIView.as_view(), name='statement-columns-list'),
+
+    # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
     path('create/', ReportCreateAPIView.as_view(), name='report-create'),
-    path('<int:id>/', ReportDetailAPIView.as_view(), name='report-detail'),
-    path('<int:id>/update-status/', ReportStatusUpdateAPIView.as_view(), name='report-status-update'),
-    path('report-items/', ReportItemListView.as_view(), name='reportitem-list'),
-    path('report-items/<int:pk>/', ReportItemDetailView.as_view(), name='reportitem-detail'),
+    path('<uuid:id>/', ReportRetrieveUpdateAPIView.as_view(), name='report-detail'),
+    path('<uuid:id>/delete/', ReportDeleteAPIView.as_view(), name='report-delete'),
+
+    # ====================  REPORT STATUS URL    ====================
+    path('send/', ReportSendAPIView.as_view(), name='report-send'),
+    path('cancel/', ReportCancelAPIView.as_view(), name='report-cancel'),
+    path('accept/', ReportAcceptAPIView.as_view(), name='report-accept'),
+
+
+    # ====================  REPORT ITEM URL    ====================
+    path('report-items/', ReportItemListAPIView.as_view(), name='report-item-list'),
+
 ]
 
 
