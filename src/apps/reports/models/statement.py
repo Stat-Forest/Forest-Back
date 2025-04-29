@@ -1,5 +1,4 @@
 from django.db import models
-from rest_framework.exceptions import ValidationError
 
 from apps.base.models import AbstractBaseModel
 from apps.utils.services import PeriodChoices

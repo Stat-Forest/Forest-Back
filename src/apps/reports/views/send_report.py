@@ -1,6 +1,5 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import UpdateModelMixin
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound
 
 from apps.reports.models import Report
@@ -11,7 +10,7 @@ class ReportSendAPIView(UpdateModelMixin, GenericAPIView):
 
     queryset = Report.objects.all()
     serializer_class = ReportSendSerializer
-    # permission_classes = [IsAuthenticated, CanSendReport]
+    permission_classes = [CanSendReport]
 
     def get_object(self):
         report_id = self.request.data.get('id')
