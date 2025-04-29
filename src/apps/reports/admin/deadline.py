@@ -22,58 +22,57 @@ class DeadlineAdminForm(forms.ModelForm):
             for deadline in existing_deadlines:
                 if set(deadline.organizations.all()) == set(organizations):
                     raise forms.ValidationError(
-                        _("Bu organizations, statement va submit_at kombinatsiyasi uchun deadline allaqachon mavjud.")
+                        _("A deadline already exists for this combination of organizations, statement, and submit_at.")
                     )
 
         if period == 'daily':
-            # Sana formati YYYY-MM-DD bo'lishini tekshirish
+            # Check that the date format is YYYY-MM-DD
             if len(submission_at) != 10 or submission_at[4] != '-' or submission_at[7] != '-':
-                raise forms.ValidationError(_("Yaroqsiz sana formati. YYYY-MM-DD formatini ishlating"))
+                raise forms.ValidationError(_("Invalid date format. Please use the YYYY-MM-DD format"))
 
             year, month, day = submission_at.split('-')
             if not (year.isdigit() and len(year) == 4):
-                raise forms.ValidationError(_("Yilni to'liq (4 raqam) kiriting."))
+                raise forms.ValidationError(_("Please enter the year as a 4-digit number."))
             if not (month.isdigit() and len(month) == 2 and 1 <= int(month) <= 12):
-                raise forms.ValidationError(_("Oy 01 dan 12 gacha bo'lishi kerak."))
+                raise forms.ValidationError(_("Month should be between 01 and 12."))
             if not (day.isdigit() and len(day) == 2 and 1 <= int(day) <= 31):
-                raise forms.ValidationError(_("Kun 01 dan 31 gacha bo'lishi kerak."))
+                raise forms.ValidationError(_("Day should be between 01 and 31."))
 
             try:
                 datetime.strptime(submission_at, '%Y-%m-%d')
             except ValueError:
-                raise forms.ValidationError(_("Yaroqsiz sana. YYYY-MM-DD formatini ishlating"))
+                raise forms.ValidationError(_("Invalid date. Please use the YYYY-MM-DD format"))
         elif period == 'weekly':
             if len(submission_at) != 10 or not submission_at[:4].isdigit() or not submission_at[
                                                                                   5:7].isdigit() or \
                     submission_at[7] != '-' or not submission_at[8:].startswith('W'):
-                raise forms.ValidationError(_("Yaroqsiz hafta formati. YYYY-MM-Wxx formatini ishlating"))
+                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
             try:
                 datetime.strptime(submission_at, '%Y-%m-W%U')
             except ValueError:
-                raise forms.ValidationError(_("Yaroqsiz hafta formati. YYYY-MM-Wxx formatini ishlating"))
+                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
         elif period == 'monthly':
             if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[5:7].isdigit() or \
                     submission_at[4] != '-':
-                raise forms.ValidationError(_("Yaroqsiz oy formati. YYYY-MM formatini ishlating"))
+                raise forms.ValidationError(_("Invalid month format. Please use the YYYY-MM format"))
             try:
                 datetime.strptime(submission_at, '%Y-%m')
             except ValueError:
-                raise forms.ValidationError(_("Yaroqsiz oy formati. YYYY-MM formatini ishlating"))
+                raise forms.ValidationError(_("Invalid month format. Please use the YYYY-MM format"))
         elif period == 'quarterly':
             if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[6:7].isdigit() or \
-                    submission_at[4] != '-' or not submission_at[5] =='Q' or submission_at[
+                    submission_at[4] != '-' or not submission_at[5] == 'Q' or submission_at[
                 6] not in ['1', '2', '3', '4']:
-                raise forms.ValidationError(_("Yaroqsiz chorak formati. YYYY-Qx formatini ishlating"))
+                raise forms.ValidationError(_("Invalid quarter format. Please use the YYYY-Qx format"))
         elif period == 'yearly':
             if len(submission_at) != 4 or not submission_at.isdigit():
-                raise forms.ValidationError(_("Yaroqsiz yil formati. YYYY formatini ishlating"))
+                raise forms.ValidationError(_("Invalid year format. Please use the YYYY format"))
             try:
                 datetime.strptime(submission_at, '%Y')
             except ValueError:
-                raise forms.ValidationError(_("Yaroqsiz yil formati. YYYY formatini ishlating"))
+                raise forms.ValidationError(_("Invalid year format. Please use the YYYY format"))
 
         return cleaned_data
-
 
 
 class DeadlineAdmin(admin.ModelAdmin):
@@ -84,7 +83,7 @@ class DeadlineAdmin(admin.ModelAdmin):
     def organizations_display(self, obj):
         return ", ".join([organization.name for organization in obj.organizations.all()])
 
-    organizations_display.short_description = _("Tashkilotlar")
+    organizations_display.short_description = _("Organizations")
 
 
 admin.site.register(Deadline, DeadlineAdmin)

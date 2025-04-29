@@ -1,27 +1,29 @@
-# views.py
 from rest_framework.generics import UpdateAPIView
-from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
 from apps.reports.models import Report
-# from apps.reports.permissions import CanSendReport
 from apps.reports.serializers import ReportCancelSerializer
+from apps.base.exceptions.exception_files import CustomExceptionError
 
 class ReportCancelAPIView(UpdateAPIView):
-
     queryset = Report.objects.all()
     serializer_class = ReportCancelSerializer
-    # permission_classes = [IsAuthenticated, CanSendReport]
     http_method_names = ['post']
 
     def get_object(self):
         report_id = self.request.data.get('id')
         if not report_id:
-            raise ValidationError({'id': 'This field is required.'})
+            raise CustomExceptionError(
+                code=400,
+                detail={'id': ['This field is required.']}
+            )
         try:
             report = self.get_queryset().get(id=report_id)
         except Report.DoesNotExist:
-            raise NotFound('Report not found.')
+            raise CustomExceptionError(
+                code=404,
+                detail={'report': ['Report not found.']}
+            )
         self.check_object_permissions(self.request, report)
         return report
 

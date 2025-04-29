@@ -16,7 +16,7 @@ class StatementAdminForm(forms.ModelForm):
 
         if parent is None and period is not None:
             raise forms.ValidationError({
-                'parent': _('Agar parent ko\'rsatilmagan bo\'lsa, period ham bo\'sh bo\'lishi kerak.')
+                'parent': _('If no parent is specified, the period should also be empty.')
             })
         return cleaned_data
 
