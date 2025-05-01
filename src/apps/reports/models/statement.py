@@ -3,7 +3,6 @@ from django.core.validators import FileExtensionValidator
 
 from apps.utils.services import PeriodChoices
 from apps.base.models import AbstractBaseModel
-from apps.utils.services.check_valid_image import validate_image
 
 
 class Statement(AbstractBaseModel):
@@ -22,15 +21,11 @@ class Statement(AbstractBaseModel):
         blank=True,
         null=True,
     )
-    icon = models.ImageField(
+    icon = models.FileField(
         upload_to='statements/icons/%Y/%m/%d/',
-        validators=[
-            FileExtensionValidator(['svg']),
-            validate_image
-        ],
+        validators=[FileExtensionValidator(['svg'])],
         blank=True,
         null=True,
-
     )
 
     def __str__(self):
