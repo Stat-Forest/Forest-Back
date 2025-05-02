@@ -7,3 +7,4 @@ class GeneralConfig(AppConfig):
 
     def ready(self):
         import apps.general.translation
+        import apps.general.signals
