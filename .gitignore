@@ -89,6 +89,7 @@ db.sqlite3
 venv
 media
 static
+staticfiles/
 gitpush.py
 .vscode
 open.py
