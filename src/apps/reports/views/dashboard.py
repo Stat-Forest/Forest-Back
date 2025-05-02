@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from drf_spectacular.utils import extend_schema
 
 from rest_framework.response import Response
 
@@ -8,6 +9,7 @@ from apps.reports.serializers import DashboardStatSerializer
 from apps.reports.models import Report, Deadline, DashboardStat
 
 
+@extend_schema(tags=["Dashboards"])
 class DashboardStatListView(CustomGenericAPIView):
     serializer_class = DashboardStatSerializer
     queryset = DashboardStat.objects.none()

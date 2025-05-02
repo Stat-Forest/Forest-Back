@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "django_filters",
     "corsheaders",
+    "drf_spectacular",
 ]
 
 INSTALLED_APPS += [
@@ -98,3 +99,12 @@ REDIS_DB = 0
 
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Forest API',
+    'DESCRIPTION': 'API documentation for the Forest application',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+}
