@@ -6,6 +6,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 
 from apps.base.models import AbstractBaseModel
 from apps.users.manager import CustomUserManager
+from apps.users.validations.new_id import new_id
 from apps.users.validations.passport_number_validate import validate_passport_number
 
 
@@ -23,26 +24,31 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         FEMALE = "female", _("Female")
 
     class Nation(models.TextChoices):
-        UZBEK = "uz", _("Uzbek")
-        RUSSIAN = "ru", _("Russian")
-        TAJIK = "tj", _("Tajik")
-        KAZAKH = "kz", _("Kazakh")
-        KARAKALPAK = "krp", _("Karakalpak")
-        TATAR = "tt", _("Tatar")
-        KOREAN = "kr", _("Korean")
-        UKRAINIAN = "ua", _("Ukrainian")
-        TURKMEN = "tm", _("Turkmen")
-        KYRGYZ = "kg", _("Kyrgyz")
-        CHINESE = "cn", _("Chinese")
-        JAPANESE = "jp", _("Japanese")
-        OTHER = "ot", _("Other")
+        UZBEK = "Uzbek"
+        RUSSIAN = "Russian"
+        TAJIK = "Tajik"
+        KAZAKH = "Kazakh"
+        KARAKALPAK = "Karakalpak"
+        TATAR = "Tatar"
+        KOREAN = "Korean"
+        UKRAINIAN = "Ukrainian"
+        TURKMEN = "Turkmen"
+        KYRGYZ = "Kyrgyz"
+        CHINESE = "Chinese"
+        JAPANESE = "Japanese"
+        OTHER = "Other"
 
     
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ["first_name"]
+    REQUIRED_FIELDS = ["first_name", "last_name"]
 
     objects = CustomUserManager()
+
+    user_number = models.PositiveSmallIntegerField(default=new_id,
+                                                   max_length=8,
+                                                   unique=True
+                                                   )
 
     role = models.CharField(Role.choices, max_length=50)
 
