@@ -1,7 +1,10 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from apps.reports.models import Deadline
 from apps.reports.serializers import DeadlineSerializer
 
+
+@extend_schema(tags=["Deadlines"])
 class DeadlineListAPIView(generics.ListAPIView):
     serializer_class = DeadlineSerializer
 
