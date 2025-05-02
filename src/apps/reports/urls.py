@@ -4,11 +4,14 @@ from apps.reports.views import (
     ReportCancelAPIView, ReportAcceptAPIView,
     ReportCreateAPIView,StatementListAPIView,
     ReportItemListAPIView, DashboardStatListView,
-    StatementColumnListAPIView,
+    StatementColumnListAPIView,UserListAPIView,
     ReportRetrieveUpdateAPIView, ReportDeleteAPIView
 )
 
 urlpatterns = [
+
+    # ====================  USERS URL   ====================
+    path('users/', UserListAPIView.as_view(), name='users'),
 
     # ====================  DASHBOARD URL   ====================
     path('dashboard/', DashboardStatListView.as_view(), name='dashboard'),
