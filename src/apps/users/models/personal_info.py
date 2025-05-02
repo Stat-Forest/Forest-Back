@@ -18,7 +18,7 @@ class PersonalInfo(AbstractBaseModel):
     )
 
     # ======================== Tashkilot nomi va Lavozimi ==============================
-    organizations = models.ForeignKey("general.Organization", on_delete=models.PROTECT, related_name="personal_info")
+    organizations = models.ManyToManyField("general.Organization", related_name="personal_info")
     positions = models.ForeignKey("users.Position", on_delete=models.PROTECT, related_name="personal_info")
     # ==================================================================================
 
