@@ -5,3 +5,4 @@ from .simple_jwt import *
 from .email_setup import *
 from .redis_setup import *
 from .rest_framework import *
+from .database import *
