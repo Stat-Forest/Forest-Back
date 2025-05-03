@@ -6,14 +6,16 @@ services:
     container_name: forest_app_container
     command: >
       sh -c "
+      /wait-for-it.sh forest_postgres:5432 --timeout=30 --strict -- &&
+      /wait-for-it.sh forest_redis:6379 --timeout=30 --strict -- &&
       python manage.py makemigrations --noinput &&
       python manage.py migrate --noinput &&
       python manage.py collectstatic --noinput &&
       python manage.py runserver 0.0.0.0:8000"
     env_file:
       - ../../.env
-    ports:
-      - "8000:8000"
+    networks:
+      - forest_network
     volumes:
       - ../../src:/app
     depends_on:
@@ -25,16 +27,16 @@ services:
     container_name: forest_postgres_container
     env_file:
       - ../../.env
-    ports:
-      - "5431:5432"
+    networks:
+      - forest_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   forest_redis:
     image: redis:7.0.15
     container_name: forest_redis_container
-    ports:
-      - "6378:6379"
+    networks:
+      - forest_network
     restart: always
     volumes:
       - redis_data:/data
@@ -47,6 +49,8 @@ services:
      command: celery -A config worker --loglevel=info
      env_file:
        - ../../.env
+     networks:
+       - forest_network
      volumes:
        - ../../src:/app
      depends_on:
@@ -61,6 +65,8 @@ services:
      command: celery -A config beat --loglevel=info
      env_file:
        - ../../.env
+     networks:
+       - forest_network
      volumes:
        - ../../src:/app
      depends_on:
@@ -71,3 +77,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  forest_network:
