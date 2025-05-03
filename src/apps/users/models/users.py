@@ -46,7 +46,6 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     user_number = models.PositiveSmallIntegerField(default=new_id,
-                                                   max_length=8,
                                                    unique=True
                                                    )
 
