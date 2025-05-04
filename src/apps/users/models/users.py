@@ -38,16 +38,16 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         JAPANESE = "Japanese"
         OTHER = "Other"
 
-    
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     objects = CustomUserManager()
 
-    user_number = models.PositiveSmallIntegerField(default=new_id,
-                                                   unique=True
-                                                   )
+    user_number = models.CharField(
+        max_length=10,
+        unique=True
+    )
 
     role = models.CharField(Role.choices, max_length=50)
 
