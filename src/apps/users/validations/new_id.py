@@ -16,7 +16,7 @@ def new_id():
         str: A unique 8-digit ID as a string.
     """
     CustomUser = apps.get_model("users", "CustomUser")
-    pk = random.randint(10000000, 99999999)
+    pk = random.randint(100000, 999999)
     if CustomUser.objects.filter(user_number=pk).exists():
         return new_id()
     return str(pk)

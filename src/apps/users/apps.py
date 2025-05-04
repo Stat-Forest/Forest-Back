@@ -7,3 +7,4 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         import apps.users.translations
+        import apps.users.signals
