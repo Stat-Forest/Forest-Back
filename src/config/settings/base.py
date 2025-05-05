@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "drf_spectacular",
+    "debug_toolbar",
 ]
 
 INSTALLED_APPS += [
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",
 
     "django.middleware.common.CommonMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -108,3 +110,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
 }
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]

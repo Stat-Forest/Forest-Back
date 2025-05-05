@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -14,6 +15,15 @@ class StatementColumn(AbstractBaseModel):
     title = models.CharField(
         max_length=255,
         verbose_name=_("Column Title")
+    )
+    plane = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Plane"),
+    )
+    is_only_plane = models.BooleanField(
+        default=False,
+        verbose_name=_("Is only-plane"),
     )
     ordering = models.PositiveIntegerField(
         default=0,

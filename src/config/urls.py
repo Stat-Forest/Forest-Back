@@ -27,3 +27,9 @@ urlpatterns += [
     path('api/v1/reports/', include('apps.reports.urls')),
     path('api/v1/general/', include('apps.general.urls')),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
