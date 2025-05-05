@@ -1,4 +1,7 @@
 # serializers.py
+from datetime import datetime
+
+from django.utils import timezone
 from rest_framework import serializers
 from apps.reports.models import Report
 
@@ -12,5 +15,7 @@ class ReportSendSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.status = Report.StatusChoices.SENT
+        now = timezone.now().strftime('%Y-%m-%d %H:%M')
+        instance.sent_at = datetime.strptime(now, '%Y-%m-%d %H:%M')
         instance.save()
         return instance
