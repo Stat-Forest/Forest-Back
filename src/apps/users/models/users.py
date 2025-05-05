@@ -6,7 +6,6 @@ from django.contrib.auth.base_user import AbstractBaseUser
 
 from apps.base.models import AbstractBaseModel
 from apps.users.manager import CustomUserManager
-from apps.users.validations.new_id import new_id
 from apps.users.validations.passport_number_validate import validate_passport_number
 
 
@@ -43,6 +42,14 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     objects = CustomUserManager()
+
+    statement = models.ForeignKey("reports.Statement",
+                                  limit_choices_to={"parent__isnull": True},
+                                  on_delete=models.PROTECT,
+                                  related_name="users",
+                                  blank=True,
+                                  null=True
+                                  )
 
     user_number = models.CharField(
         max_length=10,
