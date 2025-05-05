@@ -51,6 +51,8 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
                                   null=True
                                   )
 
+    organizations = models.ManyToManyField("general.Organization", related_name="users")
+
     user_number = models.CharField(
         max_length=10,
         unique=True
