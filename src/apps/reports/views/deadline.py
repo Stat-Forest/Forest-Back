@@ -12,7 +12,6 @@ class DeadlineListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        personal_info = getattr(user, "personal_info", None)
 
         base_qs = Deadline.objects.select_related(
             "statement", "statement__parent"
@@ -20,10 +19,10 @@ class DeadlineListAPIView(generics.ListAPIView):
             "organizations"
         )
 
-        if not personal_info or not personal_info.organizations.exists():
+        if not user.organizations.exists():
             return base_qs
 
-        user_organizations = personal_info.organizations.all()
+        user_organizations = user.organizations.all()
         return base_qs.filter(organizations__in=user_organizations).distinct()
 
 

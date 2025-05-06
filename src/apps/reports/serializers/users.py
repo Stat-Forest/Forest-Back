@@ -6,9 +6,9 @@ class UserListSerializer(serializers.ModelSerializer):
     information = serializers.SerializerMethodField()
 
     def get_organizations(self, obj):
-        personal_info = obj.personal_info if hasattr(obj, 'personal_info') else None
-        if personal_info:
-            return ", ".join([org.title for org in personal_info.organizations.all()])
+        user_organizations = obj.organizations if hasattr(obj, 'organizations') else None
+        if user_organizations:
+            return ", ".join([org.title for org in user_organizations.all()])
         return ""
 
     def get_information(self, obj):
