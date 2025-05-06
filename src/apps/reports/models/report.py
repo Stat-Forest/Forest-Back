@@ -43,6 +43,18 @@ class Report(AbstractBaseModel):
         verbose_name=_("Cancel reason"),
         help_text=_("Reason for cancelling the report")
     )
+    sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    cancelled_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    accepted_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.organization.name} "
