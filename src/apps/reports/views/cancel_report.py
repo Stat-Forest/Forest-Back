@@ -3,15 +3,14 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 
 from apps.reports.models import Report
-# from apps.reports.serializers import ReportCancelSerializer
+from apps.reports.serializers import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 
 
 @extend_schema(tags=["Reports Status Update"])
 class ReportCancelAPIView(UpdateAPIView):
     queryset = Report.objects.all()
-    # serializer_class = ReportCancelSerializer
-    http_method_names = ['post']
+    serializer_class = ReportCancelSerializer
 
     def get_object(self):
         report_id = self.request.data.get('id')
