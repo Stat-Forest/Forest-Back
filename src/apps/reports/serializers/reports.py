@@ -4,29 +4,34 @@ from apps.reports.serializers.report_item import ReportItemSerializer
 
 
 class ReportListSerializer(serializers.ModelSerializer):
-    organization = serializers.StringRelatedField()
-    deadline = serializers.StringRelatedField()
-    statement = serializers.StringRelatedField()
-    period = serializers.SerializerMethodField()
-
-    def get_period(self, obj):
-        return obj.statement.period
+    period = serializers.CharField(source='statement.period')
 
     class Meta:
         model = Report
-        fields = ['id', 'organization', 'statement', 'deadline', 'period', 'status', 'created_at']
-
+        fields = (
+            'id', 'organization', 'statement',
+            'deadline', 'period', 'status',
+            'created_at','cancel_reason',
+            'cancelled_at',
+            'sent_at','accepted_at',
+        )
 
 class ReportDetailSerializer(serializers.ModelSerializer):
     items = ReportItemSerializer(many=True)
 
     class Meta:
         model = Report
-        fields = ['id', 'items']
+        fields = ('id', 'deadline', 'items')
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', [])
-        instance = super().update(instance, validated_data)
+        deadline = validated_data.get('deadline', instance.deadline)
+        statement = deadline.statement
+
+        if statement != instance.statement or deadline != instance.deadline:
+            instance.statement = statement
+            instance.deadline = deadline
+            instance.save()
 
         existing_items = {item.id: item for item in instance.items.all()}
 
