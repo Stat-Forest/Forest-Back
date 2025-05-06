@@ -1,0 +1,51 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.env
+.venv/
+venv/
+
+# Bytecode
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose*.yml
+
+# Editor/IDE settings
+.vscode/
+.idea/
+
+# Compiled static files
+staticfiles/
+static/
+
+# Media uploads (if any)
+media/
+
+# Migration backups (optional)
+*.sqlite3
+
+# Build artifacts
+*.log
+*.bak
+*.swp
+*.tmp
+*.coverage
+
+# Requirements folder (optional — only if not needed inside container)
+# requirements/
+
+# Local settings (optional)
+local_settings.py
