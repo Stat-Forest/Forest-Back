@@ -4,11 +4,12 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.base.serializers import CustomSerializer
 
 User = get_user_model()
 
 
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(CustomSerializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
