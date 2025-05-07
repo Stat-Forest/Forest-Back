@@ -17,9 +17,12 @@ class OrganizationListAPIView(CustomListAPIView):
     def get_cache_key(self, request):
         query_params = request.GET.urlencode() or "no_query"
         page = request.GET.get('page', '1')
-        return f"organization_list_cache:{query_params}:page={page}"
+        return f"organization_list_cache:{request.user.id}:{query_params}:page={page}"
 
     def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'organizations') and user.organizations.exists():
+            return user.organizations.all()
         return Organization.objects.all()
 
     def list(self, request, *args, **kwargs):
