@@ -29,6 +29,7 @@ class StatementColumn(AbstractBaseModel):
         verbose_name=_("Ordering"),
         validators=[MinValueValidator(0.0)]
     )
+    is_plane = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -39,30 +40,3 @@ class StatementColumn(AbstractBaseModel):
         ordering = ["ordering"]
         unique_together = ("statement", "title")
 
-[
-  {
-    "id": 1,
-    "statement": 1,
-    "title": "1 - chorak",
-    "ordering": 1,
-    "children": [
-      {
-        "id": 2,
-        "statement": 1,
-        "title": "Yanvar",
-        "ordering": 1,
-        "children": [
-          {
-            "id": 3,
-            "statement": 1,
-            "title": "Reja",
-            "ordering": 1,
-            "children": []
-          },
-          ...
-        ]
-      },
-      ...
-    ]
-  }
-]
