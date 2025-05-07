@@ -2,10 +2,11 @@ from django.urls import path
 from apps.reports.views import (
     DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
     ReportCancelAPIView, ReportAcceptAPIView,
-    ReportCreateAPIView,StatementListAPIView,
+    ReportCreateAPIView, StatementListAPIView,
     ReportItemListAPIView, DashboardStatListView,
-    StatementColumnListAPIView,UserListAPIView,
-    ReportRetrieveUpdateAPIView, ReportDeleteAPIView
+    StatementColumnListAPIView, UserListAPIView,
+    ReportRetrieveUpdateAPIView, ReportDeleteAPIView,
+    PlaneStatementColumnListAPIView, PlanCreateView
 )
 
 urlpatterns = [
@@ -37,6 +38,9 @@ urlpatterns = [
 
     # ====================  REPORT ITEM URL    ====================
     path('report-items/', ReportItemListAPIView.as_view(), name='report-item-list'),
+
+    path('plan-columns/', PlaneStatementColumnListAPIView.as_view(), name='plane-columns-list'),
+    path('plans/create/', PlanCreateView.as_view(), name='plan-create'),
 
 ]
 
