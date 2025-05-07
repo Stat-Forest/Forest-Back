@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -10,14 +11,11 @@ from apps.authentications.serializers import (SendResetCodeSerializer,
                                               NewPasswordSerializer)
 
 
+@extend_schema(tags=["authentications"])
 class SendResetCodeAPIView(CustomGenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = SendResetCodeSerializer
 
-    @swagger_auto_schema(
-        request_body=SendResetCodeSerializer,
-        responses={200: openapi.Response("Code sent successfully")}
-    )
     def post(self, request):
         serializer = SendResetCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -25,13 +23,11 @@ class SendResetCodeAPIView(CustomGenericAPIView):
         return Response({"detail": "We sent verify code."})
 
 
+@extend_schema(tags=["authentications"])
 class VerifyCodeAPIView(CustomGenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = VerifyResetCodeSerializer
 
-    @swagger_auto_schema(
-        request_body=VerifyResetCodeSerializer,
-        responses={200: openapi.Response("Token created")}
-    )
     def post(self, request):
         serializer = VerifyResetCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -39,13 +35,11 @@ class VerifyCodeAPIView(CustomGenericAPIView):
         return Response(tokens)
 
 
+@extend_schema(tags=["authentications"])
 class NewPasswordAPIView(CustomGenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = NewPasswordSerializer
 
-    @swagger_auto_schema(
-        request_body=NewPasswordSerializer,
-        responses={200: openapi.Response("Password changed successfully")}
-    )
     def post(self, request):
         serializer = NewPasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
