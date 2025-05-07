@@ -34,4 +34,6 @@ wcwidth==0.2.13
 django-cors-headers==4.7.0
 psycopg2-binary>=2.9,<3
 drf-spectacular==0.28.0
+faker==37.1.0 # 05.05.2025 Oybek
+requests==2.32.3 # 06.05.2025 Oybek
 django-debug-toolbar==5.2.0 # by Jahongir
