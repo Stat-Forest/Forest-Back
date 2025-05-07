@@ -1,15 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from apps.base.views import CustomListAPIView
 from apps.reports.models import StatementColumn
+from apps.reports.serializers.plan_column import PlanColumnSerializer
 
-class PlaneStatementColumnListAPIView(APIView):
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
+class PlaneStatementColumnListAPIView(CustomListAPIView):
+    serializer_class = PlanColumnSerializer
 
-        columns = StatementColumn.objects.filter(
-            statement__parent=user.statement,
-            is_plane=True
-        )
-
-        return Response(columns)
+    def get_queryset(self, *args, **kwargs):
+        columns = StatementColumn.objects.filter(parent__isnull=False, is_plane=True).select_related("parent",
+                                                                                                     "parent__parent",
+                                                                                                     "parent__parent__parent",
+                                                                                                     "parent__parent__parent__parent")
+        return columns
