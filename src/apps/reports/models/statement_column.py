@@ -17,6 +17,7 @@ class StatementColumn(AbstractBaseModel):
     parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
+        related_query_name="statement_columns",
         null=True,
         blank=True
     )
@@ -24,15 +25,19 @@ class StatementColumn(AbstractBaseModel):
         max_length=255,
         verbose_name=_("Column Title")
     )
-    ordering = models.FloatField(
+    ordering = models.CharField(
         default=0,
-        verbose_name=_("Ordering"),
-        validators=[MinValueValidator(0.0)]
+        verbose_name=_("Ordering")
     )
     is_plane = models.BooleanField(default=False)
 
+    def return_parent(self):
+        if self.parent is None:
+            return self.title
+        return f"{self.parent.return_parent()} - {self.title}"
     def __str__(self):
-        return self.title
+
+        return self.return_parent()
 
     class Meta:
         verbose_name = _("Statement Column")
