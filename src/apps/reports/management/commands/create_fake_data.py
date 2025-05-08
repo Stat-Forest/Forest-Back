@@ -1,96 +1,77 @@
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from apps.general.models import Organization
-from apps.reports.models import Statement, Deadline, StatementColumn, Report, ReportItem
-from apps.utils.services import RegionChoices, PeriodChoices
-import random
+from apps.reports.models import Statement, StatementColumn
+from apps.utils.services import PeriodChoices
 
 
 class Command(BaseCommand):
-    help = 'Seeds the database with test data for organizations, reports, deadlines, and more'
+    help = 'Creates Daromad statement and associated statement columns'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.WARNING("🚧 Seeding started..."))
+        self.stdout.write("🚧 Daromad statement column seeding started...")
 
         try:
-            with transaction.atomic():
-                # 1. Create 13 organizations
-                organizations = []
-                for region in RegionChoices.values:
-                    org, _ = Organization.objects.get_or_create(
-                        name=f"{region.title()} Organization",
-                        region=region
-                    )
-                    organizations.append(org)
+            # 1. Get or create parent statement: "Moliya-iqsisod va bugaltiriya"
+            parent_stmt, _ = Statement.objects.get_or_create(name="Moliya-iqsisod va bugaltiriya", parent=None)
 
-                # 2. Create parent statements
-                parent_titles = [
-                    "Inson resurslarini boshqarish",
-                    "Moliya-iqsisod va bugaltiriya",
-                    "Urmon barpo qilish",
-                    "Urmon kadestri-ijoara",
-                    "Urmonlardan qoshimcha foydalanish",
-                    "Urmonlarni muhofaza qilish"
-                ]
-                parents = []
-                for title in parent_titles:
-                    stmt, _ = Statement.objects.get_or_create(name=title, parent=None)
-                    parents.append(stmt)
+            # 2. Create "Daromad" statement under "Moliya-iqsisod va bugaltiriya"
+            daromad_stmt, _ = Statement.objects.get_or_create(
+                name="Daromad",
+                parent=parent_stmt,
+                period=PeriodChoices.CHORAKLIK
+            )
 
-                # 3. Create child statement under 'Inson resurslarini boshqarish'
-                hr_parent = Statement.objects.get(name="Inson resurslarini boshqarish")
-                hodimlar_hisobi, _ = Statement.objects.get_or_create(
-                    name="Hodimlar hisobi",
-                    parent=hr_parent,
-                    period=PeriodChoices.CHORAKLIK
+            # 3. Create 3 parent-level columns
+            column_titles = ["Daromad turlari bo‘yicha", "Tushumlar bo‘yicha", "Svod"]
+            column_parents = {}
+            for idx, title in enumerate(column_titles, start=1):
+                col, _ = StatementColumn.objects.get_or_create(
+                    statement=daromad_stmt,
+                    title=title,
+                    ordering=idx
+                )
+                column_parents[title] = col
+
+            # 4. Create child column under "Daromad turlari bo‘yicha"
+            info_title = "O‘rmon xo‘jaligi agentligi tizimidagi tashkilotlarining 2025 yil davomida topilgan daromadlari to‘g‘risida MA'LUMOT"
+            info_col, _ = StatementColumn.objects.get_or_create(
+                statement=daromad_stmt,
+                title=info_title,
+                ordering=4,
+                parent=column_parents["Daromad turlari bo‘yicha"]
+            )
+
+            # 5. Create 19 sub-columns under the info_col
+            sub_titles = [
+                "Xo‘jalik nomi",
+                "Ko‘chat va nihol sotish",
+                "Yog‘och o‘tin sotish",
+                "Sanoat, xalq iste’mol mollari",
+                "Aholiga pullik xizmat",
+                "Yaylov tushumi",
+                "Qishloq xo‘jaligi mahsulotlari",
+                "Chorvachilik",
+                "Parrandachilik",
+                "Quyonchilik",
+                "Baliqchilik",
+                "Asalarichilik",
+                "Dorivor o‘simliklar",
+                "Ko‘kalamzorlashtirish",
+                "Boshqa tushumlar",
+                "Ixota",
+                "Urug‘ sotishdan",
+                "Ijara to‘lovlari",
+                "Jami"
+            ]
+            for idx, title in enumerate(sub_titles, start=1):
+                StatementColumn.objects.get_or_create(
+                    statement=daromad_stmt,
+                    title=title,
+                    ordering=100 + idx,
+                    parent=info_col
                 )
 
-                # 4. Create 3 deadlines for that child statement
-                quarters = ['2025-Q1', '2025-Q2', '2025-Q3']
-                deadlines = []
-                for q in quarters:
-                    deadline, _ = Deadline.objects.get_or_create(
-                        statement=hodimlar_hisobi,
-                        submit_at=q
-                    )
-                    deadline.organizations.set(organizations)
-                    deadlines.append(deadline)
-
-                # 5. Create statement columns
-                COLUMNS = [
-                    "all_workers", "management_workers", "expert_workers", "production_workers", "technical_workers", "service_workers", "workers",
-                    "all_vacancies", "management_vacancies", "expert_vacancies", "technical_vacancies", "service_vacancies", "workers_vacancies",
-                    "total_staff_positions", "total_number_employed_staff", "higher_education", "secondary_education", "general_education",
-                    "females", "males", "young_people", "girls", "boys", "retired_workers", "academic_degrees",
-                    "foreign_language_employees", "educated_and_trained_abroad", "total_number_new_jobs_created", "permanent_workers",
-                    "seasonal_workers", "girls_under_30", "boys_under_30", "included_iron_book_women_list", "from_low_income_families", "based_home_based_work"
-                ]
-                columns = []
-                for idx, title in enumerate(COLUMNS):
-                    col, _ = StatementColumn.objects.get_or_create(
-                        statement=hodimlar_hisobi,
-                        title=title,
-                        ordering=idx + 1
-                    )
-                    columns.append(col)
-
-                # 6. Create 13 reports and related report items
-                for org in organizations:
-                    report, _ = Report.objects.get_or_create(
-                        organization=org,
-                        statement=hodimlar_hisobi,
-                        deadline=deadlines[0],  # 2025-Q1
-                        defaults={"status": Report.StatusChoices.SAVED}
-                    )
-                    for col in columns:
-                        ReportItem.objects.get_or_create(
-                            report=report,
-                            statement_column=col,
-                            defaults={"value": random.randint(1, 100)}
-                        )
-
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"❌ Seeding failed: {e}"))
+            self.stdout.write(self.style.ERROR(f"❌ Error: {e}"))
             return
 
-        self.stdout.write(self.style.SUCCESS("✅ Seeding completed successfully!"))
+        self.stdout.write(self.style.SUCCESS("✅ Daromad statement columns created successfully!"))
