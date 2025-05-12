@@ -4,9 +4,9 @@ from apps.reports.views import (
     ReportCancelAPIView, ReportAcceptAPIView,
     ReportCreateAPIView, StatementListAPIView,
     ReportItemListAPIView, DashboardStatListView,
-    StatementColumnListAPIView, UserListAPIView,
+    StatementColumnTreeAPIView, UserListAPIView,
     ReportRetrieveUpdateAPIView, ReportDeleteAPIView,
-    PlaneStatementColumnListAPIView, PlanCreateView
+    PlanStatementColumnListAPIView, PlanCreateView
 )
 
 urlpatterns = [
@@ -22,7 +22,7 @@ urlpatterns = [
 
     # ====================  STATEMENT COLUMN URL    ====================
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
-    path('statement-columns/', StatementColumnListAPIView.as_view(), name='statement-columns-list'),
+    path('statement-columns/', StatementColumnTreeAPIView.as_view(), name='statement-columns-list'),
 
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
@@ -39,8 +39,8 @@ urlpatterns = [
     # ====================  REPORT ITEM URL    ====================
     path('report-items/', ReportItemListAPIView.as_view(), name='report-item-list'),
 
-    path('plan-columns/', PlaneStatementColumnListAPIView.as_view(), name='plane-columns-list'),
-    path('plans/create/', PlanCreateView.as_view(), name='plan-create'),
+    path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
+    path('plan/create/', PlanCreateView.as_view(), name='plan-create'),
 
 ]
 

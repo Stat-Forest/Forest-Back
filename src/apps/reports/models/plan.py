@@ -11,7 +11,7 @@ class Plan(AbstractBaseModel):
         'reports.StatementColumn',
         on_delete=models.CASCADE,
         related_name='plans',
-        limit_choices_to={'is_plane': True}
+        limit_choices_to={'is_plan': True}
     )
     year = models.PositiveIntegerField()
     plan_value = models.FloatField(default=0)
