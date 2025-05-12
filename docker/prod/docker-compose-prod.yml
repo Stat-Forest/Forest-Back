@@ -1,0 +1,74 @@
+services:
+  forest_app:
+    build:
+      context: ../..
+      dockerfile: docker/prod/Dockerfile
+    container_name: forest_app_prod
+    env_file:
+      - ../../.env
+    entrypoint: ["/entrypoint.sh"]
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - forest_postgres
+      - forest_redis
+    restart: always
+    networks:
+      - forest_network
+
+  forest_postgres:
+    image: postgres:16
+    container_name: forest_postgres_prod
+    env_file:
+      - ../../.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - forest_network
+    restart: always
+
+  forest_redis:
+    image: redis:7.0.15
+    container_name: forest_redis_prod
+    volumes:
+      - redis_data:/data
+    networks:
+      - forest_network
+    restart: always
+
+  forest_celery_worker:
+    build:
+      context: ../..
+      dockerfile: docker/prod/Dockerfile
+    container_name: forest_celery_worker_prod
+    env_file:
+      - ../../.env
+    command: celery -A config worker --loglevel=info
+    depends_on:
+      - forest_redis
+      - forest_postgres
+    networks:
+      - forest_network
+    restart: always
+
+  forest_celery_beat:
+    build:
+      context: ../..
+      dockerfile: docker/prod/Dockerfile
+    container_name: forest_celery_beat_prod
+    env_file:
+      - ../../.env
+    command: celery -A config beat --loglevel=info
+    depends_on:
+      - forest_celery_worker
+    networks:
+      - forest_network
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  forest_network:
