@@ -28,5 +28,6 @@ class Statement(AbstractBaseModel):
         null=True,
     )
 
+
     def __str__(self):
         return self.name
