@@ -4,8 +4,8 @@ from .deadline import *
 from .statement import *
 from .dashboard import *
 from .send_report import *
-from .plane_column import *
-from .plane_create import *
+from .plan_column import *
+from .plan_create import *
 from .accept_report import *
 from .cancel_report import *
 from .statement_column import *
