@@ -13,5 +13,5 @@ class PlanColumnSerializer(CustomModelSerializer):
             "parent",
             "title",
             "ordering",
-            "is_plane",
+            "is_plan",
         ]

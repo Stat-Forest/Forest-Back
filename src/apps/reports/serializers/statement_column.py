@@ -1,19 +1,16 @@
 from rest_framework import serializers
-from apps.reports.models.statement_column import StatementColumn
+from apps.reports.models import StatementColumn
 
-
-class StatementColumnSerializer(serializers.ModelSerializer):
+class StatementColumnTreeSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
-    parent = serializers.StringRelatedField()
-    statement = serializers.StringRelatedField(read_only=True)
+    parent = serializers.PrimaryKeyRelatedField(read_only=True)
+    statement = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = StatementColumn
-        fields = ['id', 'statement', 'title', 'ordering', 'children', 'parent']
+        fields = ['id', 'statement', 'title', 'ordering', 'parent', 'is_plan', 'children']
 
     def get_children(self, obj):
-        qs = obj.statementcolumn_set.all().order_by('ordering')
-        return StatementColumnSerializer(qs, many=True).data
-
-    def get_parent(self, obj):
-        return 
+        if hasattr(obj, 'children_list'):
+            return StatementColumnTreeSerializer(obj.children_list, many=True).data
+        return []
