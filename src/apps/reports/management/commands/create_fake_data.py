@@ -8,6 +8,7 @@ from apps.reports.models import Statement, StatementColumn
 
 from apps.utils.services import *
 
+
 class Command(BaseCommand):
     help = 'Creates default Statement and StatementColumn data'
 
@@ -17,17 +18,17 @@ class Command(BaseCommand):
         Organization.objects.all().delete()
 
         with transaction.atomic():
-            organizations =[]
+            # Create organizations
+            organizations = []
             for _ in range(13):
-                org= random.choice(RegionChoices.values)
+                org_region = random.choice(RegionChoices.values)
                 organization = Organization(
-                    name='Organization {}'.format(org),
-                    region= org,
+                    name='Organization {}'.format(org_region),
+                    region=org_region,
                 )
                 organizations.append(organization)
 
             Organization.objects.bulk_create(organizations)
-
 
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
@@ -39,7 +40,6 @@ class Command(BaseCommand):
                 period=PeriodChoices.OYLIK,
             )
 
-            # --- 1. Daromad turlari bo‘yicha ---
             daromad_turlari = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=None,
@@ -55,7 +55,6 @@ class Command(BaseCommand):
             )
 
             titles = [
-                "Xo‘jalik nomi",
                 "Ko‘chat va nihol sotish",
                 "Yog‘och o‘tin sotish",
                 "Sanoat, xalq iste’mol mollari",
@@ -86,7 +85,7 @@ class Command(BaseCommand):
             tushumlar = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=None,
-                title="Tushumlar boicha",
+                title="Tushumlar bo‘yicha",
                 ordering="2"
             )
             tushum_info = StatementColumn.objects.create(
@@ -99,15 +98,9 @@ class Command(BaseCommand):
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushum_info,
-                title='Tashkilotlar nomi',
-                ordering="2.1.1"
-            )
-            StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=tushum_info,
                 title='Yillik reja',
-                ordering="2.1.2",
-                is_plan = True
+                ordering="2.1.1",
+                is_plan=True
             )
 
             choraklar = {
@@ -116,11 +109,31 @@ class Command(BaseCommand):
                 "3 - chorak": ["iyul", "avgust", "sentyabr"],
                 "4 - chorak": ["oktyabr", "noyabr", "dekabr"]
             }
-            base_order = 3
-            oy_counter = 1
 
             for chorak_idx, (chorak_nomi, oylari) in enumerate(choraklar.items(), start=1):
-                chorak_order = f"2.1.{2 + chorak_idx}"
+                chorak_reja_order = f"2.1.{2 + (chorak_idx - 1) * 2}"
+                chorak_reja_node = StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=tushum_info,
+                    title=f"{chorak_nomi} reja",
+                    ordering=chorak_reja_order
+                )
+                StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=chorak_reja_node,
+                    title="Reja",
+                    ordering=f"{chorak_reja_order}.1",
+                    is_plan=True
+                )
+                StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=chorak_reja_node,
+                    title="Amalda",
+                    ordering=f"{chorak_reja_order}.2",
+                    is_plan=False
+                )
+
+                chorak_order = f"2.1.{2 + (chorak_idx - 1) * 2 + 1}"
                 chorak_node = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
@@ -149,7 +162,6 @@ class Command(BaseCommand):
                     for sub_idx, sub in enumerate(sub_titles, start=1):
                         ordering_value = f"{tushum_order}.{sub_idx}"
                         is_plan_flag = sub == "Reja"
-
                         StatementColumn.objects.update_or_create(
                             statement=daromad_statement,
                             parent=tushum_node,
@@ -158,9 +170,8 @@ class Command(BaseCommand):
                             defaults={'is_plan': is_plan_flag}
                         )
 
-            # --- 3. Svod bo‘limi ---
             svod = StatementColumn.objects.create(
-                statement=daromad_statement,    
+                statement=daromad_statement,
                 parent=None,
                 title="Svod",
                 ordering="3"
@@ -168,14 +179,14 @@ class Command(BaseCommand):
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
-                title="Yillik Reja(ming sum)",
+                title="Yillik Reja (ming so'm)",
                 ordering="3.1",
                 is_plan=True
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
-                title="Amalda (ming sum)",
+                title="Amalda (ming so'm)",
                 ordering="3.2"
             )
             StatementColumn.objects.create(
@@ -185,6 +196,4 @@ class Command(BaseCommand):
                 ordering="3.3"
             )
 
-
-
-            self.stdout.write(self.style.SUCCESS("✅ Successfully created statement columns with full 12-month breakdown."))
+            self.stdout.write(self.style.SUCCESS("✅ Successfully created statement columns with full 12-month breakdown and all quarterly 'reja' sections."))
