@@ -10,7 +10,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
 # CORS_ALLOW_ALL_ORIGINS = True
 
