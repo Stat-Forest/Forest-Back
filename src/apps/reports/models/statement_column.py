@@ -20,9 +20,21 @@ class StatementColumn(AbstractBaseModel):
         null=True,
         blank=True
     )
-    title = models.CharField(max_length=255, verbose_name=_("Column Title"))
-    ordering = models.CharField(default="0", max_length=100, verbose_name=_("Ordering"))
-    is_plan = models.BooleanField(default=False)
+    title = models.CharField(
+        max_length=255,
+        verbose_name=_("Column Title")
+    )
+    ordering = models.CharField(
+        default="0",
+        max_length=100,
+        verbose_name=_("Ordering")
+    )
+    is_plan = models.BooleanField(
+        default=False
+    )
+    is_organization = models.BooleanField(
+        default=False
+    )
 
     def return_parent(self):
         if self.parent is None:
