@@ -55,6 +55,7 @@ class Command(BaseCommand):
             )
 
             titles = [
+                "Tashkilot nomi",
                 "Ko‘chat va nihol sotish",
                 "Yog‘och o‘tin sotish",
                 "Sanoat, xalq iste’mol mollari",
@@ -74,7 +75,17 @@ class Command(BaseCommand):
                 "Ijara to‘lovlari",
                 "Jami"
             ]
+
             for idx, title in enumerate(titles, start=1):
+                if title == titles[0]:
+                    StatementColumn.objects.create(
+                        statement=daromad_statement,
+                        parent=info,
+                        title=title,
+                        ordering=f"1.1.{idx}",
+                        is_organization=True
+                    )
+                    continue
                 StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=info,
@@ -94,12 +105,18 @@ class Command(BaseCommand):
                 title="O‘rmon xo‘jaligi agentligi tizimi korxonalarida 2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
                 ordering="2.1"
             )
-
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=tushum_info,
+                title='Tashkilot nomi',
+                ordering="2.1.1",
+                is_organization=True
+            )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushum_info,
                 title='Yillik reja',
-                ordering="2.1.1",
+                ordering="2.1.2",
                 is_plan=True
             )
 
@@ -111,7 +128,7 @@ class Command(BaseCommand):
             }
 
             for chorak_idx, (chorak_nomi, oylari) in enumerate(choraklar.items(), start=1):
-                chorak_reja_order = f"2.1.{2 + (chorak_idx - 1) * 2}"
+                chorak_reja_order = f"2.1.{3 + (chorak_idx - 1) * 2}"
                 chorak_reja_node = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
@@ -133,7 +150,7 @@ class Command(BaseCommand):
                     is_plan=False
                 )
 
-                chorak_order = f"2.1.{2 + (chorak_idx - 1) * 2 + 1}"
+                chorak_order = f"2.1.{3 + (chorak_idx - 1) * 2 + 1}"
                 chorak_node = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
@@ -179,21 +196,28 @@ class Command(BaseCommand):
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
-                title="Yillik Reja (ming so'm)",
+                title="Tashkilot nomi",
                 ordering="3.1",
+                is_organization=True
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod,
+                title="Yillik Reja (ming so'm)",
+                ordering="3.2",
                 is_plan=True
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
                 title="Amalda (ming so'm)",
-                ordering="3.2"
+                ordering="3.3"
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
                 title="Rejaga nisbatan %",
-                ordering="3.3"
+                ordering="3.4"
             )
 
             self.stdout.write(self.style.SUCCESS("✅ Successfully created statement columns with full 12-month breakdown and all quarterly 'reja' sections."))
