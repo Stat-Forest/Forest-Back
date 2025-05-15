@@ -22,14 +22,30 @@ services:
     container_name: forest_nginx_prod
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - forest_app
     volumes:
       - ../../static:/app/static
       - ../../media:/app/media
       - ../../docker/prod/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/www/certbot
     networks:
       - forest_network
+
+  forest_certbot:
+    image: certbot/certbot
+    container_name: forest_certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/www/certbot
+    command: >
+      certonly --webroot --webroot-path=/var/www/certbot 
+      --email tolqinovoybek92@gmail.com 
+      --agree-tos 
+      --no-eff-email 
+      -d forest.yutori.uz
 
   forest_postgres:
     image: postgres:16
@@ -83,6 +99,8 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  certbot-etc:
+  certbot-var:
 
 networks:
   forest_network:
