@@ -95,3 +95,6 @@ gitpush.py
 open.py
 src/apps/*/migrations/0*
 .idea
+
+docker/prod/certbot/etc/
+docker/prod/certbot/var/
