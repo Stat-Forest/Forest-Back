@@ -27,3 +27,5 @@ vine==5.1.0
 psycopg2-binary>=2.9,<3
 django-cors-headers==4.7.0
 drf-spectacular==0.28.0
+requests==2.32.3
+django-debug-toolbar==5.2.0
