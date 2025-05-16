@@ -103,6 +103,11 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
             'Unselect this instead of deleting accounts.'
         ),
     )
-
+    
+    def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.role = self.Role.SUPER_ADMIN
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return self.email
