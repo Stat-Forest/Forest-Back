@@ -1,8 +1,12 @@
 from datetime import date
 from datetime import datetime
 
+from django.core.cache import cache
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.reports.models import Report, ReportItem
+
+from apps.general.models import Organization
+from apps.reports.models import Report, ReportItem, StatementColumn, Plan
 from apps.utils.services.choices import PeriodChoices
 from apps.base.exceptions.exception_files import CustomExceptionError
 
@@ -15,15 +19,57 @@ class ReportItemCreateSerializer(serializers.ModelSerializer):
 
 class ReportCreateSerializer(serializers.ModelSerializer):
     report_items = ReportItemCreateSerializer(many=True, write_only=True)
-
+    CHACHE_KEY = f'report_organization'
     class Meta:
         model = Report
-        fields = ['id', 'organization', 'deadline', 'report_items']
+        fields = ['id','deadline', 'report_items']
 
     def validate(self, attrs):
-        organization = attrs.get('organization')
+        # organization = attrs.get('organization')
+        report_items = attrs.get('report_items')
         deadline = attrs.get('deadline')
+        user = self.context['request'].user
         statement = deadline.statement
+
+
+
+
+        all_organization = []
+        for item in report_items:
+            if StatementColumn.objects.filter(statement_id=item['statement_column']).is_organization  == True:
+                if (not Organization.objects.filter(organization_id=item['value']).exists()
+                        or
+                    item['value'] not in user.organizations.values_list('id',flat=True)):
+                    raise CustomExceptionError(
+                        code = 400,
+                        detail= _('Invalid organization.')
+                    )
+
+                else:
+                    all_organization.append(item['value'])
+
+            if StatementColumn.objects.filter(statement_id=item['statement_column']).is_plan == True:
+                if not Plan.objects.filter(plan_id=item['value'],column_id=item['statement_column']).exists():
+                    raise CustomExceptionError(
+                        code = 400,
+                        detail= _('Invalid plan.')
+                    )
+            if (StatementColumn.objects.filter(statement_id=item['statement_column']).is_organization  == False
+                and
+                StatementColumn.objects.filter(statement_id=item['statement_column']).is_plan == False):
+
+                if item['value'].isdigit() is not True:
+                    raise CustomExceptionError(
+                        code = 400,
+                        detail= _('Invalid number.')
+                    )
+        if len(set(all_organization)) != 1:
+            raise CustomExceptionError(
+                code = 400,
+                detail= _('Invalid organizations.')
+            )
+        cache.set(self.CHACHE_KEY, all_organization[0])
+        del all_organization[0]
 
         def get_week_of_month():
             today = datetime.now().date()
@@ -32,7 +78,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             return (adjusted_dom - 1) // 7 + 1
 
         # Checking if organization is allowed for the selected deadline
-        if not deadline.organizations.filter(id=organization.pk).exists():
+        if not deadline.organizations.filter(id=cache.get(self.CHACHE_KEY)).exists():
             raise CustomExceptionError(
                 code=400,
                 detail={
@@ -114,7 +160,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
         # Check if report already exists for the given organization, statement, and deadline
         if Report.objects.filter(
-                organization=organization,
+                organization=cache.get(self.CHACHE_KEY),
                 statement=statement,
                 deadline=deadline
         ).exists():
@@ -131,6 +177,9 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('report_items')
         deadline = validated_data['deadline']
         validated_data['statement'] = deadline.statement
+        validated_data['organization'] = cache.get(self.CHACHE_KEY)
+        cache.get(self.CHACHE_KEY).delete()
+
         report = Report.objects.create(**validated_data)
 
         for item_data in items_data:

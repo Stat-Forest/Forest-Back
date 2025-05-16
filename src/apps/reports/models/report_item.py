@@ -17,8 +17,8 @@ class ReportItem(AbstractBaseModel):
         related_name="report_items",
         verbose_name=_("Statement Column")
     )
-    value = models.PositiveIntegerField(
-        default=0,
+    value = models.CharField(
+        max_length=100,
         verbose_name=_("Value"),
     )
 
