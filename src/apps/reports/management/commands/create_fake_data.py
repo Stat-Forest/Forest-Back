@@ -193,31 +193,37 @@ class Command(BaseCommand):
                 title="Svod",
                 ordering="3"
             )
-            StatementColumn.objects.create(
+            tushum_info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
+                title="O‘rmon xo‘jaligi agentligi tizimi korxonalarida 2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
+                ordering="3.1"
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=tushum_info,
                 title="Tashkilot nomi",
-                ordering="3.1",
+                ordering="3.1.1",
                 is_organization=True
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
-                parent=svod,
+                parent=tushum_info,
                 title="Yillik Reja (ming so'm)",
-                ordering="3.2",
+                ordering="3.1.2",
                 is_plan=True
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
-                parent=svod,
+                parent=tushum_info,
                 title="Amalda (ming so'm)",
-                ordering="3.3"
+                ordering="3.1.3"
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
-                parent=svod,
+                parent=tushum_info,
                 title="Rejaga nisbatan %",
-                ordering="3.4"
+                ordering="3.1.4"
             )
 
             self.stdout.write(self.style.SUCCESS("✅ Successfully created statement columns with full 12-month breakdown and all quarterly 'reja' sections."))

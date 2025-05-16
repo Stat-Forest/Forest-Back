@@ -14,7 +14,7 @@ class Plan(AbstractBaseModel):
         limit_choices_to={'is_plan': True}
     )
     year = models.PositiveIntegerField()
-    plan_value = models.FloatField(default=0)
+    plan_value = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ('year',)
