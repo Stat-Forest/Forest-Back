@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid "first name"
+msgstr "Исм"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-14 14:17+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+#: apps/users/admin.py:13
+msgid "Personal info"
+msgstr ""
+
+#: apps/users/admin.py:14
+msgid "Permissions"
+msgstr ""
+
+#: apps/users/models/personal_info.py:10
+msgid "Higher"
+msgstr ""
+
+#: apps/users/models/personal_info.py:11
+msgid "Middle"
+msgstr ""
+
+#: apps/users/models/personal_info.py:12
+msgid "Middle Special"
+msgstr ""
+
+#: apps/users/models/users.py:14
+msgid "Male"
+msgstr ""
+
+#: apps/users/models/users.py:15
+msgid "Female"
+msgstr ""
+
+#: apps/users/models/users.py:19
+msgid "Uzbek"
+msgstr ""
+
+#: apps/users/models/users.py:20
+msgid "Russian"
+msgstr ""
+
+#: apps/users/models/users.py:21
+msgid "Tajik"
+msgstr ""
+
+#: apps/users/models/users.py:22
+msgid "Kazakh"
+msgstr ""
+
+#: apps/users/models/users.py:23
+msgid "Karakalpak"
+msgstr ""
+
+#: apps/users/models/users.py:24
+msgid "Tatar"
+msgstr ""
+
+#: apps/users/models/users.py:25
+msgid "Korean"
+msgstr ""
+
+#: apps/users/models/users.py:26
+msgid "Ukrainian"
+msgstr ""
+
+#: apps/users/models/users.py:27
+msgid "Turkmen"
+msgstr ""
+
+#: apps/users/models/users.py:28
+msgid "Kyrgyz"
+msgstr ""
+
+#: apps/users/models/users.py:29
+msgid "Chinese"
+msgstr ""
+
+#: apps/users/models/users.py:30
+msgid "Japanese"
+msgstr ""
+
+#: apps/users/models/users.py:31
+msgid "Other"
+msgstr ""
+
+#: apps/users/models/users.py:39
+msgid "Gender"
+msgstr ""
+
+#: apps/users/models/users.py:43
+msgid "Nation"
+msgstr ""
+
+#: apps/users/models/users.py:73
+msgid "staff status"
+msgstr ""
+
+#: apps/users/models/users.py:75
+msgid "Designates whether the user can log into this admin site."
+msgstr ""
+
+#: apps/users/models/users.py:78
+msgid "active"
+msgstr ""
+
+#: apps/users/models/users.py:79
+msgid ""
+"Designates whether this user should be treated as active.Unselect this "
+"instead of deleting accounts."
+msgstr ""
+
+#: apps/users/validations/passport_number_validate.py:9
+msgid "format number of password incorrect. For Example: AA 1234567"
+msgstr ""
