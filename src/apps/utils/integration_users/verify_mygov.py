@@ -3,7 +3,7 @@ import requests
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 
-MY_GOV_CHECK_SIGNATURE = "https://sso.my.gov.uz/api/check-signatur"
+MY_GOV_CHECK_SIGNATURE = "https://sso.my.gov.uz/api/check-signature"
 
 def verify_signature_with_my_gov(signature: str, sign_data: str, pinfl: str):
     token = os.getenv("EXAMPLE")

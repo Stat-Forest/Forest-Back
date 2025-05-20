@@ -1,5 +1,6 @@
 # apps/reports/models/statement_column.py
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from apps.base.models import AbstractBaseModel
 
@@ -35,6 +36,10 @@ class StatementColumn(AbstractBaseModel):
     is_organization = models.BooleanField(
         default=False
     )
+    def clean(self):
+        super().clean()
+        if self.is_plan and self.is_organization:
+            raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
 
     def return_parent(self):
         if self.parent is None:

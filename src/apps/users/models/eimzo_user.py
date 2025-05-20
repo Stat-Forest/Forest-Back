@@ -12,13 +12,11 @@ class DigitalSignatureProfile(AbstractBaseModel):
     organization_name = models.OneToOneField(
         "general.Organization",
         on_delete=models.PROTECT,
-        max_length=255,
         verbose_name="organization name"
     )
     position = models.OneToOneField(
         "users.Position",
         on_delete=models.PROTECT,
-        max_length=255,
         blank=True,
         null=True,
         verbose_name="Position"
