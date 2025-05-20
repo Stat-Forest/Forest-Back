@@ -23,7 +23,8 @@ class OrganizationListAPIView(CustomListAPIView):
         user = self.request.user
         if hasattr(user, 'organizations') and user.organizations.exists():
             return user.organizations.all()
-        return Organization.objects.all()
+        else:
+            return Organization.objects.all()
 
     def list(self, request, *args, **kwargs):
         cache_key = self.get_cache_key(request)
