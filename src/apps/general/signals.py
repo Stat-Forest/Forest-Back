@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 from django.core.cache import caches
-from apps.reports.models import Organization
+from apps.general.models import Organization
 from django.db.models.signals import post_save, post_delete
 
 @receiver([post_save, post_delete], sender=Organization)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.reports.models import Organization
+from apps.general.models import Organization
 
 
 class OrganizationListSerializer(serializers.ModelSerializer):
