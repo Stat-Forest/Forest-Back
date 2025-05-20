@@ -1,0 +1,116 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+SECRET_KEY = os.environ["SECRET_KEY"]
+
+DEBUG = True
+
+ALLOWED_HOSTS = ['*']
+
+# CORS_ALLOW_ALL_ORIGINS = True
+
+INSTALLED_APPS = [
+    "jazzmin",
+    'modeltranslation',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "drf_yasg",
+    "django_filters",
+    "corsheaders",
+    "drf_spectacular",
+    "debug_toolbar",
+]
+
+INSTALLED_APPS += [
+    'apps.authentications.apps.AuthenticationsConfig',
+    'apps.base.apps.BaseConfig',
+    'apps.users.apps.UsersConfig',
+    'apps.reports.apps.ReportsConfig',
+    'apps.general.apps.GeneralConfig',
+]
+
+MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+
+    "django.middleware.locale.LocaleMiddleware",
+
+    "django.middleware.common.CommonMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "config.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "config.wsgi.application"
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+TIME_ZONE = "Asia/Tashkent"
+
+USE_TZ = True
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "users.CustomUser"
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Forest API',
+    'DESCRIPTION': 'API documentation for the Forest application',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+}
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]

@@ -1,0 +1,62 @@
+x-shared-config: &shared-config
+  build:
+    context: ../..
+    dockerfile: docker/dev/Dockerfile
+  env_file:
+    - ../../.env
+  volumes:
+    - ../../src:/app
+  networks:
+    - forest_network
+
+services:
+  forest_app:
+    <<: *shared-config
+    container_name: forest_app_container
+    entrypoint: ["/entrypoint.sh"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - forest_postgres
+      - forest_redis
+
+  forest_postgres:
+    image: postgres:16
+    container_name: forest_postgres_container
+    env_file:
+      - ../../.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - forest_network
+
+  forest_redis:
+    image: redis:7.0.15
+    container_name: forest_redis_container
+    volumes:
+      - redis_data:/data
+    networks:
+      - forest_network
+    restart: always
+
+  forest_celery_worker:
+    <<: *shared-config
+    container_name: forest_celery_worker_container
+    command: celery -A config worker --loglevel=info
+    depends_on:
+      - forest_redis
+      - forest_postgres
+
+  forest_celery_beat:
+    <<: *shared-config
+    container_name: forest_celery_beat_container
+    command: celery -A config beat --loglevel=info
+    depends_on:
+      - forest_celery_worker
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  forest_network:
