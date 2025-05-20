@@ -1,26 +1,27 @@
 from django.core.management.base import BaseCommand
+from getpass import getpass
 
 from apps.users.models import CustomUser
 
 
 class Command(BaseCommand):
-    help = "Creates a superuser"
+    help = "Creates a superuser with minimal required fields (email, first_name, last_name, password)"
 
     def handle(self, *args, **options):
-        email = input("Enter email: ").strip()
-        first_name = input("Enter first name: ").strip()
-        password = input("Enter password: ").strip()
-
-        if not email or not first_name or not password:
-            self.stdout.write(self.style.ERROR("All fields are required."))
-            return self.handle()
-
         try:
-            CustomUser.objects.create_superuser(
+            email = input("Email: ").strip()
+            first_name = input("First name: ").strip()
+            last_name = input("Last name: ").strip()
+            password = getpass("Password: ")
+
+            user = CustomUser.objects.create_superuser(
                 email=email,
                 password=password,
-                first_name=first_name
+                first_name=first_name,
+                last_name=last_name,
             )
-            self.stdout.write(self.style.SUCCESS("SuperUser created successfully!!!"))
+
+            self.stdout.write(self.style.SUCCESS(f"Superuser '{user.email}' created successfully."))
+
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error: {e}"))
