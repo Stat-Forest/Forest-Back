@@ -1,175 +1,135 @@
+from uuid import UUID
 from datetime import date
-from datetime import datetime
 
+from django.db import transaction
 from django.core.cache import cache
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
 from apps.general.models import Organization
-from apps.reports.models import Report, ReportItem, StatementColumn, Plan
 from apps.utils.services.choices import PeriodChoices
 from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.reports.models import Report, ReportItem, StatementColumn, Plan
 
 
-class ReportItemCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ReportItem
-        fields = ['statement_column', 'value']
+class ReportItemCreateSerializer(serializers.Serializer):
+    statement_column = serializers.UUIDField()
+    value = serializers.CharField()
 
 
 class ReportCreateSerializer(serializers.ModelSerializer):
     report_items = ReportItemCreateSerializer(many=True, write_only=True)
-    CHACHE_KEY = f'report_organization'
+    CACHE_KEY = 'report_organization'
+
     class Meta:
         model = Report
-        fields = ['id','deadline', 'report_items']
+        fields = ['id', 'deadline', 'report_items']
+
+    def validate_uuid(self, value):
+        try:
+            return UUID(str(value))
+        except ValueError:
+            raise CustomExceptionError(400, _('Organization ID must be a valid UUID.'))
 
     def validate(self, attrs):
-        # organization = attrs.get('organization')
-        report_items = attrs.get('report_items')
-        deadline = attrs.get('deadline')
-        user = self.context['request'].user
+        report_items = attrs['report_items']
+        deadline = attrs['deadline']
         statement = deadline.statement
 
+        column_ids = [item['statement_column'] for item in report_items]
+        statement_columns = StatementColumn.objects.in_bulk(column_ids)
+        if len(statement_columns) != len(set(column_ids)):
+            raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
 
+        organization_ids = set()
+        plan_column_ids = []
+        plan_values = {}
 
-
-        all_organization = []
         for item in report_items:
-            if StatementColumn.objects.filter(statement_id=item['statement_column']).is_organization  == True:
-                if (not Organization.objects.filter(organization_id=item['value']).exists()
-                        or
-                    item['value'] not in user.organizations.values_list('id',flat=True)):
-                    raise CustomExceptionError(
-                        code = 400,
-                        detail= _('Invalid organization.')
-                    )
+            col_id = item['statement_column']
+            value = item['value']
+            column = statement_columns.get(col_id)
 
-                else:
-                    all_organization.append(item['value'])
+            if column.is_organization:
+                org_id = self.validate_uuid(value)
+                organization_ids.add(org_id)
 
-            if StatementColumn.objects.filter(statement_id=item['statement_column']).is_plan == True:
-                if not Plan.objects.filter(plan_id=item['value'],column_id=item['statement_column']).exists():
-                    raise CustomExceptionError(
-                        code = 400,
-                        detail= _('Invalid plan.')
-                    )
-            if (StatementColumn.objects.filter(statement_id=item['statement_column']).is_organization  == False
-                and
-                StatementColumn.objects.filter(statement_id=item['statement_column']).is_plan == False):
+            elif column.is_plan:
+                try:
+                    plan_values[col_id] = int(value)
+                except ValueError:
+                    raise CustomExceptionError(400, _('Plan value must be an integer.'))
+                plan_column_ids.append(col_id)
 
-                if item['value'].isdigit() is not True:
-                    raise CustomExceptionError(
-                        code = 400,
-                        detail= _('Invalid number.')
-                    )
-        if len(set(all_organization)) != 1:
-            raise CustomExceptionError(
-                code = 400,
-                detail= _('Invalid organizations.')
-            )
-        cache.set(self.CHACHE_KEY, all_organization[0])
-        del all_organization[0]
+            else:
+                try:
+                    float(value)
+                except (ValueError, TypeError):
+                    raise CustomExceptionError(400, _('Value must be a number.'))
 
-        def get_week_of_month():
-            today = datetime.now().date()
-            first_day = today.replace(day=1)
-            adjusted_dom = today.day + first_day.weekday()
+        if len(organization_ids) != 1:
+            raise CustomExceptionError(400, _('Invalid organizations. Multiple different organizations found.'))
+
+        organization_id = organization_ids.pop()
+        if not Organization.objects.filter(id=organization_id).exists():
+            raise CustomExceptionError(400, _('Invalid organization.'))
+
+        # Optimize plan check
+        if plan_column_ids:
+            plans = Plan.objects.filter(column_id__in=plan_column_ids)
+            plans_map = {p.column_id: p for p in plans}
+            for col_id in plan_column_ids:
+                plan = plans_map.get(col_id)
+                if not plan or plan.plan_value != plan_values[col_id]:
+                    raise CustomExceptionError(400, _('Invalid Plan value'))
+
+        cache.set(self.CACHE_KEY, organization_id)
+
+        # Period checks (only allow past periods)
+        today = date.today()
+        submit_at = deadline.submit_at
+
+        def get_week_of_month(day):
+            first_day = day.replace(day=1)
+            adjusted_dom = day.day + first_day.weekday()
             return (adjusted_dom - 1) // 7 + 1
 
-        # Checking if organization is allowed for the selected deadline
-        if not deadline.organizations.filter(id=cache.get(self.CHACHE_KEY)).exists():
-            raise CustomExceptionError(
-                code=400,
-                detail={
-                    'organization': ['This organization is not allowed for the selected deadline.']
-                }
-            )
+        if statement.period == PeriodChoices.KUNLIK:
+            # Format: YYYY-MM-DD
+            report_day = date.fromisoformat(submit_at)
+            if report_day >= today:
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past days.']})
 
-        # Validate based on period types (daily, weekly, monthly, etc.)
-        if deadline.statement.period == PeriodChoices.KUNLIK:
-            if int(deadline.submit_at[-2::]) > date.today().day:
-                raise CustomExceptionError(
-                    code=400,
-                    detail={
-                        'submit_at': ['You can only submit before tomorrow.']
-                    }
-                )
+        elif statement.period == PeriodChoices.HAFTALIK:
+            # Format: YYYY-MM-X
+            year, month, week = map(int, submit_at.split('-'))
+            if year > today.year or (year == today.year and month > today.month):
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
+            if year == today.year and month == today.month and week >= get_week_of_month(today):
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
 
-        if deadline.statement.period == PeriodChoices.HAFTALIK:
-            if int(deadline.submit_at[-1]) > get_week_of_month():
-                raise CustomExceptionError(
-                    code=400,
-                    detail={
-                        'submit_at': ['You can only submit before the next tomorrow.']
-                    }
-                )
+        elif statement.period == PeriodChoices.OYLIK:
+            # Format: YYYY-MM
+            year, month = map(int, submit_at.split('-'))
+            if year > today.year or (year == today.year and month >= today.month):
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past months.']})
 
-        if deadline.statement.period == PeriodChoices.OYLIK:
-            if int(deadline.submit_at[-2::]) > date.today().month:
-                raise CustomExceptionError(
-                    code=400,
-                    detail={
-                        'submit_at': ['You can only submit before next month.']
-                    }
-                )
+        elif statement.period == PeriodChoices.CHORAKLIK:
+            # Format: YYYY-QX
+            year, quarter = int(submit_at[:4]), int(submit_at[-1])
+            current_quarter = (today.month - 1) // 3 + 1
+            if year > today.year or (year == today.year and quarter >= current_quarter):
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past quarters.']})
 
-        if deadline.statement.period == PeriodChoices.CHORAKLIK:
-            if int(deadline.submit_at[-1]) == 1:
-                if date.today().month in (1, 2):
-                    raise CustomExceptionError(
-                        code=400,
-                        detail={
-                            'submit_at': ['You can only create report after February.']
-                        }
-                    )
-            if int(deadline.submit_at[-1]) == 2:
-                if date.today().month in (1, 2, 3, 4, 5):
-                    raise CustomExceptionError(
-                        code=400,
-                        detail={
-                            'submit_at': ['You can only create report after May.']
-                        }
-                    )
+        elif statement.period == PeriodChoices.YILLIK:
+            # Format: YYYY
+            year = int(submit_at)
+            if year >= today.year:
+                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past years.']})
 
-            if int(deadline.submit_at[-1]) == 3:
-                if date.today().month in (1, 2, 3, 4, 5, 6, 7, 8):
-                    raise CustomExceptionError(
-                        code=400,
-                        detail={
-                            'submit_at': ['You can only create report after August.']
-                        }
-                    )
-            if int(deadline.submit_at[-1]) == 4:
-                if date.today().month in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11):
-                    raise CustomExceptionError(
-                        code=400,
-                        detail={
-                            'submit_at': ['You can only create report after November.']
-                        }
-                    )
-
-        if deadline.statement.period == PeriodChoices.YILLIK:
-            if int(deadline.submit_at) > date.today().year:
-                raise CustomExceptionError(
-                    code=400,
-                    detail={
-                        'submit_at': ['You can only submit before the next year.']
-                    }
-                )
-
-        # Check if report already exists for the given organization, statement, and deadline
-        if Report.objects.filter(
-                organization=cache.get(self.CHACHE_KEY),
-                statement=statement,
-                deadline=deadline
-        ).exists():
-            raise CustomExceptionError(
-                code=400,
-                detail={
-                    'non_field_errors': ['This report already exists.']
-                }
-            )
+        # Check uniqueness
+        if Report.objects.filter(organization_id=organization_id, statement=statement, deadline=deadline).exists():
+            raise CustomExceptionError(400, {'report': ['This report already exists.']})
 
         return attrs
 
@@ -177,12 +137,24 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('report_items')
         deadline = validated_data['deadline']
         validated_data['statement'] = deadline.statement
-        validated_data['organization'] = cache.get(self.CHACHE_KEY)
-        cache.get(self.CHACHE_KEY).delete()
 
-        report = Report.objects.create(**validated_data)
+        organization_id = cache.get(self.CACHE_KEY)
+        organization = Organization.objects.get(id=organization_id)
+        validated_data['organization'] = organization
+        cache.delete(self.CACHE_KEY)
 
-        for item_data in items_data:
-            ReportItem.objects.create(report=report, **item_data)
+        column_ids = [item['statement_column'] for item in items_data]
+        statement_columns = StatementColumn.objects.in_bulk(column_ids)
+
+        with transaction.atomic():
+            report = Report.objects.create(**validated_data)
+            report_items = [
+                ReportItem(
+                    report=report,
+                    statement_column=statement_columns[item['statement_column']],
+                    value=item['value']
+                ) for item in items_data
+            ]
+            ReportItem.objects.bulk_create(report_items)
 
         return report
