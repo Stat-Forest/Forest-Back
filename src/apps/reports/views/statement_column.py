@@ -1,23 +1,28 @@
-from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from apps.reports.models import StatementColumn
 from apps.reports.serializers import StatementColumnTreeSerializer
-from django.db.models import Prefetch
 
 @extend_schema(tags=["Statements"])
-class StatementColumnTreeAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        statement_id = request.query_params.get('statement')
+class StatementColumnTreeAPIView(generics.GenericAPIView):
+    serializer_class = StatementColumnTreeSerializer
+    filterset_fields = ['statement']
+
+    def get_queryset(self):
+        statement_id = self.request.query_params.get('statement')
 
         qs = StatementColumn.objects.all()
 
         if statement_id:
             qs = qs.filter(statement_id=statement_id)
 
-        qs = qs.select_related('statement', 'parent')
+        return qs.select_related('statement', 'parent')
 
-        all_columns = list(qs)
+    def get(self, request, *args, **kwargs):
+        all_columns = list(self.filter_queryset(self.get_queryset()))
 
         # Build a map of ID to object
         column_map = {col.id: col for col in all_columns}
@@ -45,5 +50,5 @@ class StatementColumnTreeAPIView(APIView):
 
         tree = sort_tree_recursive(tree)
 
-        data = StatementColumnTreeSerializer(tree, many=True).data
+        data = self.get_serializer(tree, many=True).data
         return Response(data)

@@ -2,7 +2,7 @@ from django.core.cache import cache
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 
-from apps.reports.models import Organization
+from apps.general.models import Organization
 from apps.base.views import CustomListAPIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.serializers import OrganizationListSerializer
@@ -23,7 +23,8 @@ class OrganizationListAPIView(CustomListAPIView):
         user = self.request.user
         if hasattr(user, 'organizations') and user.organizations.exists():
             return user.organizations.all()
-        return Organization.objects.all()
+        else:
+            return Organization.objects.all()
 
     def list(self, request, *args, **kwargs):
         cache_key = self.get_cache_key(request)
