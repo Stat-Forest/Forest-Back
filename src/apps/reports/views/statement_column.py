@@ -1,5 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from apps.reports.models import StatementColumn
@@ -8,8 +9,7 @@ from apps.reports.serializers import StatementColumnTreeSerializer
 @extend_schema(tags=["Statements"])
 class StatementColumnTreeAPIView(generics.GenericAPIView):
     serializer_class = StatementColumnTreeSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_plan']
+    filterset_fields = ['statement']
 
     def get_queryset(self):
         statement_id = self.request.query_params.get('statement')
