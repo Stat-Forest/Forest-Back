@@ -1,12 +1,10 @@
 import random
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
 from apps.general.models import Organization
 from apps.reports.models import Statement, StatementColumn
-
-from apps.utils.services import *
+from apps.reports.models.statement_column import StatementColumn as SC
+from apps.utils.services import RegionChoices, PeriodChoices
 
 
 class Command(BaseCommand):
@@ -22,12 +20,10 @@ class Command(BaseCommand):
             organizations = []
             for _ in range(13):
                 org_region = random.choice(RegionChoices.values)
-                organization = Organization(
-                    name='Organization {}'.format(org_region),
-                    region=org_region,
-                )
-                organizations.append(organization)
-
+                organizations.append(Organization(
+                    name=f'Organization {org_region}',
+                    region=org_region
+                ))
             Organization.objects.bulk_create(organizations)
 
             moliya_statement = Statement.objects.create(
@@ -46,11 +42,10 @@ class Command(BaseCommand):
                 title="Daromad turlari bo‘yicha",
                 ordering="1"
             )
-            info_title = "O‘rmon xo‘jaligi agentligi tizimidagi tashkilotlarining 2025 yil davomida topilgan daromadlari to‘g‘risida MA'LUMOT"
             info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=daromad_turlari,
-                title=info_title,
+                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
                 ordering="1.1"
             )
 
@@ -75,22 +70,13 @@ class Command(BaseCommand):
                 "Ijara to‘lovlari",
                 "Jami"
             ]
-
             for idx, title in enumerate(titles, start=1):
-                if title == titles[0]:
-                    StatementColumn.objects.create(
-                        statement=daromad_statement,
-                        parent=info,
-                        title=title,
-                        ordering=f"1.1.{idx}",
-                        is_organization=True
-                    )
-                    continue
                 StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=info,
                     title=title,
-                    ordering=f"1.1.{idx}"
+                    ordering=f"1.1.{idx}",
+                    is_organization=(idx == 1)
                 )
 
             tushumlar = StatementColumn.objects.create(
@@ -102,7 +88,7 @@ class Command(BaseCommand):
             tushum_info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushumlar,
-                title="O‘rmon xo‘jaligi agentligi tizimi korxonalarida 2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
+                title="2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
                 ordering="2.1"
             )
             StatementColumn.objects.create(
@@ -112,118 +98,81 @@ class Command(BaseCommand):
                 ordering="2.1.1",
                 is_organization=True
             )
+
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushum_info,
                 title='Yillik reja',
                 ordering="2.1.2",
-                is_plan=True
+                status_plan=SC.PlanStatus.YILLIK
             )
 
             choraklar = {
-                "1 - chorak": ["yanvar", "fevral", "mart"],
-                "2 - chorak": ["aprel", "may", "iyun"],
-                "3 - chorak": ["iyul", "avgust", "sentyabr"],
-                "4 - chorak": ["oktyabr", "noyabr", "dekabr"]
+                SC.PlanStatus.CHORAK_1: [SC.PlanStatus.YANVAR, SC.PlanStatus.FEVRAL, SC.PlanStatus.MART],
+                SC.PlanStatus.CHORAK_2: [SC.PlanStatus.APREL, SC.PlanStatus.MAY, SC.PlanStatus.IYUN],
+                SC.PlanStatus.CHORAK_3: [SC.PlanStatus.IYUL, SC.PlanStatus.AVGUST, SC.PlanStatus.SENTABR],
+                SC.PlanStatus.CHORAK_4: [SC.PlanStatus.OKTABR, SC.PlanStatus.NOYABR, SC.PlanStatus.DEKABR],
             }
 
-            for chorak_idx, (chorak_nomi, oylari) in enumerate(choraklar.items(), start=1):
-                chorak_reja_order = f"2.1.{3 + (chorak_idx - 1) * 2}"
-                chorak_reja_node = StatementColumn.objects.create(
+            for c_idx, (chorak_status, oylar) in enumerate(choraklar.items(), start=1):
+                chorak_order = f"2.1.{2 + c_idx * 2 - 1}"
+                chorak_reja = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
-                    title=f"{chorak_nomi} reja",
-                    ordering=chorak_reja_order
-                )
-                StatementColumn.objects.create(
-                    statement=daromad_statement,
-                    parent=chorak_reja_node,
-                    title="Reja",
-                    ordering=f"{chorak_reja_order}.1",
-                    is_plan=True
-                )
-                StatementColumn.objects.create(
-                    statement=daromad_statement,
-                    parent=chorak_reja_node,
-                    title="Amalda",
-                    ordering=f"{chorak_reja_order}.2",
-                    is_plan=False
-                )
-
-                chorak_order = f"2.1.{3 + (chorak_idx - 1) * 2 + 1}"
-                chorak_node = StatementColumn.objects.create(
-                    statement=daromad_statement,
-                    parent=tushum_info,
-                    title=chorak_nomi,
+                    title=f"{chorak_status.label} reja",
                     ordering=chorak_order
                 )
+                StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=chorak_reja,
+                    title="Reja",
+                    ordering=f"{chorak_order}.1",
+                    status_plan=chorak_status
+                )
+                StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=chorak_reja,
+                    title="Amalda",
+                    ordering=f"{chorak_order}.2"
+                )
 
-                for oy_idx, oy in enumerate(oylari, start=1):
-                    oy_order = f"{chorak_order}.{oy_idx}"
+                chorak_oy_node = StatementColumn.objects.create(
+                    statement=daromad_statement,
+                    parent=tushum_info,
+                    title=chorak_status.label,
+                    ordering=f"2.1.{2 + c_idx * 2}"
+                )
+
+                for o_idx, oy_status in enumerate(oylar, start=1):
+                    oy_order = f"2.1.{2 + c_idx * 2}.{o_idx}"
                     oy_node = StatementColumn.objects.create(
                         statement=daromad_statement,
-                        parent=chorak_node,
-                        title=oy,
+                        parent=chorak_oy_node,
+                        title=oy_status.label,
                         ordering=oy_order
                     )
 
-                    tushum_order = f"{oy_order}.1"
+                    for p_idx, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+                        StatementColumn.objects.create(
+                            statement=daromad_statement,
+                            parent=oy_node,
+                            title=title,
+                            ordering=f"{oy_order}.{p_idx}",
+                            status_plan=(oy_status if title == "Reja" else None)
+                        )
+
                     tushum_node = StatementColumn.objects.create(
                         statement=daromad_statement,
                         parent=oy_node,
-                        title='tushum',
-                        ordering=tushum_order
+                        title="tushum",
+                        ordering=f"{oy_order}.4"
                     )
-
-                    sub_titles = ["Reja", "Amalda", "Foiz", "kunlik", "Oy boshidan"]
-                    for sub_idx, sub in enumerate(sub_titles, start=1):
-                        ordering_value = f"{tushum_order}.{sub_idx}"
-                        is_plan_flag = sub == "Reja"
-                        StatementColumn.objects.update_or_create(
+                    for t_idx, sub in enumerate(["kunlik", "Oy boshidan"], start=1):
+                        StatementColumn.objects.create(
                             statement=daromad_statement,
                             parent=tushum_node,
                             title=sub,
-                            ordering=ordering_value,
-                            defaults={'is_plan': is_plan_flag}
+                            ordering=f"{oy_order}.4.{t_idx}"
                         )
 
-            svod = StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=None,
-                title="Svod",
-                ordering="3"
-            )
-            tushum_info = StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=svod,
-                title="O‘rmon xo‘jaligi agentligi tizimi korxonalarida 2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
-                ordering="3.1"
-            )
-            StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=tushum_info,
-                title="Tashkilot nomi",
-                ordering="3.1.1",
-                is_organization=True
-            )
-            StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=tushum_info,
-                title="Yillik Reja (ming so'm)",
-                ordering="3.1.2",
-                is_plan=True
-            )
-            StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=tushum_info,
-                title="Amalda (ming so'm)",
-                ordering="3.1.3"
-            )
-            StatementColumn.objects.create(
-                statement=daromad_statement,
-                parent=tushum_info,
-                title="Rejaga nisbatan %",
-                ordering="3.1.4"
-            )
-
-            self.stdout.write(self.style.SUCCESS("✅ Successfully created statement columns with full 12-month breakdown and all quarterly 'reja' sections."))
+            self.stdout.write(self.style.SUCCESS("✅ StatementColumn entries created with `status_plan` structure."))

@@ -8,7 +8,7 @@ class UserListSerializer(serializers.ModelSerializer):
     def get_organizations(self, obj):
         user_organizations = obj.organizations if hasattr(obj, 'organizations') else None
         if user_organizations:
-            return ", ".join([org.title for org in user_organizations.all()])
+            return ", ".join([org.name for org in user_organizations.all()])
         return ""
 
     def get_information(self, obj):
