@@ -1,24 +1,10 @@
-from rest_framework import generics
-from drf_spectacular.utils import extend_schema
-from rest_framework.response import Response
-from django.db import transaction
-from apps.reports.models import Plan, StatementColumn
-from apps.reports.serializers import PlanSerializer
-
-
-
-from rest_framework import generics, status
-from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Sum, Q
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
-from django.db import transaction
-from django.db.models import Sum
-
+from drf_spectacular.utils import extend_schema
 from apps.reports.models import Plan, StatementColumn
 from apps.reports.serializers import PlanSerializer
-from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Plan"])
@@ -33,7 +19,6 @@ class PlanCreateView(generics.CreateAPIView):
             year = plan.year
             statement = plan.column.statement
 
-            # === Define months and quarter map ===
             chorak_map = {
                 StatementColumn.PlanStatus.CHORAK_1: [
                     StatementColumn.PlanStatus.YANVAR,
@@ -57,7 +42,6 @@ class PlanCreateView(generics.CreateAPIView):
                 ],
             }
 
-            # === Check if any full quarter's months exist ===
             for chorak_status, oy_status_list in chorak_map.items():
                 oy_columns = list(
                     StatementColumn.objects.filter(
@@ -67,7 +51,7 @@ class PlanCreateView(generics.CreateAPIView):
                 )
 
                 if len(oy_columns) != 3:
-                    continue  # Not all 3 months exist in this quarter
+                    continue
 
                 oy_plans = list(
                     Plan.objects.filter(
@@ -78,9 +62,7 @@ class PlanCreateView(generics.CreateAPIView):
                 )
 
                 if len(oy_plans) != 3:
-                    continue  # Not all 3 plans exist
-
-                # All 3 months exist — create/update the corresponding quarter
+                    continue
                 total_value = sum(p.plan_value for p in oy_plans)
                 chorak_column = StatementColumn.objects.filter(
                     status_plan=chorak_status,
@@ -95,7 +77,6 @@ class PlanCreateView(generics.CreateAPIView):
                         defaults={'plan_value': total_value}
                     )
 
-            # === After all 4 quarters, create yearly plan if all exist ===
             all_chorak_columns = StatementColumn.objects.filter(
                 status_plan__in=chorak_map.keys(),
                 statement=statement
