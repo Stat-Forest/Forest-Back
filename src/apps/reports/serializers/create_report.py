@@ -54,7 +54,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 org_id = self.validate_uuid(value)
                 organization_ids.add(org_id)
 
-            elif column.is_plan:
+            elif column.status_plan is not None:
                 try:
                     plan_values[col_id] = int(value)
                 except ValueError:

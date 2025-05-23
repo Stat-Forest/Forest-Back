@@ -1,11 +1,12 @@
 from django.core.cache import cache
-from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
+
 from apps.users.models import CustomUser
+from apps.reports.models import Report, Deadline
 from apps.base.views import CustomGenericAPIView
 from apps.reports.serializers import DashboardStatSerializer
-from apps.reports.models import Report, Deadline
 
+from drf_spectacular.utils import extend_schema
 
 @extend_schema(tags=["Dashboards"])
 class DashboardStatListView(CustomGenericAPIView):

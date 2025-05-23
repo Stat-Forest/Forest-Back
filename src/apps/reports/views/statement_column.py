@@ -1,30 +1,38 @@
+# views.py
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
-from rest_framework.filters import SearchFilter
-from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
+from rest_framework.response import Response
+
 from apps.reports.models import StatementColumn
 from apps.reports.serializers import StatementColumnTreeSerializer
+# filters.py
+import django_filters
+from apps.reports.models import Statement, StatementColumn
+
+
+class StatementColumnFilter(django_filters.FilterSet):
+    statement = django_filters.ModelChoiceFilter(
+        queryset=Statement.objects.filter(parent__isnull=False)
+    )
+
+    class Meta:
+        model = StatementColumn
+        fields = ['statement']
+
+
 
 @extend_schema(tags=["Statements"])
-class StatementColumnTreeAPIView(generics.GenericAPIView):
+class StatementColumnTreeAPIView(generics.ListAPIView):
     serializer_class = StatementColumnTreeSerializer
-    filterset_fields = ['statement']
+    queryset = StatementColumn.objects.select_related('statement', 'parent')
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = StatementColumnFilter
 
-    def get_queryset(self):
-        statement_id = self.request.query_params.get('statement')
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        all_columns = list(queryset)
 
-        qs = StatementColumn.objects.all()
-
-        if statement_id:
-            qs = qs.filter(statement_id=statement_id)
-
-        return qs.select_related('statement', 'parent')
-
-    def get(self, request, *args, **kwargs):
-        all_columns = list(self.filter_queryset(self.get_queryset()))
-
-        # Build a map of ID to object
         column_map = {col.id: col for col in all_columns}
         for col in all_columns:
             col.children_list = []
@@ -49,6 +57,5 @@ class StatementColumnTreeAPIView(generics.GenericAPIView):
             return nodes
 
         tree = sort_tree_recursive(tree)
-
-        data = self.get_serializer(tree, many=True).data
-        return Response(data)
+        serializer = self.get_serializer(tree, many=True)
+        return Response(serializer.data)
