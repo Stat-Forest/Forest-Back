@@ -10,6 +10,7 @@ class PlanSerializer(serializers.ModelSerializer):
 
     def validate_year(self, value):
         from django.utils import timezone
+
         current_year = timezone.now().year
         if value < 1900 or value > current_year:
             raise CustomExceptionError(
@@ -27,4 +28,10 @@ class PlanSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        plan = self.instance
+        related_column = plan.column
+
+        if ReportItem.objects.filter(statement_column=related_column).exists():
+            raise CustomExceptionError(400, _('This plan has already been used in a report and cannot be edited.'))
+
         return attrs

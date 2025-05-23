@@ -10,8 +10,9 @@ class PlanColumnSerializer(CustomModelSerializer):
     class Meta:
         model = StatementColumn
         fields = [
+            "id",
             "parent",
             "title",
             "ordering",
-            "is_plan",
+            "status_plan"
         ]
