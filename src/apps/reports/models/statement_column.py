@@ -6,6 +6,27 @@ from apps.base.models import AbstractBaseModel
 
 
 class StatementColumn(AbstractBaseModel):
+    class PlanStatus(models.TextChoices):
+        YANVAR = 'yanvar', 'Yanvar'
+        FEVRAL = 'fevral', 'Fevral'
+        MART = 'mart', 'Mart'
+        APREL = 'aprel', 'Aprel'
+        MAY = 'may', 'May'
+        IYUN = 'iyun', 'Iyun'
+        IYUL = 'iyul', 'Iyul'
+        AVGUST = 'avgust', 'Avgust'
+        SENTABR = 'sentabr', 'Sentabr'
+        OKTABR = 'oktabr', 'Oktabr'
+        NOYABR = 'noyabr', 'Noyabr'
+        DEKABR = 'dekabr', 'Dekabr'
+
+        CHORAK_1 = 'chorak_1', '1-chorak'
+        CHORAK_2 = 'chorak_2', '2-chorak'
+        CHORAK_3 = 'chorak_3', '3-chorak'
+        CHORAK_4 = 'chorak_4', '4-chorak'
+
+        YILLIK = 'yillik', 'Yillik'
+
     statement = models.ForeignKey(
         'reports.Statement',
         on_delete=models.CASCADE,
@@ -30,15 +51,21 @@ class StatementColumn(AbstractBaseModel):
         max_length=100,
         verbose_name=_("Ordering")
     )
-    is_plan = models.BooleanField(
-        default=False
-    )
     is_organization = models.BooleanField(
         default=False
     )
+
+    status_plan = models.CharField(
+        max_length=20,
+        choices=PlanStatus.choices,
+        blank=True,
+        null=True,
+        verbose_name=_("Plan holati (oy, chorak, yil)")
+    )
+
     def clean(self):
         super().clean()
-        if self.is_plan and self.is_organization:
+        if self.status_plan and self.is_organization:
             raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
 
     def return_parent(self):
