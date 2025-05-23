@@ -17,7 +17,6 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         if user.statement:
             base_filter &= Q(statement__parent=user.statement)
 
-        # Avval oy (monthly) planlarni olamiz:
         month_qs = StatementColumn.objects.filter(
             base_filter & Q(status_plan__in=[
                 StatementColumn.PlanStatus.YANVAR,
@@ -43,7 +42,6 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
                 "parent__parent__parent__parent__parent"
             )
 
-        # Oy planlari yo‘q bo‘lsa, chorak (quarter) planlarni olamiz:
         quarter_qs = StatementColumn.objects.filter(
             base_filter & Q(status_plan__in=[
                 StatementColumn.PlanStatus.CHORAK_1,
