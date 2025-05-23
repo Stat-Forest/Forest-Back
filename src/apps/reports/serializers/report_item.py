@@ -1,11 +1,25 @@
-from apps.reports.models import ReportItem
-
 from rest_framework import serializers
+from apps.reports.models import ReportItem
+from apps.general.models import Organization
+import uuid
 
 class ReportItemSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=False)
+    value = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportItem
         fields = ['id', 'statement_column', 'value']
+
+    def get_value(self, obj):
+        try:
+            org_id = uuid.UUID(str(obj.value))
+            org = Organization.objects.filter(id=org_id).first()
+            if org:
+                return org.title
+        except (ValueError, TypeError):
+            pass
+
+        return obj.value
+
 
