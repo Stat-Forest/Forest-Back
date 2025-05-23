@@ -27,11 +27,11 @@ class PlanSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate(self, attrs):
-        plan = self.instance
-        related_column = plan.column
-
-        if ReportItem.objects.filter(statement_column=related_column).exists():
-            raise CustomExceptionError(400, _('This plan has already been used in a report and cannot be edited.'))
-
-        return attrs
+    # def validate(self, attrs):
+    #     plan = self.instance
+    #     related_column = plan.column
+    #
+    #     if ReportItem.objects.filter(statement_column=related_column).exists():
+    #         raise CustomExceptionError(400, _('This plan has already been used in a report and cannot be edited.'))
+    #
+    #     return attrs
