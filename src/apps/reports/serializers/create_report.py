@@ -127,7 +127,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             if year >= today.year:
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past years.']})
 
-        # Check uniqueness
         if Report.objects.filter(organization_id=organization_id, statement=statement, deadline=deadline).exists():
             raise CustomExceptionError(400, {'report': ['This report already exists.']})
 
