@@ -16,7 +16,7 @@ class ReportItemSerializer(serializers.ModelSerializer):
             org_id = uuid.UUID(str(obj.value))
             org = Organization.objects.filter(id=org_id).first()
             if org:
-                return org.title
+                return org.name
         except (ValueError, TypeError):
             pass
 
