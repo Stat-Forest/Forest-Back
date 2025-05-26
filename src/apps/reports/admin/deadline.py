@@ -77,7 +77,7 @@ class DeadlineAdminForm(forms.ModelForm):
 
 class DeadlineAdmin(admin.ModelAdmin):
     form = DeadlineAdminForm
-    list_display = ('statement', 'submit_at', 'organizations_display')
+    list_display = ('statement','statement__period', 'submit_at', 'organizations_display')
     search_fields = ('statement__name', 'submit_at')
 
     def organizations_display(self, obj):
