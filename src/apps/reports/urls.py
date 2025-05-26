@@ -11,6 +11,7 @@ from apps.reports.views import (
 )
 
 # from apps.reports.models import Plan
+from apps.reports.models import Report
 urlpatterns = [
 
     # ====================  USERS URL   ====================
@@ -53,4 +54,5 @@ urlpatterns = [
 
 
 # Plan.objects.all().delete()
+# Report.objects.all().delete()
 

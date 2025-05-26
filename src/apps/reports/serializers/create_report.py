@@ -36,6 +36,24 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         deadline = attrs['deadline']
         statement = deadline.statement
 
+        user = self.context['request'].user
+
+        if not user.statement:
+           raise CustomExceptionError(
+                code=400,
+                detail=_('User must have a statement to create report !')
+            )
+
+        if user.statement != statement.parent:
+           raise CustomExceptionError(
+                code=400,
+                detail=_('User statement does not match deadline statement !')
+            )
+
+        deadline_organizations_ids = deadline.organizations.values_list('id', flat=True)
+        if not user.organizations.filter(id__in=deadline_organizations_ids).exists():
+            raise CustomExceptionError(400, _('User organization is not related to this deadline'))
+
         column_ids = [item['statement_column'] for item in report_items]
         statement_columns = StatementColumn.objects.in_bulk(column_ids)
         if len(statement_columns) != len(set(column_ids)):
@@ -71,7 +89,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             raise CustomExceptionError(400, _('Invalid organizations. Multiple different organizations found.'))
 
         organization_id = organization_ids.pop()
-        if not Organization.objects.filter(id=organization_id).exists():
+        if not Organization.objects.filter(id=organization_id).exists() or  organization_id not in user.organizations.values_list('id',flat=True) :
             raise CustomExceptionError(400, _('Invalid organization.'))
 
         # Optimize plan check
@@ -85,7 +103,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
         cache.set(self.CACHE_KEY, organization_id)
 
-        # Period checks (only allow past periods)
         today = date.today()
         submit_at = deadline.submit_at
 
