@@ -2,7 +2,7 @@ from django.core.cache import cache
 from rest_framework.response import Response
 
 from apps.users.models import CustomUser
-from apps.reports.models import Report, Deadline
+from apps.reports.models import Report,Deadline
 from apps.base.views import CustomGenericAPIView
 from apps.reports.serializers import DashboardStatSerializer
 

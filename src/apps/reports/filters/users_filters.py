@@ -1,36 +1,21 @@
-# from django_filters import rest_framework as filters
-# from apps.users.models import CustomUser
-# from apps.general.models import Organization
-# from functools import lru_cache
-#
-#
-# @lru_cache()
-# def get_region_choices():
-#     regions = Organization.objects.values_list("region", flat=True).distinct()
-#     return [(region, region) for region in regions if region]
-#
-#
-# @lru_cache()
-# def get_organization_name_choices():
-#     names = Organization.objects.values_list("name", flat=True).distinct()
-#     return [(name, name) for name in names if name]
-#
-#
-# class UserFilter(filters.FilterSet):
-#     region = filters.ChoiceFilter(
-#         field_name='organizations__region',
-#         choices=lambda: get_region_choices(),
-#         label="Region"
-#     )
-#
-#     organization_name = filters.ChoiceFilter(
-#         field_name='organizations__name',
-#         choices=lambda: get_organization_name_choices(),
-#         label="Organization Name"
-#     )
-#
-#
-#     class Meta:
-#         model = CustomUser
-#         fields = ['region', 'organization_name']
-#
+from django_filters import rest_framework as filters
+from apps.users.models import CustomUser
+from apps.general.models import Organization
+from apps.utils.services import RegionChoices
+class CustomUserFilter(filters.FilterSet):
+    organizations__name = filters.ModelChoiceFilter(
+        field_name="organizations",
+        queryset=Organization.objects.all(),
+        to_field_name="name",
+        label="Organization Name"
+    )
+
+    organizations__region = filters.ChoiceFilter(
+        field_name="organizations__region",
+        choices=RegionChoices.choices,
+        label="Organization Region"
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['first_name']
