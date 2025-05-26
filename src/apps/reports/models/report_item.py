@@ -8,13 +8,13 @@ class ReportItem(AbstractBaseModel):
     report = models.ForeignKey(
         "reports.Report",
         on_delete=models.CASCADE,
-        related_name="items",
+        related_name="report_items",
         verbose_name=_("Report")
     )
     statement_column = models.ForeignKey(
         "reports.StatementColumn",
         on_delete=models.PROTECT,
-        related_name="report_items",
+        related_name="items",
         verbose_name=_("Statement Column")
     )
     value = models.CharField(
