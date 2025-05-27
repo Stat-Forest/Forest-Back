@@ -51,7 +51,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
                                   null=True
                                   )
 
-    organizations = models.ForeignKey("general.Organization",
+    organization = models.ForeignKey("general.Organization",
                                       on_delete=models.PROTECT,
                                       related_name="users",
                                       blank=True,
