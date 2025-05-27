@@ -63,7 +63,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         unique=True
     )
 
-    role = models.CharField(Role.choices, max_length=50)
+    role = models.CharField(choices=Role.choices, max_length=50)
 
     gender = models.CharField(_("Gender"),
                               max_length=10,
