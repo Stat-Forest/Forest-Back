@@ -5,5 +5,5 @@ class CanCreateReport(BasePermission):
         allowed_roles = ['tashkilot_hodimi', 'hududiy_boshqarma']
         return (
             request.user.role in allowed_roles and
-            obj.organization in request.user.organizations.all()
+            obj.organization == request.user.organization
         )

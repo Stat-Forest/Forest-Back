@@ -10,7 +10,7 @@ from apps.reports.views import (
     PlanListAPIView,PlanUpdateAPIView,PlanDeleteAPIView
 )
 
-# from apps.reports.models import Plan
+from apps.reports.models import Plan
 from apps.reports.models import Report
 urlpatterns = [
 

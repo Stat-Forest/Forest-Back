@@ -12,7 +12,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', 'localhost', '127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ["https://forest.yutori.uz", "localhost:5173", "localhost:5174"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://forest.yutori.uz",
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
 # CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [

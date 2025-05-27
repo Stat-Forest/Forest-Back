@@ -2,14 +2,7 @@ from rest_framework import serializers
 from apps.users.models import CustomUser
 
 class UserListSerializer(serializers.ModelSerializer):
-    organizations = serializers.SerializerMethodField()
     information = serializers.SerializerMethodField()
-
-    def get_organizations(self, obj):
-        user_organizations = obj.organizations if hasattr(obj, 'organizations') else None
-        if user_organizations:
-            return ", ".join([org.name for org in user_organizations.all()])
-        return ""
 
     def get_information(self, obj):
         personal_info = obj.personal_info if hasattr(obj, 'personal_info') else None
@@ -19,4 +12,4 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('user_number', 'first_name', 'last_name', 'organizations', 'nationality', 'information', 'role')
+        fields = ('user_number', 'first_name', 'last_name', 'organization', 'nationality', 'information', 'role')

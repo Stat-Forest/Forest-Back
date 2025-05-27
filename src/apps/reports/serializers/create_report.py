@@ -50,8 +50,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 detail=_('User statement does not match deadline statement !')
             )
 
-        deadline_organizations_ids = deadline.organizations.values_list('id', flat=True)
-        if not user.organizations.filter(id__in=deadline_organizations_ids).exists():
+        if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('User organization is not related to this deadline'))
 
         column_ids = [item['statement_column'] for item in report_items]
@@ -89,7 +88,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             raise CustomExceptionError(400, _('Invalid organizations. Multiple different organizations found.'))
 
         organization_id = organization_ids.pop()
-        if not Organization.objects.filter(id=organization_id).exists() or  organization_id not in user.organizations.values_list('id',flat=True) :
+        if not Organization.objects.filter(id=organization_id).exists() or not organization_id == user.organization.id:
             raise CustomExceptionError(400, _('Invalid organization.'))
 
         # Optimize plan check
