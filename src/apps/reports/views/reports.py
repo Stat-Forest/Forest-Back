@@ -46,7 +46,7 @@ class ReportRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         'statement',
         'deadline__statement',
         'deadline',
-    ).prefetch_related('items').distinct().order_by('-created_at')
+    ).prefetch_related('report_items').distinct().order_by('-created_at')
     serializer_class = ReportDetailSerializer
     # permission_classes = (CanUpdateReport,)
     lookup_field = 'id'

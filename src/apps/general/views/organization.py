@@ -12,7 +12,7 @@ class OrganizationListAPIView(CustomListAPIView):
     serializer_class = OrganizationListSerializer
     pagination_class = CustomPageNumberPagination
     filterset_fields = ['name', 'region']
-    CACHE_TIMEOUT = 60 * 60
+    CACHE_TIMEOUT = 1
 
     def get_cache_key(self, request):
         query_params = request.GET.urlencode() or "no_query"
@@ -21,8 +21,9 @@ class OrganizationListAPIView(CustomListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, 'organizations') and user.organizations.exists():
-            return user.organizations.all()
+
+        if hasattr(user, 'organization') and user.organization is not None:
+            return Organization.objects.filter(id=user.organization.id)
         else:
             return Organization.objects.all()
 

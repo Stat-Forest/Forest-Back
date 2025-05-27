@@ -44,7 +44,7 @@ class CustomUserAdmin(admin.ModelAdmin):
         (_("Extra Info"), {
             "fields": ("user_number",
                        "statement",
-                       "organizations",
+                       "organization",
                        # "positions",
                        # "information",
                        # "name_of_education_university",
@@ -78,7 +78,7 @@ class CustomUserAdmin(admin.ModelAdmin):
                 "email", "password1", "password2",
                 "first_name", "last_name", "father_name",
                 "gender", "nationality", "passport_number", "phone_number", "date_of_birth",
-                "date_of_place", "address", "role", "user_number", "statement", "organizations",
+                "date_of_place", "address", "role", "user_number", "statement", "organization",
                 "is_active", "is_staff", "is_superuser", "is_disabled", "groups", "user_permissions"
             ),
         }),
