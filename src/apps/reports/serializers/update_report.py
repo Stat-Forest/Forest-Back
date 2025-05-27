@@ -1,24 +1,22 @@
 from datetime import date
 
 from rest_framework import serializers
-from apps.reports.models import Report, ReportItem
-from apps.reports.serializers.report_item import ReportItemSerializer
+from django.utils.translation import gettext_lazy as _
 
+from apps.reports.models import Report, ReportItem,Plan
+from apps.reports.serializers.report_item import ReportItemSerializer
+from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.utils.services import PeriodChoices
+
 
 
 class ReportDetailSerializer(serializers.ModelSerializer):
-    items = ReportItemSerializer(many=True)
+    report_items = ReportItemSerializer(many=True)
 
     class Meta:
         model = Report
-        fields = ('id', 'deadline', 'reports_items')
-
-    def validate_uuid(self, value):
-        try:
-            return UUID(str(value))
-        except ValueError:
-            raise CustomExceptionError(400, _('Organization ID must be a valid UUID.'))
+        fields = ('deadline', 'report_items')
 
     def validate(self, attrs):
         report_items = attrs['report_items']
@@ -28,23 +26,18 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
 
         if not user.statement:
-            raise CustomExceptionError(
-                code=400,
-                detail=_('User must have a statement to create report !')
-            )
+            raise CustomExceptionError(400, _('User must have a statement to create report !'))
 
         if user.statement != statement.parent:
-            raise CustomExceptionError(
-                code=400,
-                detail=_('User statement does not match deadline statement !')
-            )
+            raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
 
-        deadline_organizations_ids = deadline.organizations.values_list('id', flat=True)
-        if not user.organizations.filter(id__in=deadline_organizations_ids).exists():
+        if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('User organization is not related to this deadline'))
 
+        # column ids & validation
+        statement_columns = {col.id: col for col in statement.columns.all()}
         column_ids = [item['statement_column'] for item in report_items]
-        statement_columns = StatementColumn.objects.in_bulk(column_ids)
+
         if len(statement_columns) != len(set(column_ids)):
             raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
 
@@ -58,8 +51,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             column = statement_columns.get(col_id)
 
             if column.is_organization:
-                org_id = self.validate_uuid(value)
-                organization_ids.add(org_id)
+                organization_ids.add(value)
 
             elif column.status_plan is not None:
                 try:
@@ -78,11 +70,14 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             raise CustomExceptionError(400, _('Invalid organizations. Multiple different organizations found.'))
 
         organization_id = organization_ids.pop()
-        if not Organization.objects.filter(
-                id=organization_id).exists() or organization_id not in user.organizations.values_list('id', flat=True):
-            raise CustomExceptionError(400, _('Invalid organization.'))
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
+            raise CustomExceptionError(400, _('Organization not found.'))
 
-        # Optimize plan check
+        if Report.objects.filter(organization=organization, statement=statement, deadline=deadline).exists():
+            raise CustomExceptionError(400, {'report': ['This report already exists.']})
+
         if plan_column_ids:
             plans = Plan.objects.filter(column_id__in=plan_column_ids)
             plans_map = {p.column_id: p for p in plans}
@@ -90,8 +85,6 @@ class ReportDetailSerializer(serializers.ModelSerializer):
                 plan = plans_map.get(col_id)
                 if not plan or plan.plan_value != plan_values[col_id]:
                     raise CustomExceptionError(400, _('Invalid Plan value'))
-
-        cache.set(self.CACHE_KEY, organization_id)
 
         today = date.today()
         submit_at = deadline.submit_at
@@ -102,13 +95,11 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             return (adjusted_dom - 1) // 7 + 1
 
         if statement.period == PeriodChoices.KUNLIK:
-            # Format: YYYY-MM-DD
             report_day = date.fromisoformat(submit_at)
             if report_day >= today:
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past days.']})
 
         elif statement.period == PeriodChoices.HAFTALIK:
-            # Format: YYYY-MM-X
             year, month, week = map(int, submit_at.split('-'))
             if year > today.year or (year == today.year and month > today.month):
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
@@ -116,26 +107,20 @@ class ReportDetailSerializer(serializers.ModelSerializer):
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
 
         elif statement.period == PeriodChoices.OYLIK:
-            # Format: YYYY-MM
             year, month = map(int, submit_at.split('-'))
             if year > today.year or (year == today.year and month >= today.month):
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past months.']})
 
         elif statement.period == PeriodChoices.CHORAKLIK:
-            # Format: YYYY-QX
             year, quarter = int(submit_at[:4]), int(submit_at[-1])
             current_quarter = (today.month - 1) // 3 + 1
             if year > today.year or (year == today.year and quarter >= current_quarter):
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past quarters.']})
 
         elif statement.period == PeriodChoices.YILLIK:
-            # Format: YYYY
             year = int(submit_at)
             if year >= today.year:
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past years.']})
-
-        if Report.objects.filter(organization_id=organization_id, statement=statement, deadline=deadline).exists():
-            raise CustomExceptionError(400, {'report': ['This report already exists.']})
 
         return attrs
 

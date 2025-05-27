@@ -14,17 +14,17 @@ class DashboardStatListView(CustomGenericAPIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        organizations = user.organizations.all()
-        is_global_user = not organizations.exists()
-        cache_key = f'dashboard_stat_{"all" if is_global_user else "_".join(str(org.id) for org in organizations)}'
+        organization= user.organization
+        is_global_user = not organization.exists()
+        cache_key = f'dashboard_stat_{"all" if is_global_user else "_".join(str(organization.id))}'
 
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return Response(cached_data)
 
-        report_qs = Report.objects.all() if is_global_user else Report.objects.filter(organization__in=organizations)
+        report_qs = Report.objects.all() if is_global_user else Report.objects.filter(organization_id=organization.id)
         deadline_qs = Deadline.objects.all() if is_global_user else Deadline.objects.filter(
-            organizations__in=organizations).distinct()
+            organizations__in=organization).distinct()
 
         data = {
             "sent_reports": report_qs.filter(status=Report.StatusChoices.SENT).count(),
@@ -32,7 +32,7 @@ class DashboardStatListView(CustomGenericAPIView):
             "accepted_reports": report_qs.filter(status=Report.StatusChoices.ACCEPTED).count(),
             "draft_reports": report_qs.filter(status=Report.StatusChoices.SAVED).count(),
             "responsible_users": CustomUser.objects.filter(
-                organizations__in=organizations).distinct().count() if not is_global_user else CustomUser.objects.count(),
+                organization_id=organization.id).count() if not is_global_user else CustomUser.objects.count(),
             "deadlines": deadline_qs.count(),
         }
 

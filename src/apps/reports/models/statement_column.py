@@ -68,10 +68,10 @@ class StatementColumn(AbstractBaseModel):
         if self.status_plan and self.is_organization:
             raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
 
-    # def return_parent(self):
-    #     if self.parent is None:
-    #         return self.title
-    #     return f"{self.parent.return_parent()} - {self.title}"
+    def return_parent(self):
+        if self.parent is None:
+            return self.title
+        return f"{self.parent.return_parent()} - {self.title}"
 
     def __str__(self):
         return self.title
