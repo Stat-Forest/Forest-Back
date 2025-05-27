@@ -23,7 +23,7 @@ class DeadlineListAPIView(generics.ListAPIView):
             return base_qs
 
         else:
-            user_organizations = user.organizations.all()
-            return base_qs.filter(organizations__in=user_organizations).distinct()
+            user_organization = user.organization
+            return base_qs.filter(organizations__in=user_organization).distinct()
 
 

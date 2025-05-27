@@ -4,12 +4,11 @@ from apps.general.models import Organization
 import uuid
 
 class ReportItemSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=False)
     value = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportItem
-        fields = ['id', 'statement_column', 'value']
+        fields = ['statement_column', 'value']
 
     def get_value(self, obj):
         try:
