@@ -15,7 +15,7 @@ class DashboardStatListView(CustomGenericAPIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         organization= user.organization
-        is_global_user = not organization.exists()
+        is_global_user = not organization
         cache_key = f'dashboard_stat_{"all" if is_global_user else "_".join(str(organization.id))}'
 
         cached_data = cache.get(cache_key)
