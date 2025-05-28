@@ -17,36 +17,47 @@ class Command(BaseCommand):
                 parent=moliya_statement,
                 period=PeriodChoices.HAFTALIK
             )
-            info = StatementColumn.objects.create(
+            parent_info =StatementColumn.objects.create(
                 statement=daromad_statement,
-                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title="Jamg'arma",
                 ordering="1"
             )
-            info = StatementColumn.objects.create(
+            info_child = StatementColumn.objects.create(
                 statement=daromad_statement,
-                title="Tashkilot nomi",
+                parent=parent_info,
+                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
                 ordering="1.1"
             )
-
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent= info_child,
+                title="Tashkilot nomi",
+                ordering="1.1.1"
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=info_child,
+                title="Hisob raqamda yil boshiga qoldiq",
+                ordering="1.1.2"
+            )
             # Income types
             income_types = [
-                ("Ruxsatnoma olish uchun arizalarni ko‘rib chiqganlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (1001)", "1.2"),
-                ("Hayvonot va o‘simlik dunyosiga yetkazilgan zarar o‘rnini qoplash bo‘yicha undirilgan mablag‘ (1007)", "1.3"),
-                ("Ruxsat etilgan hududlarda ovchilik qilish uchun tushgan mablag‘ (50%)", "1.4"),
-                ("Ummon fondi yerlaridagi boyliklar va madaniy meroslardan foydalanishdan tushgan mablag‘ (100%)", "1.5"),
-                ("Ummon xo‘jaligi yog‘och kesishdan tushgan mablag‘ (50%)", "1.6"),
-                ("Boshqa daromadlar (101)", "1.7"),
+                ("Ruxsatnoma olish uchun arizalarni ko‘rib chiqganlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (1001)", "1.1.3"),
+                ("Hayvonot va o‘simlik dunyosiga yetkazilgan zarar o‘rnini qoplash bo‘yicha undirilgan mablag‘ (1007)", "1.1.4"),
+                ("Ruxsat etilgan hududlarda ovchilik qilish uchun tushgan mablag‘ (50%)", "1.1.5"),
+                ("Ummon fondi yerlaridagi boyliklar va madaniy meroslardan foydalanishdan tushgan mablag‘ (100%)", "1.1.6"),
+                ("Ummon xo‘jaligi yog‘och kesishdan tushgan mablag‘ (50%)", "1.1.7"),
+                ("Boshqa daromadlar (101)", "1.1.8"),
             ]
 
             for idx, (income_title, income_order) in enumerate(income_types, start=1):
                 income_node = StatementColumn.objects.create(
-                    parent=info,
+                    parent=info_child,
                     statement=daromad_statement,
                     title=income_title,
                     ordering=income_order
                 )
 
-                # Subnodes: Jami tushum + shundan jamg’armaga -> To‘lanishi kerak, To‘landi, Qoldiq
                 jami_node = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=income_node,
@@ -71,8 +82,9 @@ class Command(BaseCommand):
 
             jami_tushum = StatementColumn.objects.create(
                 statement=daromad_statement,
+                parent=info_child,
                 title="Jami tushum",
-                ordering="1.10"
+                ordering="1.1.9"
             )
 
             # Jamg’arma jami tushum
@@ -80,14 +92,14 @@ class Command(BaseCommand):
                 statement=daromad_statement,
                 parent=jami_tushum,
                 title="Jamg’arma ga jami tushum",
-                ordering="1.10.1"
+                ordering="1.1.9.1"
             )
 
             jamg_shundan = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=jami_tushum,
                 title="shundan jamg’armaga",
-                ordering="1.10.2"
+                ordering="1.1.9.2"
             )
 
             for j_idx, title in enumerate([
@@ -99,7 +111,7 @@ class Command(BaseCommand):
                     statement=daromad_statement,
                     parent=jamg_shundan,
                     title=title,
-                    ordering=f"1.10.2.{j_idx}"
+                    ordering=f"1.1.9.2.{j_idx}"
                 )
 
         self.stdout.write(self.style.SUCCESS("✅ Daromad statement yaratildi."))
