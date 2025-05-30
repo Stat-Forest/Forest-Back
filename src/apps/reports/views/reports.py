@@ -23,7 +23,7 @@ class ReportListAPIView(CustomListAPIView):
         'deadline',
     ).filter(statement__parent__isnull=False).order_by('-created_at')
     serializer_class = ReportListSerializer
-    filterset_fields = ['status','organization','statement','statement__period' ,'report_items']
+    filterset_fields = ['status','organization','statement','statement__period']
 
 
 @extend_schema(tags=["Reports"])
