@@ -16,13 +16,14 @@ from apps.base.views import (
 
 @extend_schema(tags=["Reports"])
 class ReportListAPIView(CustomListAPIView):
+    pagination_class=None
     queryset = Report.objects.select_related(
         'organization',
         'statement',
         'deadline',
     ).filter(statement__parent__isnull=False).order_by('-created_at')
     serializer_class = ReportListSerializer
-    filterset_fields = ['status','organization','statement','statement__period' ]
+    filterset_fields = ['status','organization','statement','statement__period' ,'report_items']
 
 
 @extend_schema(tags=["Reports"])
