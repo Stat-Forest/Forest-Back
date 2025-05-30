@@ -96,7 +96,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         if not Organization.objects.filter(id=organization_id).exists() or not organization_id == user.organization.id:
             raise CustomExceptionError(400, _('Invalid organization.'))
 
-        # Optimize plan check
         if plan_column_ids:
             plans = Plan.objects.filter(column_id__in=plan_column_ids)
             plans_map = {p.column_id: p for p in plans}
