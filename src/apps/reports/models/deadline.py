@@ -22,7 +22,7 @@ class Deadline(AbstractBaseModel):
         max_length=20,
         help_text=_(
            f'Kunlik-YYYY-MM-DD , '
-           f'Haftalik -YYYY-MM-X(1,2,3,4), '
+           f'Haftalik -YYYY-MM-W(1,2,3,4), '
            f'Oylik -YYYY-MM, '
            f'Choraklik-YYYY-Qx(Q1,Q2,Q3,Q4)'
            f'Yillik-YYYY'

@@ -27,7 +27,7 @@ class DeadlineAdminForm(forms.ModelForm):
 
         if period == 'daily':
             # Check that the date format is YYYY-MM-DD
-            if len(submission_at) != 10 or submission_at[4] != '-' or submission_at[7] != '-':
+            if len(submission_at) != 10 or submission_at[4] != '-' or not submission_at[4] !='-'  or submission_at[7] != '-':
                 raise forms.ValidationError(_("Invalid date format. Please use the YYYY-MM-DD format"))
 
             year, month, day = submission_at.split('-')
@@ -43,7 +43,7 @@ class DeadlineAdminForm(forms.ModelForm):
             except ValueError:
                 raise forms.ValidationError(_("Invalid date. Please use the YYYY-MM-DD format"))
         elif period == 'weekly':
-            if len(submission_at) != 10 or not submission_at[:4].isdigit() or not submission_at[
+            if len(submission_at) != 10 or not submission_at[:4].isdigit() or  not submission_at[4] !='-' or  not submission_at[
                                                                                   5:7].isdigit() or \
                     submission_at[7] != '-' or not submission_at[8:].startswith('W'):
                 raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
@@ -52,7 +52,7 @@ class DeadlineAdminForm(forms.ModelForm):
             except ValueError:
                 raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
         elif period == 'monthly':
-            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[5:7].isdigit() or \
+            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[4] !='-' or not submission_at[5:7].isdigit() or \
                     submission_at[4] != '-':
                 raise forms.ValidationError(_("Invalid month format. Please use the YYYY-MM format"))
             try:
@@ -60,7 +60,7 @@ class DeadlineAdminForm(forms.ModelForm):
             except ValueError:
                 raise forms.ValidationError(_("Invalid month format. Please use the YYYY-MM format"))
         elif period == 'quarterly':
-            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[6:7].isdigit() or \
+            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[4] !='-' or not submission_at[6:7].isdigit() or \
                     submission_at[4] != '-' or not submission_at[5] == 'Q' or submission_at[
                 6] not in ['1', '2', '3', '4']:
                 raise forms.ValidationError(_("Invalid quarter format. Please use the YYYY-Qx format"))
