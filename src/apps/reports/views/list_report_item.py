@@ -9,4 +9,5 @@ from apps.reports.serializers import ReportItemSerializer
 class ReportItemListAPIView(ListAPIView):
     queryset = ReportItem.objects.select_related('report', 'statement_column')
     serializer_class = ReportItemSerializer
+    pagination_class = None
     filterset_fields = ['report__id']
