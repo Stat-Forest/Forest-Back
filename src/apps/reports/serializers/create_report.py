@@ -44,6 +44,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 detail=_('User must have a statement to create report !')
             )
 
+
+
         if user.statement != statement.parent:
            raise CustomExceptionError(
                 code=400,
@@ -55,6 +57,9 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
         column_ids = [item['statement_column'] for item in report_items]
         statement_columns = StatementColumn.objects.in_bulk(column_ids)
+
+
+
         if len(statement_columns) != len(set(column_ids)):
             raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
 

@@ -7,6 +7,10 @@ from apps.base.models import AbstractBaseModel
 
 
 class Plan(AbstractBaseModel):
+    statement = models.ForeignKey(
+        'reports.Statement',
+        on_delete=models.CASCADE,
+    )
     organization = models.ForeignKey(
         'general.Organization',
         on_delete=models.CASCADE

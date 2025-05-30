@@ -16,7 +16,6 @@ class Command(BaseCommand):
         Organization.objects.all().delete()
 
         with transaction.atomic():
-            # Create organizations
             organizations = []
             for _ in range(13):
                 org_region = random.choice(RegionChoices.values)
@@ -175,4 +174,54 @@ class Command(BaseCommand):
                             ordering=f"{oy_order}.4.{t_idx}"
                         )
 
-            self.stdout.write(self.style.SUCCESS("✅ StatementColumn entries created with `status_plan` structure."))
+            year_begin=StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=tushum_info,
+                title='Yil boshidan',
+                ordering="2.1.11",
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=year_begin,
+                title='Tushum',
+                ordering="2.1.11.1",
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=year_begin,
+                title='Yillik rejaga nisbatan %',
+                ordering="2.1.11.2",
+            )
+            svod = StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=None,
+                title="Svod",
+                ordering="3"
+            )
+            svod_title = StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod,
+                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
+                ordering="3.1"
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod_title,
+                title="Yillik reja (ming sum)",
+                ordering="3.1.1",
+                status_plan=SC.PlanStatus.YILLIK
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod_title,
+                title="Amalda (ming sum)",
+                ordering="3.1.2"
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod_title,
+                title="Rejaga nisbatan %",
+                ordering="3.1.3"
+            )
+
+            self.stdout.write(self.style.SUCCESS("StatementColumn entries created with `status_plan` structure."))

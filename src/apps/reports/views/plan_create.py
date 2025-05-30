@@ -72,6 +72,7 @@ class PlanCreateView(generics.CreateAPIView):
                 if chorak_column:
                     Plan.objects.update_or_create(
                         organization=organization,
+                        statement=statement,
                         column=chorak_column,
                         year=year,
                         defaults={'plan_value': total_value}
@@ -90,14 +91,15 @@ class PlanCreateView(generics.CreateAPIView):
                 )
                 if chorak_plans.count() == 4:
                     total_value = sum(p.plan_value for p in chorak_plans)
-                    yil_column = StatementColumn.objects.filter(
+                    yil_columns = StatementColumn.objects.filter(
                         status_plan=StatementColumn.PlanStatus.YILLIK,
                         statement=statement
-                    ).first()
+                    )
 
-                    if yil_column:
+                    for yil_column in yil_columns:
                         Plan.objects.update_or_create(
                             organization=organization,
+                            statement=statement,
                             column=yil_column,
                             year=year,
                             defaults={'plan_value': total_value}
