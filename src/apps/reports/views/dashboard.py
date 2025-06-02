@@ -26,7 +26,7 @@ class DashboardStatListView(CustomGenericAPIView):
 
         report_qs = Report.objects.all() if is_global_user else Report.objects.filter(organization_id=organization.id)
         deadline_qs = Deadline.objects.all() if is_global_user else Deadline.objects.filter(
-            organizations__in=[organization]  # <-- to'g'rilangan
+            organizations__in=[organization]
         ).distinct()
 
         data = {
