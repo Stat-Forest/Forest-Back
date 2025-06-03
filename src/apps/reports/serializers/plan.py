@@ -34,11 +34,22 @@ class PlanSerializer(serializers.ModelSerializer):
             )
         return value
 
-    # def validate(self, attrs):
-    #     plan = self.instance
-    #     related_column = plan.column
-    #
-    #     if ReportItem.objects.filter(statement_column=related_column).exists():
-    #         raise CustomExceptionError(400, _('This plan has already been used in a report and cannot be edited.'))
-    #
-    #     return attrs
+
+class PlanListSerializer(serializers.ModelSerializer):
+    statement_name = serializers.CharField(source='statement.name', read_only=True)
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    column_title = serializers.CharField(source='column.title', read_only=True)
+
+    class Meta:
+        model = Plan
+        fields = [
+            'id',
+            'statement',
+            'statement_name',
+            'organization',
+            'organization_name',
+            'column',
+            'column_title',
+            'year',
+            'plan_value'
+        ]
