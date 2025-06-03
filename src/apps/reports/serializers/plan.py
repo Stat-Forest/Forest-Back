@@ -4,19 +4,13 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan
 
 class PlanSerializer(serializers.ModelSerializer):
-    statement_name = serializers.CharField(source="statement.name")
-    organization_name = serializers.CharField(source="organization.name")
-    statement_column_name = serializers.CharField(source="column.title")
     class Meta:
         model = Plan
         fields = [
             'id',
             'statement',
-            "statement_name",
             'organization',
-            "organization_name",
             'column',
-            "statement_column_name",
             'year',
             'plan_value'
         ]
