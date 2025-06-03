@@ -52,7 +52,7 @@ class DeadlineAdminForm(forms.ModelForm):
             except ValueError:
                 raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
         elif period == 'monthly':
-            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[4] !='-' or not submission_at[5:7].isdigit() or \
+            if len(submission_at) != 7 or not submission_at[:4].isdigit() or not submission_at[5:7].isdigit() or \
                     submission_at[4] != '-':
                 raise forms.ValidationError(_("Invalid month format. Please use the YYYY-MM format"))
             try:
