@@ -67,14 +67,14 @@ class StatementColumn(AbstractBaseModel):
         super().clean()
         if self.status_plan and self.is_organization:
             raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
-
+    @property
     def return_parent(self):
         if self.parent is None:
             return self.title
-        return f"{self.parent.return_parent()} - {self.title}"
+        return f"{self.parent.return_parent} - {self.title}"
 
     def __str__(self):
-        return self.title
+        return self.return_parent
 
     class Meta:
         verbose_name = _("Statement Column")
