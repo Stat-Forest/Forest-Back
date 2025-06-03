@@ -207,21 +207,28 @@ class Command(BaseCommand):
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod_title,
-                title="Yillik reja (ming sum)",
+                title="Tashkilot nomi",
                 ordering="3.1.1",
+                is_organization=True
+            )
+            StatementColumn.objects.create(
+                statement=daromad_statement,
+                parent=svod_title,
+                title="Yillik reja (ming sum)",
+                ordering="3.1.2",
                 status_plan=SC.PlanStatus.YILLIK
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod_title,
                 title="Amalda (ming sum)",
-                ordering="3.1.2"
+                ordering="3.1.3"
             )
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod_title,
                 title="Rejaga nisbatan %",
-                ordering="3.1.3"
+                ordering="3.1.4"
             )
 
             self.stdout.write(self.style.SUCCESS("StatementColumn entries created with `status_plan` structure."))
