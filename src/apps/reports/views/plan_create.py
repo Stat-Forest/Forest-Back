@@ -17,7 +17,13 @@ class PlanCreateView(generics.CreateAPIView):
             plan = serializer.save()
             organization = plan.organization
             year = plan.year
-            statement = plan.column.statement
+            statement = plan.statement
+
+            statement_column = plan.column.statement
+
+            if statement != statement_column:
+                raise CustomExceptionError(400, _('Statement does not match column statement'))
+
 
             chorak_map = {
                 StatementColumn.PlanStatus.CHORAK_1: [
@@ -42,61 +48,63 @@ class PlanCreateView(generics.CreateAPIView):
                 ],
             }
 
-            for chorak_status, oy_status_list in chorak_map.items():
-                oy_columns = list(
+            for quarter_status, month_status_list in chorak_map.items():
+                month_columns = list(
                     StatementColumn.objects.filter(
-                        status_plan__in=oy_status_list,
+                        status_plan__in=month_status_list,
                         statement=statement
                     )
                 )
 
-                if len(oy_columns) != 3:
+                if len(month_columns) != 3:
                     continue
 
-                oy_plans = list(
+                month_plans = list(
                     Plan.objects.filter(
+                        statement=statement,
                         organization=organization,
-                        column__in=oy_columns,
+                        column__in=month_columns,
                         year=year
                     )
                 )
 
-                if len(oy_plans) != 3:
+                if len(month_plans) != 3:
                     continue
-                total_value = sum(p.plan_value for p in oy_plans)
-                chorak_column = StatementColumn.objects.filter(
-                    status_plan=chorak_status,
+                total_value = sum(p.plan_value for p in month_plans)
+                quarter_column = StatementColumn.objects.filter(
+                    status_plan=quarter_status,
                     statement=statement
                 ).first()
 
-                if chorak_column:
+                if quarter_column:
                     Plan.objects.update_or_create(
                         organization=organization,
                         statement=statement,
-                        column=chorak_column,
+                        column=quarter_column,
                         year=year,
                         defaults={'plan_value': total_value}
                     )
 
-            all_chorak_columns = StatementColumn.objects.filter(
+            all_quarter_columns = StatementColumn.objects.filter(
                 status_plan__in=chorak_map.keys(),
                 statement=statement
             )
 
-            if all_chorak_columns.count() == 4:
-                chorak_plans = Plan.objects.filter(
+            if all_quarter_columns.count() == 4:
+                quarter_plans = Plan.objects.filter(
+                    statement=statement,
                     organization=organization,
-                    column__in=all_chorak_columns,
+                    column__in=all_quarter_columns,
                     year=year
                 )
-                if chorak_plans.count() == 4:
-                    total_value = sum(p.plan_value for p in chorak_plans)
-                    yil_columns = StatementColumn.objects.filter(
+                if quarter_plans.count() == 4:
+                    total_value = sum(p.plan_value for p in quarter_plans)
+                    year_columns = StatementColumn.objects.filter(
                         status_plan=StatementColumn.PlanStatus.YILLIK,
                         statement=statement
                     )
 
-                    for yil_column in yil_columns:
+                    for yil_column in year_columns:
                         Plan.objects.update_or_create(
                             organization=organization,
                             statement=statement,
