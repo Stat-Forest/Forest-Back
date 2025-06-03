@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema
 
 @extend_schema(tags=["Plan"])
 class PlanStatementColumnListAPIView(CustomListAPIView):
+    pagination_class =None
     serializer_class = PlanColumnSerializer
 
     def get_queryset(self, *args, **kwargs):
