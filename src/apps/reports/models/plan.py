@@ -28,4 +28,7 @@ class Plan(AbstractBaseModel):
 
     class Meta:
         ordering = ('year',)
-        unique_together = ('organization', 'column') 
+        unique_together = (
+            'statement','organization',
+            'column', 'year'
+            )
