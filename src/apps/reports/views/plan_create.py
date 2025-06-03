@@ -108,7 +108,7 @@ class PlanCreateView(generics.CreateAPIView):
 
 @extend_schema(tags=["Plan"])
 class PlanListAPIView(generics.ListAPIView):
-    queryset = Plan.objects.select_related('organization', 'column')
+    queryset = Plan.objects.select_related('organization', 'column','statement')
     serializer_class = PlanListSerializer
     filterset_fields = ['column__id','statement','organization','year']
 

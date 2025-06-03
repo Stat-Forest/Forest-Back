@@ -43,10 +43,17 @@ class DeadlineAdminForm(forms.ModelForm):
             except ValueError:
                 raise forms.ValidationError(_("Invalid date. Please use the YYYY-MM-DD format"))
         elif period == 'weekly':
-            if len(submission_at) != 10 or not submission_at[:4].isdigit() or  not submission_at[4] !='-' or  not submission_at[
-                                                                                  5:7].isdigit() or \
-                    submission_at[7] != '-' or not submission_at[8:].startswith('W'):
-                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wxx format"))
+            if (
+                    len(submission_at) != 10 or
+                    not submission_at[:4].isdigit() or
+                    submission_at[4] != '-' or
+                    not submission_at[5:7].isdigit() or
+                    submission_at[7] != '-' or
+                    submission_at[8] != 'W' or
+                    not submission_at[9].isdigit()
+            ):
+                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wx format"))
+
             try:
                 datetime.strptime(submission_at, '%Y-%m-W%U')
             except ValueError:
