@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from apps.reports.models import Plan, StatementColumn
-from apps.reports.serializers import PlanSerializer
+from apps.reports.serializers import PlanSerializer,PlanListSerializer
 
 
 @extend_schema(tags=["Plan"])
@@ -109,6 +109,6 @@ class PlanCreateView(generics.CreateAPIView):
 @extend_schema(tags=["Plan"])
 class PlanListAPIView(generics.ListAPIView):
     queryset = Plan.objects.select_related('organization', 'column')
-    serializer_class = PlanSerializer
+    serializer_class = PlanListSerializer
     filterset_fields = ['column__id','statement','organization','year']
 
