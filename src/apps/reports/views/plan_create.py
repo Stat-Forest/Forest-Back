@@ -1,10 +1,15 @@
 from django.db import transaction
-from django.db.models import Sum, Q
-from rest_framework import generics, status
+from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
+
+from rest_framework import generics
 from rest_framework.response import Response
+
 from drf_spectacular.utils import extend_schema
+
 from apps.reports.models import Plan, StatementColumn
-from apps.reports.serializers import PlanSerializer,PlanListSerializer
+from apps.reports.serializers import PlanSerializer, PlanListSerializer
+from apps.base.exceptions.exception_files import CustomExceptionError
 
 
 @extend_schema(tags=["Plan"])
@@ -16,107 +21,116 @@ class PlanCreateView(generics.CreateAPIView):
         with transaction.atomic():
             plan = serializer.save()
             organization = plan.organization
-            year = plan.year
+            year =  plan.year
             statement = plan.statement
-
-            statement_column = plan.column.statement
-
-            if statement != statement_column:
+            column = plan.column
+            
+            if column.statement_id != statement.id:
                 raise CustomExceptionError(400, _('Statement does not match column statement'))
 
+            self.create_quarterly_plans(organization, year, statement)
+            self.create_yearly_plan(organization, year, statement)
 
-            chorak_map = {
-                StatementColumn.PlanStatus.CHORAK_1: [
-                    StatementColumn.PlanStatus.YANVAR,
-                    StatementColumn.PlanStatus.FEVRAL,
-                    StatementColumn.PlanStatus.MART,
-                ],
-                StatementColumn.PlanStatus.CHORAK_2: [
-                    StatementColumn.PlanStatus.APREL,
-                    StatementColumn.PlanStatus.MAY,
-                    StatementColumn.PlanStatus.IYUN,
-                ],
-                StatementColumn.PlanStatus.CHORAK_3: [
-                    StatementColumn.PlanStatus.IYUL,
-                    StatementColumn.PlanStatus.AVGUST,
-                    StatementColumn.PlanStatus.SENTABR,
-                ],
-                StatementColumn.PlanStatus.CHORAK_4: [
-                    StatementColumn.PlanStatus.OKTABR,
-                    StatementColumn.PlanStatus.NOYABR,
-                    StatementColumn.PlanStatus.DEKABR,
-                ],
-            }
+    def create_quarterly_plans(self, organization, year, statement):
+        chorak_map = {
+            StatementColumn.PlanStatus.CHORAK_1: [
+                StatementColumn.PlanStatus.YANVAR,
+                StatementColumn.PlanStatus.FEVRAL,
+                StatementColumn.PlanStatus.MART,
+            ],
+            StatementColumn.PlanStatus.CHORAK_2: [
+                StatementColumn.PlanStatus.APREL,
+                StatementColumn.PlanStatus.MAY,
+                StatementColumn.PlanStatus.IYUN,
+            ],
+            StatementColumn.PlanStatus.CHORAK_3: [
+                StatementColumn.PlanStatus.IYUL,
+                StatementColumn.PlanStatus.AVGUST,
+                StatementColumn.PlanStatus.SENTABR,
+            ],
+            StatementColumn.PlanStatus.CHORAK_4: [
+                StatementColumn.PlanStatus.OKTABR,
+                StatementColumn.PlanStatus.NOYABR,
+                StatementColumn.PlanStatus.DEKABR,
+            ],
+        }
 
-            for quarter_status, month_status_list in chorak_map.items():
-                month_columns = list(
-                    StatementColumn.objects.filter(
-                        status_plan__in=month_status_list,
-                        statement=statement
-                    )
-                )
-
-                if len(month_columns) != 3:
-                    continue
-
-                month_plans = list(
-                    Plan.objects.filter(
-                        statement=statement,
-                        organization=organization,
-                        column__in=month_columns,
-                        year=year
-                    )
-                )
-
-                if len(month_plans) != 3:
-                    continue
-                total_value = sum(p.plan_value for p in month_plans)
-                quarter_column = StatementColumn.objects.filter(
-                    status_plan=quarter_status,
-                    statement=statement
-                ).first()
-
-                if quarter_column:
-                    Plan.objects.update_or_create(
-                        organization=organization,
-                        statement=statement,
-                        column=quarter_column,
-                        year=year,
-                        defaults={'plan_value': total_value}
-                    )
-
-            all_quarter_columns = StatementColumn.objects.filter(
-                status_plan__in=chorak_map.keys(),
-                statement=statement
+        for quarter_status, month_statuses in chorak_map.items():
+            month_columns = StatementColumn.objects.filter(
+                status_plan__in=month_statuses, statement=statement
             )
 
-            if all_quarter_columns.count() == 4:
-                quarter_plans = Plan.objects.filter(
-                    statement=statement,
-                    organization=organization,
-                    column__in=all_quarter_columns,
-                    year=year
-                )
-                if quarter_plans.count() == 4:
-                    total_value = sum(p.plan_value for p in quarter_plans)
-                    year_columns = StatementColumn.objects.filter(
-                        status_plan=StatementColumn.PlanStatus.YILLIK,
-                        statement=statement
-                    )
+            if month_columns.count() != 3:
+                continue
 
-                    for yil_column in year_columns:
-                        Plan.objects.update_or_create(
-                            organization=organization,
-                            statement=statement,
-                            column=yil_column,
-                            year=year,
-                            defaults={'plan_value': total_value}
-                        )
+            month_plans = Plan.objects.filter(
+                organization=organization,
+                statement=statement,
+                year=year,
+                column__in=month_columns
+            )
+
+            if month_plans.count() != 3:
+                continue
+
+            total_value = sum(p.plan_value for p in month_plans)
+
+            quarter_column = StatementColumn.objects.filter(
+                status_plan=quarter_status, statement=statement
+            ).first()
+
+            if quarter_column:
+                Plan.objects.update_or_create(
+                    organization=organization,
+                    statement=statement,
+                    column=quarter_column,
+                    year=year,
+                    defaults={'plan_value': total_value}
+                )
+
+    def create_yearly_plan(self, organization, year, statement):
+        quarterly_columns = StatementColumn.objects.filter(
+            status_plan__in=[
+                StatementColumn.PlanStatus.CHORAK_1,
+                StatementColumn.PlanStatus.CHORAK_2,
+                StatementColumn.PlanStatus.CHORAK_3,
+                StatementColumn.PlanStatus.CHORAK_4
+            ],
+            statement=statement
+        )
+
+        if quarterly_columns.count() != 4:
+            return
+
+        quarter_plans = Plan.objects.filter(
+            organization=organization,
+            statement=statement,
+            year=year,
+            column__in=quarterly_columns
+        )
+
+        if quarter_plans.count() != 4:
+            return
+
+        total_value = sum(p.plan_value for p in quarter_plans)
+
+        year_columns = StatementColumn.objects.filter(
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            statement=statement
+        )
+
+        for year_column in year_columns:
+            Plan.objects.update_or_create(
+                organization=organization,
+                statement=statement,
+                column=year_column,
+                year=year,
+                defaults={'plan_value': total_value}
+            )
 
 
 @extend_schema(tags=["Plan"])
 class PlanListAPIView(generics.ListAPIView):
-    queryset = Plan.objects.select_related('organization', 'column','statement')
+    queryset = Plan.objects.select_related('organization', 'column', 'statement')
     serializer_class = PlanListSerializer
-    filterset_fields = ['column__id','statement','organization','year']
-
+    filterset_fields = ['column__id', 'statement', 'organization', 'year']
