@@ -12,7 +12,7 @@ from apps.reports.views import (
 
 from apps.reports.models import Plan
 from apps.reports.models import Report
-from apps.reports.views.update_plan import PlanUpdateAPIView, PlanDeleteAPIView
+from apps.reports.views.update_delete_plan import PlanUpdateAPIView, PlanDeleteAPIView
 
 urlpatterns = [
 
