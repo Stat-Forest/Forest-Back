@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from apps.users.models import CustomUser, PersonalInfo, Position
@@ -32,20 +33,15 @@ class CustomUserAdmin(admin.ModelAdmin):
         }),
         (_("Personal Info"), {
             "fields": (
-                "first_name", "last_name", "father_name", "gender", "date_of_birth",
-                "date_of_place", "nationality", "passport_number", "phone_number", "address"
+                "first_name", "last_name", "father_name", "gender", "user_number", "statement",
+                "organization", "date_of_birth", "date_of_place", "nationality", "passport_number",
+                "phone_number", "address"
             )
         }),
         (_("Permissions and Role"), {
             "fields": (
                 "role", "is_active", "is_staff", "is_superuser", "is_disabled", "groups", "user_permissions"
             )
-        }),
-        (_("Extra Info"), {
-            "fields": ("user_number",
-                       "statement",
-                       "organization",
-                       )
         }),
         (_("Important Dates"), {
             "fields": ("created_at", "updated_at")
@@ -70,8 +66,26 @@ class CustomUserAdmin(admin.ModelAdmin):
             obj.set_password(form.cleaned_data["password"])
         elif "password" in form.changed_data:
             obj.set_password(obj.password)
+
         super().save_model(request, obj, form, change)
 
+        role_group_map = {
+            CustomUser.Role.SUPER_ADMIN: "super_admin",
+            CustomUser.Role.RAHBARIYAT: "rahbariyat",
+            CustomUser.Role.BOLIM_ADMIN: "bolim_admin",
+            CustomUser.Role.TASHKILOT_RAHBARI: "tashkilot_rahbari",
+            CustomUser.Role.TASHKILOT_HODIMI: "tashkilot_hodimi",
+            CustomUser.Role.HUDUDIY_BOSHQARMA: "hududiy_boshqarma",
+        }
+
+        group_name = role_group_map.get(obj.role)
+
+        if group_name:
+            try:
+                group = Group.objects.get(name=group_name)
+                obj.groups.set([group])
+            except Group.DoesNotExist:
+                print(f"Group {group_name} not found!")
     inlines = [PersonalInfoInline]
 
 
