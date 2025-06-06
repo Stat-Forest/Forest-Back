@@ -2,29 +2,27 @@ from rest_framework import permissions
 
 
 class IsInGroup(permissions.BasePermission):
-    group_name = None
+    groups = []
 
     def has_permission(self, request, view):
-        if not self.group_name:
-            return False
-        return request.user.groups.filter(name=self.group_name).exists()
+        return request.user.groups.filter(name__in=self.groups).exists()
 
 
 class IsSuperUser(IsInGroup):
-    group_name = "SuperUser"
+    groups = ["SuperUser"]
 
 
 class IsRahbariyat(IsInGroup):
-    group_name = "Rahbariyat"
+    groups = ["Rahbariyat"]
 
 
 class IsBolimAdmin(IsInGroup):
-    group_name = "BolimAdmin"
+    groups = ["BolimAdmin"]
 
 
 class IsTashkilotRahbari(IsInGroup):
-    group_name = "TashkilotRahbari"
+    groups = ["TashkilotRahbari"]
 
 
 class IsTashkilothodimlari(IsInGroup):
-    group_name = "TashkilotHodimlari"
+    groups = ["TashkilotHodimlari"]
