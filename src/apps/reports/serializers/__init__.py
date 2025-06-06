@@ -11,3 +11,5 @@ from .create_report import *
 from .cancal_report import *
 from .update_report import *
 from .statement_column import *
+from .update_plan import *
+from .delete_plan import *
