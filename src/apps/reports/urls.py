@@ -7,11 +7,13 @@ from apps.reports.views import (
     StatementColumnTreeAPIView, UserListAPIView,
     ReportRetrieveUpdateAPIView, ReportDeleteAPIView,
     PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView,PlanUpdateAPIView,PlanDeleteAPIView
+    PlanListAPIView,
 )
 
 from apps.reports.models import Plan
 from apps.reports.models import Report
+from apps.reports.views.update_delete_plan import PlanUpdateAPIView, PlanDeleteAPIView
+
 urlpatterns = [
 
     # ====================  USERS URL   ====================
@@ -47,8 +49,8 @@ urlpatterns = [
     path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
     path('plan-list/', PlanListAPIView.as_view(), name='plan-create'),
     path('plan-create/', PlanCreateView.as_view(), name='plan-create'),
-    path('plan-update/', PlanUpdateAPIView.as_view(), name='plan-create'),
-    path('plan-delete/', PlanDeleteAPIView.as_view(), name='plan-create'),
+    path('plan-update/<uuid:id>/', PlanUpdateAPIView.as_view(), name='plan-create'),
+    path('plan-delete/<uuid:id>/', PlanDeleteAPIView.as_view(), name='plan-create'),
 
 ]
 
