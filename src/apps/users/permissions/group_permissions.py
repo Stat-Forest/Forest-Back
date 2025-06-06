@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, Group
 
 from apps.users.models import CustomUser
 
@@ -32,5 +32,5 @@ def setup_roles_and_permissions():
     }
 
     for group_name, perms in groups_permissions:
-        group, _ = Permission.objects.get_or_create(name=group_name)
+        group, _ = Group.objects.get_or_create(name=group_name)
         group.permissions.set(perms)

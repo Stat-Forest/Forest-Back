@@ -7,9 +7,6 @@ from apps.users.models import CustomUser
 
 @receiver(post_save, sender=CustomUser)
 def assign_user_to_group(sender, instance, created, **kwargs):
-    if not created:
-        return
-
     user_role = instance.role
 
     role_group_map = {
