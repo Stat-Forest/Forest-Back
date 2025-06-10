@@ -1,0 +1,22 @@
+import os
+from django.core.management.base import BaseCommand
+
+
+class Command(BaseCommand):
+    help = "Run all forest establishment commands sequentially"
+
+    def handle(self, *args, **options):
+        commands = [
+            "python manage.py forest_establishment",
+            "python manage.py second_forest_establishment",
+            "python manage.py third_forest_establishment"
+        ]
+
+        for cmd in commands:
+            self.stdout.write(self.style.WARNING(f"⏳ Running: {cmd}"))
+            exit_code = os.system(cmd)
+            if exit_code == 0:
+                self.stdout.write(self.style.SUCCESS(f"✅ Successfully finished: {cmd}"))
+            else:
+                self.stdout.write(self.style.ERROR(f"❌ Failed: {cmd}"))
+                break

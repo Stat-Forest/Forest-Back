@@ -1,14 +1,13 @@
 from django.core.management import BaseCommand
 
 from apps.reports.models import Statement, StatementColumn
+from apps.utils.services import PeriodChoices
 
 
 class Command(BaseCommand):
     help = "Create Statement Forest Establishment"
 
     def handle(self, *args, **options):
-        Statement.objects.all().delete()
-        StatementColumn.objects.all().delete()
 
         first_statement = Statement.objects.create(
             parent=None,
@@ -16,7 +15,8 @@ class Command(BaseCommand):
         )
         first_of_second_statement = Statement.objects.create(
             parent=first_statement,
-            name="Yopiq ildiz yirik hajmli"
+            name="Yopiq ildiz yirik hajmli",
+            period=PeriodChoices.YILLIK
         )
 
         app_column = StatementColumn.objects.create(
@@ -46,37 +46,37 @@ class Command(BaseCommand):
         )
 
         rows = [
-            ("Yirik hajmli yopiq ildizli ko`chatlar yetishtirish miqdori", ["Reja", "Amalda", "Foiz"]),
-            ("Tyanshan qoraqarag`ay", ["Reja", "Amalda"]),
-            ("Tyanshan qarag`ayi", ["Reja", "Amalda"]),
-            ("Vergin archa", ["Reja", "Amalda"]),
-            ("Sharq tuya", ["Reja", "Amalda"]),
-            ("Eldor qarag`ay", ["Reja", "Amalda"]),
-            ("Krim qarag`ayi", ["Reja", "Amalda"]),
-            ("Tuya sharq", ["Reja", "Amalda"]),
-            ("Kiparis", ["Reja", "Amalda"]),
-            ("Qayrag`och", ["Reja", "Amalda"]),
-            ("Shumtol", ["Reja", "Amalda"]),
-            ("Zarang", ["Reja", "Amalda"]),
-            ("Sadaqayrog`och", ["Reja", "Amalda"]),
-            ("Yapon saforasi", ["Reja", "Amalda"]),
-            ("Akatsiya", ["Reja", "Amalda"]),
-            ("Ipak Akatsiya", ["Reja", "Amalda"]),
-            ("Aylant", ["Reja", "Amalda"]),
-            ("Katalpa", ["Reja", "Amalda"]),
-            ("Pavloniya", ["Reja", "Amalda"]),
-            ("Chinor", ["Reja", "Amalda"]),
-            ("Kashtan", ["Reja", "Amalda"]),
-            ("Pisardi", ["Reja", "Amalda"]),
-            ("Bag`ryannik", ["Reja", "Amalda"]),
-            ("Chappa tut", ["Reja", "Amalda"]),
-            ("Eman", ["Reja", "Amalda"]),
-            ("Oqqayni", ["Reja", "Amalda"]),
-            ("Boshqa turlar", ["Reja", "Amalda"]),
-            ("Atirgul", ["Reja", "Amalda"]),
+            ("Yirik hajmli yopiq ildizli ko`chatlar yetishtirish miqdori", True, "YILLIK_TOTAL"),
+            ("Tyanshan qoraqarag`ay", True, "YILLIK"),
+            ("Tyanshan qarag`ayi", True, "YILLIK"),
+            ("Vergin archa", True, "YILLIK"),
+            ("Sharq tuya", True, "YILLIK"),
+            ("Eldor qarag`ay", True, "YILLIK"),
+            ("Krim qarag`ayi", True, "YILLIK"),
+            ("Tuya sharq", True, "YILLIK"),
+            ("Kiparis", True, "YILLIK"),
+            ("Qayrag`och", True, "YILLIK"),
+            ("Shumtol", True, "YILLIK"),
+            ("Zarang", True, "YILLIK"),
+            ("Sadaqayrog`och", True, "YILLIK"),
+            ("Yapon saforasi", True, "YILLIK"),
+            ("Akatsiya", True, "YILLIK"),
+            ("Ipak Akatsiya", True, "YILLIK"),
+            ("Aylant", True, "YILLIK"),
+            ("Katalpa", True, "YILLIK"),
+            ("Pavloniya", True, "YILLIK"),
+            ("Chinor", True, "YILLIK"),
+            ("Kashtan", True, "YILLIK"),
+            ("Pisardi", True, "YILLIK"),
+            ("Bag`ryannik", True, "YILLIK"),
+            ("Chappa tut", True, "YILLIK"),
+            ("Eman", True, "YILLIK"),
+            ("Oqqayni", True, "YILLIK"),
+            ("Boshqa turlar", True, "YILLIK"),
+            ("Atirgul", True, "YILLIK"),
         ]
 
-        for index, (title, children) in enumerate(rows, start=2):
+        for index, (title, has_children, plan_status) in enumerate(rows, start=2):
             parent_ordering = f"1.1.{index}"
             parent = StatementColumn.objects.create(
                 statement=first_of_second_statement,
@@ -84,20 +84,25 @@ class Command(BaseCommand):
                 title=title,
                 ordering=parent_ordering
             )
-            for i, child in enumerate(children, start=1):
+            for i, child in enumerate(["Reja", "Amalda"], start=1):
+                status_plan = None
+                if child == "Reja":
+                    status_plan = StatementColumn.PlanStatus[plan_status]
+
                 StatementColumn.objects.create(
                     statement=first_of_second_statement,
                     parent=parent,
                     title=child,
                     ordering=f"{parent_ordering}.{i}",
-                    status_plan=(child.lower() == "reja")
+                    status_plan=status_plan
                 )
 
         # ================================================================ Yopiq ildiz yirik hajmli
 
         second_statement_of_forest = Statement.objects.create(
             parent=first_statement,
-            name="O`rmon barpo qilish bo`limi"
+            name="O`rmon barpo qilish bo`limi",
+            period=PeriodChoices.YILLIK
         )
 
         # 2-ilova sarlavhasi (StatementColumn)
@@ -108,7 +113,6 @@ class Command(BaseCommand):
             ordering="1"
         )
 
-        # 2-ilovadagi bosh mavzu sarlavhasi
         second_ilova_title = StatementColumn.objects.create(
             statement=second_statement_of_forest,
             parent=second_app_column,
@@ -116,7 +120,7 @@ class Command(BaseCommand):
             ordering="1.1"
         )
 
-        organization_name = StatementColumn.objects.create(
+        StatementColumn.objects.create(
             statement=second_statement_of_forest,
             parent=second_ilova_title,
             title="O`rmon xo`jaliklar nomi",
@@ -128,54 +132,60 @@ class Command(BaseCommand):
             ("Jami", True),
             ("Cho‘l", True),
             ("Jami Yong‘oq Mevalar", True),
-            ("Shundan", True),
+            ("Shundan", False),  # Yong‘oq, Pista, Bodom
             ("Jami tez o‘suvchilar", True),
-            ("Shundan", False),  # Daraxt turlari
+            ("Shundan", False),  # Terak, Pavloniya...
             ("Tabiiy tiklanishga ko‘maklashish va boshqa daraxt turlaridan ekish", False),
         ]
 
         ordering_base = "1.1"
 
         for i, (title, has_subcolumns) in enumerate(rows, start=2):
-            parent_column = StatementColumn.objects.create(
+            parent_col = StatementColumn.objects.create(
                 statement=second_statement_of_forest,
                 parent=second_ilova_title,
                 title=title,
-                    ordering=f"{ordering_base}.{i}"
+                ordering=f"{ordering_base}.{i}"
             )
 
-            if title == "Shundan" and not has_subcolumns:
-                children = [
-                    "Terak",
-                    "Pavloniya",
-                    "Qayrog‘och",
-                    "Shumtol",
-                    "Chinor",
-                    "Akatsiya",
-                    "Boshqa turlar"
-                ]
+            if title == "Shundan":
+                if i == 5:  # Yong‘oq mevalar
+                    children = ["Yong‘oq", "Pista", "Bodom"]
+                else:  # Daraxt turlari
+                    children = [
+                        "Terak", "Pavloniya", "Qayrog‘och", "Shumtol",
+                        "Chinor", "Akatsiya", "Boshqa turlar"
+                    ]
                 for j, child in enumerate(children, start=1):
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
-                        parent=parent_column,
+                        parent=parent_col,
                         title=child,
                         ordering=f"{ordering_base}.{i}.{j}"
                     )
             elif has_subcolumns:
                 for j, sub in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+                    status_plan = None
+                    if sub == "Reja":
+                        if title == "Jami":
+                            status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
+                        else:
+                            status_plan = StatementColumn.PlanStatus.YILLIK
+
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
-                        parent=parent_column,
+                        parent=parent_col,
                         title=sub,
                         ordering=f"{ordering_base}.{i}.{j}",
-                        status_plan=StatementColumn.PlanStatus.YILLIK
+                        status_plan=status_plan
                     )
 
-        # ================================================================ Urug` Xarakai
+        # ================================================================ O`rmon barpo qilish
 
         third_statement = Statement.objects.create(
             parent=first_statement,
-            name="Urug` Xarakati"
+            name="Urug` Xarakati",
+            period=PeriodChoices.YILLIK
         )
 
         third_app_column = StatementColumn.objects.create(
@@ -191,186 +201,113 @@ class Command(BaseCommand):
             ordering="1.1"
         )
 
-        third_organization_name = StatementColumn.objects.create(
+        StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Daraxt va buta urug`lari turlari",
             ordering="1.1.1"
         )
 
-        first_column = StatementColumn.objects.create(
+        parent = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Urug` jamg`arish miqdori",
             ordering="1.1.2"
         )
+        for i, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+
+            StatementColumn.objects.create(
+                statement=third_statement,
+                parent=parent,
+                title=title,
+                ordering=f"1.1.2.{i}",
+                status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL if title == "Reja" else None
+            )
 
         StatementColumn.objects.create(
-            statement=third_statement,
-            parent=first_column,
-            title="Reja",
-            ordering="1.1.2.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=first_column,
-            title="Amalda",
-            ordering="1.1.2.2"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=first_column,
-            title="Foiz",
-            ordering="1.1.2.3"
-        )
-
-        yil_boshi_column = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Yil boshiga qoldiq",
             ordering="1.1.3"
         )
 
-        hisobot_davri_column = StatementColumn.objects.create(
+        hisobot = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Hisobot davrida tayyorlandi va sotib olindi",
             ordering="1.1.4"
         )
-
-        in_first_hisobot_davri_column = StatementColumn.objects.create(
+        child1 = StatementColumn.objects.create(
             statement=third_statement,
-            parent=hisobot_davri_column,
+            parent=hisobot,
             title="Xo`jalik tomonidan tayyorlandi",
             ordering="1.1.4.1"
         )
         StatementColumn.objects.create(
             statement=third_statement,
-            parent=in_first_hisobot_davri_column,
+            parent=child1,
             title="Jami",
             ordering="1.1.4.1.1"
         )
         StatementColumn.objects.create(
             statement=third_statement,
-            parent=in_first_hisobot_davri_column,
+            parent=child1,
             title="Sh.J urug`lik uchaskadan",
             ordering="1.1.4.1.2"
         )
 
-        in_second_hisobot_davri_column = StatementColumn.objects.create(
+        child2 = StatementColumn.objects.create(
             statement=third_statement,
-            parent=hisobot_davri_column,
+            parent=hisobot,
             title="Boshqa tashkilotdan sotib olindi",
             ordering="1.1.4.2"
         )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_second_hisobot_davri_column,
-            title="Miqdori",
-            ordering="1.1.4.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_second_hisobot_davri_column,
-            title="Sarflangan summa",
-            ordering="1.1.4.2.2"
-        )
+        for i, title in enumerate(["Miqdori", "Sarflangan summa"], start=1):
+            StatementColumn.objects.create(
+                statement=third_statement,
+                parent=child2,
+                title=title,
+                ordering=f"1.1.4.2.{i}"
+            )
 
-        hisobot_sarflandi_column = StatementColumn.objects.create(
+        sarflandi = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Hisobot davrida sarflandi",
             ordering="1.1.5"
         )
-        in_first_sarflandi_column = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=hisobot_sarflandi_column,
-            title="Ko`chatzorlar barpo etish uchun",
-            ordering="1.1.5.1"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_first_sarflandi_column,
-            title="Miqdori (KG)",
-            ordering="1.1.5.1.1"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_first_sarflandi_column,
-            title="Ish hajmi (KG)",
-            ordering="1.1.5.1.2"
-        )
+        subtitles = [
+            ("Ko`chatzorlar barpo etish uchun", ["Miqdori (KG)", "Ish hajmi (KG)"]),
+            ("O`rmonzorlar barpo etish uchun", ["Miqdori (KG)", "Ish Hajmi (KG)"]),
+            ("O`rmonlarni hatosini to`ldirish uchun", ["Miqdori (KG)", "Ish hajmi (KG)"]),
+            ("Boshqa tashkilotlarga berildi", ["kg"]),
+            ("Hisobdan chiqarildi", ["kg"])
+        ]
 
-        in_second_sarflandi_column = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=hisobot_sarflandi_column,
-            title="O`rmonzorlar barpo etish uchun",
-            ordering="1.1.5.2"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_second_sarflandi_column,
-            title="Miqdori (KG)",
-            ordering="1.1.5.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_second_sarflandi_column,
-            title="Ish Hajmi (KG)",
-            ordering="1.1.5.2.2"
-        )
+        for i, (title, children) in enumerate(subtitles, start=1):
+            parent = StatementColumn.objects.create(
+                statement=third_statement,
+                parent=sarflandi,
+                title=title,
+                ordering=f"1.1.5.{i}"
+            )
+            for j, child_title in enumerate(children, start=1):
+                StatementColumn.objects.create(
+                    statement=third_statement,
+                    parent=parent,
+                    title=child_title,
+                    ordering=f"1.1.5.{i}.{j}"
+                )
 
-        in_third_sarflandi_column = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=hisobot_sarflandi_column,
-            title="O`rmonlarni hatosini to`ldirish uchun",
-            ordering="1.1.5.3"
-        )
         StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_third_sarflandi_column,
-            title="Miqdori (KG)",
-            ordering="1.1.5.3.1"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_third_sarflandi_column,
-            title="Ish hajmi (KG)",
-            ordering="1.1.5.3.2"
-        )
-
-        in_fourth_sarflandi_column = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=hisobot_sarflandi_column,
-            title="Boshqa tashkilotlarga berildi",
-            ordering="1.1.5.4"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_fourth_sarflandi_column,
-            title="kg",
-            ordering="1.1.5.4.1"
-        )
-
-        in_fifth_sarflandi_column = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=hisobot_sarflandi_column,
-            title="Hisobdan chiqarildi",
-            ordering="1.1.5.5"
-        )
-        StatementColumn.objects.create(
-            statement=third_statement,
-            parent=in_fifth_sarflandi_column,
-            title="kg",
-            ordering="1.1.5.5.1"
-        )
-
-        hisobot_ohiri_column = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
             title="Hisobot ohiriga qolgan qoldiq (kg)",
             ordering="1.1.6"
         )
 
+        # ================================================================ Urug` Xarakati
+
+        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Yopiq ildiz yirik hajmli' Statement and Columns."))
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'O`rmon barpo qilish' Statement and Columns."))
+        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Urug` Xarakati' Statement and Columns."))

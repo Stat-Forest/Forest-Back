@@ -26,6 +26,7 @@ class StatementColumn(AbstractBaseModel):
         CHORAK_4 = 'chorak_4', '4-chorak'
 
         YILLIK = 'yillik', 'Yillik'
+        YILLIK_TOTAL = 'yillik_total', 'Yillik Total'
 
     statement = models.ForeignKey(
         'reports.Statement',
