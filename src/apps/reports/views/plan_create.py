@@ -21,15 +21,16 @@ class PlanCreateView(generics.CreateAPIView):
         with transaction.atomic():
             plan = serializer.save()
             organization = plan.organization
-            year =  plan.year
+            year = plan.year
             statement = plan.statement
             column = plan.column
-            
+
             if column.statement_id != statement.id:
                 raise CustomExceptionError(400, _('Statement does not match column statement'))
 
             self.create_quarterly_plans(organization, year, statement)
             self.create_yearly_plan(organization, year, statement)
+            self.create_total_yearly_plan(organization, year, statement)
 
     def create_quarterly_plans(self, organization, year, statement):
         chorak_map = {
@@ -124,6 +125,38 @@ class PlanCreateView(generics.CreateAPIView):
                 organization=organization,
                 statement=statement,
                 column=year_column,
+                year=year,
+                defaults={'plan_value': total_value}
+            )
+
+    def create_total_yearly_plan(self, organization, year, statement):
+        yil_cols = StatementColumn.objects.filter(
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            statement=statement
+        )
+
+        plan_qs = Plan.objects.filter(
+            organization=organization,
+            statement=statement,
+            year=year,
+            column__in=yil_cols
+        )
+
+        if not plan_qs.exists():
+            return
+
+        total_value = sum(p.plan_value for p in plan_qs)
+
+        total_col = StatementColumn.objects.filter(
+            statement=statement,
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+        ).first()
+
+        if total_col:
+            Plan.objects.update_or_create(
+                organization=organization,
+                statement=statement,
+                column=total_col,
                 year=year,
                 defaults={'plan_value': total_value}
             )
