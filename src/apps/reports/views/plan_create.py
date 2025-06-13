@@ -14,7 +14,7 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 
 @extend_schema(tags=["Plan"])
 class PlanCreateView(generics.CreateAPIView):
-    queryset = Plan.objects.select_related('organization', 'column')
+    queryset = Plan.objects.select_related('organization', 'column','statement')
     serializer_class = PlanSerializer
 
     def perform_create(self, serializer):
