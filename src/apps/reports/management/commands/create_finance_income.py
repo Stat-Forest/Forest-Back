@@ -1,10 +1,10 @@
 import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from apps.general.models import Organization
+
 from apps.reports.models import Statement, StatementColumn
 from apps.reports.models.statement_column import StatementColumn as SC
-from apps.utils.services import RegionChoices, PeriodChoices
+
 
 
 class Command(BaseCommand):
@@ -13,17 +13,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         Statement.objects.all().delete()
         StatementColumn.objects.all().delete()
-        Organization.objects.all().delete()
 
         with transaction.atomic():
-            organizations = []
-            for _ in range(13):
-                org_region = random.choice(RegionChoices.values)
-                organizations.append(Organization(
-                    name=f'Organization {org_region}',
-                    region=org_region
-                ))
-            Organization.objects.bulk_create(organizations)
+
 
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
