@@ -1,34 +1,41 @@
 from django.core.management import BaseCommand
 
 from apps.reports.models import Statement, StatementColumn
-
+from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
     help = "Create Statement Column for Hodim Hisobi"
 
     def handle(self, *args, **options):
-        first_statement = Statement.objects.create(
+
+        StatementColumn.objects.filter(statement__name="Xodimlar hisobi").delete()
+        Statement.objects.filter(name="Xodimlar hisobi").delete()
+        Statement.objects.filter(name="Insoniyat resurslarini boshqarish").delete()
+
+        person_statement = Statement.objects.create(
             parent=None,
             name="Insoniyat resurslarini boshqarish",
             period=None,
             icon=None,
         )
-        second_statement = Statement.objects.create(
-            parent=first_statement,
+        person_report_statement = Statement.objects.create(
+            parent=person_statement,
             name="Xodimlar hisobi",
-            period=None,
-            icon=None
+            period=PeriodChoices.CHORAKLIK
         )
 
+        # ==================== 1- ILOVA ========================
+
+
         firest_ilova_column = StatementColumn.objects.create(
-            statement=second_statement,
+            statement=person_report_statement,
             parent=None,
             title="1-ilova",
             ordering="1",
         )
         title_column = StatementColumn.objects.create(
             parent=firest_ilova_column,
-            title="Inson Resurslari blablablablablablablabla",
+            title="2025 yil uchun xodimlar togrisidagi hisobat",
             ordering="1.1"
         )
         organization_name_column = StatementColumn.objects.create(
@@ -118,14 +125,11 @@ class Command(BaseCommand):
             title="Ishchilar",
             ordering="1.1.5.6"
         )
-        on_yetti_statement_column = StatementColumn.objects.create(
-            parent=title_column,
-            title="Amallar",
-            ordering="1.1.6"
-        )
+
+        #==================== 2- ILOVA ========================
 
         second_ilova_column = StatementColumn.objects.create(
-            statement=second_statement,
+            statement=person_report_statement,
             parent=None,
             title="2-ilova",
             ordering="1"
@@ -133,12 +137,12 @@ class Command(BaseCommand):
 
         title_second_column = StatementColumn.objects.create(
             parent=second_ilova_column,
-            title="2-ilovani title blablablablablablablabla",
+            title="Tizim tashkilotlaridagi xodimlarni sifat tarkibi togrisida malumot",
             ordering="1.1"
         )
         second_organization_column = StatementColumn.objects.create(
             parent=title_second_column,
-            title="Tashkilot Nomi 2-ilovaniki",
+            title="Tashkilot Nomi ",
             ordering="1.1.1",
             is_organization=True
         )
@@ -185,7 +189,7 @@ class Command(BaseCommand):
         )
         tenth_column = StatementColumn.objects.create(
             parent=employees,
-            title="Erkak",
+            title="Erkak xodimlar",
             ordering="1.1.5.2"
         )
         eleventh_column = StatementColumn.objects.create(
@@ -233,10 +237,76 @@ class Command(BaseCommand):
             ordering="1.1.8"
         )
 
-        on_toqqiz_column = StatementColumn.objects.create(
-            parent=title_second_column,
-            title="Amallar",
-            ordering="1.1.9"
+        # =========================== 3 -ILOVA ========================
+
+        third_ilova_column = StatementColumn.objects.create(
+            statement=person_report_statement,
+            parent=None,
+            title="3-ilova",
+            ordering="1"
         )
+
+        title_third_column = StatementColumn.objects.create(
+            parent=third_ilova_column,
+            title="Tizim tashkilotlaridagi xodimlarni sifat tarkibi togrisida malumot",
+            ordering="1.1"
+        )
+        third_organization_column = StatementColumn.objects.create(
+            parent=title_third_column,
+            title="Tashkilot Nomi ",
+            ordering="1.1.1",
+            is_organization=True
+        )
+        StatementColumn.objects.create(
+            parent=title_third_column,
+            title="Jami yangi yaratilgan ish o'rinlar soni ",
+            ordering="1.1.2",
+        )
+        from_that = StatementColumn.objects.create(
+            parent=title_third_column,
+            title="Shundan",
+            ordering="1.1.3",
+        )
+        StatementColumn.objects.create(
+            parent=from_that,
+            title="Doimiy",
+            ordering="1.1.3.1",
+        )
+        StatementColumn.objects.create(
+            parent=from_that,
+            title="Mavsumiy",
+            ordering="1.1.3.2",
+        )
+        under_30 =StatementColumn.objects.create(
+            parent=from_that,
+            title=" Yoshlar (30 yoshgacha)",
+            ordering="1.1.3.3",
+        )
+        StatementColumn.objects.create(
+            parent=under_30,
+            title="Erkak",
+            ordering="1.1.3.3.1",
+        )
+        StatementColumn.objects.create(
+            parent=under_30,
+            title="Xotin qizlar",
+            ordering="1.1.3.3.2",
+        )
+        StatementColumn.objects.create(
+            parent=from_that,
+            title="Temir daftar va ayollar daftariga kiritilgan",
+            ordering="1.1.3.4",
+        )
+        StatementColumn.objects.create(
+            parent=from_that,
+            title="Kambag’al axolidan olingan",
+            ordering="1.1.3.5",
+        )
+        StatementColumn.objects.create(
+            parent=from_that,
+            title="Kasanachilik asosida",
+            ordering="1.1.3.6",
+        )
+
 
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Hodim Hisobi' StatementColumns."))
