@@ -167,3 +167,10 @@ class PlanListAPIView(generics.ListAPIView):
     queryset = Plan.objects.select_related('organization', 'column', 'statement')
     serializer_class = PlanListSerializer
     filterset_fields = ['column__id', 'statement', 'organization', 'year']
+
+    def get_queryset(self):
+        queryset = self.queryset
+        user = self.request.user
+        if user.statement is not None:
+            return queryset.filter(statement__parent=user.statement)
+        return queryset
