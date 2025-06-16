@@ -19,11 +19,16 @@ class DeadlineListAPIView(generics.ListAPIView):
             "organizations"
         )
 
-        if hasattr(user,'organizations') is not True:
-            return base_qs
+        if not hasattr(user, 'organization') or not hasattr(user, 'statement'):
+            return base_qs.none()
 
-        else:
-            user_organization = user.organization
-            return base_qs.filter(organizations__in=user_organization).distinct()
+        if not user.organization or not user.statement:
+            return base_qs.none()
+
+        return base_qs.filter(
+            organizations=user.organization,
+            statement=user.statement
+        ).distinct()
+
 
 
