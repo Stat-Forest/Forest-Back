@@ -28,6 +28,7 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += [
     path('api/v1/reports/', include('apps.reports.urls')),
     path('api/v1/general/', include('apps.general.urls')),
+    path('api/v1/sum/', include('apps.sum.urls')),
 ]
 
 if settings.DEBUG:
