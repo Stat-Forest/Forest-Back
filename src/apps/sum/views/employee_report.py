@@ -3,12 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.reports.models import ReportItem, Report
-from django.db.models import Sum, FloatField,IntegerField
+from django.db.models import Sum, FloatField, IntegerField
 from django.db.models.functions import Cast
 
 
 class SumEmployeeReportListAPIView(APIView):
     def get(self, request):
+        # 1-ilova
         employee_item = ReportItem.objects.filter(
             statement_column__title='Jami xodimlar soni'
         ).annotate(
@@ -42,11 +43,9 @@ class SumEmployeeReportListAPIView(APIView):
         for report in all_reports:
             emp_item = report.report_items.filter(statement_column__title='Jami xodimlar soni').first()
             vac_item = report.report_items.filter(statement_column__title='Jami vakatlar soni').first()
-
             try:
                 emp_value = float(emp_item.value) if emp_item and emp_item.value else 0
                 vac_value = float(vac_item.value) if vac_item and vac_item.value else 0
-
                 if emp_value > 0:
                     fill_percent = (vac_value / emp_value) * 100
                     if fill_percent > highest_fill_percent:
@@ -59,9 +58,9 @@ class SumEmployeeReportListAPIView(APIView):
         the_most_vac_org = getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
 
         titles_map_2 = {
-            "Oliy malumotli xodimlar soni": "Oliy",
+            "Oliy malumotli xodimlar soni ": "Oliy",
             "O'rta-maxsus malumotli xodimlar soni": "O`rta maxsus",
-            "O'rta malumotli xodimlar soni": "O`rta",
+            "O'rta malumotli xodimlar soni ": "O`rta",
             "Jami erkaklar soni": "Erkak xodimlar",
             "Jami ayollar soni": "Ayol",
             "Jami nafaqadagi xodimlar soni": "Nafaqadagi xodimlar",
@@ -72,10 +71,10 @@ class SumEmployeeReportListAPIView(APIView):
 
         ilova_2 = {}
         for label, title in titles_map_2.items():
-            item = ReportItem.objects.filter(statement_column__title=title).annotate(
+            total = ReportItem.objects.filter(statement_column__title=title).annotate(
                 value_as_float=Cast('value', IntegerField())
-            ).aggregate(total=Sum('value_as_float'))
-            ilova_2[label] = item['total'] or 0
+            ).aggregate(sum_value=Sum('value_as_float'))['sum_value'] or 0
+            ilova_2[label] = round(total, 2)
 
         titles_map_3 = {
             "Jami yangi yaratilgan ish o'rinlar soni": "Jami yangi yaratilgan ish o'rinlar soni",
@@ -88,8 +87,10 @@ class SumEmployeeReportListAPIView(APIView):
 
         ilova_3 = {}
         for label, title in titles_map_3.items():
-            count = ReportItem.objects.filter(statement_column__title=title).count()
-            ilova_3[label] = count
+            total = ReportItem.objects.filter(statement_column__title=title).annotate(
+                value_as_float=Cast('value', IntegerField())
+            ).aggregate(sum_value=Sum('value_as_float'))['sum_value'] or 0
+            ilova_3[label] = round(total, 2)
 
         data = {
             '1-ilova': {
