@@ -42,11 +42,18 @@ class SumEmployeeReportListAPIView(APIView):
             sum_value=Sum('value_as_float')
         )['sum_value'] or 0
 
+        the_most_worker_org =getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown'
+        the_most_vac_org = getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
         data = {
-            "Jami xodimlar": total_employees,
-            "Eng ko'p xodimli tashkilot": getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown',
-            "Jami vakansiyalar": total_vacancies,
-            "Eng ko'p vakansiyali tashkilot": getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
+            'I-ilova':
+                {
+                    "Jami xodimlar": total_employees,
+                    "Eng ko'p xodimli tashkilot":the_most_worker_org ,
+                    f"{the_most_worker_org} jami xodilari":employee_item.value,
+                    "Jami vakansiyalar": total_vacancies,
+                    "Eng ko'p vakansiyali tashkilot":the_most_vac_org,
+                    f"{the_most_vac_org} jami vakansiyalar": vacancy_item.value,
+                }
         }
 
         return Response(data, status=status.HTTP_200_OK)
