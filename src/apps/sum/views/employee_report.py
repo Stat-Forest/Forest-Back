@@ -6,6 +6,7 @@ from apps.reports.models import ReportItem, Report
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 
+
 class SumEmployeeReportListAPIView(APIView):
     def get(self, request):
         employee_item = ReportItem.objects.filter(
@@ -38,7 +39,6 @@ class SumEmployeeReportListAPIView(APIView):
         highest_fill_org = "UnKnown"
 
         all_reports = Report.objects.all()
-
         for report in all_reports:
             emp_item = report.report_items.filter(statement_column__title='Jami xodimlar soni').first()
             vac_item = report.report_items.filter(statement_column__title='Jami vakatlar soni').first()
@@ -58,8 +58,29 @@ class SumEmployeeReportListAPIView(APIView):
         the_most_worker_org = getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown'
         the_most_vac_org = getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
 
+        titles_map = {
+            "Oliy malumotli xodimlar soni": "Oliy",
+            "O'rta-maxsus malumotli xodimlar soni": "O`rta maxsus",
+            "O'rta malumotli xodimlar soni": "O`rta",
+            "Jami erkaklar soni": "Erkak xodimlar",
+            "Jami ayollar soni": "Ayol",
+            "Jami nafaqadagi xodimlar soni": "Nafaqadagi xodimlar",
+            "Ilmiy darajadagi xodimlar soni": "Ilmiy darajaga ega xodimlar",
+            "Xorijiy til biladigan xodimlar soni": "Xorijiy til biladigan xodimlar",
+            "Chet elda tahsil olgan yoki malaka oshirgan xodimlar": "Chet elda tashil olgan va malaka oshirgan xodimlar"
+        }
+
+        ilova_2 = {}
+        for label, title in titles_map.items():
+            item = ReportItem.objects.filter(statement_column__title=title).annotate(
+                value_as_float=Cast('value', FloatField())
+            ).aggregate(
+                total=Sum('value_as_float')
+            )
+            ilova_2[label] = item['total'] or 0
+
         data = {
-            'I-ilova': {
+            '1-ilova': {
                 "Jami xodimlar": total_employees,
                 "Eng ko'p xodimli tashkilot": the_most_worker_org,
                 f"{the_most_worker_org}ning jami xodimlari": employee_item.value if employee_item else 'Nomaʼlum',
@@ -69,8 +90,10 @@ class SumEmployeeReportListAPIView(APIView):
                 "Umumiy to'ldirilish darajasi (%)": round((total_vacancies / total_employees) * 100, 2) if total_employees else 0,
                 "Eng yuqori to'ldirilish foiziga ega tashkilot": highest_fill_org,
                 "Eng yuqori to'ldirilish foizi (%)": round(highest_fill_percent, 2)
-            }
+            },
+            '2-ilova': ilova_2
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
 
