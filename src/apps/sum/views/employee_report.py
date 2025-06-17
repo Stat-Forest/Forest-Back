@@ -44,9 +44,9 @@ class SumEmployeeReportListAPIView(APIView):
 
         data = {
             "Jami xodimlar": total_employees,
-            "Eng ko'p xodimli tashkilot": getattr(rep_1.organization, 'title', 'UnKnown') if rep_1 else 'UnKnown',
+            "Eng ko'p xodimli tashkilot": getattr(rep_1.organization.name, 'name', 'UnKnown') if rep_1 else 'UnKnown',
             "Jami vakansiyalar": total_vacancies,
-            "Eng ko'p vakansiyali tashkilot": getattr(rep_2.organization, 'title', 'UnKnown') if rep_2 else 'UnKnown'
+            "Eng ko'p vakansiyali tashkilot": getattr(rep_2.organization.name, 'name', 'UnKnown') if rep_2 else 'UnKnown'
         }
 
         return Response(data, status=status.HTTP_200_OK)
