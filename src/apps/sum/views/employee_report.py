@@ -2,11 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from apps.reports.models import ReportItem
-from django.db.models import Sum
+from apps.reports.models import ReportItem, Report
+from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
-from django.db.models import FloatField
-
 
 class SumEmployeeReportListAPIView(APIView):
     def get(self, request):
@@ -15,7 +13,6 @@ class SumEmployeeReportListAPIView(APIView):
         ).annotate(
             value_as_float=Cast('value', FloatField())
         ).order_by('-value_as_float').first()
-
         rep_1 = employee_item.report if employee_item else None
 
         vacancy_item = ReportItem.objects.filter(
@@ -23,37 +20,57 @@ class SumEmployeeReportListAPIView(APIView):
         ).annotate(
             value_as_float=Cast('value', FloatField())
         ).order_by('-value_as_float').first()
-
         rep_2 = vacancy_item.report if vacancy_item else None
 
         total_employees = ReportItem.objects.filter(
             statement_column__title='Jami xodimlar soni'
         ).annotate(
             value_as_float=Cast('value', FloatField())
-        ).aggregate(
-            sum_value=Sum('value_as_float')
-        )['sum_value'] or 0
+        ).aggregate(sum_value=Sum('value_as_float'))['sum_value'] or 0
 
         total_vacancies = ReportItem.objects.filter(
             statement_column__title='Jami vakatlar soni'
         ).annotate(
             value_as_float=Cast('value', FloatField())
-        ).aggregate(
-            sum_value=Sum('value_as_float')
-        )['sum_value'] or 0
+        ).aggregate(sum_value=Sum('value_as_float'))['sum_value'] or 0
 
-        the_most_worker_org =getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown'
+        highest_fill_percent = 0
+        highest_fill_org = "UnKnown"
+
+        all_reports = Report.objects.all()
+
+        for report in all_reports:
+            emp_item = report.report_items.filter(statement_column__title='Jami xodimlar soni').first()
+            vac_item = report.report_items.filter(statement_column__title='Jami vakatlar soni').first()
+
+            try:
+                emp_value = float(emp_item.value) if emp_item and emp_item.value else 0
+                vac_value = float(vac_item.value) if vac_item and vac_item.value else 0
+
+                if emp_value > 0:
+                    fill_percent = (vac_value / emp_value) * 100
+                    if fill_percent > highest_fill_percent:
+                        highest_fill_percent = fill_percent
+                        highest_fill_org = report.organization.name
+            except ValueError:
+                continue
+
+        the_most_worker_org = getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown'
         the_most_vac_org = getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
+
         data = {
-            'I-ilova':
-                {
-                    "Jami xodimlar": total_employees,
-                    "Eng ko'p xodimli tashkilot":the_most_worker_org ,
-                    f"{the_most_worker_org} jami xodilari":employee_item.value,
-                    "Jami vakansiyalar": total_vacancies,
-                    "Eng ko'p vakansiyali tashkilot":the_most_vac_org,
-                    f"{the_most_vac_org} jami vakansiyalar": vacancy_item.value,
-                }
+            'I-ilova': {
+                "Jami xodimlar": total_employees,
+                "Eng ko'p xodimli tashkilot": the_most_worker_org,
+                f"{the_most_worker_org}ning jami xodimlari": employee_item.value if employee_item else 'Nomaʼlum',
+                "Jami vakansiyalar": total_vacancies,
+                "Eng ko'p vakansiyali tashkilot": the_most_vac_org,
+                f"{the_most_vac_org}ning jami vakansiyalari": vacancy_item.value if vacancy_item else 'Nomaʼlum',
+                "Umumiy to'ldirilish darajasi (%)": round((total_vacancies / total_employees) * 100, 2) if total_employees else 0,
+                "Eng yuqori to'ldirilish foiziga ega tashkilot": highest_fill_org,
+                "Eng yuqori to'ldirilish foizi (%)": round(highest_fill_percent, 2)
+            }
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
