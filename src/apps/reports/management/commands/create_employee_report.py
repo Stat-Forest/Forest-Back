@@ -98,7 +98,7 @@ class Command(BaseCommand):
         nineth_statement_column = StatementColumn.objects.create(
             statement=person_report_statement,
             parent=title_column,
-            title="Jami vakatlar soni",
+                title="Jami vakatlar soni",
             ordering="1.1.1.4"
         )
         tenth_statement_column = StatementColumn.objects.create(
