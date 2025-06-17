@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.reports.models import ReportItem, Report
-from django.db.models import Sum, FloatField
+from django.db.models import Sum, FloatField,IntegerField
 from django.db.models.functions import Cast
 
 
@@ -58,7 +58,7 @@ class SumEmployeeReportListAPIView(APIView):
         the_most_worker_org = getattr(rep_1.organization, 'name', 'UnKnown') if rep_1 else 'UnKnown'
         the_most_vac_org = getattr(rep_2.organization, 'name', 'UnKnown') if rep_2 else 'UnKnown'
 
-        titles_map = {
+        titles_map_2 = {
             "Oliy malumotli xodimlar soni": "Oliy",
             "O'rta-maxsus malumotli xodimlar soni": "O`rta maxsus",
             "O'rta malumotli xodimlar soni": "O`rta",
@@ -71,13 +71,25 @@ class SumEmployeeReportListAPIView(APIView):
         }
 
         ilova_2 = {}
-        for label, title in titles_map.items():
+        for label, title in titles_map_2.items():
             item = ReportItem.objects.filter(statement_column__title=title).annotate(
-                value_as_float=Cast('value', FloatField())
-            ).aggregate(
-                total=Sum('value_as_float')
-            )
+                value_as_float=Cast('value', IntegerField())
+            ).aggregate(total=Sum('value_as_float'))
             ilova_2[label] = item['total'] or 0
+
+        titles_map_3 = {
+            "Jami yangi yaratilgan ish o'rinlar soni": "Jami yangi yaratilgan ish o'rinlar soni",
+            "Doimiy ishlaydigan xodimlar soni": "Doimiy",
+            "Mavsumiy ishlaydigan  xodimlar soni": "Mavsumiy",
+            "Temir daftar va ayollar daftariga kiritilgan xodimlar soni": "Temir daftar va ayollar daftariga kiritilgan",
+            "Kambag’al axolidan olingan": "Kambag’al axolidan olingan",
+            "Kasanachilik asosida": "Kasanachilik asosida"
+        }
+
+        ilova_3 = {}
+        for label, title in titles_map_3.items():
+            count = ReportItem.objects.filter(statement_column__title=title).count()
+            ilova_3[label] = count
 
         data = {
             '1-ilova': {
@@ -91,9 +103,8 @@ class SumEmployeeReportListAPIView(APIView):
                 "Eng yuqori to'ldirilish foiziga ega tashkilot": highest_fill_org,
                 "Eng yuqori to'ldirilish foizi (%)": round(highest_fill_percent, 2)
             },
-            '2-ilova': ilova_2
+            '2-ilova': ilova_2,
+            '3-ilova': ilova_3
         }
 
         return Response(data, status=status.HTTP_200_OK)
-
-
