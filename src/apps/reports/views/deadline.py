@@ -20,7 +20,7 @@ class DeadlineListAPIView(generics.ListAPIView):
         )
 
         if not getattr(user, 'organization', None) or not getattr(user, 'statement', None):
-            return base_qs.none()
+            return base_qs
 
         return base_qs.filter(
             organizations=user.organization,
