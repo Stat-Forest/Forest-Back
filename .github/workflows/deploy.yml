@@ -21,12 +21,12 @@ jobs:
     - name: Copy .env to server
       run: |
         echo "${{ secrets.ENV_FILE }}" > .env
-        scp -o StrictHostKeyChecking=no .env ${{ secrets.USER }}@${{ secrets.HOST }}:/home/${{ secrets.USER }}/ecology/Forest-Back/.env
+        scp -o StrictHostKeyChecking=no .env ${{ secrets.USER }}@${{ secrets.HOST }}:/home/${{ secrets.USER }}/.env
 
     - name: Deploy via SSH
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
-          cd /home/${{ secrets.USER }}/ecology/Forest-Back
+          cd /home/${{ secrets.USER }}
           git pull origin main
           docker compose -f docker/dev/docker-compose-dev.yml down
           docker compose -f docker/dev/docker-compose-dev.yml up --build -d
