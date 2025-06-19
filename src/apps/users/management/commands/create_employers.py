@@ -14,7 +14,7 @@ class Command(BaseCommand):
             last_name = input("Last name: ").strip()
             password = getpass("Password: ")
 
-            user = CustomUser.objects.create_superuser(
+            user = CustomUser.objects.create_user(
                 email=email,
                 password=password,
                 first_name=first_name,
