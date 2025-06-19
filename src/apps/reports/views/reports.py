@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
 
-from apps.reports.models import Report
+from apps.reports.models import Report, Plant
 # from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.serializers import (
     ReportListSerializer,
@@ -23,13 +23,19 @@ class ReportListAPIView(CustomListAPIView):
         'deadline',
     ).prefetch_related(
         'report_items',
-        'report_items__statement_column'  
+        'report_items__statement_column',
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
 
     serializer_class = ReportListSerializer
     filterset_fields = ['status', 'organization', 'statement', 'statement__period', 'organization__region']
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        plant_qs = Plant.objects.only("id", "name")
+        context["plant_map"] = {str(p.id): p.name for p in plant_qs}
+        return context
 
 
 @extend_schema(tags=["Reports"])
