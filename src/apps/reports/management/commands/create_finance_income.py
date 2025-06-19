@@ -4,7 +4,7 @@ from django.db import transaction
 
 from apps.reports.models import Statement, StatementColumn
 from apps.reports.models.statement_column import StatementColumn as SC
-
+from apps.utils.services import PeriodChoices
 
 
 class Command(BaseCommand):

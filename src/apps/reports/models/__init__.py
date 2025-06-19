@@ -4,3 +4,4 @@ from .statement import *
 from .report_item import *
 from .statement_column import *
 from .plan import *
+from .plant_column import *

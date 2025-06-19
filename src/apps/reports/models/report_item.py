@@ -11,14 +11,18 @@ class ReportItem(AbstractBaseModel):
         related_name="report_items",
         verbose_name=_("Report")
     )
+    plant = models.ForeignKey("reports.Plant",
+                             on_delete=models.CASCADE,
+                             blank=True,
+                             null=True
+                             )
     statement_column = models.ForeignKey(
         "reports.StatementColumn",
         on_delete=models.PROTECT,
         related_name="items",
         verbose_name=_("Statement Column")
     )
-    value = models.CharField(
-        max_length=100,
+    value = models.TextField(
         verbose_name=_("Value"),
     )
 
