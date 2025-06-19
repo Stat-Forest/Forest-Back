@@ -1,4 +1,5 @@
 from django.urls import path
+
 from apps.reports.views import (
     DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
     ReportCancelAPIView, ReportAcceptAPIView,
@@ -12,6 +13,7 @@ from apps.reports.views import (
 
 from apps.reports.models import Plan
 from apps.reports.models import Report
+from apps.reports.views.plant_column import PlantListAPIView
 from apps.reports.views.update_delete_plan import PlanUpdateAPIView, PlanDeleteAPIView
 
 urlpatterns = [
@@ -51,6 +53,10 @@ urlpatterns = [
     path('plan-create/', PlanCreateView.as_view(), name='plan-create'),
     path('plan-update/<uuid:id>/', PlanUpdateAPIView.as_view(), name='plan-create'),
     path('plan-delete/<uuid:id>/', PlanDeleteAPIView.as_view(), name='plan-create'),
+
+
+    # ====================  PLANT URL FOR SPECIALLY    ====================
+    path("plants/", PlantListAPIView.as_view(), name="plant-list"),
 
 ]
 
