@@ -21,7 +21,7 @@ jobs:
     - name: Copy .env to server
       run: |
         echo "${{ secrets.ENV_FILE }}" > .env
-        scp -o StrictHostKeyChecking=no .env ${{ secrets.USER }}@${{ secrets.HOST }}:/home/${{ secrets.USER }}/.env
+        scp -o StrictHostKeyChecking=no .env root@${{ secrets.HOST }}:/root/.env
 
     - name: Deploy via SSH
       run: |
