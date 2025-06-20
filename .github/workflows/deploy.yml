@@ -28,6 +28,6 @@ jobs:
         ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -T ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
           cd /home/${{ secrets.USER }}/Forest-Back
           git pull origin main
-          docker compose -f docker/prod/docker-compose-prod.yml down
-          docker compose -f docker/prod/docker-compose-prod.yml up --build -d
+          docker-compose -f docker/prod/docker-compose-prod.yml down
+          docker-compose -f docker/prod/docker-compose-prod.yml up --build -d
         EOF
