@@ -31,5 +31,3 @@ jobs:
           docker-compose -f docker/prod/docker-compose-prod.yml down
           docker-compose -f docker/prod/docker-compose-prod.yml up --build -d
         EOF
-
-
