@@ -3,7 +3,8 @@ name: CI/CD Deployment
 on:
   push:
     branches:
-      - main
+      - hoka
+      - J
 
 jobs:
   deploy:
@@ -27,7 +28,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -T ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
           cd /root/Forest-Back
-          git pull origin main
+          git pull origin ${{ github.ref_name }}
           docker-compose -f docker/prod/docker-compose-prod.yml down
           docker-compose -f docker/prod/docker-compose-prod.yml up --build -d
         EOF
