@@ -70,6 +70,7 @@ class Command(BaseCommand):
             ("Pisardi", True, "YILLIK"),
             ("Bag`ryannik", True, "YILLIK"),
             ("Chappa tut", True, "YILLIK"),
+            ("Yapon tut", True, "YILLIK"),
             ("Eman", True, "YILLIK"),
             ("Oqqayni", True, "YILLIK"),
             ("Boshqa turlar", True, "YILLIK"),
