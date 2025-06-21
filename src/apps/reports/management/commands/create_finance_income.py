@@ -11,9 +11,7 @@ class Command(BaseCommand):
     help = 'Creates default Statement and StatementColumn data'
 
     def handle(self, *args, **kwargs):
-        Statement.objects.all().delete()
-        StatementColumn.objects.all().delete()
-
+      
         with transaction.atomic():
 
 
