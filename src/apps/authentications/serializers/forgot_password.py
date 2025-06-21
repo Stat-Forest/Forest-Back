@@ -49,7 +49,7 @@ class VerifyResetCodeSerializer(serializers.Serializer):
 
     def create_tokens(self):
         refresh = RefreshToken.for_user(self.user)
-        cache.delete(f"reset_code: {self.user.email}")
+        cache.set(f"reset_user_id:{self.user.email}", self.user.id, timeout=600)
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token)

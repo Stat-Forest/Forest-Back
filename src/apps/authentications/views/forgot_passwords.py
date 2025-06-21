@@ -1,10 +1,9 @@
 from drf_spectacular.utils import extend_schema
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
+from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.base.views import CustomGenericAPIView
 from apps.authentications.serializers import (SendResetCodeSerializer,
                                               VerifyResetCodeSerializer,
@@ -41,7 +40,15 @@ class NewPasswordAPIView(CustomGenericAPIView):
     serializer_class = NewPasswordSerializer
 
     def post(self, request):
-        serializer = NewPasswordSerializer(data=request.data, context={"request": request})
+        print(">>> Authorization:", request.headers.get("Authorization"))
+        print(">>> request.user =", request.user)
+        print(">>> is_authenticated =", request.user.is_authenticated)
+
+        user = request.user
+        if not user or not user.is_authenticated:
+            raise CustomExceptionError(code=401, detail="Token is missing or invalid.")
+
+        serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Password was changed successfully."})
