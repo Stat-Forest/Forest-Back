@@ -44,8 +44,10 @@ INSTALLED_APPS += [
     'apps.users.apps.UsersConfig',
     'apps.reports.apps.ReportsConfig',
     'apps.general.apps.GeneralConfig',
-]
+    'apps.sum.apps.SumConfig',
+    'apps.report_statistics.apps.ReportStatisticsConfig',
 
+]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
