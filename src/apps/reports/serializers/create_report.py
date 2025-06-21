@@ -8,6 +8,7 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
 from apps.general.models import Organization
+from apps.users.models import CustomUser
 from apps.utils.services.choices import PeriodChoices
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report, ReportItem, StatementColumn, Plan
@@ -39,6 +40,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         deadline = attrs['deadline']
         statement = deadline.statement
         user = self.context['request'].user
+
+        # if user.role == CustomUser.Role.SUPER_ADMIN:
+        #     if user.statement:
+        #         raise CustomExceptionError(400, _("User must have a statement to create report!"))
 
         if not user.statement:
             raise CustomExceptionError(400, _('User must have a statement to create report !'))
