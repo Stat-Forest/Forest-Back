@@ -130,33 +130,33 @@ class PlanCreateView(generics.CreateAPIView):
             )
 
     def create_total_yearly_plan(self, organization, year, statement):
-        yil_cols = StatementColumn.objects.filter(
-            status_plan=StatementColumn.PlanStatus.YILLIK,
-            statement=statement
+        yearly_columns = StatementColumn.objects.filter(
+            statement=statement,
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
 
-        plan_qs = Plan.objects.filter(
+        yearly_plans = Plan.objects.filter(
             organization=organization,
             statement=statement,
             year=year,
-            column__in=yil_cols
+            column__in=yearly_columns
         )
 
-        if not plan_qs.exists():
+        if not yearly_plans.exists():
             return
 
-        total_value = sum(p.plan_value for p in plan_qs)
+        total_value = sum(p.plan_value for p in yearly_plans)
 
-        total_col = StatementColumn.objects.filter(
+        total_column = StatementColumn.objects.filter(
             statement=statement,
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
         ).first()
 
-        if total_col:
+        if total_column:
             Plan.objects.update_or_create(
                 organization=organization,
                 statement=statement,
-                column=total_col,
+                column=total_column,
                 year=year,
                 defaults={'plan_value': total_value}
             )
