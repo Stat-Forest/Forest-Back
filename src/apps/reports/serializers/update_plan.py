@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from django.utils import timezone
+from django.db import transaction
 from apps.base.exceptions.exception_files import CustomExceptionError
-from apps.reports.models import Plan, Report
+from apps.reports.models import Plan, Report, StatementColumn
+
 
 class PlanUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,6 +37,13 @@ class PlanUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         statement = attrs.get('statement', self.instance.statement if self.instance else None)
         column = attrs.get('column', self.instance.column if self.instance else None)
+
+        if column.status_plan == StatementColumn.PlanStatus.YILLIK_TOTAL:
+            raise CustomExceptionError(
+                400,
+                {'column': ['You cannot update TOTAL_YILLIK plan directly.']}
+            )
+
         if statement and column:
             if column.statement != statement:
                 raise CustomExceptionError(
@@ -53,13 +62,13 @@ class PlanUpdateSerializer(serializers.ModelSerializer):
                     {'plan': ['Cannot update Plan because related Reports exist. Delete the Reports first.']}
                 )
 
-        if self.instance:
+            # Check for unique constraint
             statement = attrs.get('statement', self.instance.statement)
             organization = attrs.get('organization', self.instance.organization)
             column = attrs.get('column', self.instance.column)
             year = attrs.get('year', self.instance.year)
 
-            instance_id = self.instance.id if self.instance else None
+            instance_id = self.instance.id
 
             conflicting_plan = Plan.objects.exclude(id=instance_id).filter(
                 statement=statement,
@@ -80,3 +89,33 @@ class PlanUpdateSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            updated_plan = super().update(instance, validated_data)
+
+            if updated_plan.column.status_plan == StatementColumn.PlanStatus.YILLIK:
+                yillik_plans = Plan.objects.filter(
+                    organization=updated_plan.organization,
+                    statement=updated_plan.statement,
+                    year=updated_plan.year,
+                    column__status_plan=StatementColumn.PlanStatus.YILLIK
+                )
+
+                total_value = sum(p.plan_value for p in yillik_plans)
+
+                total_column = StatementColumn.objects.filter(
+                    statement=updated_plan.statement,
+                    status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+                ).first()
+
+                if total_column:
+                    Plan.objects.update_or_create(
+                        organization=updated_plan.organization,
+                        statement=updated_plan.statement,
+                        column=total_column,
+                        year=updated_plan.year,
+                        defaults={'plan_value': total_value}
+                    )
+
+            return updated_plan
