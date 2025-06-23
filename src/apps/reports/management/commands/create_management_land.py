@@ -436,6 +436,7 @@ class Command(BaseCommand):
                     ordering=f"1.4.1.{i+1}"
                 )
 
+            self.stdout.write(self.style.SUCCESS("O'rmon kadastri,ijarasi columns created!"))
 
 
 
