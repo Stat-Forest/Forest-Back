@@ -28,7 +28,7 @@ class UserListAPIView(generics.ListAPIView):
 
         if user_org and user_stmt:
             qs = qs.filter(
-                organization    =user_org,
+                organization=user_org,
                 statement=user_stmt
             )
 
