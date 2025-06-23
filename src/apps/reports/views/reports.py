@@ -29,7 +29,8 @@ class ReportListAPIView(CustomListAPIView):
     ).order_by('-created_at')
 
     serializer_class = ReportListSerializer
-    filterset_fields = ['status', 'organization', 'statement', 'statement__period', 'organization__region']
+    filterset_fields = [
+        'status', 'organization__name','organization', 'statement__name','statement', 'statement__period', 'organization__region']
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

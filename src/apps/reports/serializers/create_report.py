@@ -41,10 +41,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         statement = deadline.statement
         user = self.context['request'].user
 
-        # if user.role == CustomUser.Role.SUPER_ADMIN:
-        #     if user.statement:
-        #         raise CustomExceptionError(400, _("User must have a statement to create report!"))
-
         if not user.statement:
             raise CustomExceptionError(400, _('User must have a statement to create report !'))
 
@@ -128,7 +124,14 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             if report_day >= today:
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past days.']})
         elif statement.period == PeriodChoices.HAFTALIK:
-            year, month, week = map(int, submit_at.split('-'))
+            try:
+                year, month, week_str = submit_at.split('-')
+                year = int(year)
+                month = int(month)
+                week = int(week_str.lstrip('W'))
+            except (ValueError, AttributeError):
+                raise CustomExceptionError(400, {'submit_at': ['Invalid weekly format. Must be YYYY-MM-Wn']})
+
             if year > today.year or (year == today.year and month > today.month):
                 raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
             if year == today.year and month == today.month and week >= get_week_of_month(today):
@@ -158,8 +161,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         validated_data['statement'] = deadline.statement
 
         organization_id = cache.get(self.CACHE_KEY)
-        organization = Organization.objects.get(id=organization_id) if organization_id else self.context[
-            'request'].user.organization
+        organization = Organization.objects.get(id=organization_id) if organization_id else self.context['request'].user.organization
         validated_data['organization'] = organization
         cache.delete(self.CACHE_KEY)
 
