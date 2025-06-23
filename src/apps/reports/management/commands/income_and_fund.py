@@ -43,7 +43,8 @@ class Command(BaseCommand):
                 statement=jamg_statement,
                 parent=info_child,
                 title="Tashkilot nomi",
-                ordering="1.1.1"
+                ordering="1.1.1",
+                is_organization=True
             )
             StatementColumn.objects.create(
                 statement=jamg_statement,
