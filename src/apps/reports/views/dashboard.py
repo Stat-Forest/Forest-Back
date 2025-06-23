@@ -41,5 +41,5 @@ class DashboardStatListView(CustomGenericAPIView):
         }
 
         serializer = DashboardStatSerializer(data)
-        cache.set(cache_key, serializer.data, timeout=300)
+        cache.set(cache_key, serializer.data, timeout=1)
         return Response(serializer.data)
