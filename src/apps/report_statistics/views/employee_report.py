@@ -12,6 +12,21 @@ from apps.reports.models import ReportItem
 
 @extend_schema(tags=["Statistics"])
 class StatisticsEmployeeReportAPIView(APIView):
+
+    def get_aggregated_data_by_titles(self, titles, parent_title=None):
+        filters = {'statement_column__title__in': titles}
+        if parent_title:
+            filters['statement_column__parent__title'] = parent_title
+
+        return ReportItem.objects.filter(**filters).annotate(
+            numeric_value=Cast('value', FloatField())
+        ).values(
+            'report__organization__region',
+            'statement_column__title'
+        ).annotate(
+            total=Sum('numeric_value')
+        )
+
     def get(self, request):
         titles_ilova_1 = [
             "Boshqaruv xodimlari", "Mutaxassislar", "Ishlab chiqarish xodimlari",
@@ -26,25 +41,18 @@ class StatisticsEmployeeReportAPIView(APIView):
             "Kasanachilik asosida"
         ]
 
-        all_titles = titles_ilova_1 + titles_ilova_2 + titles_ilova_3
-
-        qs = ReportItem.objects.filter(
-            statement_column__title__in=all_titles
-        ).annotate(
-            numeric_value=Cast('value', FloatField())
-        ).values(
-            'report__organization__region',
-            'statement_column__title'
-        ).annotate(
-            total=Sum('numeric_value')
-        )
+        qs1 = self.get_aggregated_data_by_titles(titles_ilova_1, parent_title="Shundan-1")
+        qs2 = self.get_aggregated_data_by_titles(titles_ilova_2)
+        qs3 = self.get_aggregated_data_by_titles(titles_ilova_3)
 
         grouped_data = defaultdict(lambda: defaultdict(float))
-        for item in qs:
-            region = item['report__organization__region']
-            title = item['statement_column__title']
-            total = item['total'] or 0
-            grouped_data[region][title] = total
+
+        for qs in (qs1, qs2, qs3):
+            for item in qs:
+                region = item['report__organization__region']
+                title = item['statement_column__title']
+                total = item['total'] or 0
+                grouped_data[region][title] += total
 
         data = [{
             '1-ilova': [],
