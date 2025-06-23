@@ -10,7 +10,8 @@ class ReportListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = (
-            'id', 'organization', 'statement',
+            'id', 'organization','organization__name',
+            'statement','statement__name',
             'deadline', 'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
