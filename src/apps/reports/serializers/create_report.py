@@ -128,7 +128,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 year, month, week_str = submit_at.split('-')
                 year = int(year)
                 month = int(month)
-                week = int(week_str.lstrip('W')) 
+                week = int(week_str.lstrip('W'))
             except (ValueError, AttributeError):
                 raise CustomExceptionError(400, {'submit_at': ['Invalid weekly format. Must be YYYY-MM-Wn']})
 
