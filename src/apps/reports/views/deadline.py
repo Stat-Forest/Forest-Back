@@ -25,7 +25,7 @@ class DeadlineListAPIView(generics.ListAPIView):
         return base_qs.filter(
             organizations=user.organization,
             statement__parent=user.statement
-        ).distinct()
+        )
 
 
 
