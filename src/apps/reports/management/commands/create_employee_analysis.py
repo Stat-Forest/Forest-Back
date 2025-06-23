@@ -473,7 +473,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=person_report_statement,
             parent=f_2_4_1_column,
-            title="Mutaxassislar",
+            title="Mutaxassislar-2",
             ordering="1.5.1.3.4.4.5",
         )
         f_2_5_column = StatementColumn.objects.create(
@@ -799,4 +799,3 @@ class Command(BaseCommand):
         )
 
 
-        self.stdout.write(self.style.SUCCESS("Successfully created 'Hodim Hisobi Tahlili' StatementColumns."))
