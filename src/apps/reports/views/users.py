@@ -12,7 +12,6 @@ from apps.reports.filters import CustomUserFilter
 
 @extend_schema(tags=["Users"])
 class UserListAPIView(generics.ListAPIView):
-    
     queryset = CustomUser.objects.prefetch_related("organization")
     serializer_class = UserListSerializer
     filterset_class = CustomUserFilter
