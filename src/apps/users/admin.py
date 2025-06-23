@@ -16,7 +16,7 @@ class PersonalInfoInline(admin.StackedInline):
 class CustomUserAdmin(admin.ModelAdmin):
     model = CustomUser
     list_display = (
-        "id", "email", "first_name", "last_name", "role", "gender", "is_active"
+        "id", "email", "organization", "statement", "first_name", "last_name", "role", "gender", "is_active"
     )
     list_filter = (
         "role", "gender", "is_active", "is_disabled", "nationality", "is_superuser"
