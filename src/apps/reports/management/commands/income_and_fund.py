@@ -1,4 +1,3 @@
-import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -8,23 +7,129 @@ from apps.utils.services import PeriodChoices
 
 
 class Command(BaseCommand):
-    help = 'Creates default Statement and StatementColumn data'
+    help = 'Create Jamg‘arma va Daromad statementlari bilan to‘liq column tuzilmasi'
 
     def handle(self, *args, **kwargs):
-      
+        Statement.objects.filter(name="Jamg'arma").delete()
+        Statement.objects.filter(name="Daromad").delete()
+        Statement.objects.filter(name="Moliya-iqtisod va buxgalteriya").delete()
+
         with transaction.atomic():
-
-
+            # Asosiy statement
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
                 parent=None
             )
+
+            # --- JAMG'ARMA STATEMENT ---
+
+            jamg_statement = Statement.objects.create(
+                name="Jamg'arma",
+                parent=moliya_statement,
+                period=PeriodChoices.HAFTALIK
+            )
+            parent_info = StatementColumn.objects.create(
+                statement=jamg_statement,
+                title="Jamg'arma",
+                ordering="1"
+            )
+            info_child = StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=parent_info,
+                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
+                ordering="1.1"
+            )
+            StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=info_child,
+                title="Tashkilot nomi",
+                ordering="1.1.1",
+                is_organization=True
+            )
+            StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=info_child,
+                title="Hisob raqamda yil boshiga qoldiq",
+                ordering="1.1.2"
+            )
+
+            income_types = [
+                ("Ruxsatnoma olish uchun arizalarni ko‘rib chiqganlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (1001)", "1.1.3"),
+                ("Hayvonot va o‘simlik dunyosiga yetkazilgan zarar o‘rnini qoplash bo‘yicha undirilgan mablag‘ (1007)", "1.1.4"),
+                ("Ruxsat etilgan hududlarda ovchilik qilish uchun tushgan mablag‘ (50%)", "1.1.5"),
+                ("Ummon fondi yerlaridagi boyliklar va madaniy meroslardan foydalanishdan tushgan mablag‘ (100%)", "1.1.6"),
+                ("Ummon xo‘jaligi yog‘och kesishdan tushgan mablag‘ (50%)", "1.1.7"),
+                ("Boshqa daromadlar (101)", "1.1.8"),
+            ]
+
+            for income_title, income_order in income_types:
+                income_node = StatementColumn.objects.create(
+                    statement=jamg_statement,
+                    parent=info_child,
+                    title=income_title,
+                    ordering=income_order
+                )
+                jam_sum = StatementColumn.objects.create(
+                    statement=jamg_statement,
+                    parent=income_node,
+                    title="Jami tushum",
+                    ordering=f"{income_order}.1"
+                )
+                jamg_node = StatementColumn.objects.create(
+                    statement=jamg_statement,
+                    parent=income_node,
+                    title="shundan jamg’armaga",
+                    ordering=f"{income_order}.2"
+                )
+                for j_idx, title in enumerate(["To‘lanishi kerak (100%)", "To‘landi", "Qoldiq"], start=1):
+                    StatementColumn.objects.create(
+                        statement=jamg_statement,
+                        parent=jamg_node,
+                        title=title,
+                        ordering=f"{income_order}.2.{j_idx}"
+                    )
+
+            jami_tushum = StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=info_child,
+                title="Jami tushum",
+                ordering="1.1.9"
+            )
+            StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=jami_tushum,
+                title="Jamg’arma ga jami tushum",
+                ordering="1.1.9.1"
+            )
+            jamg_shundan = StatementColumn.objects.create(
+                statement=jamg_statement,
+                parent=jami_tushum,
+                title="shundan jamg’armaga",
+                ordering="1.1.9.2"
+            )
+            for j_idx, title in enumerate([
+                "Jamg’arma ga tushishi kerak bo‘lgan tushum",
+                "To‘landi",
+                "Qoldiq"
+            ], start=1):
+                StatementColumn.objects.create(
+                    statement=jamg_statement,
+                    parent=jamg_shundan,
+                    title=title,
+                    ordering=f"1.1.9.2.{j_idx}"
+                )
+
+            self.stdout.write(self.style.SUCCESS("Jamg‘arma statement yaratildi."))
+
+            # --- DAROMAD STATEMENT ---
+
             daromad_statement = Statement.objects.create(
                 name="Daromad",
                 parent=moliya_statement,
                 period=PeriodChoices.OYLIK,
             )
 
+            # Daromad turlari
             daromad_turlari = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=None,
@@ -37,7 +142,6 @@ class Command(BaseCommand):
                 title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
                 ordering="1.1"
             )
-
             titles = [
                 "Tashkilot nomi",
                 "Ko‘chat va nihol sotish",
@@ -68,6 +172,7 @@ class Command(BaseCommand):
                     is_organization=(idx == 1)
                 )
 
+            # Tushumlar bo‘yicha
             tushumlar = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=None,
@@ -87,7 +192,6 @@ class Command(BaseCommand):
                 ordering="2.1.1",
                 is_organization=True
             )
-
             StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushum_info,
@@ -131,7 +235,6 @@ class Command(BaseCommand):
                     title=chorak_status.label,
                     ordering=f"2.1.{2 + c_idx * 2}"
                 )
-
                 for o_idx, oy_status in enumerate(oylar, start=1):
                     oy_order = f"2.1.{2 + c_idx * 2}.{o_idx}"
                     oy_node = StatementColumn.objects.create(
@@ -140,7 +243,6 @@ class Command(BaseCommand):
                         title=oy_status.label,
                         ordering=oy_order
                     )
-
                     for p_idx, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
                         StatementColumn.objects.create(
                             statement=daromad_statement,
@@ -149,7 +251,6 @@ class Command(BaseCommand):
                             ordering=f"{oy_order}.{p_idx}",
                             status_plan=(oy_status if title == "Reja" else None)
                         )
-
                     tushum_node = StatementColumn.objects.create(
                         statement=daromad_statement,
                         parent=oy_node,
@@ -164,7 +265,7 @@ class Command(BaseCommand):
                             ordering=f"{oy_order}.4.{t_idx}"
                         )
 
-            year_begin=StatementColumn.objects.create(
+            year_begin = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushum_info,
                 title='Yil boshidan',
@@ -182,6 +283,8 @@ class Command(BaseCommand):
                 title='Yillik rejaga nisbatan %',
                 ordering="2.1.11.2",
             )
+
+            # Svod bo‘limi
             svod = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=None,
@@ -221,4 +324,4 @@ class Command(BaseCommand):
                 ordering="3.1.4"
             )
 
-            self.stdout.write(self.style.SUCCESS("StatementColumn entries created with `status_plan` structure."))
+            self.stdout.write(self.style.SUCCESS("Daromad statement to‘liq yaratildi."))
