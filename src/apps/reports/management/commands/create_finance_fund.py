@@ -114,4 +114,4 @@ class Command(BaseCommand):
                     ordering=f"1.1.9.2.{j_idx}"
                 )
 
-        self.stdout.write(self.style.SUCCESS("✅ Daromad statement yaratildi."))
+        self.stdout.write(self.style.SUCCESS("Daromad statement yaratildi."))
