@@ -5,18 +5,21 @@ from apps.reports.serializers import ReportItemSerializer, ReportItemPlantValueS
 
 class ReportListSerializer(serializers.ModelSerializer):
     period = serializers.CharField(source='statement.period')
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    statement_name = serializers.CharField(source='statement.name', read_only=True)
     report_items = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = (
-            'id', 'organization','organization__name',
-            'statement','statement__name',
+            'id', 'organization', 'organization_name',
+            'statement', 'statement_name',
             'deadline', 'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
             'report_items'
         )
+
 
     def get_report_items(self, obj):
         items = obj.report_items.all()
