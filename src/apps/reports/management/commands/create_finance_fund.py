@@ -9,9 +9,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         Statement.objects.filter(name="Jamg'arma").delete()
         with transaction.atomic():
-            moliya_statement = Statement.objects.get(
-                name="Moliya-iqtisod va buxgalteriya",
-            )
+            moliya_statement = Statement.objects.filter(
+                name="Moliya-iqtisod va buxgalteriya"
+            ).first()
             daromad_statement = Statement.objects.create(
                 name="Jamg'arma",
                 parent=moliya_statement,
