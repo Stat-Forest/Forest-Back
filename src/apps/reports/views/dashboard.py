@@ -2,7 +2,7 @@ from django.core.cache import cache
 from rest_framework.response import Response
 
 from apps.users.models import CustomUser
-from apps.reports.models import Report, Deadline
+from apps.reports.models import Report, Deadline,Plan
 from apps.base.views import CustomGenericAPIView
 from apps.reports.serializers import DashboardStatSerializer
 
@@ -38,6 +38,7 @@ class DashboardStatListView(CustomGenericAPIView):
                 organization_id=organization.id
             ).count() if not is_global_user else CustomUser.objects.count(),
             "deadlines": deadline_qs.count(),
+            "plans": Plan.objects.all() if is_global_user else Plan.objects.filter(organization_id=organization.pk) ,
         }
 
         serializer = DashboardStatSerializer(data)
