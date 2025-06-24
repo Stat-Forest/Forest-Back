@@ -20,12 +20,10 @@ class DeadlineListAPIView(generics.ListAPIView):
         )
 
         user_org = getattr(user, 'organization', None)
-        user_stmt = getattr(user, 'statement', None)
 
-        if user_org and user_stmt:
+        if user_org :
             qs = qs.filter(
                 organizations=user_org,
-                statement__parent=user_stmt
             )
 
         return qs

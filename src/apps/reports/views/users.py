@@ -12,9 +12,27 @@ from apps.reports.filters import CustomUserFilter
 
 @extend_schema(tags=["Users"])
 class UserListAPIView(generics.ListAPIView):
-    queryset = CustomUser.objects.prefetch_related("organization")
     serializer_class = UserListSerializer
     filterset_class = CustomUserFilter
+
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = CustomUser.objects.prefetch_related(
+            "organization",
+            "statement"
+        )
+
+        user_org = getattr(user, 'organization', None)
+        user_stmt = getattr(user, 'statement', None)
+
+        if user_org and user_stmt:
+            qs = qs.filter(
+                organization=user_org,
+                statement=user_stmt
+            )
+
+        return qs
 
 
 
