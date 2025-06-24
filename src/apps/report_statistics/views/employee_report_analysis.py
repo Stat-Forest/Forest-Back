@@ -24,7 +24,6 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
         titles_ilova_2 = [
             "30 yoshdan 50 yoshgacha bo‘lgan xodimlar soni",
             "50 yoshdan yuqori bo‘lgan xodimlar soni",
-            "Yillik rejaga muvofiq amalga oshiriladigan ish",
             "Mablag‘ sarfi, mln. so‘mda",
             "Yuqori lavozimlar",
             "Quyi lavozimlar"
