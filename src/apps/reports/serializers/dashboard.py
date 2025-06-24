@@ -7,3 +7,4 @@ class DashboardStatSerializer(serializers.Serializer):
     draft_reports = serializers.IntegerField()
     responsible_users = serializers.IntegerField()
     deadlines = serializers.IntegerField()
+    plans = serializers.IntegerField()
