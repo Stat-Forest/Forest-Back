@@ -36,7 +36,7 @@ class StatisticsEmployeeReportAPIView(APIView):
             "Oliy", "O`rta maxsus", "O`rta", "Ayol", "Erkak xodimlar", "Yoshlar Jami"
         ]
         titles_ilova_3 = [
-            "Jami yangi yaratilgan ish o'rinlar soni ", "Doimiy", "Mavsumiy",
+            "Doimiy", "Mavsumiy",
             "Temir daftar va ayollar daftariga kiritilgan", "Kambag’al axolidan olingan",
             "Kasanachilik asosida"
         ]
