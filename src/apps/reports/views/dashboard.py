@@ -38,7 +38,7 @@ class DashboardStatListView(CustomGenericAPIView):
                 organization_id=organization.id
             ).count() if not is_global_user else CustomUser.objects.count(),
             "deadlines": deadline_qs.count(),
-            "plans": Plan.objects.all().count() if is_global_user else Plan.objects.filter(organization_id=organization.pk).cout() ,
+            "plans": Plan.objects.all().count() if is_global_user else Plan.objects.filter(organization_id=organization.pk).count() ,
         }
 
         serializer = DashboardStatSerializer(data)
