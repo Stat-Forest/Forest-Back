@@ -216,6 +216,7 @@ class Command(BaseCommand):
 
         # ========== Pichan ilovasi ==========
 
+        pichan_statement = Statement.objects.create(parent=forest_add, name="Pichan o`rish")
         hay_app = create_column(statement_mechanization, None, "пичан ўриш", "1")
         hay_title = create_column(
             statement_mechanization,
@@ -224,63 +225,65 @@ class Command(BaseCommand):
             " ер  ҳисоби  бўйича ________ йил ҳолатига МАЪЛУМОТ",
             "1.1"
         )
-        create_column(statement_mechanization, hay_title, "Ташкилот номи", "1.1.1", is_organization=True)
-        create_column(statement_mechanization, hay_title, "____ йил прогноз кўрсаткичлари, минг сўм (режа)", "1.1.2")
-        create_column(statement_mechanization, hay_title, "Жами пичан ўриш мумкин бўлган майдон (га)", "1.1.3")
-        create_column(statement_mechanization, hay_title, "Пичан ўриладиган яроқли майдон (га)", "1.1.4")
-        create_column(statement_mechanization, hay_title, "шундан, пичан ўриладиган майдон, (га)", "1.1.5")
-        create_column(statement_mechanization, hay_title, "Фойдаланувчилар сони, (дона)", "1.1.6")
-        create_column(statement_mechanization, hay_title, "Пичан ўриш учун келиб тушган аризалар сони", "1.1.7")
-        create_column(statement_mechanization, hay_title, "шундан пичан ўриш учун берилган рухсатнома суммаcи, (минг сўм) (амалда)", "1.1.8")
-        create_column(statement_mechanization, hay_title, "Тўланган сумма, (минг сўм)", "1.1.9")
-        create_column(statement_mechanization, hay_title, "Қолган қисми, минг сўм", "1.1.10")
-        create_column(statement_mechanization, hay_title, "Жамғармаларга ўтказилган маблағ, минг сўм", "1.1.11")
+        create_column(pichan_statement, hay_title, "Ташкилот номи", "1.1.1", is_organization=True)
+        create_column(pichan_statement, hay_title, "____ йил прогноз кўрсаткичлари, минг сўм (режа)", "1.1.2")
+        create_column(pichan_statement, hay_title, "Жами пичан ўриш мумкин бўлган майдон (га)", "1.1.3")
+        create_column(pichan_statement, hay_title, "Пичан ўриладиган яроқли майдон (га)", "1.1.4")
+        create_column(pichan_statement, hay_title, "шундан, пичан ўриладиган майдон, (га)", "1.1.5")
+        create_column(pichan_statement, hay_title, "Фойдаланувчилар сони, (дона)", "1.1.6")
+        create_column(pichan_statement, hay_title, "Пичан ўриш учун келиб тушган аризалар сони", "1.1.7")
+        create_column(pichan_statement, hay_title, "шундан пичан ўриш учун берилган рухсатнома суммаcи, (минг сўм) (амалда)", "1.1.8")
+        create_column(pichan_statement, hay_title, "Тўланган сумма, (минг сўм)", "1.1.9")
+        create_column(pichan_statement, hay_title, "Қолган қисми, минг сўм", "1.1.10")
+        create_column(pichan_statement, hay_title, "Жамғармаларга ўтказилган маблағ, минг сўм", "1.1.11")
 
         # ========== Yaylov ilovasi ==========
 
-        pasture_app = create_column(statement_mechanization, None, "Яйлов-ilovasi", "1")
+        yaylov_statement = Statement.objects.create(parent=forest_add, name="Yaylov hisoboti")
+
+        pasture_app = create_column(yaylov_statement, None, "Яйлов-ilovasi", "1")
         pasture_title = create_column(
-            statement_mechanization,
+            yaylov_statement,
             pasture_app,
             "Ўрмон хўжалиги агентлиги тизимидаги хўжаликларда ўрмон фонди яйлов ҳудудларига чорва молларини"
             " жойлаштириш бўйича ________ йил ҳолатига ",
             "1.1"
         )
 
-        create_column(statement_mechanization, pasture_title, "Ташкилот номи", "1.1.1", is_organization=True)
-        create_column(statement_mechanization, pasture_title, "_____йил прогноз кўрсаткичлари, минг сўм (режа)",
+        create_column(yaylov_statement, pasture_title, "Ташкилот номи", "1.1.1", is_organization=True)
+        create_column(yaylov_statement, pasture_title, "_____йил прогноз кўрсаткичлари, минг сўм (режа)",
                       "1.1.2")
-        create_column(statement_mechanization, pasture_title, "Жами Яйлов майдони га", "1.1.3")
-        create_column(statement_mechanization, pasture_title, "Мол боқишга яроқли майдон, (га)", "1.1.4")
-        create_column(statement_mechanization, pasture_title, "шундан, чорва моллари боқилаётган майдони, (га)",
+        create_column(yaylov_statement, pasture_title, "Жами Яйлов майдони га", "1.1.3")
+        create_column(yaylov_statement, pasture_title, "Мол боқишга яроқли майдон, (га)", "1.1.4")
+        create_column(yaylov_statement, pasture_title, "шундан, чорва моллари боқилаётган майдони, (га)",
                       "1.1.5")
-        create_column(statement_mechanization, pasture_title, "Фойда-ланувчилар сони, (дона)", "1.1.6")
-        create_column(statement_mechanization, pasture_title, "Яйловга жойлаштирилган чорва моллари жами сони, (бош)",
+        create_column(yaylov_statement, pasture_title, "Фойда-ланувчилар сони, (дона)", "1.1.6")
+        create_column(yaylov_statement, pasture_title, "Яйловга жойлаштирилган чорва моллари жами сони, (бош)",
                       "1.1.7")
 
-        chorva_turi = create_column(statement_mechanization, pasture_title,
+        chorva_turi = create_column(yaylov_statement, pasture_title,
                                     "Шундан чорва молларининг тури, сони, сўммаси, минг сўм", "1.1.8")
-        create_column(statement_mechanization, chorva_turi, "Майда шохли моллар", "1.1.8.1")
-        create_column(statement_mechanization, chorva_turi, "Эчкилар", "1.1.8.2")
-        create_column(statement_mechanization, chorva_turi,
+        create_column(yaylov_statement, chorva_turi, "Майда шохли моллар", "1.1.8.1")
+        create_column(yaylov_statement, chorva_turi, "Эчкилар", "1.1.8.2")
+        create_column(yaylov_statement, chorva_turi,
                       "Майда шохли моллар ва эчкилар учун тўланадиган сўм, минг сўм", "1.1.8.3")
-        create_column(statement_mechanization, chorva_turi, "6 ойгача МШМ (қўзи улоқ)", "1.1.8.4")
-        create_column(statement_mechanization, chorva_turi,
+        create_column(yaylov_statement, chorva_turi, "6 ойгача МШМ (қўзи улоқ)", "1.1.8.4")
+        create_column(yaylov_statement, chorva_turi,
                       "6 ойгача бўлган қўзи - улоқ учун тўланадиган сўм, минг сўм", "1.1.8.5")
-        create_column(statement_mechanization, chorva_turi, "Йирик шохли моллар", "1.1.8.6")
-        create_column(statement_mechanization, chorva_turi, "Йилқилар, туялар", "1.1.8.7")
-        create_column(statement_mechanization, chorva_turi, "Эшаклар", "1.1.8.8")
-        create_column(statement_mechanization, chorva_turi,
+        create_column(yaylov_statement, chorva_turi, "Йирик шохли моллар", "1.1.8.6")
+        create_column(yaylov_statement, chorva_turi, "Йилқилар, туялар", "1.1.8.7")
+        create_column(yaylov_statement, chorva_turi, "Эшаклар", "1.1.8.8")
+        create_column(yaylov_statement, chorva_turi,
                       "Йирик шохли моллар, йилқилар, туялар ва эшаклар учун тўланадиган сўммаси, минг сўм", "1.1.8.9")
-        create_column(statement_mechanization, chorva_turi, "2 ёшгача ЙШМ", "1.1.8.10")
-        create_column(statement_mechanization, chorva_turi, "2 ёшгача ЙШМлар учун тўланадиган сўммаси, минг сўм",
+        create_column(yaylov_statement, chorva_turi, "2 ёшгача ЙШМ", "1.1.8.10")
+        create_column(yaylov_statement, chorva_turi, "2 ёшгача ЙШМлар учун тўланадиган сўммаси, минг сўм",
                       "1.1.8.11")
 
-        create_column(statement_mechanization, pasture_title,
+        create_column(yaylov_statement, pasture_title,
                       "Яйлов учун тузилган шартнома суммаси,  (минг сўм) (амалда)", "1.1.9")
-        create_column(statement_mechanization, pasture_title, "Тўланган сумма,  (минг сўм)", "1.1.10")
-        create_column(statement_mechanization, pasture_title, "Қолган қисми, минг сўм", "1.1.11")
-        create_column(statement_mechanization, pasture_title, "Жамғармага ўтказилган маблағ, минг сўм", "1.1.12")
+        create_column(yaylov_statement, pasture_title, "Тўланган сумма,  (минг сўм)", "1.1.10")
+        create_column(yaylov_statement, pasture_title, "Қолган қисми, минг сўм", "1.1.11")
+        create_column(yaylov_statement, pasture_title, "Жамғармага ўтказилган маблағ, минг сўм", "1.1.12")
 
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Mexanizatsiya hisobi' Statement and Columns."))
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Pichan Urish hisobi' Statement and Columns."))

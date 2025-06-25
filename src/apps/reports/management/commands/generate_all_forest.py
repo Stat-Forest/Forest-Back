@@ -10,10 +10,11 @@ class Command(BaseCommand):
             "python manage.py forest_establishment",
             "python manage.py second_forest_establishment",
             "python manage.py third_forest_establishment",
-            "python manage.oy plant_create_nihol",
+            "python manage.py plant_create_nihol",
             "python manage.py forest_protect",
             "python manage.py forest_additional",
-            "python manage.py second_forest_additional"
+            "python manage.py second_forest_additional",
+            "python manage.py third_forest_additional",
         ]
 
         for cmd in commands:
