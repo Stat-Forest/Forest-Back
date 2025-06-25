@@ -21,4 +21,4 @@ class CustomUserFilter(filters.FilterSet):
 
     class Meta:
         model = CustomUser
-        fields = ['first_name']
+        fields = ['first_name','id']
