@@ -41,11 +41,11 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         statement = deadline.statement
         user = self.context['request'].user
 
-        if not user.statement:
-            raise CustomExceptionError(400, _('User must have a statement to create report !'))
-
-        if user.statement != statement.parent:
-            raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
+        # if not user.statement:
+        #     raise CustomExceptionError(400, _('User must have a statement to create report !'))
+        #
+        # if user.statement != statement.parent:
+        #     raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
 
         if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('User organization is not related to this deadline'))
