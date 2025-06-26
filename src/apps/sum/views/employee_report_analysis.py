@@ -48,7 +48,7 @@ class SumEmployeeReportAnalysisListAPIView(APIView):
 
         data = {
             '1-ilova': ilova_1,
-            '4-ilova': ilova_4,
+            '2-ilova': ilova_4,
         }
 
         return Response(data, status=status.HTTP_200_OK)
