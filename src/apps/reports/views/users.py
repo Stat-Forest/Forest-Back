@@ -24,12 +24,10 @@ class UserListAPIView(generics.ListAPIView):
         )
 
         user_org = getattr(user, 'organization', None)
-        user_stmt = getattr(user, 'statement', None)
 
-        if user_org and user_stmt:
+        if user_org:
             qs = qs.filter(
                 organization=user_org,
-                statement=user_stmt
             )
 
         return qs
