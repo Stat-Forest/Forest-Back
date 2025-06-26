@@ -10,7 +10,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164','localhost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://forest.yutori.uz",
