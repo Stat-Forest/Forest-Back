@@ -32,6 +32,13 @@ class ReportListAPIView(CustomListAPIView):
     filterset_fields = [
         'status', 'organization__name','organization', 'statement__name','statement', 'statement__period', 'organization__region']
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.organization is not None:
+            return self.queryset.filter(organization_id=user.organization.pk)
+
+        return self.queryset
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         plant_qs = Plant.objects.only("id", "name")
