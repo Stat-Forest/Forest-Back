@@ -12,4 +12,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('user_number', 'first_name', 'last_name', 'organization','organization__name', 'nationality', 'information', 'role')
+        fields = (
+            'user_number', 'first_name', 'last_name',
+            'organization','organization__name',
+            'nationality', 'information', 'role'
+        )
+
