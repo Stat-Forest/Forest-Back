@@ -171,6 +171,6 @@ class PlanListAPIView(generics.ListAPIView):
     def get_queryset(self):
         queryset = self.queryset
         user = self.request.user
-        if user.statement is not None:
-            return queryset.filter(statement__parent=user.statement)
+        if user.organization is not None:
+            return queryset.filter(organization_id=user.organization.pk)
         return queryset
