@@ -1,5 +1,6 @@
 from django.core.cache import cache
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 from apps.users.models import CustomUser
@@ -11,32 +12,30 @@ from apps.reports.serializers import DashboardStatSerializer
 @extend_schema(tags=["Dashboards"])
 class DashboardStatListView(CustomGenericAPIView):
     serializer_class = DashboardStatSerializer
+    permission_classes = [IsAuthenticated]  
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        if user.organization is not None:
-             organization = user.organization
-        else:
-             organization = False
-        statement = user.statement
+
+        organization = getattr(user, "organization", None)
+        statement = getattr(user, "statement", None)
 
         is_global_user = not organization and not statement
         is_admin_user = not statement and organization
 
-        # Cache key
         if is_global_user:
             cache_key = 'dashboard_stat_all'
         elif is_admin_user:
             cache_key = f'dashboard_stat_admin_{organization.id}'
-        else:
+        elif organization:
             cache_key = f'dashboard_stat_{organization.id}'
+        else:
+            return Response({"detail": "Invalid user context."}, status=400)
 
-        # Return cached response if available
         cached_data = cache.get(cache_key)
         if cached_data:
             return Response(cached_data)
 
-        # Querysets based on user role
         if is_global_user:
             report_qs = Report.objects.all()
             deadline_qs = Deadline.objects.all()
@@ -65,7 +64,7 @@ class DashboardStatListView(CustomGenericAPIView):
             "plans": plans.count(),
         }
 
-        serializer = DashboardStatSerializer(data=data)
+        serializer = DashboardStatSerializer(data)
         cache.set(cache_key, serializer.data, timeout=1)
 
         return Response(serializer.data)
