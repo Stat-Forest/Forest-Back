@@ -30,7 +30,7 @@ class DashboardStatListView(CustomGenericAPIView):
         else:
             report_qs = Report.objects.all()
             deadline_qs = Deadline.objects.all()
-            responsible_users = CustomUser.all()
+            responsible_users = CustomUser.objects.all()
             plans = Plan.objects.all()
 
         data = {
