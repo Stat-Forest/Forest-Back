@@ -17,7 +17,7 @@ class DashboardStatListView(CustomGenericAPIView):
         user = request.user
 
         if user.organization is not None:
-            report_qs= Report.objects.filter(organization_id=user.organization.pk)
+            report_qs = Report.objects.filter(organization_id=user.organization.pk)
             responsible_users = CustomUser.objects.filter(organization_id=user.organization.pk)
             deadline_qs = Deadline.objects.filter(organizations=user.organization).distinct()
             plans = Plan.objects.filter(organization_id=user.organization.pk)
@@ -43,5 +43,5 @@ class DashboardStatListView(CustomGenericAPIView):
             "plans": plans.count(),
         }
 
-        serializer = DashboardStatSerializer(data)
-        return Response(serializer.data,status=200)
+        serializer = DashboardStatSerializer(data=data) 
+        return Response(serializer.data, status=200)
