@@ -1,7 +1,7 @@
 # views.py
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
 from apps.reports.models import StatementColumn
@@ -21,8 +21,12 @@ class StatementColumnFilter(django_filters.FilterSet):
         fields = ['statement']
 
 
-
-@extend_schema(tags=["Statements"])
+@extend_schema(
+    tags=["Statements"],
+    parameters=[
+        OpenApiParameter(name="lang", description="Language: uz, ru", required=False, type=str),
+    ]
+)
 class StatementColumnTreeAPIView(generics.ListAPIView):
     serializer_class = StatementColumnTreeSerializer
     queryset = StatementColumn.objects.select_related('statement', 'parent')
@@ -59,3 +63,8 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         tree = sort_tree_recursive(tree)
         serializer = self.get_serializer(tree, many=True)
         return Response(serializer.data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lang"] = self.request.query_params.get("lang")
+        return context
