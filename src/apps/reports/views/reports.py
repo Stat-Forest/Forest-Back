@@ -37,6 +37,9 @@ class ReportListAPIView(CustomListAPIView):
         if user.organization is not None:
             return self.queryset.filter(organization_id=user.organization.pk)
 
+        elif user.statement is not None:
+            return self.queryset.filter(statement__parent_id=user.statement.pk)
+
         return self.queryset
 
     def get_serializer_context(self):

@@ -17,7 +17,6 @@ class UserListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
         qs = CustomUser.objects.prefetch_related(
             "organization",
             "statement"
@@ -28,6 +27,10 @@ class UserListAPIView(generics.ListAPIView):
         if user_org:
             qs = qs.filter(
                 organization=user_org,
+            )
+        elif user.statement is not None:
+            qs = qs.filter(
+                statement_id=user.statement.pk,
             )
 
         return qs
