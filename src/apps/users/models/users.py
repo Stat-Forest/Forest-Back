@@ -43,59 +43,120 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    statement = models.ForeignKey("reports.Statement",
-                                  limit_choices_to={"parent__isnull": True},
-                                  on_delete=models.PROTECT,
-                                  related_name="users",
-                                  blank=True,
-                                  null=True
-                                  )
+    statement = models.ForeignKey(
+        "reports.Statement",
+        limit_choices_to={"parent__isnull": True},
+        on_delete=models.PROTECT,
+        related_name="users",
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining tegishli bo'lgan hisobot yo'nalishi"
+    )
 
-    organization = models.ForeignKey("general.Organization",
-                                      on_delete=models.PROTECT,
-                                      related_name="users",
-                                      blank=True,
-                                      null=True
-                                      )
+    organization = models.ForeignKey(
+        "general.Organization",
+        on_delete=models.PROTECT,
+        related_name="users",
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining ishlaydigan tashkiloti"
+    )
 
     user_number = models.CharField(
         max_length=10,
-        unique=True
+        unique=True,
+        help_text="Foydalanuvchiga biriktirilgan noyob raqam"
     )
 
-    role = models.CharField(choices=Role.choices, max_length=50)
+    role = models.CharField(
+        choices=Role.choices,
+        max_length=50,
+        help_text="Foydalanuvchining tizimdagi roli"
+    )
 
-    gender = models.CharField(_("Gender"),
-                              max_length=10,
-                              choices=Gender.choices
-                              )
-    nationality = models.CharField(_("Nation"),
-                                   choices=Nation.choices,
-                                   max_length=10,
-                                   default=Nation.UZBEK
-                                   )
+    gender = models.CharField(
+        _("Gender"),
+        max_length=10,
+        choices=Gender.choices,
+        help_text="Foydalanuvchining jinsi"
+    )
 
-    is_disabled = models.BooleanField(default=False, help_text="Nogiron")
+    nationality = models.CharField(
+        _("Nation"),
+        choices=Nation.choices,
+        max_length=10,
+        default=Nation.UZBEK,
+        help_text="Foydalanuvchining millati"
+    )
 
-    first_name = models.CharField(max_length=250)
-    last_name = models.CharField(max_length=250)
-    father_name = models.CharField(max_length=250)
-    email = models.EmailField(max_length=150, unique=True)
-    phone_number = models.CharField(max_length=13,
-                                    blank=True,
-                                    null=True,
-                                    validators=[
-                                        RegexValidator(
-                                            regex=r"^\+998\d{9}$",
-                                            message="Example: +998 XXXXXXXXX",
-                                            code="uzb_phone_number_validation"
-                                        )
-                                    ])
-    passport_number = models.CharField(max_length=9, validators=[validate_passport_number])
+    is_disabled = models.BooleanField(
+        default=False,
+        help_text="Agar foydalanuvchi nogiron bo‘lsa belgilanadi"
+    )
 
-    date_of_birth = models.DateField(blank=True, null=True)
-    date_of_place = models.CharField(max_length=250)
-    address = models.CharField(max_length=250)
+    first_name = models.CharField(
+        max_length=250,
+        help_text="Foydalanuvchining ismi"
+    )
+
+    last_name = models.CharField(
+        max_length=250,
+        help_text="Foydalanuvchining familiyasi"
+    )
+
+    father_name = models.CharField(
+        max_length=250,
+        help_text="Foydalanuvchining otasining ismi"
+    )
+
+    email = models.EmailField(
+        max_length=150,
+        unique=True,
+        help_text="Foydalanuvchining elektron pochtasi"
+    )
+
+    phone_number = models.CharField(
+        max_length=13,
+        blank=True,
+        null=True,
+        validators=[
+            RegexValidator(
+                regex=r"^\+998\d{9}$",
+                message="Namuna: +998XXXXXXXXX",
+                code="uzb_phone_number_validation"
+            )
+        ],
+        help_text="Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX"
+    )
+
+    passport_number = models.CharField(
+        max_length=9,
+        validators=[validate_passport_number],
+        help_text="Foydalanuvchining pasport raqami (2 harf va 7 raqam)"
+    )
+
+    date_of_birth = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Tug‘ilgan sana"
+    )
+
+    date_of_place = models.CharField(
+        max_length=250,
+        help_text="Tug‘ilgan joy"
+    )
+
+    address = models.CharField(
+        max_length=250,
+        help_text="Yashash manzili"
+    )
+
+    image = models.ImageField(
+        upload_to="%Y/%m/%d",
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining rasmi"
+    )
 
     is_staff = models.BooleanField(
         _('staff status'),
