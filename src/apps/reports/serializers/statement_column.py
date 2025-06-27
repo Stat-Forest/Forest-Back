@@ -22,7 +22,7 @@ class StatementColumnTreeSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         lang = get_lang_code(request)
         translated = get_translated_field(obj, "title", lang)
-        return translated or obj.name
+        return translated or obj.title
 
     def get_children(self, obj):
         if hasattr(obj, 'children_list'):
