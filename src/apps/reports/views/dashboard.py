@@ -16,7 +16,9 @@ class DashboardStatListView(CustomGenericAPIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         organization = user.organization
-        is_global_user = not bool(organization)
+        statement = user.statement
+        is_global_user =  not bool(organization) and not bool(statement)
+        is_admin_user = not bool(statement)
 
         cache_key = f'dashboard_stat_all' if is_global_user else f'dashboard_stat_{organization.id}'
 
@@ -24,21 +26,33 @@ class DashboardStatListView(CustomGenericAPIView):
         if cached_data is not None:
             return Response(cached_data)
 
-        report_qs = Report.objects.all() if is_global_user else Report.objects.filter(organization_id=organization.id)
-        deadline_qs = Deadline.objects.all() if is_global_user else Deadline.objects.filter(
-            organizations__in=[organization]
-        ).distinct()
+        if is_global_user is not None:
+            report_qs = Report.objects.all()
+            deadline_qs = Deadline.objects.all()
+            responsible_users = CustomUser.objects.all()
+            plans = Plan.objects.all()
+
+        elif is_admin_user is not None:
+            report_qs = Report.objects.filter(statement_id=statement.pk)
+            deadline_qs = Deadline.objects.filter(statement__parent_id=statement.pk)
+            responsible_users = CustomUser.objects.filter(statement_id=statement.pk)
+            plans = Plan.objects.filter(statement__parent_id=statement.pk)
+
+        else:
+            report_qs = Report.objects.filter(organization_id=organization.pk)
+            deadline_qs = Deadline.objects.filter( organizations__in=[organization]).distinct()
+            responsible_users = CustomUser.objects.filter(organization_id=organization.pk)
+            plans = Plan.objects.filter(organization_id=organization.pk)
+
 
         data = {
             "sent_reports": report_qs.filter(status=Report.StatusChoices.SENT).count(),
             "returned_reports": report_qs.filter(status=Report.StatusChoices.CANCELLED).count(),
             "accepted_reports": report_qs.filter(status=Report.StatusChoices.ACCEPTED).count(),
             "draft_reports": report_qs.filter(status=Report.StatusChoices.SAVED).count(),
-            "responsible_users": CustomUser.objects.filter(
-                organization_id=organization.id
-            ).count() if not is_global_user else CustomUser.objects.count(),
+            "responsible_users": responsible_users.count(),
             "deadlines": deadline_qs.count(),
-            "plans": Plan.objects.all().count() if is_global_user else Plan.objects.filter(organization_id=organization.pk).count() ,
+            "plans": plans.count() ,
         }
 
         serializer = DashboardStatSerializer(data)
