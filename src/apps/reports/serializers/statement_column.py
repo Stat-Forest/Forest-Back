@@ -1,7 +1,11 @@
 from rest_framework import serializers
 from apps.reports.models import StatementColumn
+from apps.utils.translation import get_lang_code, get_translated_field
+
 
 class StatementColumnTreeSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
     children = serializers.SerializerMethodField()
     parent = serializers.PrimaryKeyRelatedField(read_only=True)
     statement = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -13,6 +17,12 @@ class StatementColumnTreeSerializer(serializers.ModelSerializer):
             'ordering', 'parent', 'status_plan',
             'is_organization','children'
         ]
+
+    def get_title(self, obj):
+        request = self.context.get("request")
+        lang = get_lang_code(request)
+        translated = get_translated_field(obj, "title", lang)
+        return translated or obj.name
 
     def get_children(self, obj):
         if hasattr(obj, 'children_list'):
