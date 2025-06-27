@@ -14,7 +14,10 @@ class DashboardStatListView(CustomGenericAPIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        organization = user.organization
+        if user.organization is not None:
+             organization = user.organization
+        else:
+             organization = False
         statement = user.statement
 
         is_global_user = not organization and not statement
