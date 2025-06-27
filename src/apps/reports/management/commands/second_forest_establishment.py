@@ -5,30 +5,34 @@ from apps.reports.models import Statement, StatementColumn
 
 
 def generate_tree_columns(statement, parent, ordering_prefix):
-    for i, title in enumerate(["Ниҳол", "Кўчат"], start=1):
+    for i, title in enumerate(["Nihol", "Ko‘chat"], start=1):
         sub = StatementColumn.objects.create(
             statement=statement,
             parent=parent,
-            title=title,
+            title_uz=title,
+            title_ru={"Nihol": "Саженцы", "Ko‘chat": "Ростки"}[title],
             ordering=f"{ordering_prefix}.{i}"
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=sub,
-            title="Режа",
+            title_uz="Reja",
+            title_ru="План",
             ordering=f"{ordering_prefix}.{i}.1",
             status_plan=StatementColumn.PlanStatus.YILLIK
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=sub,
-            title="Амалда",
+            title_uz="Amalda",
+            title_ru="Факт",
             ordering=f"{ordering_prefix}.{i}.2"
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=sub,
-            title="Фоиз",
+            title_uz="Foiz",
+            title_ru="Процент",
             ordering=f"{ordering_prefix}.{i}.3"
         )
 
@@ -37,25 +41,29 @@ def generate_grouped_subtree(statement, parent, ordering_prefix):
     StatementColumn.objects.create(
         statement=statement,
         parent=parent,
-        title="жами минг дона",
+        title_uz="jami ming dona",
+        title_ru="всего тысяч штук",
         ordering=f"{ordering_prefix}.1"
     )
     sub = StatementColumn.objects.create(
         statement=statement,
         parent=parent,
-        title="шу жумладан",
+        title_uz="shu jumladan",
+        title_ru="в том числе",
         ordering=f"{ordering_prefix}.2"
     )
     StatementColumn.objects.create(
         statement=statement,
         parent=sub,
-        title="нихол",
+        title_uz="nihol",
+        title_ru="саженцы",
         ordering=f"{ordering_prefix}.2.1"
     )
     StatementColumn.objects.create(
         statement=statement,
         parent=sub,
-        title="кучат",
+        title_uz="ko‘chat",
+        title_ru="ростки",
         ordering=f"{ordering_prefix}.2.2"
     )
 
@@ -64,31 +72,41 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # ==========================================================================  Qalamcha tayyorlash
 
-        parent_statement = Statement.objects.get(name="O`rmon barpo qilish")
+        parent_statement, _ = Statement.objects.get_or_create(
+            name_uz="O‘rmon barpo qilish",
+            defaults={
+                "name_ru": "Создание лесов",
+                "period": PeriodChoices.YILLIK,
+            }
+        )
 
         statement = Statement.objects.create(
             parent=parent_statement,
-            name="Қаламча тайёрлаш",
+            name_uz="Qalamcha tayyorlash",
+            name_ru="Подготовка черенков",
             period=PeriodChoices.YILLIK
         )
 
         app_column = StatementColumn.objects.create(
             statement=statement,
-            title="4-ilova",
+            title_uz="4-ilova",
+            title_ru="Приложение 4",
             ordering="1"
         )
 
         title_column_1 = StatementColumn.objects.create(
             statement=statement,
             parent=app_column,
-            title="Ўрмон хўжаликлари томонидан 2025 йил баҳор мавсумларида қаламчалар тайёрлаш бўйича тезкор маълумот.",
+            title_uz="O‘rmon xo‘jaliklari tomonidan 2025 yil bahor mavsumlarida qalamchalar tayyorlash bo‘yicha tezkor ma‘lumot.",
+            title_ru="Срочная информация о подготовке черенков лесничествами в весенние сезоны 2025 года.",
             ordering="1.1"
         )
 
         StatementColumn.objects.create(
             statement=statement,
             parent=title_column_1,
-            title="Ҳудудлар номланиши",
+            title_uz="Hududlar nomlanishi",
+            title_ru="Названия регионов",
             ordering="1.1.1",
             is_organization=True
         )
@@ -96,103 +114,155 @@ class Command(BaseCommand):
         parent_1 = StatementColumn.objects.create(
             statement=statement,
             parent=title_column_1,
-            title="Қаламчалар тайёрлаш жами",
+            title_uz="Qalamchalar tayyorlash jami",
+            title_ru="Всего подготовка черенков",
             ordering="1.1.2"
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=parent_1,
-            title="Режа",
+            title_uz="Reja",
+            title_ru="План",
             ordering="1.1.2.1",
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=parent_1,
-            title="Амалда",
+            title_uz="Amalda",
+            title_ru="Факт",
             ordering="1.1.2.2"
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=parent_1,
-            title="Фоиз",
+            title_uz="Foiz",
+            title_ru="Процент",
             ordering="1.1.2.3"
         )
 
         tree_group_column = StatementColumn.objects.create(
             statement=statement,
             parent=title_column_1,
-            title="Шу жумладан: дарахт турлари бўйича",
+            title_uz="Shu jumladan: daraxt turlari bo‘yicha",
+            title_ru="В том числе: по видам деревьев",
             ordering="1.1.3"
         )
 
         daraxt_turlari = [
-            "Терак",
-            "Жийда",
-            "Чинор",
-            "мажнунтол",
-            "тол",
-            "Хилокатальпа",
-            "Бошқа турлар"
+            "Terak",
+            "Jiyda",
+            "Chinar",
+            "majnutol",
+            "tol",
+            "Xilokatalpa",
+            "Boshqa turlar"
+        ]
+        daraxt_turlari_ru = [
+            "Тополь",
+            "Ясень",
+            "Тополь",
+            "Маджунус",
+            "Ива",
+            "Гибридная катальпа",
+            "Другие виды"
         ]
 
-        for i, tree_name in enumerate(daraxt_turlari, start=1):
+        for i, (tree_name_uz, tree_name_ru) in enumerate(zip(daraxt_turlari, daraxt_turlari_ru), start=1):
             tree_ordering = f"1.1.3.{i}"
             tree_column = StatementColumn.objects.create(
                 statement=statement,
                 parent=tree_group_column,
-                title=tree_name,
+                title_uz=tree_name_uz,
+                title_ru=tree_name_ru,
                 ordering=tree_ordering
             )
             StatementColumn.objects.create(
                 statement=statement,
                 parent=tree_column,
-                title="Режа",
+                title_uz="Reja",
+                title_ru="План",
                 ordering=f"{tree_ordering}.1",
                 status_plan=StatementColumn.PlanStatus.YILLIK
             )
             StatementColumn.objects.create(
                 statement=statement,
                 parent=tree_column,
-                title="Амалда",
+                title_uz="Amalda",
+                title_ru="Факт",
                 ordering=f"{tree_ordering}.2"
             )
 
-        # ==========================================================================  Ko`chat va Nihol
+        # ==========================================================================  Ko‘chat va Nihol
 
         third_statement = Statement.objects.create(
             parent=parent_statement,
-            name="Ko‘chat va Nihol",
+            name_uz="Ko‘chat va Nihol",
+            name_ru="Ростки и саженцы",
             period=PeriodChoices.YILLIK
         )
 
         app_column = StatementColumn.objects.create(
-            statement=third_statement, title="Ko`chat-va-Nihol-ilova", ordering="1"
+            statement=third_statement,
+            title_uz="Ko‘chat-va-Nihol-ilova",
+            title_ru="Приложение Ростки-и-Саженцы",
+            ordering="1"
         )
 
         title_column_2 = StatementColumn.objects.create(
             statement=third_statement,
             parent=app_column,
-            title="Ўрмон хўжалиги давлат қўмитаси тизимидаги ўрмон хўжаликларида  ниҳолхона ва кўчатхоналар ташкил этиш, йиллик ниҳол ва кўчат етиштириш ҳаракати тўғрисида умумлашган маълумот",
+            title_uz="O‘rmon xo‘jaligi davlat qo‘mitasi tizimidagi o‘rmon xo‘jaliklariida niholxona va ko‘chatxonalar tashkil etish, yillik nihol va ko‘chat yetishtirish harakati to‘g‘risida umumlashtirilgan ma‘lumot",
+            title_ru="Обобщенная информация о создании питомников и теплиц, а также ежегодном выращивании саженцев и ростков в лесничествах системы Государственного комитета лесного хозяйства",
             ordering="1.1"
         )
 
         StatementColumn.objects.create(
-            statement=third_statement, parent=title_column_2, title="Хўжаликлар номи", ordering="1.1.1",
+            statement=third_statement,
+            parent=title_column_2,
+            title_uz="Xo‘jaliklar nomi",
+            title_ru="Названия хозяйств",
+            ordering="1.1.1",
             is_organization=True
         )
 
         jami = StatementColumn.objects.create(
-            statement=third_statement, parent=title_column_2, title="Жами ниҳолхона ва кўчатхоналар ташкил этиш (га)",
+            statement=third_statement,
+            parent=title_column_2,
+            title_uz="Jami niholxona va ko‘chatxonalar tashkil etish (ga)",
+            title_ru="Всего создание питомников и теплиц (га)",
             ordering="1.1.2"
         )
-        StatementColumn.objects.create(statement=third_statement, parent=jami, title="Режа", ordering="1.1.2.1",
-                                       status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL)
-        StatementColumn.objects.create(statement=third_statement, parent=jami, title="Амалда", ordering="1.1.2.2")
-        StatementColumn.objects.create(statement=third_statement, parent=jami, title="Фоиз", ordering="1.1.2.3")
+        StatementColumn.objects.create(
+            statement=third_statement,
+            parent=jami,
+            title_uz="Reja",
+            title_ru="План",
+            ordering="1.1.2.1",
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+        )
+        StatementColumn.objects.create(
+            statement=third_statement,
+            parent=jami,
+            title_uz="Amalda",
+            title_ru="Факт",
+            ordering="1.1.2.2"
+        )
+        StatementColumn.objects.create(
+            statement=third_statement,
+            parent=jami,
+            title_uz="Foiz",
+            title_ru="Процент",
+            ordering="1.1.2.3"
+        )
 
-        subgroup = StatementColumn.objects.create(statement=third_statement, parent=title_column_2, title="шундан",
-                                                  ordering="1.1.2.4")
+        subgroup = StatementColumn.objects.create(
+            statement=third_statement,
+            parent=title_column_2,
+            title_uz="shundan",
+            title_ru="в том числе",
+            ordering="1.1.2.4"
+        )
         generate_tree_columns(third_statement, subgroup, "1.1.2.4")
 
         generate_grouped_subtree(third_statement, title_column_2, "1.1.3")
@@ -202,79 +272,113 @@ class Command(BaseCommand):
         generate_grouped_subtree(third_statement, title_column_2, "1.1.7")
 
         sarflanishi = StatementColumn.objects.create(
-            statement=third_statement, parent=title_column_2, title="САРФЛАНИШИ", ordering="1.1.8"
+            statement=third_statement,
+            parent=title_column_2,
+            title_uz="SARFLANISHI",
+            title_ru="ИЗРАСХОДОВАНИЕ",
+            ordering="1.1.8"
         )
 
         categories = [
-            ("Ўрмон барпо килишга", "1.1.9"),
-            ("Ўрмонларни хатосига экилди", "1.1.10"),
-            ("Кўкаламзорлаштириш тадбирлари учун", "1.1.11"),
-            ("Беғараз берилди", "1.1.12"),
-            ("Сотилди", "1.1.13"),
-            ("Тарбия бўлимига ўтказилди", "1.1.14"),
-            ("Нобуд бўлган ниҳоллар (буйруқ асосида)", "1.1.15")
+            ("O‘rmon barpo qilishga", "1.1.9", "Для создания лесов"),
+            ("O‘rmonlarni xatosiga ekildi", "1.1.10", "Для восполнения потерь лесов"),
+            ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.11", "Для мероприятий по озеленению"),
+            ("Beg‘araz berildi", "1.1.12", "Передано бесплатно"),
+            ("Sotildi", "1.1.13", "Продано"),
+            ("Tarbiya bo‘limiga o‘tkazildi", "1.1.14", "Передано в питомник"),
+            ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.15", "Уничтоженные саженцы (на основании приказа)")
         ]
 
-        for title, prefix in categories:
-            parent = StatementColumn.objects.create(statement=third_statement, parent=sarflanishi, title=title,
-                                                    ordering=prefix)
+        for title_uz, prefix, title_ru in categories:
+            parent = StatementColumn.objects.create(
+                statement=third_statement,
+                parent=sarflanishi,
+                title_uz=title_uz,
+                title_ru=title_ru,
+                ordering=prefix
+            )
             generate_grouped_subtree(third_statement, parent, prefix)
 
         generate_grouped_subtree(third_statement, title_column_2, "1.1.16")
 
-        # ==========================================================================  Ko`chat
+        # ==========================================================================  Ko‘chat
 
         app_kochat_column = StatementColumn.objects.create(
             statement=third_statement,
-            title="Ko`chat-ilovasi",
+            title_uz="Ko‘chat-ilovasi",
+            title_ru="Приложение Ростки",
             ordering="1"
         )
 
         title_column_kochat = StatementColumn.objects.create(
             statement=third_statement,
             parent=app_kochat_column,
-            title="Ўрмон хўжалигида кўчатхонанинг тарбия бўлимида мавжуд кўчатлар харакати тўғрисида",
+            title_uz="O‘rmon xo‘jaligida ko‘chatxonaning tarbiya bo‘limida mavjud ko‘chatlar harakati to‘g‘risida",
+            title_ru="О движении ростков в питомнике лесного хозяйства",
             ordering="1.1"
         )
 
         data_structure = [
-            ("Кучатлар", "1.1.1", [], True),
-            ("Йил бошига қолдиқ", "1.1.2", []),
-            ("Кирим", "1.1.3", [
-                ("Жорий йилда етиштирилган қаламча ва кўчатлар (школка)", "1.1.3.1"),
-                ("Сотиб олинди", "1.1.3.2"),
-                ("Бошқа ташкилот-лардан беғараз олинди", "1.1.3.3")
+            ("Ko‘chatlar", "1.1.1", [], True),
+            ("Yil boshiga qoldiq", "1.1.2", []),
+            ("Kirim", "1.1.3", [
+                ("Joriy yilda yetishtirilgan qalamcha va ko‘chatlar (shkolka)", "1.1.3.1"),
+                ("Sotib olindi", "1.1.3.2"),
+                ("Boshqa tashkilotlardan beg‘araz olindi", "1.1.3.3")
             ]),
-            ("Жами етиштирилди (инвентаризация)", "1.1.4", []),
-            ("Чиқим", "1.1.5", [
-                ("Ўрмон барпо қилинди", "1.1.5.1"),
-                ("Ўрмон хатосига экилди", "1.1.5.2"),
-                ("Кўкаламзорлаштириш тадбирлари учун", "1.1.5.3"),
-                ("Тарбия бўлимига ўтказилди", "1.1.5.4"),
-                ("Сотилди", "1.1.5.5", [
-                    ("Ташкилот номи", "1.1.5.5.1"),
-                    ("шартнома рақами (№ санаси)", "1.1.5.5.2"),
-                    ("Ташкилот номи", "1.1.5.5.3"),
-                    ("Ташкилот номи", "1.1.5.5.4")
+            ("Jami yetishtirildi (inventarizatsiya)", "1.1.4", []),
+            ("Chiqim", "1.1.5", [
+                ("O‘rmon barpo qilindi", "1.1.5.1"),
+                ("O‘rmon xatosiga ekildi", "1.1.5.2"),
+                ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
+                ("Tarbiya bo‘limiga o‘tkazildi", "1.1.5.4"),
+                ("Sotildi", "1.1.5.5", [
+                    ("Tashkilot nomi", "1.1.5.5.1"),
+                    ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
+                    ("Tashkilot nomi", "1.1.5.5.3"),
+                    ("Tashkilot nomi", "1.1.5.5.4")
                 ]),
-                ("Сотилди", "1.1.5.6", [
-                    ("кўчат сони, (дона)", "1.1.5.6.1"),
-                    ("суммаси (минг сўм)", "1.1.5.6.2")
+                ("Sotildi", "1.1.5.6", [
+                    ("ko‘chat soni, (dona)", "1.1.5.6.1"),
+                    ("summasi (ming so‘m)", "1.1.5.6.2")
                 ]),
-                ("Нобуд бўлган кўчатлар (буйруқ асосида)", "1.1.5.7"),
-                ("Жами чиқим", "1.1.5.8"),
-                ("Шу даврга нисбатан якуний қолдиқ", "1.1.5.9"),
+                ("Nobud bo‘lgan ko‘chatlar (buyruq asosida)", "1.1.5.7"),
+                ("Jami chiqim", "1.1.5.8"),
+                ("Shu davrga nisbatan yakuniy qoldiq", "1.1.5.9"),
             ])
         ]
 
         def create_columns(parent, structure):
-            for title, ordering, *rest in structure:
+            for title_uz, ordering, *rest in structure:
                 children = rest[0] if rest else []
                 is_organization = rest[1] if len(rest) == 2 else False
+                title_ru = {
+                    "Ko‘chatlar": "Ростки",
+                    "Yil boshiga qoldiq": "Остаток на начало года",
+                    "Kirim": "Приход",
+                    "Joriy yilda yetishtirilgan qalamcha va ko‘chatlar (shkolka)": "Выращенные черенки и ростки в текущем году (школка)",
+                    "Sotib olindi": "Приобретено",
+                    "Boshqa tashkilotlardan beg‘araz olindi": "Получено бесплатно от других организаций",
+                    "Jami yetishtirildi (inventarizatsiya)": "Всего выращено (инвентаризация)",
+                    "Chiqim": "Расход",
+                    "O‘rmon barpo qilindi": "Создание лесов",
+                    "O‘rmon xatosiga ekildi": "Посадка для восполнения потерь лесов",
+                    "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
+                    "Tarbiya bo‘limiga o‘tkazildi": "Передано в питомник",
+                    "Sotildi": "Продано",
+                    "Tashkilot nomi": "Название организации",
+                    "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
+                    "ko‘chat soni, (dona)": "Количество ростков (шт)",
+                    "summasi (ming so‘m)": "Сумма (тыс. сум)",
+                    "Nobud bo‘lgan ko‘chatlar (buyruq asosida)": "Уничтоженные ростки (на основании приказа)",
+                    "Jami chiqim": "Общий расход",
+                    "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
+                }.get(title_uz, title_uz)
                 col = StatementColumn.objects.create(
                     statement=third_statement,
                     parent=parent,
-                    title=title,
+                    title_uz=title_uz,
+                    title_ru=title_ru,
                     ordering=ordering,
                     is_organization=is_organization
                 )
@@ -287,55 +391,80 @@ class Command(BaseCommand):
 
         app_nihol_column = StatementColumn.objects.create(
             statement=third_statement,
-            title="Nihol-ilovasi",
+            title_uz="Nihol-ilovasi",
+            title_ru="Приложение Саженцы",
             ordering="1"
         )
 
         title_column_nihol = StatementColumn.objects.create(
             statement=third_statement,
             parent=app_nihol_column,
-            title="Ўрмон хўжалигида кўчатхонанинг тарбия бўлимида мавжуд кўчатлар харакати тўғрисида",
+            title_uz="O‘rmon xo‘jaligida ko‘chatxonaning tarbiya bo‘limida mavjud nihollar harakati to‘g‘risida",
+            title_ru="О движении саженцев в питомнике лесного хозяйства",
             ordering="1.1"
         )
 
         data_structure = [
-            ("Нихоллар", "1.1.1", [], True),
-            ("Йил бошига қолдиқ", "1.1.2", []),
-            ("Кирим", "1.1.3", [
-                ("Жорий йилда етиштирилган қаламча ва ниҳоллар (школка)", "1.1.3.1"),
-                ("Сотиб олинди", "1.1.3.2"),
-                ("Бошқа ташкилот-лардан беғараз олинди", "1.1.3.3")
+            ("Nihollar", "1.1.1", [], True),
+            ("Yil boshiga qoldiq", "1.1.2", []),
+            ("Kirim", "1.1.3", [
+                ("Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)", "1.1.3.1"),
+                ("Sotib olindi", "1.1.3.2"),
+                ("Boshqa tashkilotlardan beg‘araz olindi", "1.1.3.3")
             ]),
-            ("Жами етиштирилди (инвентаризация)", "1.1.4", []),
-            ("Чиқим", "1.1.5", [
-                ("Ўрмон барпо қилинди", "1.1.5.1"),
-                ("Ўрмон хатосига экилди", "1.1.5.2"),
-                ("Кўкаламзорлаштириш тадбирлари учун", "1.1.5.3"),
-                ("Тарбия бўлимига ўтказилди", "1.1.5.4"),
-                ("Сотилди", "1.1.5.5", [
-                    ("Ташкилот номи", "1.1.5.5.1"),
-                    ("шартнома рақами (№ санаси)", "1.1.5.5.2"),
-                    ("Ташкилот номи", "1.1.5.5.3"),
-                    ("Ташкилот номи", "1.1.5.5.4")
+            ("Jami yetishtirildi (inventarizatsiya)", "1.1.4", []),
+            ("Chiqim", "1.1.5", [
+                ("O‘rmon barpo qilindi", "1.1.5.1"),
+                ("O‘rmon xatosiga ekildi", "1.1.5.2"),
+                ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
+                ("Tarbiya bo‘limiga o‘tkazildi", "1.1.5.4"),
+                ("Sotildi", "1.1.5.5", [
+                    ("Tashkilot nomi", "1.1.5.5.1"),
+                    ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
+                    ("Tashkilot nomi", "1.1.5.5.3"),
+                    ("Tashkilot nomi", "1.1.5.5.4")
                 ]),
-                ("Сотилди", "1.1.5.6", [
-                    ("ниҳол сони, (дона)", "1.1.5.6.1"),
-                    ("суммаси (минг сўм)", "1.1.5.6.2")
+                ("Sotildi", "1.1.5.6", [
+                    ("nihollari soni, (dona)", "1.1.5.6.1"),
+                    ("summasi (ming so‘m)", "1.1.5.6.2")
                 ]),
-                ("Нобуд бўлган ниҳоллар (буйруқ асосида)", "1.1.5.7"),
-                ("Жами чиқим", "1.1.5.8"),
-                ("Шу даврга нисбатан якуний қолдиқ", "1.1.5.9"),
+                ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.5.7"),
+                ("Jami chiqim", "1.1.5.8"),
+                ("Shu davrga nisbatan yakuniy qoldiq", "1.1.5.9"),
             ])
         ]
 
         def create_columns(parent, structure):
-            for title, ordering, *rest in structure:
+            for title_uz, ordering, *rest in structure:
                 children = rest[0] if rest else []
                 is_organization = rest[1] if len(rest) == 2 else False
+                title_ru = {
+                    "Nihollar": "Саженцы",
+                    "Yil boshiga qoldiq": "Остаток на начало года",
+                    "Kirim": "Приход",
+                    "Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)": "Выращенные черенки и саженцы в текущем году (школка)",
+                    "Sotib olindi": "Приобретено",
+                    "Boshqa tashkilotlardan beg‘araz olindi": "Получено бесплатно от других организаций",
+                    "Jami yetishtirildi (inventarizatsiya)": "Всего выращено (инвентаризация)",
+                    "Chiqim": "Расход",
+                    "O‘rmon barpo qilindi": "Создание лесов",
+                    "O‘rmon xatosiga ekildi": "Посадка для восполнения потерь лесов",
+                    "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
+                    "Tarbiya bo‘limiga o‘tkazildi": "Передано в питомник",
+                    "Sotildi": "Продано",
+                    "Tashkilot nomi": "Название организации",
+                    "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
+                    "nihollari soni, (dona)": "Количество саженцев (шт)",
+                    "summasi (ming so‘m)": "Сумма (тыс. сум)",
+                    "Nobud bo‘lgan nihollar (buyruq asosida)": "Уничтоженные саженцы (на основании приказа)",
+                    "Jami chiqim": "Общий расход",
+                    "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
+                }.get(title_uz, title_uz)
                 col = StatementColumn.objects.create(
                     statement=third_statement,
                     parent=parent,
-                    title=title,
+                    title_uz=title_uz,
+                    title_ru=title_ru,
                     ordering=ordering,
                     is_organization=is_organization
                 )
@@ -345,8 +474,7 @@ class Command(BaseCommand):
         create_columns(title_column_nihol, data_structure)
 
 
-        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Қаламча тайёрлаш' statement."))
-        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Ko`chat' statement."))
-        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Nihol' statement."))
-        self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Ko‘chat va Nihol' statement."))
-
+        self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Подготовка черенков' statement."))
+        self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Ростки' statement."))
+        self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Саженцы' statement."))
+        self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Ростки и саженцы' statement."))

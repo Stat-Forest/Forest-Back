@@ -1,67 +1,160 @@
 from django.core.management.base import BaseCommand
+from modeltranslation.utils import build_localized_fieldname
 from apps.reports.models import Plant
 
 
+PARENT_NAMES = {
+    "Yaproqbarglilar": {
+        "ru": "Лиственные"
+    },
+    "Tez o‘suvchilar": {
+        "ru": "Быстрорастущие"
+    },
+    "Yong‘oqmevalilar": {
+        "ru": "Орехоплодные"
+    },
+    "Mevalilar": {
+        "ru": "Плодовые"
+    },
+    "Ignabarglilar": {
+        "ru": "Хвойные"
+    },
+    "Buta va gullar": {
+        "ru": "Кустарники и цветы"
+    }
+}
+
+
 PLANTS_STRUCTURE = {
-    "Япроқбарглилар": [
-        "багрянник", "эман черешч (дуб)", "эман пирамид (дуб)", "қайрогоч (вяз)",
-        "сада қайроғоч (гужум)", "шумтол (ясень)", "айлант", "саваттол",
-        "гледичия", "чинор", "япон сафораси", "каштан", "катальпа",
-        "хило каталпа", "оқ қайин (берёза)", "заранг (клен)", "ипак акация",
-        "акация", "маклюра", "липа", "қогоз дарахт", "совун дарахти",
-        "магнолия", "лола дарахти"
+    "Yaproqbarglilar": [
+        ("bagrannik", "багрянник"),
+        ("eman chereshch (dub)", "эман черешч (дуб)"),
+        ("eman piramid (dub)", "эман пирамид (дуб)"),
+        ("qayrogoch (vyaz)", "қайрогоч (вяз)"),
+        ("sada qayrog‘och (gujum)", "сада қайроғоч (гужум)"),
+        ("shumtol (yasen)", "шумтол (ясень)"),
+        ("aylant", "айлант"),
+        ("savatol", "саваттол"),
+        ("gledichiya", "гледичия"),
+        ("chinor", "чинор"),
+        ("yapon saforasi", "япон сафораси"),
+        ("kashtan", "каштан"),
+        ("katalpa", "катальпа"),
+        ("xilo katalpa", "хило каталпа"),
+        ("oq qayin (beryoza)", "оқ қайин (берёза)"),
+        ("zarang (klen)", "заранг (клен)"),
+        ("ipak akatsiya", "ипак акация"),
+        ("akatsiya", "акация"),
+        ("maklyura", "маклюра"),
+        ("lipa", "липа"),
+        ("qog‘oz daraxt", "қогоз дарахт"),
+        ("sovun daraxti", "совун дарахти"),
+        ("magnoliya", "магнолия"),
+        ("lola daraxti", "лола дарахти")
     ],
-    "Тез ўсувчилар": ["терак", "тол (ива)", "мажнунтол", "павловния"],
-    "Ёнғоқмевалилар": ["ёнгок", "аччиқ бодом", "ширин бодом", "пекан", "писта", "фундук"],
-    "Мевалилар": [
-        "ўрик (абрикос)", "шафтоли", "олча (вишневый)", "олхури, қорали ГАЙЛОЛУ",
-        "писсарда олхуриси", "гилос  (вышня)", "магалепка гилос", "хурмо", "олма",
-        "бехи", "нок (мурут)", "узум (ток)", "анор", "анжир", "қизил дўлана",
-        "тут", "чаппа тут", "жийда (лох)", "нон жийда", "чилонжийда (унаби)",
-        "Палма", "лимон"
+    "Tez o‘suvchilar": [
+        ("terak", "терак"),
+        ("tol (iva)", "тол (ива)"),
+        ("majnuntol", "мажнунтол"),
+        ("pavlovniya", "павловния")
     ],
-    "Игнабарглилар": [
-        "тяншан қора қарағайи", "Зарафшон арчаси", "виргин арча", "шарқ туя",
-        "компакт туя", "қрим қарағайи", "эльдор қарағайи", "сарви (кипарис)", "тоғ арча"
+    "Yong‘oqmevalilar": [
+        ("yong‘oq", "ёнгок"),
+        ("achchiq bodom", "аччиқ бодом"),
+        ("shirin bodom", "ширин бодом"),
+        ("pekan", "пекан"),
+        ("pista", "писта"),
+        ("funduk", "фундук")
     ],
-    "Бута ва гуллар": [
-        "наъматак (шиповник)", "аморфа", "лигуструм (бирючина)", "бересклет",
-        "япон бехи", "магония", "форзиция", "самшит", "сирень", "ҳинд сирени",
-        "атиргул", "сурия атиргули (гибискус)", "цизалпиния", "чаканда (облепиха)",
-        "испан дрок", "сумах", "юкка", "смородина", "архидея", "рябина",
-        "пираканта", "лованда", "зирк", "бошқалар"
+    "Mevalilar": [
+        ("o‘rik (abrikos)", "ўрик (абрикос)"),
+        ("shaftoli", "шафтоли"),
+        ("olchcha (vishnya)", "олча (вишневый)"),
+        ("olxuri, qorali GAYLOLU", "олхури, қорали ГАЙЛОЛУ"),
+        ("pissarda olxurisi", "писсарда олхуриси"),
+        ("gilos (vishnya)", "гилос  (вышня)"),
+        ("magalepka gilos", "магалепка гилос"),
+        ("xurmo", "хурмо"),
+        ("olma", "олма"),
+        ("bexi", "бехи"),
+        ("nok (murut)", "нок (мурут)"),
+        ("uzum (tok)", "узум (ток)"),
+        ("anor", "анор"),
+        ("anjir", "анжир"),
+        ("qizil do‘lona", "қизил дўлана"),
+        ("tut", "тут"),
+        ("chappa tut", "чаппа тут"),
+        ("jiyda (lox)", "жийда (лох)"),
+        ("non jiyda", "нон жийда"),
+        ("chilonjiyda (unabi)", "чилонжийда (унаби)"),
+        ("palma", "Палма"),
+        ("limon", "лимон")
+    ],
+    "Ignabarglilar": [
+        ("tyanshan qora qarag‘ayi", "тяншан қора қарағайи"),
+        ("zarafshon archasi", "Зарафшон арчаси"),
+        ("virgin archa", "виргин арча"),
+        ("sharq tuya", "шарқ туя"),
+        ("kompakt tuya", "компакт туя"),
+        ("qrim qarag‘ayi", "қрим қарағайи"),
+        ("eldor qarag‘ayi", "эльдор қарағайи"),
+        ("sarvi (kiparis)", "сарви (кипарис)"),
+        ("tog‘ archa", "тоғ арча")
+    ],
+    "Buta va gullar": [
+        ("na‘matak (shipovnik)", "наъматак (шиповник)"),
+        ("amorfa", "аморфа"),
+        ("ligustrum (biryuchina)", "лигуструм (бирючина)"),
+        ("beresklet", "бересклет"),
+        ("yapon bexi", "япон бехи"),
+        ("magoniya", "магония"),
+        ("forzitsiya", "форзиция"),
+        ("samshit", "самшит"),
+        ("sireni", "сирень"),
+        ("hind sireni", "ҳинд сирени"),
+        ("atirgul", "атиргул"),
+        ("suriya atirguli (gibiskus)", "сурия атиргули (гибискус)"),
+        ("tsizalpiniya", "цизалпиния"),
+        ("chakanda (oblepixa)", "чаканда (облепиха)"),
+        ("ispan drek", "испан дрок"),
+        ("sumax", "сумах"),
+        ("yukka", "юкка"),
+        ("smorodina", "смородина"),
+        ("arxideya", "архидея"),
+        ("ryabina", "рябина"),
+        ("pirakanta", "пираканта"),
+        ("lovanda", "лованда"),
+        ("zirk", "зирк"),
+        ("boshqalar", "бошқалар")
     ]
 }
 
 
 class Command(BaseCommand):
-    help = "Create Plant categories and their children from PLANTS_STRUCTURE"
+    help = "Create Plants with name, name_uz_cyrl and name_ru"
 
     def handle(self, *args, **kwargs):
         self.stdout.write(">>> Creating Plants...")
 
-        total_created = 0
-        parent_names = []
+        total = 0
+        for latin_parent, children in PLANTS_STRUCTURE.items():
+            parent, created = Plant.objects.get_or_create(name=latin_parent, parent=None)
 
-        for parent_name, children in PLANTS_STRUCTURE.items():
-            parent, _ = Plant.objects.get_or_create(name=parent_name, parent=None)
-            parent_names.append(parent_name)
-            created_in_this_group = 0
+            if created:
+                self.stdout.write(f"✓ Created parent: {latin_parent}")
 
-            for child_name in children:
-                plant, created = Plant.objects.get_or_create(name=child_name, parent=parent)
+            parent_translations = PARENT_NAMES.get(latin_parent)
+            if parent_translations:
+                setattr(parent, build_localized_fieldname("name", "ru"), parent_translations["ru"])
+                parent.save()
+
+            for name_uz, name_ru in children:
+                obj, created = Plant.objects.get_or_create(name=name_uz, parent=parent)
+                setattr(obj, build_localized_fieldname("name", "ru"), name_ru)
+                obj.save()
+
                 if created:
-                    self.stdout.write(f"  ✓ {child_name} (parent: {parent_name})")
-                    created_in_this_group += 1
+                    self.stdout.write(f"  ✓ {name_uz} (parent: {latin_parent})")
+                    total += 1
 
-            self.stdout.write(f"✔ {parent_name}: {created_in_this_group} child(ren)")
-            total_created += created_in_this_group
-
-        XUJALIK_DUX_NAME = "Хўжалик ДЎХ"
-        xujalik_dux, created = Plant.objects.get_or_create(name=XUJALIK_DUX_NAME, parent=None)
-        if created:
-            self.stdout.write(self.style.SUCCESS(f"✓ Created top-level plant: {XUJALIK_DUX_NAME}"))
-        else:
-            self.stdout.write(f"• {XUJALIK_DUX_NAME} already exists")
-
-        self.stdout.write(self.style.SUCCESS(f"✓ All done. Total children created: {total_created}"))
+        self.stdout.write(self.style.SUCCESS(f"✓ Done. Total created: {total}"))
