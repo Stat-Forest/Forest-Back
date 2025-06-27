@@ -17,19 +17,20 @@ class UserListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
         qs = CustomUser.objects.prefetch_related(
             "organization",
             "statement"
         )
 
         user_org = getattr(user, 'organization', None)
-        user_stmt = getattr(user, 'statement', None)
 
-        if user_org and user_stmt:
+        if user_org:
             qs = qs.filter(
                 organization=user_org,
-                statement=user_stmt
+            )
+        elif user.statement is not None:
+            qs = qs.filter(
+                statement_id=user.statement.pk,
             )
 
         return qs

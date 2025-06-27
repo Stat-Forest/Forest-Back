@@ -25,5 +25,9 @@ class DeadlineListAPIView(generics.ListAPIView):
             qs = qs.filter(
                 organizations=user_org,
             )
+        elif user.statement is not None:
+            qs = qs.filter(
+                statement__parent_id=user.statement.pk,
+            )
 
         return qs

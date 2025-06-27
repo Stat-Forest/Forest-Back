@@ -41,11 +41,11 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         statement = deadline.statement
         user = self.context['request'].user
 
-        if not user.statement:
-            raise CustomExceptionError(400, _('User must have a statement to create report !'))
-
-        if user.statement != statement.parent:
-            raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
+        # if not user.statement:
+        #     raise CustomExceptionError(400, _('User must have a statement to create report !'))
+        #
+        # if user.statement != statement.parent:
+        #     raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
 
         if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('User organization is not related to this deadline'))
@@ -100,13 +100,13 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             if not Organization.objects.filter(id=organization_id).exists() or organization_id != user.organization.id:
                 raise CustomExceptionError(400, _('Invalid organization.'))
 
-        if plan_column_ids:
-            plans = Plan.objects.filter(column_id__in=plan_column_ids)
-            plans_map = {p.column_id: p for p in plans}
-            for col_id in plan_column_ids:
-                plan = plans_map.get(col_id)
-                if not plan or plan.plan_value != plan_values[col_id]:
-                    raise CustomExceptionError(400, _('Invalid Plan value'))
+        # if plan_column_ids:
+        #     plans = Plan.objects.filter(column_id__in=plan_column_ids)
+        #     plans_map = {p.column_id: p for p in plans}
+        #     for col_id in plan_column_ids:
+        #         plan = plans_map.get(col_id)
+        #         if not plan or plan.plan_value != plan_values[col_id]:
+        #             raise CustomExceptionError(400, _('Invalid Plan value'))
 
         if not any_plant_based:
             cache.set(self.CACHE_KEY, organization_id)
