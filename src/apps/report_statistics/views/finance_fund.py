@@ -40,11 +40,11 @@ class StatisticsFinanceFundAPIView(APIView):
             grouped_data[region][title] = total
 
         data = [{
-            '1-ilova': [],
+            "Jamg'arma": [],
         }]
 
         for region in RegionChoices.values:
-            data[0]['1-ilova'].append({
+            data[0]["Jamg'arma"].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_1}
             })
