@@ -20,6 +20,17 @@ services:
     networks:
       - forest_network
 
+  forest_frontend:
+    build:
+      context: ../..
+      dockerfile: docker/prod/frontend/Dockerfile
+    container_name: forest_frontend_prod
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - forest_network
+
   forest_nginx:
     image: nginx:latest
     container_name: forest_nginx_prod
@@ -28,6 +39,7 @@ services:
       - "443:443"
     depends_on:
       - forest_app
+      - forest_frontend
     volumes:
       - ../../staticfiles:/app/staticfiles
       - ../../media:/app/media
