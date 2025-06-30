@@ -47,16 +47,16 @@ class StatisticsFinanceIncomeAPIView(APIView):
             grouped_data[region][title] = total
 
         data = [{
-            '1-ilova': [],
-            '2-ilova': []
+            'Daromad turlari bo‘yicha': [],
+            'Tushumlar bo‘yicha': []
         }]
 
         for region in RegionChoices.values:
-            data[0]['1-ilova'].append({
+            data[0]['Daromad turlari bo‘yicha'].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_1}
             })
-            data[0]['2-ilova'].append({
+            data[0]['Tushumlar bo‘yicha'].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_2}
             })
