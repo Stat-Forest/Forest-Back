@@ -44,7 +44,7 @@ services:
     container_name: frontend_nginx_prod
     ports:
       - "8080:80"
-      - "84443:443"
+      - "8443:443"
     volumes:
       - ../../docker/prod/frontend/frontend.nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /var/www/stat-ormon:/var/www/stat-ormon
