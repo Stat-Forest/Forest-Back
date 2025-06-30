@@ -53,21 +53,21 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
             grouped_data[region][title] = total
 
         data = [{
-            '1-ilova': [],
-            '2-ilova': [],
-            '3-ilova': []
+            '4-ilova': [],
+            '5-ilova': [],
+            '6-ilova': []
         }]
 
         for region in RegionChoices.values:
-            data[0]['1-ilova'].append({
+            data[0]['4-ilova'].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_1}
             })
-            data[0]['2-ilova'].append({
+            data[0]['5-ilova'].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_2}
             })
-            data[0]['3-ilova'].append({
+            data[0]['6-ilova'].append({
                 'name': region,
                 **{title: grouped_data[region].get(title, 0) for title in titles_ilova_3}
             })
