@@ -29,7 +29,6 @@ jobs:
           cd /root/Forest-Back
           git fetch origin
           git checkout main
-#          git reset --hard origin/main
           docker-compose -f docker/prod/docker-compose-prod.yml down
           docker-compose -f docker/prod/docker-compose-prod.yml up --build -d
         EOF
