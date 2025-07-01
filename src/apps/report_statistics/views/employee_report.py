@@ -10,6 +10,11 @@ from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
 
+@extend_schema(
+    summary="Xodim hisobi",
+    description="Xodim hisobi statistikasi"
+)
+
 @extend_schema(tags=["Statistics"])
 class StatisticsEmployeeReportAPIView(APIView):
 

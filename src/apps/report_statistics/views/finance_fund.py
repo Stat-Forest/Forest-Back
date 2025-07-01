@@ -9,13 +9,16 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
+@extend_schema(
+    summary="Jamg'arma",
+    description="Jamg'arma"
+)
 
 @extend_schema(tags=["Statistics"])
 class StatisticsFinanceFundAPIView(APIView):
     def get(self, request):
         titles_ilova_1 = [
             "Hisob raqamda yil boshiga qoldiq",
-
         ]
 
 
