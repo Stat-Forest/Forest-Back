@@ -9,6 +9,10 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
+@extend_schema(
+    summary="Daromad",
+    description="Daromad"
+)
 
 @extend_schema(tags=["Statistics"])
 class StatisticsFinanceIncomeAPIView(APIView):
