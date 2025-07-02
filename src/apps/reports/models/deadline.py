@@ -19,7 +19,7 @@ class Deadline(AbstractBaseModel):
 
     )
     submit_at = models.CharField(
-        max_length=20,
+        max_length=100,
         help_text=_(
            f'Kunlik-YYYY-MM-DD , '
            f'Haftalik -YYYY-MM-W(1,2,3,4), '
