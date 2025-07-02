@@ -8,6 +8,11 @@ from django.db.models.functions import Cast
 from drf_spectacular.utils import extend_schema
 
 
+@extend_schema(
+    summary="Daromad",
+    description="Daromad"
+)
+
 @extend_schema(tags=["Sum"])
 class SumFundIncomeAnalysisListAPIView(APIView):
     def get(self, request):
@@ -42,8 +47,8 @@ class SumFundIncomeAnalysisListAPIView(APIView):
         ilova_4 = {label: result_map.get(title, 0) for label, title in titles_4_map.items()}
 
         data = {
-            '1-ilova': ilova_1,
-            '2-ilova': ilova_4,
+            'Daromad turlari bo‘yicha': ilova_1,
+            'Tushumlar bo‘yicha': ilova_4,
         }
 
         return Response(data, status=status.HTTP_200_OK)

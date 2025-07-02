@@ -18,9 +18,9 @@ from apps.reports.models import ReportItem
 class StatisticsForestLandAPIView(APIView):
     def get(self, request):
         titles_ilova_1 = [
-            "Maydoni (ga)",
-            "Daraxtlar zaxirasi (m³)",
-            "Qiymati (so‘m)",
+                "Maydoni (ga)",
+                "Daraxtlar zaxirasi (m³)",
+                "Qiymati (so‘m)",
         ]
 
         all_titles = titles_ilova_1
