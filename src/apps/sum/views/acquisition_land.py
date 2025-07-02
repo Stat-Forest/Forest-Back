@@ -36,8 +36,8 @@ class SumAcquisitionLandAnalysisListAPIView(APIView):
 
         ilova_1 = {label: result_map.get(title, 0) for label, title in titles_1_map.items()}
 
-        data = {
+        data = [{
             '1-ilova': ilova_1,
-        }
+        }]
 
         return Response(data, status=status.HTTP_200_OK)
