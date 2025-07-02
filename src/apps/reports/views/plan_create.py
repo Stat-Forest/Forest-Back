@@ -10,12 +10,13 @@ from drf_spectacular.utils import extend_schema
 from apps.reports.models import Plan, StatementColumn
 from apps.reports.serializers import PlanSerializer, PlanListSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
-
+from apps.reports.permissions import CanCreatePlan
 
 @extend_schema(tags=["Plan"])
 class PlanCreateView(generics.CreateAPIView):
     queryset = Plan.objects.select_related('organization', 'column','statement')
     serializer_class = PlanSerializer
+    permission_classes = [CanCreatePlan]
 
     def perform_create(self, serializer):
         with transaction.atomic():
