@@ -106,7 +106,7 @@ class SumEmployeeReportListAPIView(APIView):
         the_most_worker_org = getattr(most_employee.report.organization, 'name', 'UnKnown') if most_employee else 'UnKnown'
         the_most_vac_org = getattr(most_vacancy.report.organization, 'name', 'UnKnown') if most_vacancy else 'UnKnown'
 
-        data = {
+        data = [{
             '1-ilova': {
                 "Jami xodimlar": round(total_employees, 2),
                 "Eng ko'p xodimli tashkilot": the_most_worker_org,
@@ -120,6 +120,6 @@ class SumEmployeeReportListAPIView(APIView):
             },
             '2-ilova': ilova_2,
             '3-ilova': ilova_3
-        }
+        }]
 
         return Response(data, status=status.HTTP_200_OK)
