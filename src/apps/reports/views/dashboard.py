@@ -13,31 +13,34 @@ class DashboardStatListView(CustomGenericAPIView):
     def get(self, request, *args, **kwargs):
         user = request.user
 
-        if not user.organization or not user.statement:
+        if not user.organization and not user.statement:
             report_qs = Report.objects.all()
             deadline_qs = Deadline.objects.all()
             responsible_users = CustomUser.objects.count()
             plans = Plan.objects.all().count()
 
-        elif user.statement is not None:
+        elif user.statement:
             report_qs = Report.objects.filter(statement__parent_id=user.statement.id)
             deadline_qs = Deadline.objects.filter(
                 statement__parent_id=user.statement.id
-            ).distinct()
+            )
             responsible_users = CustomUser.objects.filter(
                 statement_id=user.statement.id
             ).count()
             plans = Plan.objects.filter(statement__parent_id=user.statement.id).count()
-            
-        else:
+
+        elif user.organization:
             report_qs = Report.objects.filter(organization_id=user.organization.id)
             deadline_qs = Deadline.objects.filter(
                 organizations__in=[user.organization]
-            ).distinct()
+            )
             responsible_users = CustomUser.objects.filter(
                 organization_id=user.organization.id
             ).count()
             plans = Plan.objects.filter(organization_id=user.organization.id).count()
+
+        else:
+            return Response({"detail": "Invalid user context."}, status=400)
 
         data = {
             "sent_reports": report_qs.filter(status=Report.StatusChoices.SENT).count(),
