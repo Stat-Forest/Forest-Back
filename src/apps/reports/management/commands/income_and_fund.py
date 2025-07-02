@@ -11,7 +11,7 @@ class Command(BaseCommand):
     help = 'Create Jamg‘arma va Daromad statementlari bilan to‘liq column tuzilmasi'
 
     def handle(self, *args, **kwargs):
-        Statement.objects.filter(name="Jamg'arma").delete()
+        SC.objects.filter(Statement__name="Jamg'arma").delete()
         # Statement.objects.filter(name="Daromad").delete()
         # Statement.objects.filter(name="Moliya-iqtisod va buxgalteriya").delete()
 
