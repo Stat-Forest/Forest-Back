@@ -7,6 +7,11 @@ from django.db.models import Sum, FloatField, IntegerField
 from django.db.models.functions import Cast
 from drf_spectacular.utils import extend_schema
 
+@extend_schema(
+    summary="Xodim hisobi",
+    description="Xodim hisobi statistikasi"
+)
+
 @extend_schema(tags=["Sum"])
 class SumEmployeeReportListAPIView(APIView):
     def get(self, request):
