@@ -12,7 +12,8 @@ class Command(BaseCommand):
         first_statement = Statement.objects.create(
             parent=None,
             name_uz="O'rmon barpo qilish",
-            name_ru="Создание леса"
+            name_ru="Создание леса",
+            period=PeriodChoices.YILLIK
         )
         first_of_second_statement = Statement.objects.create(
             parent=first_statement,
@@ -110,13 +111,6 @@ class Command(BaseCommand):
                 )
 
         # ================================================================ Закрытый корень крупногабаритный
-
-        first_of_second_statement = Statement.objects.create(
-            parent=first_statement,
-            name_uz="Yopiq ildiz yirik hajmli",
-            name_ru="Закрытый корень крупногабаритный",
-            period=PeriodChoices.YILLIK
-        )
 
         # =========================== 2-Ilova =============================
         second_statement_of_forest = Statement.objects.create(
