@@ -10,7 +10,7 @@ from apps.general.serializers import OrganizationListSerializer
 @extend_schema(tags=["General"])
 class OrganizationListAPIView(CustomListAPIView):
     serializer_class = OrganizationListSerializer
-    pagination_class = CustomPageNumberPagination
+    pagination_class = None
     filterset_fields = ['name', 'region']
     CACHE_TIMEOUT = 1
 

@@ -16,6 +16,9 @@ class RegionChoices(models.TextChoices):
     JIZZAX = 'jizzax', _('Jizzakh')
     QORAQALPAQSTAN = 'qoraqalpog‘iston', _('Karakalpakstan')
 
+    REPUBLIC = 'republic', _('Respublika tashkilotlari')
+    OTHERS = 'others', _('Boshqa tashkilotlar')
+
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
@@ -65,7 +68,6 @@ class ReportType(models.TextChoices):
     CANCELLED = 'cancelled', _('Cancelled')
     ACCEPTED = 'accepted', _('Accepted')
 
-# Hisobot davrlari bo‘yicha kategoriyalangan statementlar
 
 DAILY_STATEMENTS = [  # kundalik
     "urug_harakati",

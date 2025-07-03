@@ -46,9 +46,9 @@ class SumFundIncomeAnalysisListAPIView(APIView):
         ilova_1 = {label: result_map.get(title, 0) for label, title in titles_1_map.items()}
         ilova_4 = {label: result_map.get(title, 0) for label, title in titles_4_map.items()}
 
-        data = {
+        data = [{
             'Daromad turlari bo‘yicha': ilova_1,
             'Tushumlar bo‘yicha': ilova_4,
-        }
+        }]
 
         return Response(data, status=status.HTTP_200_OK)
