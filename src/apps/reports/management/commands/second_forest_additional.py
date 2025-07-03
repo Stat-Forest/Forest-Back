@@ -16,12 +16,10 @@ class Command(BaseCommand):
                 is_organization=is_organization
             )
 
-        forest_add, _ = Statement.objects.get_or_create(
-            name="O`rmonlardan qo`shimcha foydalanish",
-            defaults={
-                "name_ru": "Дополнительное использование лесов",
-                "period": PeriodChoices.YILLIK,
-            }
+        forest_add = Statement.objects.get(
+            name_uz="O'rmonlardan qo'shimcha foydalanish",
+            name_ru="Дополнительное использование лесов",
+            period=PeriodChoices.YILLIK
         )
         statement_mechanization = Statement.objects.create(parent=forest_add, name="Mexanizatsiya hisobi")
 
@@ -300,7 +298,11 @@ class Command(BaseCommand):
             create_column(statement_mechanization, hujjat, "Miqdori, tonna", "Количество, тонн", f"1.1.{i + 1}.3.3")
 
             # ========== Pichan ilovasi ==========
-            pichan_statement = Statement.objects.create(parent=forest_add, name="Pichan o`rish")
+            pichan_statement, _ = Statement.objects.get_or_create(
+                parent=forest_add,
+                name_uz="Pichan o`rish",
+                name_ru="Сенокошение",
+            )
 
             hay_app = create_column(
                 statement_mechanization,
@@ -343,7 +345,11 @@ class Command(BaseCommand):
                           "Средства, перечисленные в фонды, тыс. сум", "1.1.11")
 
             # ========== Yaylov ilovasi ==========
-            yaylov_statement = Statement.objects.create(parent=forest_add, name="Yaylov hisoboti")
+            yaylov_statement, _ = Statement.objects.get_or_create(
+                parent=forest_add,
+                name_uz="Yaylov hisoboti",
+                name_ru="Пастбище",
+            )
 
             pasture_app = create_column(yaylov_statement, None, "Yaylov ilovasi", "Приложение: Пастбище", "9")
             pasture_title = create_column(
