@@ -122,12 +122,10 @@ def create_column_group(statement, parent, columns):
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        parent_statement, _ = Statement.objects.get_or_create(
-            name_uz="O‘rmon barpo qilish",
-            defaults={
-                "name_ru": "Создание лесов",
-                "period": PeriodChoices.YILLIK,
-            }
+        parent_statement = Statement.objects.get(
+            name_uz="O'rmon barpo qilish",
+            name_ru="Создание леса",
+            period=PeriodChoices.YILLIK
         )
 
         statement = Statement.objects.create(

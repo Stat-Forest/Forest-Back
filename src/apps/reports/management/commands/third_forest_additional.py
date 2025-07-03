@@ -17,14 +17,16 @@ class Command(BaseCommand):
                 status_plan=status_plan
             )
 
-        forest_statement, _ = Statement.objects.get_or_create(
-            name="O`rmonlardan qo`shimcha foydalanish",
-            defaults={
-                "name_ru": "Дополнительное использование лесов",
-                "period": PeriodChoices.YILLIK,
-            }
+        forest_statement = Statement.objects.get(
+            name_uz="O'rmonlardan qo'shimcha foydalanish",
+            name_ru="Дополнительное использование лесов",
+            period=PeriodChoices.YILLIK
         )
-        statement_husbandry = Statement.objects.create(parent=forest_statement, name="Chorvachilik")
+        statement_husbandry = Statement.objects.create(
+            parent=forest_statement,
+            name_uz="Chorvachilik",
+            name_ru="Животноводство"
+        )
 
         # ========== Й.Ш.М ilovasi ==========
         y_sh_m_ilova = create_column(statement_husbandry, None, "Yirik shohli mollar ilovasi", "Приложение: КРС", "1")
