@@ -1,6 +1,7 @@
 from django.core.management import BaseCommand
 
 from apps.reports.models import Statement, StatementColumn
+from apps.utils.services import PeriodChoices
 
 
 class Command(BaseCommand):
@@ -33,9 +34,9 @@ class Command(BaseCommand):
                 create_column(statement, parent, title_uz, title_ru, f"{base_ordering}.{i}")
 
         forest_add = Statement.objects.create(
-            parent=None,
             name_uz="O'rmonlardan qo'shimcha foydalanish",
-            name_ru="Дополнительное использование лесов"
+            name_ru="Дополнительное использование лесов",
+            period=PeriodChoices.YILLIK
         )
         statement_forest_add = Statement.objects.create(
             parent=forest_add,
