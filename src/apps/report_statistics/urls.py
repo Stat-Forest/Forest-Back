@@ -1,9 +1,14 @@
 from django.urls import path
-from apps.report_statistics.views import (
+
+from apps.report_statistics.views.employee import (
     StatisticsEmployeeReportAPIView,
     StatisticsEmployeeReportAnalysisAPIView,
+)
+from apps.report_statistics.views.finance import (
     StatisticsFinanceFundAPIView,
     StatisticsFinanceIncomeAPIView,
+)
+from apps.report_statistics.views.land_management import (
     StatisticsLandAcquisitionAPIView,
     StatisticsRentedLandAPIView,
     StatisticsForestLandAPIView
