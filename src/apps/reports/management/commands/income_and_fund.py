@@ -1,3 +1,4 @@
+import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -15,30 +16,31 @@ class Command(BaseCommand):
         Statement.objects.filter(name="Moliya-iqtisod va buxgalteriya").delete()
 
         with transaction.atomic():
-            # Asosiy statement
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
                 parent=None
             )
 
             # --- JAMG'ARMA STATEMENT ---
-
             jamg_statement = Statement.objects.create(
                 name="Jamg'arma",
                 parent=moliya_statement,
                 period=PeriodChoices.HAFTALIK
             )
+
             parent_info = StatementColumn.objects.create(
                 statement=jamg_statement,
                 title="Jamg'arma",
                 ordering="1"
             )
+
             info_child = StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=parent_info,
-                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title="O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazgan tushumi to‘g‘risida HISOBOT",
                 ordering="1.1"
             )
+
             StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=info_child,
@@ -46,6 +48,7 @@ class Command(BaseCommand):
                 ordering="1.1.1",
                 is_organization=True
             )
+
             StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=info_child,
@@ -54,34 +57,49 @@ class Command(BaseCommand):
             )
 
             income_types = [
-                ("Ruxsatnoma olish uchun arizalarni ko‘rib chiqganlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (1001)", "1.1.3"),
-                ("Hayvonot va o‘simlik dunyosiga yetkazilgan zarar o‘rnini qoplash bo‘yicha undirilgan mablag‘ (1007)", "1.1.4"),
-                ("Ruxsat etilgan hududlarda ovchilik qilish uchun tushgan mablag‘ (50%)", "1.1.5"),
-                ("Ummon fondi yerlaridagi boyliklar va madaniy meroslardan foydalanishdan tushgan mablag‘ (100%)", "1.1.6"),
-                ("Ummon xo‘jaligi yog‘och kesishdan tushgan mablag‘ (50%)", "1.1.7"),
-                ("Boshqa daromadlar (101)", "1.1.8"),
+                ("Ruxsatnoma olish uchun arizalarni ko‘rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (100%)",
+                 "1.1.3"),
+                ("Hayvonot va o‘simlik dunyosiga yetkazilgan zararni qoplash bo‘yicha undirilgan mablag‘ (100%)",
+                 "1.1.4"),
+                ("Ruxsat etilgan hududlarda chorva boqish, pichan o‘rish, asalarilar uyasi va qutilarini joylashtirish, daraxt kesmagan holda o‘tin yig‘ish va boshqa maqsadlardan tushgan mablag‘ (50%)",
+                 "1.1.5"),
+                ("O‘rmon fondi yerlaridagi bog‘lar va madaniy o‘rmonzorlani fuqarolarga ijaraga berishdan tushgan mablag‘ (100%)",
+                 "1.1.6"),
+                ("O‘rmon xo‘jaligida yog‘och kesishdan tushgan mablag‘ (50%)", "1.1.7"),
+                ("Boshqa daromadlar (10%)", "1.1.8"),
             ]
 
             for income_title, income_order in income_types:
+                # Foizni ajratib olish
+                match = re.search(r'\((\d+%)\)', income_title)
+                percent = match.group(1) if match else "0%"
+
                 income_node = StatementColumn.objects.create(
                     statement=jamg_statement,
                     parent=info_child,
                     title=income_title,
                     ordering=income_order
                 )
-                jam_sum = StatementColumn.objects.create(
+
+                StatementColumn.objects.create(
                     statement=jamg_statement,
                     parent=income_node,
                     title="Jami tushum",
                     ordering=f"{income_order}.1"
                 )
+
                 jamg_node = StatementColumn.objects.create(
                     statement=jamg_statement,
                     parent=income_node,
                     title="shundan jamg’armaga",
                     ordering=f"{income_order}.2"
                 )
-                for j_idx, title in enumerate(["To‘lanishi kerak (100%)", "To‘landi", "Qoldiq"], start=1):
+
+                for j_idx, title in enumerate([
+                    f"To‘lanishi kerak ({percent})",
+                    "To‘landi",
+                    "Qoldiq"
+                ], start=1):
                     StatementColumn.objects.create(
                         statement=jamg_statement,
                         parent=jamg_node,
@@ -89,24 +107,28 @@ class Command(BaseCommand):
                         ordering=f"{income_order}.2.{j_idx}"
                     )
 
+            # Yakuniy jami tushum qismi
             jami_tushum = StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=info_child,
                 title="Jami tushum",
                 ordering="1.1.9"
             )
+
             StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=jami_tushum,
                 title="Jamg’arma ga jami tushum",
                 ordering="1.1.9.1"
             )
+
             jamg_shundan = StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=jami_tushum,
                 title="shundan jamg’armaga",
                 ordering="1.1.9.2"
             )
+
             for j_idx, title in enumerate([
                 "Jamg’arma ga tushishi kerak bo‘lgan tushum",
                 "To‘landi",
