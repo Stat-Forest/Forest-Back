@@ -1,801 +1,402 @@
 from django.core.management import BaseCommand
-
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
-    help = "Create Statement Column for Hodim Hisobi Taxlili"
+    help = "Create Statement Columns for 'Xodimlar hisobi taxlili'"
 
     def handle(self, *args, **options):
+        person_statement = Statement.objects.filter(name="Insoniyat resurslarini boshqarish").first()
 
-        # StatementColumn.objects.filter(statement__name="Xodimlar hisobi taxlili").delete()
-        # Statement.objects.filter(name="Xodimlar hisobi taxlili").delete()
-
-        person_statement = Statement.objects.get(
-            name="Insoniyat resurslarini boshqarish",
-        )
         person_report_statement = Statement.objects.create(
             parent=person_statement,
-            name="Xodimlar hisobi taxlili",
+            name_uz="Xodimlar hisobi taxlili",
+            name_ru="Анализ учета кадров",
             period=PeriodChoices.YILLIK
         )
 
-        # ==================== 1- ILOVA ========================
-
-
-        firest_ilova_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=None,
-            title="4-ilova",
-            ordering="1.4",
-        )
-        title_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=firest_ilova_column,
-            title="2025 yil uchun xodimlar statistikasi togrisidagi malumot",
-            ordering="1.4.1"
-        )
-
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Tashkilot nomi",
-            ordering="1.4.1.1",
-            is_organization=True
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Tasdiqlanagan shtat birligi boyicha xodimlar soni(faqat boshqaruv hodimlar soni)",
-            ordering="1.4.1.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Amaldagi xodimlar soni(faqat boshqaruv hodimlar soni)",
-            ordering="1.4.1.3"
-        )
-
-        age_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Xodimlarning yosh boyicha tarkibi",
-            ordering="1.4.1.4"
-        )
-
-        age_ranges = [
-            "30 yoshgacha bolgan",
-            "30 yoshdan 40 yoshgacha bolgan",
-            "40 yoshdan 50 yoshgacha bolgan",
-            "50 yoshdan 60 yoshgacha bolgan",
-            "60 yoshdan yuqori bolgan",
-            "Yoshga doir pensiya olayotgan va pensiyaga chiqish huquqiga ega bolib ishlayotgan",
-            "2025 yilda pensiya yoshiga yetadigan"
-        ]
-        for i, title in enumerate(age_ranges, 1):
-            StatementColumn.objects.create(
-                statement=person_report_statement,
-                parent=age_column,
-                title=f"{title} boshqaruv xodimlari soni",
-                ordering=f"1.4.1.4.{i}"
+        def create_column(statement, parent, uz, ru, ordering, is_org=False):
+            return StatementColumn.objects.create(
+                statement=statement,
+                parent=parent,
+                title=uz,
+                title_uz=uz,
+                title_ru=ru,
+                ordering=ordering,
+                is_organization=is_org
             )
 
-        exp_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Xodimlarning ish staji boyicha tarkibi",
-            ordering="1.4.1.5"
+        # --- 4-ilova: Xodimlar statistikasi ---
+        ilova_4 = create_column(
+            person_report_statement,
+            None,
+            "4-ilova",
+            "Приложение 4",
+            "1.4"
         )
 
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=exp_column,
-            title="2 yilgacha",
-            ordering="1.4.1.5.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=exp_column,
-            title="2 yildan ortiq",
-            ordering="1.4.1.5.2"
+        stats_root = create_column(
+            person_report_statement,
+            ilova_4,
+            "2025 yil uchun xodimlar statistikasi to‘g‘risidagi ma’lumot",
+            "Информация о статистике сотрудников за 2025 год",
+            "1.4.1"
         )
 
-        info_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Xodimlarning malumot  boyicha tarkibi",
-            ordering="1.4.1.6"
+        # Statik ustunlar
+        static_columns = [
+            ("Tashkilot nomi", "Наименование организации", "1.4.1.1", True),
+            ("Tasdiqlangan shtat birligi bo‘yicha xodimlar soni (faqat boshqaruv xodimlari)",
+             "Количество сотрудников по утвержденной штатной единице (только управленческий состав)", "1.4.1.2", False),
+            ("Amaldagi xodimlar soni (faqat boshqaruv xodimlari)",
+             "Фактическое количество сотрудников (только управленческий состав)", "1.4.1.3", False),
+        ]
+        for uz, ru, order, is_org in static_columns:
+            create_column(person_report_statement, stats_root, uz, ru, order, is_org)
+
+        # Yosh bo‘yicha tarkib
+        age_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Xodimlarning yosh bo‘yicha tarkibi",
+            "Возрастной состав сотрудников",
+            "1.4.1.4"
+        )
+
+        age_fields = [
+            ("30 yoshgacha bo‘lgan", "До 30 лет"),
+            ("30 yoshdan 40 yoshgacha bo‘lgan", "От 30 до 40 лет"),
+            ("40 yoshdan 50 yoshgacha bo‘lgan", "От 40 до 50 лет"),
+            ("50 yoshdan 60 yoshgacha bo‘lgan", "От 50 до 60 лет"),
+            ("60 yoshdan yuqori bo‘lgan", "Старше 60 лет"),
+            ("Yoshga doir pensiya olayotgan va pensiyaga chiqish huquqiga ega bo‘lib ishlayotgan",
+             "Получающие пенсию по возрасту и имеющие право на выход на пенсию"),
+            ("2025 yilda pensiya yoshiga yetadigan", "Достигающие пенсионного возраста в 2025 году"),
+        ]
+
+        for i, (uz, ru) in enumerate(age_fields, 1):
+            create_column(
+                person_report_statement,
+                age_column,
+                f"{uz} boshqaruv xodimlari soni",
+                f"Количество руководящих сотрудников {ru}",
+                f"1.4.1.4.{i}"
+            )
+
+        # Ish staji bo‘yicha tarkib
+        exp_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Xodimlarning ish staji bo‘yicha tarkibi",
+            "Состав сотрудников по трудовому стажу",
+            "1.4.1.5"
+        )
+
+        stajlar = [
+            ("2 yilgacha", "До 2 лет"),
+            ("2 yildan ortiq", "Свыше 2 лет"),
+        ]
+
+        for i, (uz, ru) in enumerate(stajlar, 1):
+            create_column(person_report_statement, exp_column, uz, ru, f"1.4.1.5.{i}")
+
+        # Ma’lumoti bo‘yicha tarkib
+        info_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Xodimlarning ma’lumoti bo‘yicha tarkibi",
+            "Состав сотрудников по образованию",
+            "1.4.1.6"
         )
 
         info_fields = [
-            "Pedagogika fanlari", "Gumanitar fanlari", "Tabiiy fanlar, matematika va fizika", "Sanoat sahosi",
-            "Jurnalistika va axborat", "Iqtisot, bizness va boshqaruv", "Huquq va siyosat", "Muhandislik ishi",
-            "Ishlab chiqarish va ishlov berish sohalari", "Arxitektura va qurilish",
-            "Qishloq,Urmon va baliq xojaligi ,Irrigatsiya va Viterenariya"
+            ("Pedagogika fanlari", "Педагогические науки"),
+            ("Gumanitar fanlar", "Гуманитарные науки"),
+            ("Tabiiy fanlar, matematika va fizika", "Естественные науки, математика и физика"),
+            ("Sanoat sohasi", "Промышленная сфера"),
+            ("Jurnalistika va axborot", "Журналистика и информация"),
+            ("Iqtisod, biznes va boshqaruv", "Экономика, бизнес и управление"),
+            ("Huquq va siyosat", "Право и политика"),
+            ("Muhandislik ishi", "Инженерное дело"),
+            ("Ishlab chiqarish va ishlov berish sohalari", "Производственные и перерабатывающие отрасли"),
+            ("Arxitektura va qurilish", "Архитектура и строительство"),
+            ("Qishloq, o‘rmon va baliq xo‘jaligi, irrigatsiya va veterinariya",
+             "Сельское, лесное и рыбное хозяйство, ирригация и ветеринария"),
+            ("Xizmat ko‘rsatish sohasi", "Сфера обслуживания"),
+            ("Transport va logistika", "Транспорт и логистика"),
+            ("Ijtimoiy va xulq-atvorga mansub fanlar", "Социальные и поведенческие науки"),
+            ("Sog‘liqni saqlash", "Здравоохранение"),
+            ("Kompyuter texnologiyalari va informatika", "Компьютерные технологии и информатика"),
         ]
-        for i, title in enumerate(info_fields, 1):
-            StatementColumn.objects.create(
-                statement=person_report_statement,
-                parent=info_column,
-                title=title,
-                ordering=f"1.4.1.6.{i}"
-            )
 
-        degree_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Xodimlarning darajasi  boyicha tarkibi",
-            ordering="1.4.1.7"
+        for i, (uz, ru) in enumerate(info_fields, 1):
+            create_column(person_report_statement, info_column, uz, ru, f"1.4.1.6.{i}")
+
+        # Ilmiy daraja
+        degree_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Xodimlarning darajasi bo‘yicha tarkibi",
+            "Состав сотрудников по научным степеням",
+            "1.4.1.7"
         )
 
         degree_fields = [
-            "Sog'liqni saqlash",
-            "Komputer texnologiyalari va informatika",
-            "PHD, fan nomzodi ilmiy darajasi ega xodimlar soni",
-            "Magister darajasi ega xodimlar soni",
-            "Bakalavr darajasiga ega xodimlar",
-            "O'rta mahsus malumotli xodimlar soni",
-            "Xalqaro e’tirof etilgan (...) tamomlagan xodimlar soni"
+            ("PHD, fan nomzodi ilmiy darajasiga ega xodimlar soni",
+             "Количество сотрудников с ученой степенью PhD, кандидата наук"),
+            ("Magistr darajasiga ega xodimlar soni", "Количество сотрудников со степенью магистра"),
+            ("Bakalavr darajasiga ega xodimlar soni", "Количество сотрудников со степенью бакалавра"),
+            ("O‘rta maxsus ma’lumotli xodimlar soni", "Количество сотрудников со средним специальным образованием"),
+            ("Xalqaro e’tirof etilgan diplomga ega xodimlar soni",
+             "Количество сотрудников с международно признанным дипломом"),
         ]
-        for i, title in enumerate(degree_fields, 1):
-            StatementColumn.objects.create(
-                statement=person_report_statement,
-                parent=degree_column,
-                title=title,
-                ordering=f"1.4.1.7.{i}"
+
+        for i, (uz, ru) in enumerate(degree_fields, 1):
+            create_column(person_report_statement, degree_column, uz, ru, f"1.4.1.7.{i}")
+
+        # Sertifikatlar
+        # Xorijiy tillarni biluvchi xodimlar
+        lang_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Xorijiy tillarni biluvchi xodimlar",
+            "Сотрудники, владеющие иностранными языками",
+            "1.4.1.8"
+        )
+
+        sertifikatlar = [
+            ("Xalqaro sertifikatga ega xodimlar soni", "Количество сотрудников с международным сертификатом"),
+            ("Milliy sertifikatga ega xodimlar soni", "Количество сотрудников с национальным сертификатом"),
+        ]
+
+        for i, (uz, ru) in enumerate(sertifikatlar, 1):
+            create_column(
+                person_report_statement,
+                lang_column,
+                uz,
+                ru,
+                f"1.4.1.8.{i}"
             )
 
-        ser_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Xorijiy tillarni biluvchi xodimlar (...)",
-            ordering="1.4.1.8"
-        )
-
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=ser_column,
-            title="Xalqaro sertifikatga ega xodimlar soni",
-            ordering="1.4.1.8.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=ser_column,
-            title="Milliy sertifikatga ega xodimlar soni",
-            ordering="1.4.1.8.2"
-        )
-
-        vak_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_column,
-            title="Mavjud vakant (...) lavozimlar bo‘yicha mutaxassisliklar",
-            ordering="1.4.1.9"
+        # Vakant lavozimlar bo‘yicha mutaxassisliklar — 1.4.1.9
+        vak_column = create_column(
+            person_report_statement,
+            stats_root,
+            "Vakant lavozimlar bo‘yicha mutaxassisliklar",
+            "Специальности по вакантным должностям",
+            "1.4.1.9"
         )
 
         vak_fields = [
-            "Pedagogika fanlari", "Gumanitar fanlar", "Tabiiy fanlar, matematika va fizika", "San’at sohasi",
-            "Jurnalistika va axborot", "Iqtisod, biznes va boshqaruv", "Huquq va siyosat", "Muhandislik ishi",
-            "Ishlab chiqarish va ishlov berish sohalari", "Arxitektura va qurilish",
-            "Qishloq, o‘rmon va baliq xo‘jaligi, irrigatsiya va melioratsiya, veterinariya",
-            "Xizmat ko‘rsatish sohasi", "Transport va logistika", "Ijtimoiy va xulq-atvorga mansub fanlar",
-            "Sog‘liqni saqlash", "Kompyuter texnologiyalari va informatika"
+            ("Pedagogika fanlari", "Педагогические науки"),
+            ("Gumanitar fanlar", "Гуманитарные науки"),
+            ("Tabiiy fanlar, matematika va fizika", "Естественные науки, математика и физика"),
+            ("San’at sohasi", "Сфера искусства"),
+            ("Jurnalistika va axborot", "Журналистика и информация"),
+            ("Iqtisod, biznes va boshqaruv", "Экономика, бизнес и управление"),
+            ("Huquq va siyosat", "Право и политика"),
+            ("Muhandislik ishi", "Инженерное дело"),
+            ("Ishlab chiqarish va ishlov berish sohalari", "Производственные и перерабатывающие отрасли"),
+            ("Arxitektura va qurilish", "Архитектура и строительство"),
+            ("Qishloq, o‘rmon va baliq xo‘jaligi, irrigatsiya va veterinariya",
+             "Сельское, лесное и рыбное хозяйство, ирригация и ветеринария"),
+            ("Xizmat ko‘rsatish sohasi", "Сфера обслуживания"),
+            ("Transport va logistika", "Транспорт и логистика"),
+            ("Ijtimoiy va xulq-atvorga mansub fanlar", "Социальные и поведенческие науки"),
+            ("Sog‘liqni saqlash", "Здравоохранение"),
+            ("Kompyuter texnologiyalari va informatika", "Компьютерные технологии и информатика"),
         ]
-        for i, title in enumerate(vak_fields, 1):
-            StatementColumn.objects.create(
+
+        for i, (uz, ru) in enumerate(vak_fields, 1):
+            create_column(person_report_statement, vak_column, uz, ru, f"1.4.1.9.{i}")
+
+        # Utility functions
+
+        def create_col(parent, uz, ru, ord, is_org=False):
+            return StatementColumn.objects.create(
                 statement=person_report_statement,
-                parent=vak_column,
-                title=title,
-                ordering=f"1.4.1.9.{i}"
+                parent=parent,
+                title=uz,
+                title_uz=uz,
+                title_ru=ru,
+                ordering=ord,
+                is_organization=is_org
             )
 
-        # ==================== 2- ILOVA ========================
+        # 5-ilova: O‘rmon xo‘jaligi xodimlari
+        ilova_5 = create_col(None, "5-ilova", "Приложение 5", "1.5")
+        title_5 = create_col(ilova_5,
+                             "O‘rmon xo‘jaligi xodimlari to‘g‘risidagi statistik tahlili",
+                             "Статистический анализ сотрудников лесного хозяйства",
+                             "1.5.1")
 
-        second_ilova_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=None,
-            title="5-ilova",
-            ordering="1.5",
-        )
-        title_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=second_ilova_column,
-            title="O‘rmon xo‘jaligi xodimlari to‘g‘risidagi statistik tahlili",
-            ordering="1.5.1"
-        )
+        # F1: Mehnat va muhofaza
+        create_col(title_5, "Tashkilot nomi", "Наименование организации", "1.5.1.1", is_org=True)
+        f1 = create_col(title_5,
+                        "Xodimlarning ish faoliyati me'yorlari va mehnat muhofazasi",
+                        "Нормы труда и охрана труда сотрудников",
+                        "1.5.1.2")
 
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_2_column,
-            title="Tashkilot nomi",
-            ordering="1.5.1.1",
-            is_organization=True
-        )
-        f_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_2_column,
-            title="Xodimlarning ish faoliyati me'yorlari va mehnat muhofazasi",
-            ordering="1.5.1.2"
-        )
+        create_col(f1, "Tasdiqlangan shtat birligi bo‘yicha xodimlar soni",
+                   "Численность сотрудников по штатному расписанию", "1.5.1.2.1")
+        create_col(f1, "Shundan xotin-qizlar soni", "В том числе женщины", "1.5.1.2.2")
 
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Tasdiqlangan shtat birligi bo‘yicha xodimlar soni",
-            ordering="1.5.1.2.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Shundan xotin-qizlar soni",
-            ordering="1.5.1.2.2",
-        )
-        f_1_1_column=StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Xodimlarning yosh bo‘yicha tarkibi",
-            ordering="1.5.1.2.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_1_column,
-            title="30 yoshgacha bo‘lgan xodimlar soni:",
-            ordering="1.5.1.2.3.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_1_column,
-            title="30 yoshdan 50 yoshgacha bo‘lgan xodimlar soni",
-            ordering="1.5.1.2.3.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_1_column,
-            title="50 yoshdan yuqori bo‘lgan xodimlar soni",
-            ordering="1.5.1.2.3.3",
-        )
-        f_1_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Xodim ish vaqti me'yorlarining ish hajmiga mutanosibligi (foizda)",
-            ordering="1.5.1.2.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_2_column,
-            title="Yillik rejaga muvofiq amalga oshiriladigan ish",
-            ordering="1.5.1.2.4.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_2_column,
-            title="Va shunga muvofiq ish hajmining mavjudligi",
-            ordering="1.5.1.2.4.2",
-        )
+        f1_1 = create_col(f1, "Xodimlarning yosh bo‘yicha tarkibi", "Возрастной состав сотрудников", "1.5.1.2.3")
+        ages = [
+            ("30 yoshgacha bo‘lgan xodimlar soni", "Количество сотрудников до 30 лет"),
+            ("30 yoshdan 50 yoshgacha bo‘lgan xodimlar soni", "Сотрудников от 30 до 50 лет"),
+            ("50 yoshdan yuqori bo‘lgan xodimlar soni", "Сотрудников старше 50 лет"),
+        ]
+        for idx, (uz, ru) in enumerate(ages, 1):
+            create_col(f1_1, uz, ru, f"1.5.1.2.3.{idx}")
 
-        #f_1_3_column
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Bir hisobot yili davomida mehnat ta’tiliga chiqqan xodimlar soni",
-            ordering="1.5.1.2.5",
-        )
-        f_1_4_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Xodimning ish vaqtidan tashqari ishlaganligi uchun qo‘shimcha to‘lov to‘langanligi",
-            ordering="1.5.1.2.6",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_4_column,
-            title="Mablag‘ sarfi, mln. so‘mda",
-            ordering="1.5.1.2.6.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_4_column,
-            title="Dam olish va bayram kunlari ishga jalb qilingan xodimlar soni",
-            ordering="1.5.1.2.6.2",
-        )
-        #f_1_5_column
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_1_column,
-            title="Xodimlarning ish vaqtini hisobga olishning avtomatlashtirilgan tizimining mavjudligi (mavjud yoki mavjud emas)",
-            ordering="1.5.1.2.7",
-        )
+        f1_2 = create_col(f1, "Xodim ish vaqti me'yorlarining ish hajmiga mutanosibligi (foizda)",
+                          "Соответствие рабочего времени норме труда (в %)", "1.5.1.2.4")
+        create_col(f1_2, "Yillik rejaga muvofiq amalga oshiriladigan ish",
+                   "Работы, выполненные согласно годовому плану", "1.5.1.2.4.1")
+        create_col(f1_2, "Va shunga muvofiq ish hajmining mavjudligi",
+                   "Наличие объёма выполненных работ", "1.5.1.2.4.2")
 
-        f_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_2_column,
-            title="Kadrlar qo‘nimsizligi va xodimlarning kasbiy o‘sishi",
-            ordering="1.5.1.3"
-        )
+        create_col(f1, "Bir hisobot yili davomida mehnat ta’tiliga chiqqan xodimlar soni",
+                   "Количество сотрудников, использовавших трудовой отпуск за отчетный год", "1.5.1.2.5")
+        f1_4 = create_col(f1, "Xodimning ish vaqtidan tashqari ishlaganligi uchun qo‘shimcha to‘lov to‘langanligi",
+                          "Оплата за переработки сотрудников", "1.5.1.2.6")
+        create_col(f1_4, "Mablag‘ sarfi, mln. so‘mda", "Сумма расходов (млн. сум)", "1.5.1.2.6.1")
+        create_col(f1_4, "Dam olish va bayram kunlari ishga jalb qilingan xodimlar soni",
+                   "Количество сотрудников, привлекавшихся в выходные и праздничные дни", "1.5.1.2.6.2")
 
+        create_col(f1,
+                   "Xodimlarning ish vaqtini hisobga olishning avtomatlashtirilgan tizimining mavjudligi (mavjud yoki mavjud emas)",
+                   "Наличие автоматизированной системы учёта рабочего времени", "1.5.1.2.7")
 
-        f_2_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarning bir lavozimda bo‘lishi davomiyligi (yillarda)",
-            ordering="1.5.1.3.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Direktor",
-            ordering="1.5.1.3.1.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Direktor o'rin bosari",
-            ordering="1.5.1.3.1.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Bolim boshlig'i",
-            ordering="1.5.1.3.1.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Sho‘ba mudiri",
-            ordering="1.5.1.3.1.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Bosh mutaxassislar",
-            ordering="1.5.1.3.1.5",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_1_column,
-            title="Mutaxassislar",
-            ordering="1.5.1.3.1.6",
-        )
+        # F2: Kadrlar oqimi
+        f2 = create_col(title_5, "Kadrlar qo‘nimsizligi va xodimlarning kasbiy o‘sishi",
+                        "Движение кадров и профессиональный рост", "1.5.1.3")
+        f2_1 = create_col(f2, "Xodimlarning bir lavozimda bo‘lishi davomiyligi (yillarda)",
+                          "Продолжительность пребывания сотрудников на должностях (лет)", "1.5.1.3.1")
+        for idx, pos in enumerate(
+                ["Direktor", "Direktor o‘rinbosari", "Bo‘lim boshlig‘i", "Sho‘ba mudiri", "Bosh mutaxassislar",
+                 "Mutaxassislar"], 1):
+            create_col(f2_1, pos, pos, f"1.5.1.3.1.{idx}")
 
-        f_2_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarni ishga qabul qilish",
-            ordering="1.5.1.3.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_2_column,
-            title="2025-yil",
-            ordering="1.5.1.3.2.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_2_column,
-            title="2024-yil",
-            ordering="1.5.1.3.2.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_2_column,
-            title="2023-yil",
-            ordering="1.5.1.3.2.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_2_column,
-            title="2022-yil",
-            ordering="1.5.1.3.2.4",
-        )
-        f_2_3_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarni ishdan boshatish",
-            ordering="1.5.1.3.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_3_column,
-            title="2025-yil",
-            ordering="1.5.1.3.3.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_3_column,
-            title="2024-yil",
-            ordering="1.5.1.3.3.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_3_column,
-            title="2023-yil",
-            ordering="1.5.1.3.3.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_3_column,
-            title="2022-yil",
-            ordering="1.5.1.3.3.4",
-        )
-        f_2_4_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarning kasbiy o‘sishi",
-            ordering="1.5.1.3.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_column,
-            title="Yuqori lavozimlar",
-            ordering="1.5.1.3.4.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_column,
-            title="Teng lavozimlar",
-            ordering="1.5.1.3.4.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_column,
-            title="Quyi lavozimlar",
-            ordering="1.5.1.3.4.3",
-        )
-        f_2_4_1_column =StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_column,
-            title="Xodimlarning kasbiy o‘sishi",
-            ordering="1.5.1.3.4.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_1_column,
-            title="Departament mudiri",
-            ordering="1.5.1.3.4.4.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_1_column,
-            title="Boshqarma boshlig‘i",
-            ordering="1.5.1.3.4.4.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_1_column,
-            title="Bo‘lim boshlig‘i",
-            ordering="1.5.1.3.4.4.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_1_column,
-            title="Sho'ba mudiri",
-            ordering="1.5.1.3.4.4.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_4_1_column,
-            title="Mutaxassislar-2",
-            ordering="1.5.1.3.4.4.5",
-        )
-        f_2_5_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Malaka oshirgan va qayta o‘qish kurslariga qatnashgan xodimlar soni",
-            ordering="1.5.1.3.5",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_column,
-            title="Jami",
-            ordering="1.5.1.3.5.1",
-        )
-        f_2_5_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_column,
-            title="shu jumladan",
-            ordering="1.5.1.3.5.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_1_column,
-            title="Departament mudiri",
-            ordering="1.5.1.3.5.2.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_1_column,
-            title="Boshqarma boshlig‘i",
-            ordering="1.5.1.3.5.2.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_1_column,
-            title="Bo‘lim boshlig‘i",
-            ordering="1.5.1.3.5.2.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_1_column,
-            title="Sho'ba mudiri",
-            ordering="1.5.1.3.5.2.4",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_5_1_column,
-            title="Mutaxassilar",
-            ordering="1.5.1.3.5.2.5",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Kasallik varaqasi bo‘yicha vaqtincha mehnatga layoqatsizlik davrida bo‘lgan xodimlar va o‘rtacha davolanish (kasallik varaqasi) muddati (soni va o‘rtacha muddati)",
-            ordering="1.5.1.3.6",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarni davolash va tibbiy profilaktika choralari uchun to‘langan mablag‘",
-            ordering="1.5.1.3.7",
-        )
-        f_2_8_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Xodimlarning kasallik turlari (5 yillik dinamikasi bilan)",
-            ordering="1.5.1.3.8",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_8_column,
-            title="Jami",
-            ordering="1.5.1.3.8.1",
-        )
-        f_2_8_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_8_column,
-            title="Shu jumladan",
-            ordering="1.5.1.3.8.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_8_1_column,
-            title="Yurak va qon tomir",
-            ordering="1.5.1.3.8.2.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_8_1_column,
-            title="Asab",
-            ordering="1.5.1.3.8.2.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_8_1_column,
-            title="Oshqazon ichak kasaliklari",
-            ordering="1.5.1.3.8.2.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Sport bilan shug‘ullanuvchi xodimlar soni va ushbu tadbirlar uchun to‘langan mablag‘ (kasaba uyushmasi mablag‘laridan tashqari)",
-            ordering="1.5.1.3.9",
-        )
-        f_2_10_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Madaniy-ma’rifiy tadbirlarda qatnashgan xodimlar va ushbu tadbirlar uchun to‘langan mablag‘lar (kasaba uyushmasi mablag‘laridan tashqari)",
-            ordering="1.5.1.3.10",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_10_column,
-            title="Jami",
-            ordering="1.5.1.3.10.1",
-        )
-        f_2_10_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_column,
-            title="Shu jumladan",
-            ordering="1.5.1.3.10.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_10_1_column,
-            title="Teatr",
-            ordering="1.5.1.3.10.2.1",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_10_1_column,
-            title="KIno",
-            ordering="1.5.1.3.10.2.2",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_10_1_column,
-            title="Konsert",
-            ordering="1.5.1.3.10.2.3",
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=f_2_10_1_column,
-            title="Boshqalar",
-            ordering="1.5.1.3.10.2.4",
-        )
+        f2_2 = create_col(f2, "Xodimlarni ishga qabul qilish", "Приём на работу сотрудников", "1.5.1.3.2")
+        for idx, y in enumerate(["2025‑yil", "2024‑yil", "2023‑yil", "2022‑yil"], 1):
+            create_col(f2_2, y, y, f"1.5.1.3.2.{idx}")
 
+        f2_3 = create_col(f2, "Xodimlarni ishdan bo‘shatish", "Увольнение сотрудников", "1.5.1.3.3")
+        for idx, y in enumerate(["2025‑yil", "2024‑yil", "2023‑yil", "2022‑yil"], 1):
+            create_col(f2_3, y, y, f"1.5.1.3.3.{idx}")
 
+        f2_4 = create_col(f2, "Xodimlarning kasbiy o‘sishi", "Профессиональный рост сотрудников", "1.5.1.3.4")
+        for idx, (uz, ru) in enumerate([
+            ("Yuqori lavozimlar", "Высшие должности"),
+            ("Teng lavozimlar", "Равные должности"),
+            ("Quyi lavozimlar", "Низшие должности")
+        ], 1):
+            create_col(f2_4, uz, ru, f"1.5.1.3.4.{idx}")
 
-        # ================ 3 -ILOVA ========================
+        f2_4_1 = create_col(f2_4, "Xodimlarning kasbiy o‘sishi (to‘liq)",
+                            "Профессиональный рост сотрудников (детально)", "1.5.1.3.4.4")
+        for idx, pos in enumerate(
+                ["Departament mudiri", "Boshqarma boshlig‘i", "Bo‘lim boshlig‘i", "Sho‘ba mudiri", "Mutaxassislar‑2"],
+                1):
+            create_col(f2_4_1, pos, pos, f"1.5.1.3.4.4.{idx}")
 
-        third_ilova_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=None,
-            title="6-ilova",
-            ordering="1.6",
-        )
-        title_3_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=third_ilova_column,
-            title="Oliy ta’lim muassasalari va kasb-hunar kollejlarini tamomlagan o‘rmon xo‘jaligi mutaxassislariga bo‘lgan talab",
-            ordering="1.6.1"
-        )
+        f2_5 = create_col(f2, "Malaka oshirgan va qayta o‘qish kurslariga qatnashgan xodimlar soni",
+                          "Количество сотрудников, прошедших повышение квалификации и переподготовку", "1.5.1.3.5")
+        create_col(f2_5, "Jami", "Всего", "1.5.1.3.5.1")
+        f2_5_1 = create_col(f2_5, "shu jumladan", "в том числе", "1.5.1.3.5.2")
+        for idx, pos in enumerate(
+                ["Departament mudiri", "Boshqarma boshlig‘i", "Bo‘lim boshlig‘i", "Sho‘ba mudiri", "Mutaxassislar‑2"],
+                1):
+            create_col(f2_5_1, pos, pos, f"1.5.1.3.5.2.{idx}")
 
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_3_column,
-            title="Tashkilot nomi",
-            ordering="1.6.1.1",
-            is_organization=True
-        )
-        r_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_3_column,
-            title="Bosh o‘rmonchi, o‘rmon xo‘jaligi muhandisi, o‘rmonchi, nazoratchi, egermayor va boshqa o‘rmon xo‘jaligi mutaxassislari",
-            ordering="1.6.1.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_column,
-            title="Jami",
-            ordering="1.6.1.2.1"
-        )
-        r_1_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_column,
-            title="Shundan",
-            ordering="1.6.1.2.2"
-        )
-        r_1_1_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_column,
-            title="Oliy ma'lumotli",
-            ordering="1.6.1.2.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_1_column,
-            title="Jami",
-            ordering="1.6.1.2.2.1.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_1_column,
-            title="O'rmonshunos",
-            ordering="1.6.1.2.2.1.2"
-        )
-        r_1_1_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_column,
-            title="O'rta-maxsus malumotli",
-            ordering="1.6.1.2.2.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_2_column,
-            title="Jami",
-            ordering="1.6.1.2.2.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_2_column,
-            title="O'rmonshunos",
-            ordering="1.6.1.2.2.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_1_1_column,
-            title="O'rta malumotli",
-            ordering="1.6.1.2.2.3"
-        )
+        # Additional items
+        tail_items = [
+            ("Kasallik varaqasi ... (soni va o‘rtacha)",
+             "Больничные листы ... (количество и средняя продолжительность)", "1.5.1.3.6"),
+            ("Xodimlarni davolash va tibbiy profilaktika choralari uchun to‘langan mablag‘",
+             "Расходы на лечение и профилактику сотрудников", "1.5.1.3.7"),
+            ("Xodimlarning kasallik turlari (5 yillik dinamikasi bilan)",
+             "Типы заболеваний сотрудников (с 5-летней динамикой)", "1.5.1.3.8"),
+            ("Sport bilan shug‘ullanuvchi xodimlar soni va to‘lovlar",
+             "Число сотрудников, занимающихся спортом и выплаты", "1.5.1.3.9"),
+            ("Madaniy-ma’rifiy tadbirlarda qatnashgan xodimlar va mablag‘lar",
+             "Участие сотрудников в культурно-просветительских мероприятиях и расходы", "1.5.1.3.10")
+        ]
+        for uz, ru, ord in tail_items:
+            create_col(f2, uz, ru, ord)
 
-        r_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=title_3_column,
-            title="Ma’lumot darajasi bo‘yicha mutaxassislarga bo‘lgan talab",
-            ordering="1.6.1.6"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent= r_2_column,
-            title="Jami",
-            ordering="1.6.1.6.1"
-        )
-        r_2_1_column=StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent= r_2_column,
-            title="Shundan",
-            ordering="1.6.1.6.2"
-        )
-        r_2_1_1_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_column,
-            title="Magister",
-            ordering="1.6.1.6.2.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_1_column,
-            title="2025",
-            ordering="1.6.1.6.2.1.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_1_column,
-            title="2026",
-            ordering="1.6.1.6.2.1.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_1_column,
-            title="2027",
-            ordering="1.6.1.6.2.1.6"
-        )
+        def create_col(parent, uz, ru, ord, is_org=False):
+            return StatementColumn.objects.create(
+                statement=person_report_statement,
+                parent=parent,
+                title=uz,
+                title_uz=uz,
+                title_ru=ru,
+                ordering=ord,
+                is_organization=is_org
+            )
 
-        r_2_1_2_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_column,
-            title="Oliy ma'lu,otli",
-            ordering="1.6.1.6.2.2"
+        # === 3-ILOVA / 6-ILOVA ===
+        ilova_3 = create_col(
+            None,
+            "6-ilova",
+            "Приложение 6",
+            "1.6"
         )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_2_column,
-            title="2025",
-            ordering="1.6.1.6.2.2.1"
+        title_3 = create_col(
+            ilova_3,
+            "Oliy ta’lim muassasalari va kasb-hunar kollejlarini tamomlagan o‘rmon xo‘jaligi mutaxassislariga bo‘lgan talab",
+            "Потребность в специалистах лесного хозяйства, окончивших вузы и колледжи",
+            "1.6.1"
         )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_2_column,
-            title="2026",
-            ordering="1.6.1.6.2.2.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_2_column,
-            title="2027",
-            ordering="1.6.1.6.2.2.3"
-        )
-        r_2_1_3_column = StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_column,
-            title="O'rta-maxsus malumotli",
-            ordering="1.6.1.6.2.3"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_3_column,
-            title="2025",
-            ordering="1.6.1.6.2.3.1"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_3_column,
-            title="2026",
-            ordering="1.6.1.6.2.3.2"
-        )
-        StatementColumn.objects.create(
-            statement=person_report_statement,
-            parent=r_2_1_3_column,
-            title="2027",
-            ordering="1.6.1.6.2.3.3"
-        )
+        create_col(title_3, "Tashkilot nomi", "Наименование организации", "1.6.1.1", is_org=True)
 
+        # 1-qism
+        r1 = create_col(title_3,
+                        "Bosh o‘rmonchi, o‘rmon xo‘jaligi muhandisi, o‘rmonchi, nazoratchi, egermayor va boshqa o‘rmon xo‘jaligi mutaxassislari",
+                        "Главный лесничий, инженер, лесничий, инспектор, егермейстер и др. специалисты",
+                        "1.6.1.2"
+                        )
+        create_col(r1, "Jami", "Всего", "1.6.1.2.1")
+        r1_1 = create_col(r1, "Shundan", "В том числе", "1.6.1.2.2")
 
+        # Oliy
+        r1_1_1 = create_col(r1_1, "Oliy ma'lumotli", "С высшим образованием", "1.6.1.2.2.1")
+        create_col(r1_1_1, "Jami", "Всего", "1.6.1.2.2.1.1")
+        create_col(r1_1_1, "O'rmonshunos", "Лесовод", "1.6.1.2.2.1.2")
+
+        # O'rta maxsus
+        r1_1_2 = create_col(r1_1, "O'rta-maxsus malumotli", "Со средне-специальным образованием", "1.6.1.2.2.2")
+        create_col(r1_1_2, "Jami", "Всего", "1.6.1.2.2.2.1")
+        create_col(r1_1_2, "O'rmonshunos", "Лесовод", "1.6.1.2.2.2.2")
+
+        # O'rta
+        create_col(r1_1, "O'rta malumotli", "Со средним образованием", "1.6.1.2.2.3")
+
+        # 2-qism: Mutaxassislarga bo‘lgan talab
+        r2 = create_col(title_3,
+                        "Ma’lumot darajasi bo‘yicha mutaxassislarga bo‘lgan talab",
+                        "Потребность в специалистах по уровню образования",
+                        "1.6.1.6"
+                        )
+        create_col(r2, "Jami", "Всего", "1.6.1.6.1")
+        r2_1 = create_col(r2, "Shundan", "В том числе", "1.6.1.6.2")
+
+        # Magister
+        r2_1_1 = create_col(r2_1, "Magister", "Магистр", "1.6.1.6.2.1")
+        for i, y in enumerate(["2025", "2026", "2027"], start=1):
+            create_col(r2_1_1, y, y, f"1.6.1.6.2.1.{i}")
+
+        # Oliy
+        r2_1_2 = create_col(r2_1, "Oliy ma'lumotli", "С высшим образованием", "1.6.1.6.2.2")
+        for i, y in enumerate(["2025", "2026", "2027"], start=1):
+            create_col(r2_1_2, y, y, f"1.6.1.6.2.2.{i}")
+
+        # O'rta maxsus
+        r2_1_3 = create_col(r2_1, "O'rta-maxsus malumotli", "Со средне-специальным образованием", "1.6.1.6.2.3")
+        for i, y in enumerate(["2025", "2026", "2027"], start=1):
+            create_col(r2_1_3, y, y, f"1.6.1.6.2.3.{i}")
+
+        self.stdout.write(self.style.SUCCESS(f"Employee created ! "))
