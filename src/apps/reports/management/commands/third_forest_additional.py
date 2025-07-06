@@ -39,7 +39,7 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_husbandry, y_sh_m_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1", is_organization=True)
+        create_column(statement_husbandry, y_sh_m_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1", is_organization=True)
         year_moment = create_column(statement_husbandry, y_sh_m_title, "01.01.2025 yil holatiga", "Состояние на 01.01.2025", "1.1.2")
         general_number = create_column(statement_husbandry, year_moment, "Jami bosh soni", "Общее количество голов", "1.1.2.1")
         create_column(statement_husbandry, general_number, "Amalda", "Факт", "1.1.2.1.1")
@@ -78,7 +78,7 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_husbandry, yilqichilik_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1",
+        create_column(statement_husbandry, yilqichilik_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
         yil_start = create_column(statement_husbandry, yilqichilik_title, "01.01.2025 yil holatiga mavjud",
                                   "Состояние на 01.01.2025", "1.1.2")
@@ -125,7 +125,7 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_husbandry, m_sh_m_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1",
+        create_column(statement_husbandry, m_sh_m_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
 
         start_block = create_column(statement_husbandry, m_sh_m_title, "01.01.2025 yil holatiga",
@@ -205,7 +205,7 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_husbandry, parranda_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1",
+        create_column(statement_husbandry, parranda_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
 
         year_parranda = create_column(statement_husbandry, parranda_title, "01.01.2025 yil holatiga mavjud",
@@ -327,7 +327,7 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_husbandry, bees_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1",
+        create_column(statement_husbandry, bees_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
         create_column(statement_husbandry, bees_title, "01.01.2025 yil holatiga mavjud asalari oilasi soni",
                       "Состояние на 01.01.2025 — количество пчелиных семей", "1.1.2")
@@ -382,7 +382,7 @@ class Command(BaseCommand):
             "6.1"
         )
 
-        create_column(statement_husbandry, fish_title, "Xo‘jaliklar nomi", "Наименование хозяйства", "1.1.1",
+        create_column(statement_husbandry, fish_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
         create_column(statement_husbandry, fish_title, "Jami baliq ko‘llari maydoni (ga)",
                       "Общая площадь рыбных прудов (га)", "1.1.2")
