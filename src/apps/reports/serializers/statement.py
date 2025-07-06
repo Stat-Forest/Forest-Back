@@ -1,4 +1,3 @@
-# serializers.py
 from rest_framework import serializers
 from apps.reports.models import Statement
 from apps.utils.translation import get_translated_field, get_lang_code
@@ -11,8 +10,7 @@ class StatementChildSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
     def get_name(self, obj):
-        request = self.context.get("request")
-        lang = get_lang_code(request)
+        lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name
 
@@ -25,7 +23,6 @@ class StatementSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'period','icon', 'parent', 'children')
 
     def get_name(self, obj):
-        request = self.context.get("request")
-        lang = get_lang_code(request)
+        lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name

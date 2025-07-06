@@ -19,12 +19,11 @@ class StatementColumnTreeSerializer(serializers.ModelSerializer):
         ]
 
     def get_title(self, obj):
-        request = self.context.get("request")
-        lang = get_lang_code(request)
+        lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "title", lang)
-        return translated or obj.title
+        return translated
 
     def get_children(self, obj):
         if hasattr(obj, 'children_list'):
-            return StatementColumnTreeSerializer(obj.children_list, many=True).data
+            return StatementColumnTreeSerializer(obj.children_list, many=True, context=self.context).data
         return []
