@@ -66,5 +66,8 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["lang"] = self.request.query_params.get("lang")
+        lang = self.request.query_params.get("lang")
+        if not lang:
+            lang = "uz"
+        context["lang"] = lang
         return context
