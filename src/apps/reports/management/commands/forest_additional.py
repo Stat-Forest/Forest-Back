@@ -337,7 +337,7 @@ class Command(BaseCommand):
             statement_forest_add,
             None,
             "Ozuqa ilovasi",
-            "Приложение: Ozuqa ekinlari",
+            "Кормовые культуры",
             "1"
         )
 
