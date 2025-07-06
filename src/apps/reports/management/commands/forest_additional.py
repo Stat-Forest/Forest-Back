@@ -64,7 +64,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             title_forest_app,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -128,7 +128,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             second_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -190,7 +190,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             third_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -243,7 +243,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             fourth_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -298,7 +298,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             fifth_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -352,7 +352,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             sixth_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -423,7 +423,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             seventh_title_forest,
-            "Xo'jalik nomi",
+            "Tashkilot nomi",
             "Наименование хозяйства",
             "1.1.1",
             is_organization=True
@@ -493,7 +493,7 @@ class Command(BaseCommand):
         create_column(
             statement_forest_add,
             eighth_title_forest,
-            "O'rmon xo'jaliklari nomi",
+            "Tashkilot nomi",
             "Наименование лесных хозяйств",
             "1.1.1",
             is_organization=True

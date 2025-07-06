@@ -48,7 +48,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=first_of_second_statement,
             parent=title_column,
-            title_uz="Hududlar nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Названия регионов",
             ordering="1.1.1",
             is_organization=True
@@ -139,7 +139,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=second_statement_of_forest,
             parent=second_ilova_title,
-            title_uz="O'rmon xo'jaliklar nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Названия лесничеств",
             ordering="1.1.1",
             is_organization=True
