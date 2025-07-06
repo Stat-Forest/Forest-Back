@@ -21,13 +21,15 @@ class PlantSerializer(CustomModelSerializer):
         ]
 
     def get_name(self, obj):
-        request = self.context["request"]
-        lang = get_lang_code(request)
+        lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name
 
     def get_parent_name(self, obj):
-        return obj.parent.name if obj.parent else None
+        if not obj.parent:
+            return None
+        lang = get_lang_code(self.context)
+        return get_translated_field(obj.parent, "name", lang)
 
     def get_children(self, obj):
         if obj.parent is None:
