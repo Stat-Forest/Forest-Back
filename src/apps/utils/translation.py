@@ -6,7 +6,6 @@ def get_translated_field(obj, field: str, lang: str, default_lang: str = "uz"):
 
     lang_map = {
         "uz": "uz",
-        "uz-cyrl": "uz_cyrl",
         "ru": "ru",
     }
 
@@ -25,9 +24,15 @@ def get_translated_field(obj, field: str, lang: str, default_lang: str = "uz"):
 
 def get_lang_code(source, default_lang="uz"):
     """
-    Accepts a request object or context dict and returns language code.
+    Accepts a request object, context dict, or direct language string and returns normalized language code.
     """
     if source is None:
+        return default_lang
+
+    if isinstance(source, str):
+        source = source.lower()
+        if source in ["uz", "ru"]:
+            return source
         return default_lang
 
     if hasattr(source, "query_params"):
@@ -41,7 +46,7 @@ def get_lang_code(source, default_lang="uz"):
 
     if query_lang:
         query_lang = query_lang.lower()
-        if query_lang in ["uz", "ru", "uz-cyrl"]:
+        if query_lang in ["uz", "ru"]:
             return query_lang
 
     if hasattr(source, "META"):
@@ -51,9 +56,7 @@ def get_lang_code(source, default_lang="uz"):
 
     lang = raw.split(",")[0].strip().lower()
 
-    if lang.startswith("uz-") and "cyrl" in lang:
-        return "uz-cyrl"
-    elif lang.startswith("uz"):
+    if lang.startswith("uz"):
         return "uz"
     elif lang.startswith("ru"):
         return "ru"
