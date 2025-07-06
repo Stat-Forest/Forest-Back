@@ -103,7 +103,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=statement,
             parent=title_column_1,
-            title_uz="Hududlar nomlanishi",
+            title_uz="Tashkilot nomi",
             title_ru="Названия регионов",
             ordering="1.1.1",
             is_organization=True
@@ -218,7 +218,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=title_column_2,
-            title_uz="Xo‘jaliklar nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Названия хозяйств",
             ordering="1.1.1",
             is_organization=True

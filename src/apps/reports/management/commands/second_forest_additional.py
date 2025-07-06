@@ -21,7 +21,11 @@ class Command(BaseCommand):
             name_ru="Дополнительное использование лесов",
             period=PeriodChoices.YILLIK
         )
-        statement_mechanization = Statement.objects.create(parent=forest_add, name="Mexanizatsiya hisobi")
+        statement_mechanization = Statement.objects.create(
+            parent=forest_add,
+            name_uz="Mexanizatsiya hisobi",
+            name_ru="Счет механизации"
+        )
 
         # ========== Neftbaza ilovasi ==========
         neftbaza_ilova = create_column(statement_mechanization, None, "Neftbaza ilovasi", "Приложение: Нефтебаза", "1")

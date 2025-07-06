@@ -64,7 +64,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=fire_prevent,
             parent=title_column,
-            title_uz="Xo‘jalik nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Название хозяйства",
             ordering="1.1.1",
             is_organization=True
@@ -110,7 +110,6 @@ class Command(BaseCommand):
             ("yong‘inga qarshi himoya chiziqlari (km)", "противопожарные линии (км)"),
             ("zovurlar (km)", "каналы (км)"),
             ("suv havzalari (m3)", "водоемы (м³)"),
-            ("kichik hajmdagi suv zaxiralari (litrda)", "маленькие водные запасы (литры)")
         ]
 
         for i, (title_uz, title_ru) in enumerate(items_1_1_3, start=1):
@@ -122,6 +121,13 @@ class Command(BaseCommand):
                 title_ru=title_ru,
                 status_plan=YILLIK
             )
+        StatementColumn.objects.create(
+            statement=fire_prevent,
+            parent=title_column,
+            title_uz="kichik hajmdagi suv zaxiralari (litrda)",
+            title_ru="маленькие водные запасы (литры)",
+            ordering="1.1.4"
+        )
 
     # ===================================================  YONG`INLARNI OLDINI OLISH
 
@@ -150,7 +156,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=second_of_statement,
             parent=title_of_column,
-            title_uz="Xo‘jalik nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Название хозяйства",
             ordering="1.1.1",
             is_organization=True
@@ -198,7 +204,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=third_title_column,
-            title_uz="Xo‘jalik nomi",
+            title_uz="Tashkilot nomi",
             title_ru="Название хозяйства",
             ordering="1.1.1",
             is_organization=True
