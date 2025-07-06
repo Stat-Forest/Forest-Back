@@ -1,8 +1,9 @@
 import json
 import uuid
 from rest_framework import serializers
-from apps.reports.models import ReportItem, Plant
+from apps.reports.models import ReportItem
 from apps.general.models import Organization
+from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class ReportItemSerializer(serializers.ModelSerializer):
@@ -13,37 +14,42 @@ class ReportItemSerializer(serializers.ModelSerializer):
         fields = ['statement_column', 'value']
 
     def get_value(self, obj):
-        raw = obj.value
+        lang = get_lang_code(self.context)
         plant_map = self.context.get('plant_map', {})
+        raw = obj.value
 
-        # 1. Try to parse plant-based JSON string
+        # 1. Plant-based JSON string
         if isinstance(raw, str):
             raw = raw.strip()
             if raw.startswith("[") and raw.endswith("]"):
                 try:
-                    parsed = json.loads(raw.replace("'", '"'))  # if needed
+                    parsed = json.loads(raw.replace("'", '"'))  # optional fix for single quotes
                     if isinstance(parsed, list) and all("plant_id" in i and "value" in i for i in parsed):
                         return [
                             {
                                 "plant_id": i["plant_id"],
                                 "value": i["value"],
-                                "plant_name": plant_map.get(i["plant_id"], "Noma'lum o‘simlik")
+                                "plant_name": get_translated_field(
+                                    obj=plant_map.get(i["plant_id"]),
+                                    field="name",
+                                    lang=lang
+                                ) if plant_map.get(i["plant_id"]) else "Noma'lum o‘simlik"
                             }
                             for i in parsed
                         ]
                 except json.JSONDecodeError:
                     pass
 
-        # 2. Try UUID (Organization)
+        # 2. UUID (organization ID)
         try:
             org_id = uuid.UUID(str(raw))
             org = Organization.objects.filter(id=org_id).first()
             if org:
-                return org.name
+                return get_translated_field(org, "name", lang)
         except (ValueError, TypeError):
             pass
 
-        # 3. Plain value
+        # 3. Plain string or number
         return raw
 
 
@@ -60,7 +66,10 @@ class ReportItemPlantValueSerializer(serializers.ModelSerializer):
         return str(obj.plant_id) if obj.plant_id else None
 
     def get_plant_name(self, obj):
-        return obj.plant.name if obj.plant else None
+        lang = get_lang_code(self.context)
+        if obj.plant:
+            return get_translated_field(obj.plant, "name", lang)
+        return None
 
     def get_plant_type(self, obj):
         if not obj.plant:
