@@ -4,7 +4,7 @@ from django.conf import settings
 LANGUAGE_CODE = 'uz'
 
 LANGUAGES = [
-    ('uz', 'Uzbek (Latin)'),
+    ('uz', 'Uzbek'),
     ('ru', 'Russian'),
 ]
 
