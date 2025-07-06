@@ -31,3 +31,9 @@ class DeadlineListAPIView(generics.ListAPIView):
             )
 
         return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz")
+        context["lang"] = lang
+        return context
