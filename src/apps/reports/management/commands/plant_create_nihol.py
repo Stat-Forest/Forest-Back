@@ -5,24 +5,31 @@ from apps.reports.models import Plant
 
 PARENT_NAMES = {
     "Yaproqbarglilar": {
+        "uz": "Yaproqbarglilar",
         "ru": "Лиственные"
     },
     "Tez o‘suvchilar": {
+        "uz": "Tez o‘suvchilar",
         "ru": "Быстрорастущие"
     },
     "Yong‘oqmevalilar": {
+        "uz": "Yong‘oqmevalilar",
         "ru": "Орехоплодные"
     },
     "Mevalilar": {
+        "uz": "Mevalilar",
         "ru": "Плодовые"
     },
     "Ignabarglilar": {
+        "uz": "Ignabarglilar",
         "ru": "Хвойные"
     },
     "Buta va gullar": {
+        "uz": "Butalar va gullar",
         "ru": "Кустарники и цветы"
     }
 }
+
 
 
 PLANTS_STRUCTURE = {
@@ -145,7 +152,8 @@ class Command(BaseCommand):
 
             parent_translations = PARENT_NAMES.get(latin_parent)
             if parent_translations:
-                setattr(parent, build_localized_fieldname("name", "ru"), parent_translations["ru"])
+                setattr(parent, build_localized_fieldname("name", "uz"), parent_translations.get("uz", latin_parent))
+                setattr(parent, build_localized_fieldname("name", "ru"), parent_translations.get("ru"))
                 parent.save()
 
             for name_uz, name_ru in children:
