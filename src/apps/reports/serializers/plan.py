@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan
+from apps.utils.translation import get_lang_code, get_translated_field
+
 
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,9 +38,9 @@ class PlanSerializer(serializers.ModelSerializer):
 
 
 class PlanListSerializer(serializers.ModelSerializer):
-    statement_name = serializers.CharField(source='statement.name', read_only=True)
-    organization_name = serializers.CharField(source='organization.name', read_only=True)
-    column_title = serializers.CharField(source='column.title', read_only=True)
+    statement_name = serializers.SerializerMethodField()
+    organization_name = serializers.SerializerMethodField()
+    column_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
@@ -53,3 +55,15 @@ class PlanListSerializer(serializers.ModelSerializer):
             'year',
             'plan_value'
         ]
+
+    def get_lang(self):
+        return get_lang_code(self.context)
+
+    def get_statement_name(self, obj):
+        return get_translated_field(obj.statement, 'name', self.get_lang())
+
+    def get_organization_name(self, obj):
+        return get_translated_field(obj.organization, 'name', self.get_lang())
+
+    def get_column_title(self, obj):
+        return get_translated_field(obj.column, 'title', self.get_lang())

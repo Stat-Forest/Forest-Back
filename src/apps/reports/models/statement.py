@@ -36,4 +36,4 @@ class Statement(AbstractBaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.name_uz
