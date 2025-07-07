@@ -175,3 +175,11 @@ class PlanListAPIView(generics.ListAPIView):
         if user.organization is not None:
             return queryset.filter(organization_id=user.organization.pk)
         return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang")
+        if not lang:
+            lang = "uz"
+        context["lang"] = lang
+        return context

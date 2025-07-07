@@ -39,3 +39,21 @@ class PlantSerializer(CustomModelSerializer):
             )
             return serializer.data
         return []
+
+{
+  "deadline": "4c18f7d2-7b6e-4fb7-a3d7-fcf1d3936905",
+  "report_items": [
+    {
+      "statement_column": "277f6472-816b-497a-8dc0-74db000df282",
+      "value": "67eefcc8-c9b8-45be-9456-481237d8afa5"
+    },
+    {
+      "statement_column": "e01abc8c-d502-46f2-9ef0-7abfbf2ccb6c",
+      "value": "10"
+    },
+    {
+      "statement_column": "b121a091-b1d9-4f13-852b-fe77d8ae1e15",
+      "value": "10"
+    }
+  ]
+}
