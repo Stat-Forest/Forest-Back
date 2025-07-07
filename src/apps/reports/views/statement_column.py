@@ -4,21 +4,28 @@ from rest_framework import generics
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
-from apps.reports.models import StatementColumn
 from apps.reports.serializers import StatementColumnTreeSerializer
 # filters.py
 import django_filters
 from apps.reports.models import Statement, StatementColumn
+from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class StatementColumnFilter(django_filters.FilterSet):
-    statement = django_filters.ModelChoiceFilter(
-        queryset=Statement.objects.filter(parent__isnull=False)
-    )
+    statement = django_filters.ModelChoiceFilter(queryset=Statement.objects.filter(parent__isnull=False))
 
     class Meta:
         model = StatementColumn
         fields = ['statement']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        lang = "uz"
+        if self.request:
+            lang = self.request.GET.get("lang", "uz").lower()
+
+        self.filters['statement'].label_from_instance = lambda obj: get_translated_field(obj, 'name', lang)
 
 
 @extend_schema(
