@@ -1,6 +1,6 @@
 from modeltranslation.translator import register, TranslationOptions
 
-from apps.reports.models import Statement, StatementColumn, Plant
+from apps.reports.models import Statement, StatementColumn, Plant, Plan
 
 
 @register(Statement)
