@@ -151,12 +151,12 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Yashash manzili"
     )
 
-    # image = models.ImageField(
-    #     upload_to="%Y/%m/%d",
-    #     blank=True,
-    #     null=True,
-    #     help_text="Foydalanuvchining rasmi"
-    # )
+    image = models.ImageField(
+        upload_to="%Y/%m/%d",
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining rasmi"
+    )
 
     is_staff = models.BooleanField(
         _('staff status'),
