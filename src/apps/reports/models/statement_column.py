@@ -7,26 +7,26 @@ from apps.base.models import AbstractBaseModel
 
 class StatementColumn(AbstractBaseModel):
     class PlanStatus(models.TextChoices):
-        YANVAR = 'yanvar', 'Yanvar'
-        FEVRAL = 'fevral', 'Fevral'
-        MART = 'mart', 'Mart'
-        APREL = 'aprel', 'Aprel'
-        MAY = 'may', 'May'
-        IYUN = 'iyun', 'Iyun'
-        IYUL = 'iyul', 'Iyul'
-        AVGUST = 'avgust', 'Avgust'
-        SENTABR = 'sentabr', 'Sentabr'
-        OKTABR = 'oktabr', 'Oktabr'
-        NOYABR = 'noyabr', 'Noyabr'
-        DEKABR = 'dekabr', 'Dekabr'
+        YANVAR = 'yanvar', _('Yanvar')
+        FEVRAL = 'fevral', _('Fevral')
+        MART = 'mart', _('Mart')
+        APREL = 'aprel', _('Aprel')
+        MAY = 'may', _('May')
+        IYUN = 'iyun', _('Iyun')
+        IYUL = 'iyul', _('Iyul')
+        AVGUST = 'avgust', _('Avgust')
+        SENTABR = 'sentabr', _('Sentabr')
+        OKTABR = 'oktabr', _('Oktabr')
+        NOYABR = 'noyabr', _('Noyabr')
+        DEKABR = 'dekabr', _('Dekabr')
 
-        CHORAK_1 = 'chorak_1', '1-chorak'
-        CHORAK_2 = 'chorak_2', '2-chorak'
-        CHORAK_3 = 'chorak_3', '3-chorak'
-        CHORAK_4 = 'chorak_4', '4-chorak'
+        CHORAK_1 = 'chorak_1', _('1-chorak')
+        CHORAK_2 = 'chorak_2', _('2-chorak')
+        CHORAK_3 = 'chorak_3', _('3-chorak')
+        CHORAK_4 = 'chorak_4', _('4-chorak')
 
-        YILLIK = 'yillik', 'Yillik'
-        YILLIK_TOTAL = 'yillik_total', 'Yillik Total'
+        YILLIK = 'yillik', _('Yillik')
+        YILLIK_TOTAL = 'yillik_total', _('Yillik Total')
 
     statement = models.ForeignKey(
         'reports.Statement',
