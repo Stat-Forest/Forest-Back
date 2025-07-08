@@ -64,15 +64,16 @@ class StatementColumn(AbstractBaseModel):
         verbose_name=_("Plan holati (oy, chorak, yil)")
     )
 
-    def clean(self):
-        super().clean()
-        if self.status_plan and self.is_organization:
-            raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
     @property
     def return_parent(self):
         if self.parent is None:
             return self.title
         return f"{self.parent.return_parent} - {self.title}"
+
+    def clean(self):
+        super().clean()
+        if self.status_plan and self.is_organization:
+            raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
 
     def __str__(self):
         return self.return_parent
