@@ -70,6 +70,10 @@ class StatementColumn(AbstractBaseModel):
             return self.title
         return f"{self.parent.return_parent} - {self.title}"
 
+    @property
+    def is_leaf(self):
+        return not StatementColumn.objects.filter(parent=self).exists()
+    
     def clean(self):
         super().clean()
         if self.status_plan and self.is_organization:
