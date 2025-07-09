@@ -74,6 +74,10 @@ class StatementColumn(AbstractBaseModel):
             return self.title
         return f"{self.parent.return_parent} - {self.title}"
 
+    @property
+    def is_leaf(self):
+        return not StatementColumn.objects.filter(parent=self).exists()
+
     def __str__(self):
         return self.return_parent
 
