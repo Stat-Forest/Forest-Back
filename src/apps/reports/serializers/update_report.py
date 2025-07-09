@@ -76,7 +76,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             raise CustomExceptionError(400, _('Organization not found.'))
 
         if Report.objects.filter(organization=organization, statement=statement, deadline=deadline).exists():
-            raise CustomExceptionError(400, {'report': ['This report already exists.']})
+            raise CustomExceptionError(400, {'report': _('This report already exists.')})
 
         if plan_column_ids:
             plans = Plan.objects.filter(column_id__in=plan_column_ids)
@@ -97,30 +97,30 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         if statement.period == PeriodChoices.KUNLIK:
             report_day = date.fromisoformat(submit_at)
             if report_day >= today:
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past days.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past days.')})
 
         elif statement.period == PeriodChoices.HAFTALIK:
             year, month, week = map(int, submit_at.split('-'))
             if year > today.year or (year == today.year and month > today.month):
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
             if year == today.year and month == today.month and week >= get_week_of_month(today):
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
 
         elif statement.period == PeriodChoices.OYLIK:
             year, month = map(int, submit_at.split('-'))
             if year > today.year or (year == today.year and month >= today.month):
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past months.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past months.')})
 
         elif statement.period == PeriodChoices.CHORAKLIK:
             year, quarter = int(submit_at[:4]), int(submit_at[-1])
             current_quarter = (today.month - 1) // 3 + 1
             if year > today.year or (year == today.year and quarter >= current_quarter):
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past quarters.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past quarters.')})
 
         elif statement.period == PeriodChoices.YILLIK:
             year = int(submit_at)
             if year >= today.year:
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past years.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past years.')})
 
         return attrs
 

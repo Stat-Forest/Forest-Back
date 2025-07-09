@@ -77,7 +77,7 @@ class StatementColumn(AbstractBaseModel):
     def clean(self):
         super().clean()
         if self.status_plan and self.is_organization:
-            raise ValidationError("An instance cannot be both a plan and an organization at the same time.")
+            raise ValidationError(_("An instance cannot be both a plan and an organization at the same time."))
 
     def __str__(self):
         return self.return_parent
