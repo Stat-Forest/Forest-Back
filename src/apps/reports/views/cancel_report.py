@@ -2,6 +2,8 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 
+from django.utils.translation import gettext_lazy as _
+
 from apps.reports.models import Report
 from apps.reports.serializers import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
@@ -17,14 +19,14 @@ class ReportCancelAPIView(UpdateAPIView):
         if not report_id:
             raise CustomExceptionError(
                 code=400,
-                detail={'id': ['This field is required.']}
+                detail={'id': _('This field is required.')}
             )
         try:
             report = self.get_queryset().get(id=report_id)
         except Report.DoesNotExist:
             raise CustomExceptionError(
                 code=404,
-                detail={'report': ['Report not found.']}
+                detail={'report': _('Report not found.')}
             )
         self.check_object_permissions(self.request, report)
         return report

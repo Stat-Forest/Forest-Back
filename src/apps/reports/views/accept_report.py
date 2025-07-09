@@ -7,6 +7,8 @@ from apps.reports.models import Report
 from apps.reports.serializers import ReportAcceptSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 
+from django.utils.translation import gettext_lazy as _
+
 
 @extend_schema(tags=["Reports Status Update"])
 class ReportAcceptAPIView(UpdateAPIView):
@@ -27,7 +29,7 @@ class ReportAcceptAPIView(UpdateAPIView):
         except Report.DoesNotExist:
             raise CustomExceptionError(
                 code=404,
-                detail={'report': ['Report not found.']}
+                detail={'report': _('Report not found.')}
             )
         self.check_object_permissions(self.request, report)
         return report

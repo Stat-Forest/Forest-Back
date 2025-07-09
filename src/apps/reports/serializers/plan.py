@@ -4,6 +4,7 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan
 from apps.utils.translation import get_lang_code, get_translated_field
 
+from django.utils.translation import gettext_lazy as _
 
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,7 +25,7 @@ class PlanSerializer(serializers.ModelSerializer):
         if value < 1900 or value > current_year:
             raise CustomExceptionError(
                 400,
-                {'year': ['Year must be between 1900 and current year.']}
+                {'year': _('Year must be between 1900 and current year.')}
             )
         return value
 
@@ -32,7 +33,7 @@ class PlanSerializer(serializers.ModelSerializer):
         if value < 0:
             raise CustomExceptionError(
                 400,
-                {'plan_value': ['Plan value cannot be negative.']}
+                {'plan_value': _('Plan value cannot be negative.')}
             )
         return value
 
