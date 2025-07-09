@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.reports.models.deadline import Deadline
+from django.utils.translation import gettext_lazy as _
 
 
 class PlantValueSerializer(serializers.Serializer):
@@ -21,4 +22,4 @@ class PlantReportInitSerializer(serializers.Serializer):
         try:
             return Deadline.objects.get(id=value)
         except Deadline.DoesNotExist:
-            raise serializers.ValidationError("Deadline not found.")
+            raise serializers.ValidationError(_("Deadline topilmadi."))
