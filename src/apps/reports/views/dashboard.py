@@ -5,6 +5,8 @@ from apps.base.views import CustomGenericAPIView
 from apps.reports.serializers import DashboardStatSerializer
 from drf_spectacular.utils import extend_schema
 
+from django.utils.translation import gettext_lazy as _
+
 
 @extend_schema(tags=["Dashboards"])
 class DashboardStatListView(CustomGenericAPIView):
@@ -40,7 +42,7 @@ class DashboardStatListView(CustomGenericAPIView):
             plans = Plan.objects.filter(organization_id=user.organization.id).count()
 
         else:
-            return Response({"detail": "Invalid user context."}, status=400)
+            return Response({"detail": _("Invalid user context.")}, status=400)
 
         data = {
             "sent_reports": report_qs.filter(status=Report.StatusChoices.SENT).count(),

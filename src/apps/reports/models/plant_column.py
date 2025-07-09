@@ -1,7 +1,9 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 from apps.base.models import AbstractBaseModel
+
 
 
 class Plant(AbstractBaseModel):
@@ -17,7 +19,7 @@ class Plant(AbstractBaseModel):
 
     def clean(self):
         if self.parent and self.parent_id == self.id:
-            raise ValidationError("Plant cannot be parent of itself.")
+            raise ValidationError(_("Plant cannot be parent of itself."))
 
     def __str__(self):
         return self.name
@@ -41,7 +43,7 @@ class ColumnPlant(AbstractBaseModel):
 
     def clean(self):
         if self.plant.children.exists():
-            raise ValidationError("Only leaf-level plants can be assigned to a column.")
+            raise ValidationError(_("Only leaf-level plants can be assigned to a column."))
 
 
     def __str__(self):

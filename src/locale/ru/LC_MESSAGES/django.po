@@ -1,0 +1,663 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-07-09 14:12+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+#: apps/general/admin/organization.py:16
+msgid "An organization with this name already exists."
+msgstr ""
+
+#: apps/general/models/organization.py:11
+msgid "Name"
+msgstr "Название"
+
+#: apps/general/models/organization.py:16
+msgid "Region"
+msgstr "Регион"
+
+#: apps/general/models/organization.py:20 apps/reports/models/report.py:17
+msgid "Organization"
+msgstr "Организация"
+
+#: apps/general/models/organization.py:21 apps/reports/admin/deadline.py:82
+#: apps/reports/models/deadline.py:10
+msgid "Organizations"
+msgstr "Организации"
+
+#: apps/reports/admin/deadline.py:25
+msgid ""
+"A deadline already exists for this combination of organizations, statement, "
+"and submit_at."
+msgstr "Дедлайн уже существует для данной комбинации организаций, отчёта и даты сдачи."
+
+#: apps/reports/admin/deadline.py:33
+msgid "Invalid date format. Please use the YYYY-MM-DD format"
+msgstr "Недопустимый формат даты. Пожалуйста, используйте формат ГГГГ-ММ-ДД"
+
+#: apps/reports/admin/deadline.py:46
+msgid "Invalid week format. Please use the YYYY-MM-Wx format"
+msgstr "Недопустимый формат недели. Пожалуйста, используйте формат ГГГГ-MM-Wx"
+
+#: apps/reports/admin/deadline.py:53
+msgid "Invalid month format. Please use the YYYY-MM format"
+msgstr "Недопустимый формат месяца. Пожалуйста, используйте формат ГГГГ-ММ"
+
+#: apps/reports/admin/deadline.py:64
+msgid "Invalid quarter format. Please use the YYYY-Qx format"
+msgstr "Недопустимый формат квартала. Пожалуйста, используйте формат ГГГГ-Qx"
+
+#: apps/reports/admin/deadline.py:69
+msgid "Invalid year format. Please use the YYYY format"
+msgstr "Недопустимый формат года. Пожалуйста, используйте формат ГГГГ"
+
+#: apps/reports/admin/statement.py:19
+msgid "If no parent is specified, the period should also be empty."
+msgstr "Если родитель не указан, период также должен быть пустым."
+
+#: apps/reports/models/deadline.py:24
+msgid "Kunlik-YYYY-MM-DD , "
+msgstr "Ежедневно-ГГГГ-MM-ДД , "
+
+#: apps/reports/models/deadline.py:37 apps/reports/models/report.py:30
+msgid "Deadline"
+msgstr "Срок сдачи"
+
+#: apps/reports/models/deadline.py:38
+msgid "Deadlines"
+msgstr "Сроки сдачи"
+
+#: apps/reports/models/plant_column.py:22
+msgid "Plant cannot be parent of itself."
+msgstr "Элемент не может быть родителем самому себе."
+
+#: apps/reports/models/plant_column.py:46
+msgid "Only leaf-level plants can be assigned to a column."
+msgstr "Только конечные элементы могут быть назначены столбцу."
+
+#: apps/reports/models/report.py:9
+msgid "Saved"
+msgstr "Сохранён"
+
+#: apps/reports/models/report.py:10 apps/utils/services/choices.py:67
+msgid "Sent"
+msgstr "Отправлен"
+
+#: apps/reports/models/report.py:11 apps/utils/services/choices.py:68
+msgid "Cancelled"
+msgstr "Отменён"
+
+#: apps/reports/models/report.py:12 apps/utils/services/choices.py:69
+msgid "Accepted"
+msgstr "Принят"
+
+#: apps/reports/models/report.py:24
+msgid "Statement"
+msgstr "Отчёт"
+
+#: apps/reports/models/report.py:37
+msgid "Status"
+msgstr "Статус"
+
+#: apps/reports/models/report.py:43
+msgid "Cancel reason"
+msgstr "Причина отмены"
+#: apps/reports/models/report.py:44
+msgid "Reason for cancelling the report"
+msgstr "Причина отмены отчёта"
+
+#: apps/reports/models/report.py:63 apps/reports/models/report_item.py:12
+msgid "Report"
+msgstr "Отчёт"
+
+#: apps/reports/models/report.py:64
+msgid "Reports"
+msgstr "Отчёты"
+
+#: apps/reports/models/report_item.py:23
+#: apps/reports/models/statement_column.py:86
+msgid "Statement Column"
+msgstr "Столбец отчёта"
+
+#: apps/reports/models/report_item.py:26
+msgid "Value"
+msgstr "Значение"
+
+#: apps/reports/models/report_item.py:33
+msgid "Report Item"
+msgstr "Элемент отчёта"
+
+#: apps/reports/models/report_item.py:34
+msgid "Report Items"
+msgstr "Элементы отчёта"
+
+#: apps/reports/models/statement_column.py:10
+msgid "Yanvar"
+msgstr "Январь"
+
+#: apps/reports/models/statement_column.py:11
+msgid "Fevral"
+msgstr "Февраль"
+
+#: apps/reports/models/statement_column.py:12
+msgid "Mart"
+msgstr "Март"
+
+#: apps/reports/models/statement_column.py:13
+msgid "Aprel"
+msgstr "Апрель"
+
+#: apps/reports/models/statement_column.py:14
+msgid "May"
+msgstr "Май"
+
+#: apps/reports/models/statement_column.py:15
+msgid "Iyun"
+msgstr "Июнь"
+
+#: apps/reports/models/statement_column.py:16
+msgid "Iyul"
+msgstr "Июль"
+
+#: apps/reports/models/statement_column.py:17
+msgid "Avgust"
+msgstr "Август"
+
+#: apps/reports/models/statement_column.py:18
+msgid "Sentabr"
+msgstr "Сентябрь"
+
+#: apps/reports/models/statement_column.py:19
+msgid "Oktabr"
+msgstr "Октябрь"
+
+#: apps/reports/models/statement_column.py:20
+msgid "Noyabr"
+msgstr "Ноябрь"
+
+#: apps/reports/models/statement_column.py:21
+msgid "Dekabr"
+msgstr "Декабрь"
+
+#: apps/reports/models/statement_column.py:23
+msgid "1-chorak"
+msgstr "1-й квартал"
+
+#: apps/reports/models/statement_column.py:24
+msgid "2-chorak"
+msgstr "2-й квартал"
+
+#: apps/reports/models/statement_column.py:25
+msgid "3-chorak"
+msgstr "3-й квартал"
+
+#: apps/reports/models/statement_column.py:26
+msgid "4-chorak"
+msgstr "4-й квартал"
+
+#: apps/reports/models/statement_column.py:28 apps/utils/services/choices.py:63
+msgid "Yillik"
+msgstr "Годовой"
+
+#: apps/reports/models/statement_column.py:29
+msgid "Yillik Total"
+msgstr "Годовая сумма"
+
+#: apps/reports/models/statement_column.py:48
+msgid "Column Title"
+msgstr "Название столбца"
+
+#: apps/reports/models/statement_column.py:53
+msgid "Ordering"
+msgstr "Порядок сортировки"
+
+#: apps/reports/models/statement_column.py:64
+msgid "Plan holati (oy, chorak, yil)"
+msgstr "Плановый статус (месяц, квартал, год)"
+
+#: apps/reports/models/statement_column.py:80
+msgid "An instance cannot be both a plan and an organization at the same time."
+msgstr "Экземпляр не может одновременно быть и планом, и организацией."
+
+#: apps/reports/models/statement_column.py:87
+msgid "Statement Columns"
+msgstr "Столбцы отчёта"
+
+#: apps/reports/serializers/create_report.py:36
+msgid "Organization ID must be a valid UUID."
+msgstr "ID организации должен быть корректным UUID."
+
+#: apps/reports/serializers/create_report.py:51
+#: apps/reports/serializers/update_report.py:35
+msgid "User organization is not related to this deadline"
+msgstr "Организация пользователя не связана с этим сроком сдачи"
+#: apps/reports/serializers/create_report.py:57
+#: apps/reports/serializers/update_report.py:42
+msgid "Invalid statement column(s) found."
+msgstr "Найдены недопустимые столбцы отчёта."
+
+#: apps/reports/serializers/create_report.py:76
+msgid "Value must be a list for plant-based reports."
+msgstr "Значение должно быть списком для отчётов по растениям."
+
+#: apps/reports/serializers/create_report.py:79
+msgid "Each plant entry must contain plant_id and value."
+msgstr "Каждая запись растения должна содержать plant_id и значение."
+
+#: apps/reports/serializers/create_report.py:83
+msgid "Plant value must be numeric."
+msgstr "Значение растения должно быть числом."
+
+#: apps/reports/serializers/create_report.py:92
+#: apps/reports/serializers/update_report.py:60
+msgid "Plan value must be an integer."
+msgstr "Плановое значение должно быть целым числом."
+
+#: apps/reports/serializers/create_report.py:97
+#: apps/reports/serializers/update_report.py:70
+msgid "Invalid organizations. Multiple different organizations found."
+msgstr "Недопустимые организации. Найдено несколько различных организаций."
+
+#: apps/reports/serializers/create_report.py:101
+msgid "Invalid organization."
+msgstr "Недопустимая организация."
+
+#: apps/reports/serializers/create_report.py:125
+#: apps/reports/serializers/update_report.py:100
+msgid "You can only submit for past days."
+msgstr "Вы можете отправить только за прошедшие дни."
+
+#: apps/reports/serializers/create_report.py:133
+msgid "Invalid weekly format. Must be YYYY-MM-Wn"
+msgstr "Недопустимый формат недели. Должно быть в формате ГГГГ-ММ-Wn"
+
+#: apps/reports/serializers/create_report.py:136
+#: apps/reports/serializers/update_report.py:105
+#: apps/reports/serializers/update_report.py:107
+msgid "You can only submit for past weeks."
+msgstr "Вы можете отправить только за прошедшие недели."
+
+#: apps/reports/serializers/create_report.py:142
+#: apps/reports/serializers/update_report.py:112
+msgid "You can only submit for past months."
+msgstr "Вы можете отправить только за прошедшие месяцы."
+
+#: apps/reports/serializers/create_report.py:147
+#: apps/reports/serializers/update_report.py:118
+msgid "You can only submit for past quarters."
+msgstr "Вы можете отправить только за прошедшие кварталы."
+
+#: apps/reports/serializers/create_report.py:151
+#: apps/reports/serializers/update_report.py:123
+msgid "You can only submit for past years."
+msgstr "Вы можете отправить только за прошедшие года."
+
+#: apps/reports/serializers/create_report.py:154
+#: apps/reports/serializers/update_report.py:79
+msgid "This report already exists."
+msgstr "Такой отчёт уже существует."
+
+#: apps/reports/serializers/plan.py:28
+msgid "Year must be between 1900 and current year."
+msgstr "Год должен быть между 1900 и текущим годом."
+
+#: apps/reports/serializers/plan.py:36
+msgid "Plan value cannot be negative."
+msgstr "Плановое значение не может быть отрицательным."
+
+#: apps/reports/serializers/plant_report.py:25
+msgid "Deadline topilmadi."
+msgstr "Срок сдачи не найден."
+
+#: apps/reports/serializers/update_report.py:29
+msgid "User must have a statement to create report !"
+msgstr "У пользователя должен быть отчёт для создания записи!"
+
+#: apps/reports/serializers/update_report.py:32
+msgid "User statement does not match deadline statement !"
+msgstr "Отчёт пользователя не совпадает с отчётом по сроку сдачи!"
+
+#: apps/reports/serializers/update_report.py:67
+msgid "Value must be a number."
+msgstr "Значение должно быть числом."
+
+#: apps/reports/serializers/update_report.py:76
+msgid "Organization not found."
+msgstr "Организация не найдена."
+
+#: apps/reports/serializers/update_report.py:87
+msgid "Invalid Plan value"
+msgstr "Недопустимое плановое значение"
+
+#: apps/reports/views/accept_report.py:32
+#: apps/reports/views/cancel_report.py:29
+msgid "Report not found."
+msgstr "Отчёт не найден."
+
+#: apps/reports/views/cancel_report.py:22
+msgid "This field is required."
+msgstr "Это поле обязательно для заполнения."
+
+#: apps/reports/views/dashboard.py:45
+msgid "Invalid user context."
+msgstr "Недопустимый контекст пользователя."
+
+#: apps/reports/views/plan_create.py:30
+msgid "Statement does not match column statement"
+msgstr "Отчёт не соответствует столбцу отчёта"
+
+#: apps/reports/views/plant_report.py:20
+msgid "Tashkilot topilmadi."
+msgstr "Организация не найдена."
+
+#: apps/users/admin.py:31
+msgid "Login Credentials"
+msgstr "Учётные данные для входа"
+
+#: apps/users/admin.py:34
+msgid "Personal Info"
+msgstr "Личная информация"
+
+#: apps/users/admin.py:41
+msgid "Permissions and Role"
+msgstr "Права и роль"
+
+#: apps/users/admin.py:46
+msgid "Important Dates"
+msgstr "Важные даты"
+
+#: apps/users/admin.py:52
+msgid "Create User"
+msgstr "Создать пользователя"
+
+#: apps/users/models/personal_info.py:10
+msgid "Higher"
+msgstr "Высшее"
+
+#: apps/users/models/personal_info.py:11
+msgid "Middle"
+msgstr "Среднее"
+
+#: apps/users/models/personal_info.py:12
+msgid "Middle Special"
+msgstr "Среднее специальное"
+#: apps/users/models/users.py:14
+msgid "Super Admin"
+msgstr "Супер Админ"
+
+#: apps/users/models/users.py:15
+msgid "Rahbariyat"
+msgstr "Руководство"
+
+#: apps/users/models/users.py:16
+msgid "Bo`lim Admin"
+msgstr "Администратор отдела"
+
+#: apps/users/models/users.py:17
+msgid "Tashkilot rahbari"
+msgstr "Руководитель организации"
+
+#: apps/users/models/users.py:18
+msgid "Tashkilot hodimi"
+msgstr "Сотрудник организации"
+
+#: apps/users/models/users.py:19
+msgid "Hududiy boshqarma"
+msgstr "Территориальное управление"
+
+#: apps/users/models/users.py:22
+msgid "Male"
+msgstr "Мужской"
+
+#: apps/users/models/users.py:23
+msgid "Female"
+msgstr "Женский"
+
+#: apps/users/models/users.py:78
+msgid "Gender"
+msgstr "Пол"
+
+#: apps/users/models/users.py:85
+msgid "Nation"
+msgstr "Национальность"
+
+#: apps/users/models/users.py:162
+msgid "staff status"
+msgstr "статус персонала"
+
+#: apps/users/models/users.py:164
+msgid "Designates whether the user can log into this admin site."
+msgstr "Определяет, может ли пользователь войти в административную панель."
+
+#: apps/users/models/users.py:167
+msgid "active"
+msgstr "активен"
+
+#: apps/users/models/users.py:168
+msgid ""
+"Designates whether this user should be treated as active.Unselect this "
+"instead of deleting accounts."
+msgstr "Определяет, следует ли считать пользователя активным. Снимите этот флажок вместо удаления аккаунта."
+
+#: apps/users/validations/passport_number_validate.py:9
+msgid "format number of password incorrect. For Example: AA 1234567"
+msgstr "неверный формат номера паспорта. Пример: AA 1234567"
+
+#: apps/utils/services/check_valid_image.py:15
+#, python-brace-format
+msgid "Image dimensions should not exceed {max_width}x{max_height} pixels."
+msgstr "Размеры изображения не должны превышать {max_width}x{max_height} пикселей."
+
+#: apps/utils/services/check_valid_image.py:21
+msgid "Image size should not exceed {max_size / (1024 * 1024)} MB."
+msgstr "Размер изображения не должен превышать {max_size / (1024 * 1024)} МБ."
+
+#: apps/utils/services/choices.py:5
+msgid "Tashkent"
+msgstr "Ташкент"
+
+#: apps/utils/services/choices.py:6
+msgid "Namangan"
+msgstr "Наманган"
+
+#: apps/utils/services/choices.py:7
+msgid "Andijon"
+msgstr "Андижан"
+
+#: apps/utils/services/choices.py:8
+msgid "Fergana"
+msgstr "Фергана"
+
+#: apps/utils/services/choices.py:9
+msgid "Bukhara"
+msgstr "Бухара"
+
+#: apps/utils/services/choices.py:10
+msgid "Samarkand"
+msgstr "Самарканд"
+
+#: apps/utils/services/choices.py:11
+msgid "Navoi"
+msgstr "Навои"
+
+#: apps/utils/services/choices.py:12
+msgid "Qashqadarya"
+msgstr "Кашкадарья"
+
+#: apps/utils/services/choices.py:13
+msgid "Surxondaryo"
+msgstr "Сурхандарья"
+
+#: apps/utils/services/choices.py:14
+msgid "Khorezm"
+msgstr "Хорезм"
+
+#: apps/utils/services/choices.py:15
+msgid "Sirdaryo"
+msgstr "Сырдарья"
+
+#: apps/utils/services/choices.py:16
+msgid "Jizzakh"
+msgstr "Джизак"
+
+#: apps/utils/services/choices.py:17
+msgid "Karakalpakstan"
+msgstr "Каракалпакстан"
+
+#: apps/utils/services/choices.py:19
+msgid "Respublika tashkilotlari"
+msgstr "Республиканские организации"
+
+#: apps/utils/services/choices.py:20
+msgid "Boshqa tashkilotlar"
+msgstr "Другие организации"
+
+#: apps/utils/services/choices.py:26
+msgid "Hodimlar hisobi"
+msgstr "Учёт сотрудников"
+
+#: apps/utils/services/choices.py:27
+msgid "Hodimlar hisobi tahlili"
+msgstr "Анализ учёта сотрудников"
+#: apps/utils/services/choices.py:28
+msgid "Daromad"
+msgstr "Доход"
+
+#: apps/utils/services/choices.py:29
+msgid "Jamg'arma"
+msgstr "Фонд"
+
+#: apps/utils/services/choices.py:30
+msgid "Niholxona-ko'chatxona"
+msgstr "Парник–питомник"
+
+#: apps/utils/services/choices.py:31
+msgid "Yopiq ildiz yirik hajmli"
+msgstr "С закрытой корневой системой, крупномасштабные"
+
+#: apps/utils/services/choices.py:32
+msgid "Sotish uchun yaroqli ko'chatlar"
+msgstr "Саженцы, пригодные для продажи"
+
+#: apps/utils/services/choices.py:33
+msgid "Qalamcha tayyorlash"
+msgstr "Подготовка черенков"
+
+#: apps/utils/services/choices.py:34
+msgid "Nih kuch jamlanma"
+msgstr "Комплекс саженцев"
+
+#: apps/utils/services/choices.py:35
+msgid "Ko'chat harakati"
+msgstr "Движение саженцев"
+
+#: apps/utils/services/choices.py:36
+msgid "Ko'chat qoldiq (ko'chat turi bo'yicha)"
+msgstr "Остаток саженцев (по типу саженцев)"
+
+#: apps/utils/services/choices.py:37
+msgid "Nihol harakati"
+msgstr "Движение рассады"
+
+#: apps/utils/services/choices.py:38
+msgid "Nihol qoldiq (nihol turi bo'yicha)"
+msgstr "Остаток рассады (по типу рассады)"
+
+#: apps/utils/services/choices.py:39
+msgid "Ko'chat yetkazib berish"
+msgstr "Доставка саженцев"
+
+#: apps/utils/services/choices.py:40
+msgid "Urmon barpo qilish"
+msgstr "Создание лесов"
+
+#: apps/utils/services/choices.py:41
+msgid "Urug' harakati"
+msgstr "Движение семян"
+
+#: apps/utils/services/choices.py:42
+msgid "Urug' turi bo'yicha"
+msgstr "По типу семян"
+
+#: apps/utils/services/choices.py:43
+msgid "Urug'larni jamg'arish"
+msgstr "Сбор семян"
+
+#: apps/utils/services/choices.py:44
+msgid "Yaylov hisobi"
+msgstr "Учёт пастбищ"
+
+#: apps/utils/services/choices.py:45
+msgid "Chorvachilik"
+msgstr "Животноводство"
+
+#: apps/utils/services/choices.py:46
+msgid "Mexanizatsiya hisobi"
+msgstr "Учёт механизации"
+
+#: apps/utils/services/choices.py:47
+msgid "Qishloq xo'jaligi"
+msgstr "Сельское хозяйство"
+
+#: apps/utils/services/choices.py:48
+msgid "Pichan o'rish"
+msgstr "Косов сена"
+
+#: apps/utils/services/choices.py:49
+msgid "Ijaraga berilgan yerlar hisobi"
+msgstr "Учёт арендованных земель"
+
+#: apps/utils/services/choices.py:50
+msgid "Yer o'zlashtirish"
+msgstr "Освоение земель"
+
+#: apps/utils/services/choices.py:51
+msgid "Urmon bilan qoplangan yerlar"
+msgstr "Земли, покрытые лесом"
+
+#: apps/utils/services/choices.py:52
+msgid "Yong'inlarni oldini olish"
+msgstr "Профилактика пожаров"
+
+#: apps/utils/services/choices.py:53
+msgid "Zararkunanda va kasalliklarga qarshi kurashish"
+msgstr "Борьба с вредителями и болезнями"
+
+#: apps/utils/services/choices.py:54
+msgid "Huquqbuzarlik"
+msgstr "Правонарушение"
+
+#: apps/utils/services/choices.py:59
+msgid "Kunlik"
+msgstr "Ежедневно"
+
+#: apps/utils/services/choices.py:60
+msgid "Haftalik"
+msgstr "Еженедельно"
+
+#: apps/utils/services/choices.py:61
+msgid "Oylik"
+msgstr "Ежемесячно"
+
+#: apps/utils/services/choices.py:62
+msgid "Choraklik (3 oy)"
+msgstr "Ежеквартально (3 месяца)"
+
+#: apps/utils/services/choices.py:66
+msgid "New"
+msgstr "Новый"
