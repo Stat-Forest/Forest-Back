@@ -11,10 +11,8 @@ from apps.reports.views import (
     PlanListAPIView,
 )
 
-from apps.reports.models import Plan
-from apps.reports.models import Report
 from apps.reports.views.plant_column import PlantListAPIView
-from apps.reports.views.plant_report import PlantReportListAPIView
+from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
 from apps.reports.views.update_delete_plan import PlanUpdateAPIView, PlanDeleteAPIView
 
 urlpatterns = [
@@ -58,11 +56,7 @@ urlpatterns = [
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
-    path("plant-report/", PlantReportListAPIView.as_view(), name="plant-report-list")
+    path("plant-report/kochat/", KochatReportListAPIView.as_view(), name="plant-report-kochat-list"),
+    path("plant-report/nihol/", NiXolReportListAPIView.as_view(), name="plant-report-nixol-list")
 
 ]
-
-
-# Plan.objects.all().delete()
-# Report.objects.all().delete()
-
