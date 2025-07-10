@@ -30,6 +30,7 @@ urlpatterns += [
     path('api/v1/general/', include('apps.general.urls')),
     path('api/v1/sum/', include('apps.sum.urls')),
     path('api/v1/statistics/', include('apps.report_statistics.urls')),
+    path('api/v1/eimzo-login/', include('apps.e_imzo.urls')),
 ]
 
 if settings.DEBUG:
