@@ -169,6 +169,33 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
             'Unselect this instead of deleting accounts.'
         ),
     )
+
+    #===============================E-IMZO =======================
+    pin = models.CharField(
+        max_length=14,
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining PINFL raqami"
+    )
+
+    is_legal_entity = models.BooleanField(
+        default=False,
+        help_text="Yuridik shaxs yoki yo'qligi"
+    )
+
+    full_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
+    )
+
+    signature_verified_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="E-Imzo imzosi tasdiqlangan vaqt"
+    )
+
     
     def save(self, *args, **kwargs):
         if self.is_superuser:
