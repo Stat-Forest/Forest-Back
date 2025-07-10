@@ -10,7 +10,7 @@ from .serializers import EimzoLoginSerializer
 from .services import verify_pkcs7
 from .utils import generate_user_email_and_password_fn
 from apps.general.models import Organization
-from apps.user.models import CustomUser
+from apps.users.models import CustomUser
 
 
 User = get_user_model()
