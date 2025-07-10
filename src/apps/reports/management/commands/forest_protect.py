@@ -30,7 +30,6 @@ class Command(BaseCommand):
             title_uz="Amalda",
             title_ru="Факт",
             ordering=f"{base_ordering}.2",
-            status_plan=status_plan
         )
 
         return parent_column
@@ -129,7 +128,7 @@ class Command(BaseCommand):
             ordering="1.1.4"
         )
 
-    # ===================================================  YONG`INLARNI OLDINI OLISH
+    # ===================================================  ZARARKUNANDA
 
         second_of_statement, _ = Statement.objects.get_or_create(
             parent=root,
