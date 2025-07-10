@@ -38,7 +38,8 @@ class Command(BaseCommand):
             "1.1"
         )
 
-        create_column(statement_mechanization, neftbaza_title, "Tashkilot nomi", "Наименование организации", "1.1.1", is_organization=True)
+        create_column(statement_mechanization, neftbaza_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+                      is_organization=True)
         create_column(statement_mechanization, neftbaza_title, "Neftbaza nomi", "Наименование нефтебазы", "1.1.2")
 
         nakladnoy = create_column(statement_mechanization, neftbaza_title, "Nakladnoy", "Накладная", "1.1.3")
@@ -48,7 +49,8 @@ class Command(BaseCommand):
         create_column(statement_mechanization, neftbaza_title, "Yoqilgʻi turi", "Вид топлива", "1.1.4")
         create_column(statement_mechanization, neftbaza_title, "Miqdori, kg", "Количество, кг", "1.1.5")
         create_column(statement_mechanization, neftbaza_title, "Summasi, ming soʻm", "Сумма, тыс. сум", "1.1.6")
-        create_column(statement_mechanization, neftbaza_title, "Moliya manbai (byudjet/xoʻjalik hisobidan)", "Источник финансирования (бюджет/хозрасчёт)", "1.1.7")
+        create_column(statement_mechanization, neftbaza_title, "Moliya manbai (byudjet/xoʻjalik hisobidan)",
+                      "Источник финансирования (бюджет/хозрасчёт)", "1.1.7")
 
         # ========== Avto ilovasi ==========
         avto_ilova = create_column(statement_mechanization, None, "Avto ilovasi", "Приложение: Автомашины", "1")
@@ -302,112 +304,114 @@ class Command(BaseCommand):
             create_column(statement_mechanization, hujjat, "Miqdori, tonna", "Количество, тонн", f"1.1.{i + 1}.3.3")
 
             # ========== Pichan ilovasi ==========
-            pichan_statement, _ = Statement.objects.get_or_create(
-                parent=forest_add,
-                name_uz="Pichan o`rish",
-                name_ru="Сенокошение",
-            )
+        pichan_statement, _ = Statement.objects.get_or_create(
+            parent=forest_add,
+            name_uz="Pichan o`rish",
+            name_ru="Сенокошение",
+            period=PeriodChoices.YILLIK
+        )
 
-            hay_app = create_column(
-                statement_mechanization,
-                None,
-                "Pichan o‘rish ilovasi",
-                "Приложение: Сенокошение",
-                "1"
-            )
+        hay_app = create_column(
+            pichan_statement,
+            None,
+            "Pichan o‘rish ilovasi",
+            "Приложение: Сенокошение",
+            "1"
+        )
 
-            hay_title = create_column(
-                statement_mechanization,
-                hay_app,
-                "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yerlarida pichan o‘rish uchun berilgan yerlar hisoboti bo‘yicha ________ yil holatiga maʼlumot",
-                "Информация по состоянию на ________ год о сенокосных угодьях, предоставленных в лесном фонде хозяйствам в системе Агентства лесного хозяйства",
-                "1.1"
-            )
+        hay_title = create_column(
+            pichan_statement,
+            hay_app,
+            "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yerlarida pichan o‘rish uchun berilgan yerlar hisoboti bo‘yicha ________ yil holatiga maʼlumot",
+            "Информация по состоянию на ________ год о сенокосных угодьях, предоставленных в лесном фонде хозяйствам в системе Агентства лесного хозяйства",
+            "1.1"
+        )
 
-            create_column(pichan_statement, hay_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
-                          is_organization=True)
-            create_column(pichan_statement, hay_title, "____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                          "Прогнозные показатели на ____ год, тыс. сум (план)", "1.1.2")
-            create_column(pichan_statement, hay_title, "Jami pichan o‘rish mumkin bo‘lgan maydon (ga)",
-                          "Общая площадь возможного сенокошения (га)", "1.1.3")
-            create_column(pichan_statement, hay_title, "Pichan o‘riladigan yaroqli maydon (ga)",
-                          "Пригодная площадь для сенокошения (га)", "1.1.4")
-            create_column(pichan_statement, hay_title, "Shundan, pichan o‘riladigan maydon (ga)",
-                          "Из них: площадь, на которой будет производиться сенокошение (га)", "1.1.5")
-            create_column(pichan_statement, hay_title, "Foydalanuvchilar soni (dona)", "Количество пользователей (шт)",
-                          "1.1.6")
-            create_column(pichan_statement, hay_title, "Pichan o‘rish uchun kelib tushgan arizalar soni",
-                          "Количество поступивших заявок на сенокошение", "1.1.7")
-            create_column(pichan_statement, hay_title,
-                          "Shundan pichan o‘rish uchun berilgan ruxsatnoma summasi (ming so‘m) (amalda)",
-                          "Сумма выданных разрешений на сенокошение, тыс. сум (факт)", "1.1.8")
-            create_column(pichan_statement, hay_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма, тыс. сум",
-                          "1.1.9")
-            create_column(pichan_statement, hay_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма, тыс. сум",
-                          "1.1.10")
-            create_column(pichan_statement, hay_title, "Jamg‘armalarga o‘tkazilgan mablag‘ (ming so‘m)",
-                          "Средства, перечисленные в фонды, тыс. сум", "1.1.11")
+        create_column(pichan_statement, hay_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+                      is_organization=True)
+        create_column(pichan_statement, hay_title, "____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
+                      "Прогнозные показатели на ____ год, тыс. сум (план)", "1.1.2")
+        create_column(pichan_statement, hay_title, "Jami pichan o‘rish mumkin bo‘lgan maydon (ga)",
+                      "Общая площадь возможного сенокошения (га)", "1.1.3")
+        create_column(pichan_statement, hay_title, "Pichan o‘riladigan yaroqli maydon (ga)",
+                      "Пригодная площадь для сенокошения (га)", "1.1.4")
+        create_column(pichan_statement, hay_title, "Shundan, pichan o‘riladigan maydon (ga)",
+                      "Из них: площадь, на которой будет производиться сенокошение (га)", "1.1.5")
+        create_column(pichan_statement, hay_title, "Foydalanuvchilar soni (dona)", "Количество пользователей (шт)",
+                      "1.1.6")
+        create_column(pichan_statement, hay_title, "Pichan o‘rish uchun kelib tushgan arizalar soni",
+                      "Количество поступивших заявок на сенокошение", "1.1.7")
+        create_column(pichan_statement, hay_title,
+                      "Shundan pichan o‘rish uchun berilgan ruxsatnoma summasi (ming so‘m) (amalda)",
+                      "Сумма выданных разрешений на сенокошение, тыс. сум (факт)", "1.1.8")
+        create_column(pichan_statement, hay_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма, тыс. сум",
+                      "1.1.9")
+        create_column(pichan_statement, hay_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма, тыс. сум",
+                      "1.1.10")
+        create_column(pichan_statement, hay_title, "Jamg‘armalarga o‘tkazilgan mablag‘ (ming so‘m)",
+                      "Средства, перечисленные в фонды, тыс. сум", "1.1.11")
 
-            # ========== Yaylov ilovasi ==========
-            yaylov_statement, _ = Statement.objects.get_or_create(
-                parent=forest_add,
-                name_uz="Yaylov hisoboti",
-                name_ru="Пастбище",
-            )
+        # ========== Yaylov ilovasi ==========
+        yaylov_statement, _ = Statement.objects.get_or_create(
+            parent=forest_add,
+            name_uz="Yaylov hisoboti",
+            name_ru="Пастбище",
+            period=PeriodChoices.YILLIK
+        )
 
-            pasture_app = create_column(yaylov_statement, None, "Yaylov ilovasi", "Приложение: Пастбище", "9")
-            pasture_title = create_column(
-                yaylov_statement,
-                pasture_app,
-                "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yaylov hududlariga chorva mollarini joylashtirish boʻyicha ________ yil holatiga maʼlumot",
-                "Информация по размещению скота на пастбищных участках лесного фонда в хозяйствах системы Агентства лесного хозяйства по состоянию на ________ год",
-                "9.1"
-            )
+        pasture_app = create_column(yaylov_statement, None, "Yaylov ilovasi", "Приложение: Пастбище", "1")
+        pasture_title = create_column(
+            yaylov_statement,
+            pasture_app,
+            "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yaylov hududlariga chorva mollarini joylashtirish boʻyicha ________ yil holatiga maʼlumot",
+            "Информация по размещению скота на пастбищных участках лесного фонда в хозяйствах системы Агентства лесного хозяйства по состоянию на ________ год",
+            "1.1"
+        )
 
-            create_column(yaylov_statement, pasture_title, "Tashkilot nomi", "Наименование организации", "9.1.1",
-                          is_organization=True)
-            create_column(yaylov_statement, pasture_title, "_____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                          "Прогнозные показатели на _____ год, тыс. сум (план)", "9.1.2")
-            create_column(yaylov_statement, pasture_title, "Jami yaylov maydoni (ga)", "Общая площадь пастбищ (га)",
-                          "9.1.3")
-            create_column(yaylov_statement, pasture_title, "Mol boqishga yaroqli maydon (ga)",
-                          "Пригодная площадь для выпаса скота (га)", "9.1.4")
-            create_column(yaylov_statement, pasture_title, "Shundan, chorva boqilayotgan maydon (ga)",
-                          "Из них: площадь, на которой пасется скот (га)", "9.1.5")
-            create_column(yaylov_statement, pasture_title, "Foydalanuvchilar soni (dona)",
-                          "Количество пользователей (шт)", "9.1.6")
-            create_column(yaylov_statement, pasture_title,
-                          "Yaylovga joylashtirilgan chorva mollarining jami soni (bosh)",
-                          "Общее количество скота, размещенного на пастбищах (голов)", "9.1.7")
+        create_column(yaylov_statement, pasture_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+                      is_organization=True)
+        create_column(yaylov_statement, pasture_title, "_____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
+                      "Прогнозные показатели на _____ год, тыс. сум (план)", "1.1.2")
+        create_column(yaylov_statement, pasture_title, "Jami yaylov maydoni (ga)", "Общая площадь пастбищ (га)",
+                      "1.1.3")
+        create_column(yaylov_statement, pasture_title, "Mol boqishga yaroqli maydon (ga)",
+                      "Пригодная площадь для выпаса скота (га)", "1.1.4")
+        create_column(yaylov_statement, pasture_title, "Shundan, chorva boqilayotgan maydon (ga)",
+                      "Из них: площадь, на которой пасется скот (га)", "1.1.5")
+        create_column(yaylov_statement, pasture_title, "Foydalanuvchilar soni (dona)",
+                      "Количество пользователей (шт)", "1.1.6")
+        create_column(yaylov_statement, pasture_title,
+                      "Yaylovga joylashtirilgan chorva mollarining jami soni (bosh)",
+                      "Общее количество скота, размещенного на пастбищах (голов)", "1.1.7")
 
-            chorva_turi = create_column(yaylov_statement, pasture_title, "Chorva turlari, soni, summasi (ming so‘m)",
-                                        "Виды скота, количество и сумма (тыс. сум)", "9.1.8")
-            create_column(yaylov_statement, chorva_turi, "Mayda shoxli mollar", "Мелкий рогатый скот", "9.1.8.1")
-            create_column(yaylov_statement, chorva_turi, "Echkilar", "Козы", "9.1.8.2")
-            create_column(yaylov_statement, chorva_turi, "To‘lov: mayda shoxli mollar va echkilar (ming so‘m)",
-                          "Плата: мелкий рогатый скот и козы (тыс. сум)", "9.1.8.3")
-            create_column(yaylov_statement, chorva_turi, "6 oygacha MShM (qo‘zi, uloq)",
-                          "До 6 месяцев МРС (ягнята, козлята)", "9.1.8.4")
-            create_column(yaylov_statement, chorva_turi, "To‘lov: 6 oygacha qo‘zi/uloq (ming so‘m)",
-                          "Плата: до 6 месяцев (ягнята/козлята), тыс. сум", "9.1.8.5")
-            create_column(yaylov_statement, chorva_turi, "Yirik shoxli mollar", "Крупный рогатый скот", "9.1.8.6")
-            create_column(yaylov_statement, chorva_turi, "Otlar, tuyalar", "Лошади, верблюды", "9.1.8.7")
-            create_column(yaylov_statement, chorva_turi, "Eshaklar", "Ослики", "9.1.8.8")
-            create_column(yaylov_statement, chorva_turi, "To‘lov: YSHM, otlar, tuyalar, eshaklar (ming so‘m)",
-                          "Плата: КРС, лошади, верблюды, ослы (тыс. сум)", "9.1.8.9")
-            create_column(yaylov_statement, chorva_turi, "2 yoshgacha YSHM", "До 2 лет КРС", "9.1.8.10")
-            create_column(yaylov_statement, chorva_turi, "To‘lov: 2 yoshgacha YSHM (ming so‘m)",
-                          "Плата: до 2 лет КРС, тыс. сум", "9.1.8.11")
+        chorva_turi = create_column(yaylov_statement, pasture_title, "Chorva turlari, soni, summasi (ming so‘m)",
+                                    "Виды скота, количество и сумма (тыс. сум)", "1.1.8")
+        create_column(yaylov_statement, chorva_turi, "Mayda shoxli mollar", "Мелкий рогатый скот", "1.1.8.1")
+        create_column(yaylov_statement, chorva_turi, "Echkilar", "Козы", "1.1.8.2")
+        create_column(yaylov_statement, chorva_turi, "To‘lov: mayda shoxli mollar va echkilar (ming so‘m)",
+                      "Плата: мелкий рогатый скот и козы (тыс. сум)", "1.1.8.3")
+        create_column(yaylov_statement, chorva_turi, "6 oygacha MShM (qo‘zi, uloq)",
+                      "До 6 месяцев МРС (ягнята, козлята)", "1.1.8.4")
+        create_column(yaylov_statement, chorva_turi, "To‘lov: 6 oygacha qo‘zi/uloq (ming so‘m)",
+                      "Плата: до 6 месяцев (ягнята/козлята), тыс. сум", "1.1.8.5")
+        create_column(yaylov_statement, chorva_turi, "Yirik shoxli mollar", "Крупный рогатый скот", "1.1.8.6")
+        create_column(yaylov_statement, chorva_turi, "Otlar, tuyalar", "Лошади, верблюды", "1.1.8.7")
+        create_column(yaylov_statement, chorva_turi, "Eshaklar", "Ослики", "1.1.8.8")
+        create_column(yaylov_statement, chorva_turi, "To‘lov: YSHM, otlar, tuyalar, eshaklar (ming so‘m)",
+                      "Плата: КРС, лошади, верблюды, ослы (тыс. сум)", "1.1.8.9")
+        create_column(yaylov_statement, chorva_turi, "2 yoshgacha YSHM", "До 2 лет КРС", "1.1.8.10")
+        create_column(yaylov_statement, chorva_turi, "To‘lov: 2 yoshgacha YSHM (ming so‘m)",
+                      "Плата: до 2 лет КРС, тыс. сум", "1.1.8.11")
 
-            create_column(yaylov_statement, pasture_title,
-                          "Yaylov uchun tuzilgan shartnoma summasi (ming so‘m, amalda)",
-                          "Сумма заключенного договора на пастбище (тыс. сум, факт)", "9.1.9")
-            create_column(yaylov_statement, pasture_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма (тыс. сум)",
-                          "9.1.10")
-            create_column(yaylov_statement, pasture_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма (тыс. сум)",
-                          "9.1.11")
-            create_column(yaylov_statement, pasture_title, "Jamg‘armaga o‘tkazilgan mablag‘ (ming so‘m)",
-                          "Средства, перечисленные в фонд (тыс. сум)", "9.1.12")
+        create_column(yaylov_statement, pasture_title,
+                      "Yaylov uchun tuzilgan shartnoma summasi (ming so‘m, amalda)",
+                      "Сумма заключенного договора на пастбище (тыс. сум, факт)", "1.1.9")
+        create_column(yaylov_statement, pasture_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма (тыс. сум)",
+                      "1.1.10")
+        create_column(yaylov_statement, pasture_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма (тыс. сум)",
+                      "1.1.11")
+        create_column(yaylov_statement, pasture_title, "Jamg‘armaga o‘tkazilgan mablag‘ (ming so‘m)",
+                      "Средства, перечисленные в фонд (тыс. сум)", "1.1.12")
 
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Mexanizatsiya hisobi' Statement and Columns."))
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Pichan Urish hisobi' Statement and Columns."))
