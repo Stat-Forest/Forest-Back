@@ -31,7 +31,7 @@ class EimzoJWTLoginView(APIView):
         name = vo.get("name", "")
         surname = vo.get("surname", "")
         uid = vo.get("uid") or vo.get("1.2.860.3.16.1.2")
-        legal_stir = vo.get("1.2.860.3.16.1.1", "")
+        # legal_stir = vo.get("1.2.860.3.16.1.1", "")
         legal_name = vo.get("o", "").upper()
 
         email = f"{uid}@example.com"
@@ -43,8 +43,8 @@ class EimzoJWTLoginView(APIView):
             mid_name = " ".join(full_parts[2:])
 
         organization = None
-        if legal_stir and legal_name:
-            organization = Organization.objects.filter(name=legal_name, stir=legal_stir).first()
+        if legal_name:
+            organization = Organization.objects.filter(name=legal_name).first()
             if not organization:
                 return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
 
@@ -58,7 +58,7 @@ class EimzoJWTLoginView(APIView):
                 "father_name": mid_name.upper(),
                 "full_name": full_name.upper(),
                 "nationality": vo.get("c", "").upper(),
-                "is_legal_entity": bool(legal_stir),
+                # "is_legal_entity": bool(legal_stir),
                 "organization": organization,
                 "is_active": True,
                 "role": CustomUser.Role.BOLIM_ADMIN,

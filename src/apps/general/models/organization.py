@@ -16,12 +16,12 @@ class Organization(AbstractBaseModel):
         verbose_name=_("Region")
     )
 
-    stir = models.CharField(
-        max_length=14,
-        unique=True,
-        verbose_name=_("STIR"),
-        help_text=_("Tashkilotning STIR raqami")
-    )
+    # stir = models.CharField(
+    #     max_length=14,
+    #     unique=True,
+    #     verbose_name=_("STIR"),
+    #     help_text=_("Tashkilotning STIR raqami")
+    # )
 
     class Meta:
         verbose_name = _("Organization")
@@ -29,4 +29,4 @@ class Organization(AbstractBaseModel):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({self.stir})"
+        return f"{self.name}"
