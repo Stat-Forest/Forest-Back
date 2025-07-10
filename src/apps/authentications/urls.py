@@ -7,7 +7,7 @@ from apps.authentications.views.forgot_passwords import (
     VerifyCodeAPIView,
     NewPasswordAPIView,
 )
-
+from apps.e_imzo.views import EimzoJWTLoginView
 
 urlpatterns = [
     path('login/', LoginAPIView.as_view(), name='login'),
@@ -18,4 +18,5 @@ urlpatterns = [
     path('forgot-password/new-password/', NewPasswordAPIView.as_view(), name='set_new_password'),
 
     path("change-password/", ChangePasswordAPIView.as_view(), name="change-password"),
+    path("", EimzoJWTLoginView.as_view(), name="eimzo-jwt-login")
 ]
