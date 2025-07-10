@@ -1,11 +1,11 @@
-from apps.reports.models import Report, ReportItem, StatementColumn
+from django.db import models
+
+from apps.reports.models import StatementColumn, Report, ReportItem, ColumnPlant
+from apps.reports.services.get_leaf_columns import get_leaf_columns_under_ilova_root
 
 
 def get_or_create_report_and_columns(deadline, organization, ilova_title_uz: str):
-    """
-    Faqat `ilova_title_uz` (masalan, "Ko‘chat-ilovasi") ostidagi leaf columnlar uchun
-    ColumnPlant orqali plant asosida ReportItem larni yaratadi yoki mavjudlarini qaytaradi.
-    """
+
     report, created = Report.objects.get_or_create(
         deadline=deadline,
         organization=organization,
@@ -13,8 +13,21 @@ def get_or_create_report_and_columns(deadline, organization, ilova_title_uz: str
         defaults={"status": Report.StatusChoices.SAVED},
     )
 
+    try:
+        ilova_root = StatementColumn.objects.get(
+            statement=deadline.statement,
+            title_uz__iexact=ilova_title_uz,
+            parent__isnull=True
+        )
+    except StatementColumn.DoesNotExist:
+        return report, []
+
     if not created:
-        existing_items = report.report_items.select_related("statement_column", "plant")
+        existing_items = ReportItem.objects.filter(
+            report=report,
+            statement_column__in=StatementColumn.objects.filter(statement=deadline.statement)
+        ).select_related("statement_column", "plant")
+
         result = {}
         for item in existing_items:
             col_id = str(item.statement_column_id)
@@ -31,23 +44,13 @@ def get_or_create_report_and_columns(deadline, organization, ilova_title_uz: str
             })
         return report, list(result.values())
 
-    try:
-        ilova_root = StatementColumn.objects.get(
-            statement=deadline.statement,
-            title_uz__iexact=ilova_title_uz,
-            parent__isnull=True
+    # get all leaf columns under ilova root
+    leaf_columns = get_leaf_columns_under_ilova_root(ilova_root).prefetch_related(
+        models.Prefetch(
+            'column_plants',
+            queryset=ColumnPlant.objects.select_related('plant').order_by('ordering')
         )
-    except StatementColumn.DoesNotExist:
-        return report, []
-
-    all_columns = StatementColumn.objects.filter(
-        statement=deadline.statement
-    ).select_related("parent")
-
-    leaf_columns = [
-        col for col in all_columns
-        if col.parent and col.parent.parent_id == ilova_root.id and not col.children.exists()
-    ]
+    )
 
     items_to_create = []
     result = []
@@ -78,4 +81,5 @@ def get_or_create_report_and_columns(deadline, organization, ilova_title_uz: str
         })
 
     ReportItem.objects.bulk_create(items_to_create)
+
     return report, result
