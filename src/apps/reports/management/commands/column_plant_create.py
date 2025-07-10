@@ -3,12 +3,13 @@ from apps.reports.models import StatementColumn, Plant, ColumnPlant
 
 
 class Command(BaseCommand):
-    help = "❗️Faqat 'Ko‘chat-ilovasi' va 'Nihol-ilovasi' ostidagi leaf-columnlarga (tashkilot emas) barcha plantlarni ColumnPlant sifatida bog'laydi"
+    help = "❗️Faqat 'Ko‘chat-ilovasi' va 'Nihol-ilovasi' ostidagi leaf-columnlarga (tashkilot emas) har bir plantni faqat 1 marta ColumnPlant sifatida bog'laydi"
 
     def handle(self, *args, **kwargs):
         allowed_ilova_titles = ["Ko‘chat-ilovasi", "Nihol-ilovasi"]
-        all_plants = Plant.objects.all()
+        all_plants = list(Plant.objects.all())
         created_count = 0
+        used_plant_ids = set(ColumnPlant.objects.values_list("plant_id", flat=True))
 
         for ilova_title in allowed_ilova_titles:
             try:
@@ -24,11 +25,14 @@ class Command(BaseCommand):
 
             for column in leaf_columns:
                 for plant in all_plants:
+                    if plant.id in used_plant_ids:
+                        continue  # allaqachon boshqa columnga bog‘langan
                     obj, created = ColumnPlant.objects.get_or_create(
                         column=column,
                         plant=plant
                     )
                     if created:
+                        used_plant_ids.add(plant.id)
                         created_count += 1
                         print(f"✅ Yaratildi: Ilova = {ilova_title}, Column = {column.title_uz}, Plant = {plant.name}")
                     else:
