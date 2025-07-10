@@ -18,5 +18,5 @@ urlpatterns = [
     path('forgot-password/new-password/', NewPasswordAPIView.as_view(), name='set_new_password'),
 
     path("change-password/", ChangePasswordAPIView.as_view(), name="change-password"),
-    path("", EimzoJWTLoginView.as_view(), name="eimzo-jwt-login")
+    path("eimzo-login/", EimzoJWTLoginView.as_view(), name="eimzo-jwt-login")
 ]
