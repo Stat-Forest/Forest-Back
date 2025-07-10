@@ -10,6 +10,7 @@ from apps.reports.views import (
     PlanStatementColumnListAPIView, PlanCreateView,
     PlanListAPIView,
 )
+from apps.reports.views.column_plant import ColumnPlantListAPIView
 
 from apps.reports.views.plant_column import PlantListAPIView
 from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
@@ -57,6 +58,6 @@ urlpatterns = [
     # ====================  PLANT URL FOR SPECIALLY    ====================
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
     path("plant-report/kochat/", KochatReportListAPIView.as_view(), name="plant-report-kochat-list"),
-    path("plant-report/nihol/", NiXolReportListAPIView.as_view(), name="plant-report-nixol-list")
-
+    path("plant-report/nihol/", NiXolReportListAPIView.as_view(), name="plant-report-nixol-list"),
+    path("column-plants/", ColumnPlantListAPIView.as_view(), name="column-plant-lists")
 ]

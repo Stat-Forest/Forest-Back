@@ -1,7 +1,8 @@
+from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
 
-from apps.reports.models import Report, Plant
+from apps.reports.models import Report, Plant, ReportItem
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.serializers import (
     ReportListSerializer,
@@ -17,21 +18,26 @@ from apps.base.views import (
 @extend_schema(tags=["Reports"])
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
+
     queryset = Report.objects.select_related(
         'organization',
         'statement',
         'deadline',
     ).prefetch_related(
-        'report_items',
-        'report_items__statement_column',
+        Prefetch(
+            'report_items',
+            queryset=ReportItem.objects.select_related('plant', 'statement_column')
+        )
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
 
     serializer_class = ReportListSerializer
     filterset_fields = [
-        'status', 'organization__name','organization', 'statement__name','statement', 'statement__period', 'organization__region']
-
+        'status', 'organization__name','organization',
+        'statement__name','statement', 'statement__period',
+        'organization__region'
+    ]
     def get_queryset(self):
         user = self.request.user
         if user.organization is not None:
@@ -62,7 +68,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
 class ReportDeleteAPIView(DestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
-    permission_classes = (CanUpdateReport,)
+    # permission_classes = (CanUpdateReport,)
     lookup_field = 'id'
 
 
