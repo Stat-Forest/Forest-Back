@@ -96,19 +96,35 @@ class Command(BaseCommand):
                 title_ru=title_ru,
                 ordering=parent_ordering
             )
-            for i, child in enumerate(["Reja", "Amalda"], start=1):
-                status_plan = None
-                if child == "Reja":
-                    status_plan = StatementColumn.PlanStatus[plan_status]
 
-                StatementColumn.objects.create(
-                    statement=first_of_second_statement,
-                    parent=parent,
-                    title_uz=child,
-                    title_ru={"Reja": "План", "Amalda": "Факт"}[child],
-                    ordering=f"{parent_ordering}.{i}",
-                    status_plan=status_plan
-                )
+            if index == 2:
+                children = ["Reja", "Amalda", "%"]
+                for i, child in enumerate(children, start=1):
+                    status_plan = None
+                    if child == "Reja":
+                        status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
+                    StatementColumn.objects.create(
+                        statement=first_of_second_statement,
+                        parent=parent,
+                        title_uz=child,
+                        title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[child],
+                        ordering=f"{parent_ordering}.{i}",
+                        status_plan=status_plan
+                    )
+
+            else:
+                for i, child in enumerate(["Reja", "Amalda"], start=1):
+                    status_plan = None
+                    if child == "Reja":
+                        status_plan = StatementColumn.PlanStatus.YILLIK
+                    StatementColumn.objects.create(
+                        statement=first_of_second_statement,
+                        parent=parent,
+                        title_uz=child,
+                        title_ru={"Reja": "План", "Amalda": "Факт"}[child],
+                        ordering=f"{parent_ordering}.{i}",
+                        status_plan=status_plan
+                    )
 
         # ================================================================ Закрытый корень крупногабаритный
 
@@ -226,9 +242,10 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
-            title_uz="Daraxt va buta urug'lari turlari",
-            title_ru="Виды семян деревьев и кустарников",
-            ordering="1.1.1"
+            title_uz="Tashkilot nomi",
+            title_ru="Название организации",
+            ordering="1.1.1",
+            is_organization=True
         )
 
         parent = StatementColumn.objects.create(
