@@ -329,16 +329,15 @@ class Command(BaseCommand):
                 ("O‘rmon barpo qilindi", "1.1.5.1"),
                 ("O‘rmon xatosiga ekildi", "1.1.5.2"),
                 ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
-                ("Tarbiya bo‘limiga o‘tkazildi", "1.1.5.4"),
-                ("Sotildi", "1.1.5.5", [
-                    ("Tashkilot nomi", "1.1.5.5.1"),
-                    ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
-                    ("Tashkilot nomi", "1.1.5.5.3"),
-                    ("Tashkilot nomi", "1.1.5.5.4")
+                ("Sotildi", "1.1.5.4", [
+                    ("Tashkilot nomi", "1.1.5.4.1"),
+                    ("shartnoma raqami (№ sanasi)", "1.1.5.4.2"),
+                    ("Ko`chat soni", "1.1.5.4.3"),
+                    ("summasi", "1.1.5.4.4")
                 ]),
-                ("Sotildi", "1.1.5.6", [
-                    ("ko‘chat soni, (dona)", "1.1.5.6.1"),
-                    ("summasi (ming so‘m)", "1.1.5.6.2")
+                ("Beg`araz berildi", "1.1.5.5", [
+                    ("ko‘chat soni, (dona)", "1.1.5.5.1"),
+                    ("summasi (ming so‘m)", "1.1.5.5.2")
                 ]),
                 ("Nobud bo‘lgan ko‘chatlar (buyruq asosida)", "1.1.5.7"),
                 ("Jami chiqim", "1.1.5.8"),
@@ -362,12 +361,12 @@ class Command(BaseCommand):
                     "O‘rmon barpo qilindi": "Создание лесов",
                     "O‘rmon xatosiga ekildi": "Посадка для восполнения потерь лесов",
                     "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
-                    "Tarbiya bo‘limiga o‘tkazildi": "Передано в питомник",
                     "Sotildi": "Продано",
                     "Tashkilot nomi": "Название организации",
                     "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
                     "ko‘chat soni, (dona)": "Количество ростков (шт)",
                     "summasi (ming so‘m)": "Сумма (тыс. сум)",
+                    "Beg`araz berildi:": "Бескорыстно",
                     "Nobud bo‘lgan ko‘chatlar (buyruq asosida)": "Уничтоженные ростки (на основании приказа)",
                     "Jami chiqim": "Общий расход",
                     "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
@@ -415,20 +414,19 @@ class Command(BaseCommand):
                 ("O‘rmon barpo qilindi", "1.1.5.1"),
                 ("O‘rmon xatosiga ekildi", "1.1.5.2"),
                 ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
-                ("Tarbiya bo‘limiga o‘tkazildi", "1.1.5.4"),
-                ("Sotildi", "1.1.5.5", [
-                    ("Tashkilot nomi", "1.1.5.5.1"),
-                    ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
-                    ("Tashkilot nomi", "1.1.5.5.3"),
-                    ("Tashkilot nomi", "1.1.5.5.4")
+                ("Sotildi", "1.1.5.4", [
+                    ("Tashkilot nomi", "1.1.5.4.1"),
+                    ("shartnoma raqami (№ sanasi)", "1.1.5.4.2"),
+                    ("nihol soni", "1.1.5.4.3"),
+                    ("summasi", "1.1.5.4.4")
                 ]),
-                ("Sotildi", "1.1.5.6", [
-                    ("nihollari soni, (dona)", "1.1.5.6.1"),
-                    ("summasi (ming so‘m)", "1.1.5.6.2")
+                ("Beg`araz sotildi", "1.1.5.5", [
+                    ("nihollari soni, (dona)", "1.1.5.5.1"),
+                    ("summasi (ming so‘m)", "1.1.5.5.2")
                 ]),
-                ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.5.7"),
-                ("Jami chiqim", "1.1.5.8"),
-                ("Shu davrga nisbatan yakuniy qoldiq", "1.1.5.9"),
+                ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.5.6"),
+                ("Jami chiqim", "1.1.5.7"),
+                ("Shu davrga nisbatan yakuniy qoldiq", "1.1.5.8"),
             ])
         ]
 
@@ -448,12 +446,12 @@ class Command(BaseCommand):
                     "O‘rmon barpo qilindi": "Создание лесов",
                     "O‘rmon xatosiga ekildi": "Посадка для восполнения потерь лесов",
                     "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
-                    "Tarbiya bo‘limiga o‘tkazildi": "Передано в питомник",
                     "Sotildi": "Продано",
                     "Tashkilot nomi": "Название организации",
                     "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
                     "nihollari soni, (dona)": "Количество саженцев (шт)",
                     "summasi (ming so‘m)": "Сумма (тыс. сум)",
+                    "Beg`araz berildi:": "Бескорыстно",
                     "Nobud bo‘lgan nihollar (buyruq asosida)": "Уничтоженные саженцы (на основании приказа)",
                     "Jami chiqim": "Общий расход",
                     "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
