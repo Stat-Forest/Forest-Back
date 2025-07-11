@@ -16,7 +16,7 @@ class Organization(AbstractBaseModel):
         verbose_name=_("Region")
     )
 
-    stir = models.PositiveBigIntegerField()
+    stir = models.PositiveBigIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("Organization")
