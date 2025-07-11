@@ -59,11 +59,10 @@ class EimzoJWTLoginView(APIView):
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": {
-                "email": user.email,
-                "full_name": user.full_name,
-                "role": user.role,
-                "organization":user.organization.name,
-                "stir":legal_stir
-            }
+            "full_name": user.full_name,
+            "role": user.role,
+            "organization":user.organization.name_uz,
+            "stir":legal_stir,
+            "pinfl":pinfl,
+            "user_id":user.id
         }, status=status.HTTP_200_OK)
