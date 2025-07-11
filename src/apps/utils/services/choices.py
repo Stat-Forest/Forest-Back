@@ -17,7 +17,6 @@ class RegionChoices(models.TextChoices):
     QORAQALPAQSTAN = 'qoraqalpog‘iston', _('Karakalpakstan')
 
     REPUBLIC = 'republic', _('Respublika tashkilotlari')
-    OTHERS = 'others', _('Boshqa tashkilotlar')
 
 from django.utils.translation import gettext_lazy as _
 from django.db import models
