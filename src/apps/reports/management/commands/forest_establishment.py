@@ -262,7 +262,7 @@ class Command(BaseCommand):
                 title_uz=title,
                 title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
                 ordering=f"1.1.2.{i}",
-                status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL if title == "Reja" else None
+                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None
             )
 
         StatementColumn.objects.create(
