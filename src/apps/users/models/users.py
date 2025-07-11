@@ -171,16 +171,17 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     )
 
     #===============================E-IMZO =======================
-    pin = models.CharField(
+    pinfl = models.CharField(
         max_length=14,
         blank=True,
         null=True,
         help_text="Foydalanuvchining PINFL raqami"
     )
-
-    is_legal_entity = models.BooleanField(
-        default=False,
-        help_text="Yuridik shaxs yoki yo'qligi"
+    tin = models.CharField(
+        max_length=14,
+        blank=True,
+        null=True,
+        help_text="Foydalanuvchining stir raqami"
     )
 
     full_name = models.CharField(
@@ -190,11 +191,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
     )
 
-    signature_verified_at = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="E-Imzo imzosi tasdiqlangan vaqt"
-    )
+
 
     
     def save(self, *args, **kwargs):
