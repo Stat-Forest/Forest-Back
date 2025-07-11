@@ -135,7 +135,7 @@ class Command(BaseCommand):
                 ("Toshkent davlat o‘rmon xo‘jaligi", "Ташкентское государственное лесное хозяйство", 200663214),
                 ("Bekobod davlat o‘rmon xo‘jaligi", "Бекабадское государственное лесное хозяйство", 200556283),
                 ("Burchmulla davlat o‘rmon xo‘jaligi", "Бурчмуллинское государственное лесное хозяйство", 200438857),
-                ("Oxangaron davlat o‘rmon xo‘jaligi", "Ахангаранское государственное лесное хозяйство", 200608534),
+                ("Ohangaron davlat o‘rmon xo‘jaligi", "Ахангаранское государственное лесное хозяйство", 200608534),
                 ("Saksonota davlat o‘rmon ishlab chiqarish korxonasi",
                  "Саксанотинское государственное лесопроизводственное предприятие", 205693166),
                 ("Quyichirchiq ixtisoslashgan davlat o‘rmon xo‘jaligi",
