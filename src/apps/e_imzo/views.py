@@ -11,7 +11,6 @@ from .services import verify_pkcs7
 from .utils import generate_user_email_and_password_fn
 from apps.general.models import Organization
 from apps.users.models import CustomUser
-from django.db.models import Q
 
 
 User = get_user_model()
@@ -45,7 +44,7 @@ class EimzoJWTLoginView(APIView):
 
         organization = None
         if legal_stir and legal_name:
-            organization = Organization.objects.filter(Q(name=legal_name) | Q(stir=legal_stir)).first()
+            organization = Organization.objects.filter(stir=legal_stir).first()
             if not organization:
                 return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
 
