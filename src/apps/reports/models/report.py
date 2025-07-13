@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from django.conf import settings
 from apps.base.models import AbstractBaseModel
+from apps.users.models import CustomUser
 
 
 class Report(AbstractBaseModel):
@@ -54,6 +55,26 @@ class Report(AbstractBaseModel):
     accepted_at = models.DateTimeField(
         blank=True,
         null=True,
+    )
+    sent_by = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="%(app_label)s_%(class)s_set",
+    )
+    sent_by_org = models.ForeignKey(
+        "general.Organization",
+        on_delete=models.PROTECT,
+        verbose_name=_("Organization"),
+        related_name="sent_by_reports",
+        db_index=True
+    )
+    sent_by_role =  models.CharField(
+        choices=CustomUser.Role.choices,
+        max_length=50,
+        help_text="Foydalanuvchining tizimdagi roli"
     )
 
     def __str__(self):
