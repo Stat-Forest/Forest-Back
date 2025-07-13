@@ -62,7 +62,7 @@ class Report(AbstractBaseModel):
         null=True,
         blank=True,
         editable=False,
-        related_name="%(app_label)s_%(class)s_set",
+        related_name="reports_sent_by",
     )
     sent_by_org = models.ForeignKey(
         "general.Organization",
