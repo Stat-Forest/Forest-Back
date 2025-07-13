@@ -8,17 +8,17 @@ class ReportListSerializer(serializers.ModelSerializer):
     period = serializers.CharField(source='statement.period')
     organization_name = serializers.SerializerMethodField()
     report_items = serializers.SerializerMethodField()
-    statement__name = serializers.SerializerMethodField()
+    statement_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = (
             'id', 'organization', 'organization_name',
-            'statement','statement_name'
+            'statement', 'statement_name',
             'deadline', 'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items','sent_by','sent_by_org','sent_by_role'
+            'report_items', 'sent_by', 'sent_by_org', 'sent_by_role'
         )
 
     def get_organization_name(self, obj):
