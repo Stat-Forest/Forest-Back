@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.generics import UpdateAPIView
 
 from apps.reports.models import Report
-# from apps.reports.permissions import CanAcceptReport
+from apps.reports.permissions import CanAcceptReport
 from apps.reports.serializers import ReportAcceptSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 
@@ -15,7 +15,7 @@ class ReportAcceptAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
 
-    # permission_classes = [CanAcceptReport]
+    permission_classes = [CanAcceptReport]
 
     def get_object(self):
         report_id = self.request.data.get('id')
