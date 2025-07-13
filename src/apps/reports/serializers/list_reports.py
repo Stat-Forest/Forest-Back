@@ -39,7 +39,7 @@ class ReportListSerializer(serializers.ModelSerializer):
 
     def get_sent_by_full_name(self, obj):
         if obj.sent_by:
-            return obj.sent_by.get_full_name()  # yoki obj.sent_by.full_name, agar `.get_full_name()` yo‘q bo‘lsa
+            return obj.sent_by.full_name
         return None
 
     def get_sent_by_org_name(self, obj):
