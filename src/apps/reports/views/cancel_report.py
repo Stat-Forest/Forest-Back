@@ -3,6 +3,7 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 
 from django.utils.translation import gettext_lazy as _
+from apps.reports.permissions import CanCancelReport
 
 from apps.reports.models import Report
 from apps.reports.serializers import ReportCancelSerializer
@@ -13,6 +14,7 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 class ReportCancelAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCancelSerializer
+    permission_classes = [CanCancelReport]
 
     def get_object(self):
         report_id = self.request.data.get('id')
