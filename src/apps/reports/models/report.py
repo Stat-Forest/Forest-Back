@@ -69,12 +69,16 @@ class Report(AbstractBaseModel):
         on_delete=models.PROTECT,
         verbose_name=_("Organization"),
         related_name="sent_by_reports",
-        db_index=True
+        db_index=True,
+        null=True,
+        blank=True,
     )
     sent_by_role =  models.CharField(
         choices=CustomUser.Role.choices,
         max_length=50,
-        help_text="Foydalanuvchining tizimdagi roli"
+        help_text="Foydalanuvchining tizimdagi roli",
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
