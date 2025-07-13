@@ -8,6 +8,7 @@ class ReportListSerializer(serializers.ModelSerializer):
     period = serializers.CharField(source='statement.period')
     organization_name = serializers.SerializerMethodField()
     report_items = serializers.SerializerMethodField()
+    statement__name = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
