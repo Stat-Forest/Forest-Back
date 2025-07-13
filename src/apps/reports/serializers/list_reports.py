@@ -25,6 +25,10 @@ class ReportListSerializer(serializers.ModelSerializer):
         lang = get_lang_code(self.context)
         return get_translated_field(obj.organization, "name", lang)
 
+    def get_statement_name(self, obj):
+        lang = get_lang_code(self.context)
+        return get_translated_field(obj.statement, "name", lang)
+
     def get_report_items(self, obj):
         items = obj.report_items.all().select_related('statement_column', 'plant')
         result = {}
