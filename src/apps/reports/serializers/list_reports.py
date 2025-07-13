@@ -13,11 +13,11 @@ class ReportListSerializer(serializers.ModelSerializer):
         model = Report
         fields = (
             'id', 'organization', 'organization_name',
-            'statement',
+            'statement','statement__name'
             'deadline', 'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items'
+            'report_items','sent_by','sent_by_org','sent_by_role'
         )
 
     def get_organization_name(self, obj):

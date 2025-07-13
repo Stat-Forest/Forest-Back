@@ -4,7 +4,7 @@ from rest_framework.mixins import UpdateModelMixin
 from rest_framework.exceptions import ValidationError, NotFound
 
 from apps.reports.models import Report
-# from apps.reports.permissions import CanSendReport
+from apps.reports.permissions import CanSendReport
 from apps.reports.serializers import ReportSendSerializer
 
 
@@ -13,7 +13,7 @@ class ReportSendAPIView(UpdateModelMixin, GenericAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportSendSerializer
 
-    # permission_classes = [CanSendReport]
+    permission_classes = [CanSendReport]
 
     def get_object(self):
         report_id = self.request.data.get('id')
