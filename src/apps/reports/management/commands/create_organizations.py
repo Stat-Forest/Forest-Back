@@ -1,5 +1,6 @@
 from django.core.management import BaseCommand
 
+from django.utils import translation
 from apps.general.models import Organization
 from apps.utils.services import RegionChoices
 
@@ -10,6 +11,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("Organizations already exist!"))
             return
 
+        translation.activate('uz')
         org_data = {
             RegionChoices.REPUBLIC : [
                 ("O‘rmon agentligi", "Лесное агентство", 200934675),
@@ -150,18 +152,17 @@ class Command(BaseCommand):
             ],
         }
 
-        organizations = []
+        count = 0
         for region, orgs in org_data.items():
             for name_uz, name_ru, stir in orgs:
-                organizations.append(
-                    Organization(
-                        name=name_uz,
-                        name_uz=name_uz,
-                        name_ru=name_ru,
-                        stir=stir,
-                        region=region
-                    )
+                org = Organization(
+                    name_uz=name_uz,
+                    name_ru=name_ru,
+                    stir=stir,
+                    region=region
                 )
+                org.name = name_uz
+                org.save()
+                count += 1
 
-        Organization.objects.bulk_create(organizations)
-        self.stdout.write(self.style.SUCCESS(f"{len(organizations)} organizations created successfully."))
+        self.stdout.write(self.style.SUCCESS(f"{count} organizations created successfully."))
