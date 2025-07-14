@@ -10,18 +10,19 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164','localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164','localhost', '127.0.0.1', 'stat-urmon.uz']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://forest.yutori.uz",
     "http://localhost:5173",
     "http://localhost:5174",
+    "http://stat-urmon.uz",
+    "https://stat-urmon.uz",
 ]
-# CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
-    "jazzmin",
     'modeltranslation',
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -106,10 +107,6 @@ AUTH_USER_MODEL = "users.CustomUser"
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_DB = 0
-
-
-CORS_ALLOW_ALL_ORIGINS = True
-
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Forest API',
