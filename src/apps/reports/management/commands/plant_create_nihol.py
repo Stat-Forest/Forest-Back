@@ -27,9 +27,12 @@ PARENT_NAMES = {
     "Buta va gullar": {
         "uz": "Butalar va gullar",
         "ru": "Кустарники и цветы"
+    },
+    "Xo`jalik DUH": {
+        "uz": "Xo`jalik DO`X",
+        "ru": "Сельское хозяйство DOX"
     }
 }
-
 
 
 PLANTS_STRUCTURE = {
@@ -164,5 +167,17 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(f"  ✓ {name_uz} (parent: {latin_parent})")
                     total += 1
+
+        # Qo‘shimcha: Xo‘jalik DUH qo‘shiladi
+        if "Xo`jalik DUH" in PARENT_NAMES:
+            name = "Xo`jalik DUH"
+            data = PARENT_NAMES[name]
+            parent, created = Plant.objects.get_or_create(name=name, parent=None)
+            setattr(parent, build_localized_fieldname("name", "uz"), data["uz"])
+            setattr(parent, build_localized_fieldname("name", "ru"), data["ru"])
+            parent.save()
+            if created:
+                self.stdout.write(f"✓ Created parent: {name}")
+                total += 1
 
         self.stdout.write(self.style.SUCCESS(f"✓ Done. Total created: {total}"))
