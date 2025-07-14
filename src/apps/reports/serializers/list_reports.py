@@ -4,25 +4,49 @@ from apps.reports.serializers import ReportItemSerializer, ReportItemPlantValueS
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
+from rest_framework import serializers
+from apps.reports.models import Report
+from apps.utils.translation import get_lang_code, get_translated_field
+
+
 class ReportListSerializer(serializers.ModelSerializer):
     period = serializers.CharField(source='statement.period')
     organization_name = serializers.SerializerMethodField()
     report_items = serializers.SerializerMethodField()
+    statement_name = serializers.SerializerMethodField()
+    sent_by_full_name = serializers.SerializerMethodField()
+    sent_by_org_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = (
             'id', 'organization', 'organization_name',
-            'statement',
+            'statement', 'statement_name',
             'deadline', 'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items'
+            'report_items',
+            'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
         )
 
     def get_organization_name(self, obj):
         lang = get_lang_code(self.context)
         return get_translated_field(obj.organization, "name", lang)
+
+    def get_statement_name(self, obj):
+        lang = get_lang_code(self.context)
+        return get_translated_field(obj.statement, "name", lang)
+
+    def get_sent_by_full_name(self, obj):
+        if obj.sent_by:
+            return obj.sent_by.full_name
+        return None
+
+    def get_sent_by_org_name(self, obj):
+        lang = get_lang_code(self.context)
+        if obj.sent_by_org:
+            return get_translated_field(obj.sent_by_org, "name", lang)
+        return None
 
     def get_report_items(self, obj):
         items = obj.report_items.all().select_related('statement_column', 'plant')

@@ -8,7 +8,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import EimzoLoginSerializer
 from .services import verify_pkcs7
-from .utils import generate_user_email_and_password_fn
 from apps.general.models import Organization
 from apps.users.models import CustomUser
 
@@ -27,24 +26,16 @@ class EimzoJWTLoginView(APIView):
         if not verify_pkcs7(pkcs7, vo):
             return Response({"detail": "Imzo noto‘g‘ri yoki noto‘liq."}, status=status.HTTP_400_BAD_REQUEST)
 
-        full_name = vo.get("cn", "")
-        name = vo.get("name", "")
-        surname = vo.get("surname", "")
-        uid = vo.get("uid") or vo.get("1.2.860.3.16.1.2")
-        # legal_stir = vo.get("1.2.860.3.16.1.1", "")
-        legal_name = vo.get("o", "").upper()
+        full_name = vo.get("CN", "")
+        uid = vo.get("UID","")
+        pinfl = vo.get("PINFL","")
+        legal_stir = vo.get("TIN", "")
 
         email = f"{uid}@example.com"
-        logpass = generate_user_email_and_password_fn(name, surname)
-
-        mid_name = ""
-        full_parts = full_name.split()
-        if len(full_parts) > 2:
-            mid_name = " ".join(full_parts[2:])
 
         organization = None
-        if legal_name:
-            organization = Organization.objects.filter(name=legal_name).first()
+        if legal_stir :
+            organization = Organization.objects.filter(stir=legal_stir).first()
             if not organization:
                 return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
 
@@ -52,30 +43,23 @@ class EimzoJWTLoginView(APIView):
         user, _ = User.objects.update_or_create(
             email=email,
             defaults={
-                "pin": vo.get("1.2.860.3.16.1.2"),
-                "first_name": name.upper(),
-                "last_name": surname.upper(),
-                "father_name": mid_name.upper(),
-                "full_name": full_name.upper(),
-                "nationality": vo.get("c", "").upper(),
-                # "is_legal_entity": bool(legal_stir),
+                "tin":legal_stir,
+                "full_name": full_name,
+                "pinfl": pinfl,
                 "organization": organization,
                 "is_active": True,
-                "role": CustomUser.Role.BOLIM_ADMIN,
+                "role": CustomUser.Role.TASHKILOT_RAHBARI,
             }
         )
 
-        user.set_password(logpass["password"])
+        user.set_password(uid)
         user.save()
 
         refresh = RefreshToken.for_user(user)
         return Response({
             "access": str(refresh.access_token),
+            "email":email,
             "refresh": str(refresh),
-            "user": {
-                "email": user.email,
-                "full_name": user.full_name,
-                "role": user.role,
-                "organization":user.organization
-            }
+            "role": user.role,
+            "user_id":user.id
         }, status=status.HTTP_200_OK)
