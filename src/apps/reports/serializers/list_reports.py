@@ -87,7 +87,6 @@ class ReportListSerializer(serializers.ModelSerializer):
         for item in items:
             record = {
                 "statement_column_id": str(item.statement_column_id),
-                "statement_column_name": item.statement_column.title_uz,
                 "value": (
                     get_translated_field(obj.organization, "name", lang)
                     if item.statement_column.is_organization
