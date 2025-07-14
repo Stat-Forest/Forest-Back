@@ -156,6 +156,7 @@ class Command(BaseCommand):
                 organizations.append(
                     Organization(
                         name=name_uz,
+                        name_uz=name_uz,
                         name_ru=name_ru,
                         stir=stir,
                         region=region
