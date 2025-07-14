@@ -10,6 +10,8 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = True
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164', 'localhost', '127.0.0.1', 'stat-urmon.uz']
 
 CSRF_TRUSTED_ORIGINS = [
