@@ -10,7 +10,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("Organizations already exist!"))
             return
 
-        translation.activate('uz')
         org_data = {
             RegionChoices.REPUBLIC : [
                 ("O‘rmon agentligi", "Лесное агентство", 200934675),
