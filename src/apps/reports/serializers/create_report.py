@@ -159,6 +159,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('report_items')
         deadline = validated_data['deadline']
         validated_data['statement'] = deadline.statement
+        user = self.context['request'].user
 
         organization_id = cache.get(self.CACHE_KEY)
         organization = Organization.objects.get(id=organization_id) if organization_id else self.context['request'].user.organization
@@ -187,5 +188,9 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         statement_column=column,
                         value=value
                     )
+
+            user = self.context['request'].user
+            report.created_by= user
+            report.save()
 
         return report
