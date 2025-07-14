@@ -35,6 +35,7 @@ services:
       - ./certbot/etc:/etc/letsencrypt
       - ./certbot/var:/var/www/certbot
       - /etc/localtime:/etc/localtime:ro
+      - /var/www/stat-ormon:/var/www/stat-ormon
     restart: always
     networks:
       - forest_network
@@ -51,6 +52,7 @@ services:
       --agree-tos 
       --no-eff-email 
       -d forest.yutori.uz
+      -d stat-urmon.uz
 
   forest_postgres:
     image: postgres:16
