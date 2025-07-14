@@ -6,14 +6,15 @@ from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False):
+        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, status_plan=None):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
                 title=title_uz,
                 title_ru=title_ru,
                 ordering=ordering,
-                is_organization=is_organization
+                is_organization=is_organization,
+                status_plan=status_plan
             )
 
         forest_add = Statement.objects.get(
@@ -330,7 +331,7 @@ class Command(BaseCommand):
         create_column(pichan_statement, hay_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
         create_column(pichan_statement, hay_title, "____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                      "Прогнозные показатели на ____ год, тыс. сум (план)", "1.1.2")
+                      "Прогнозные показатели на ____ год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(pichan_statement, hay_title, "Jami pichan o‘rish mumkin bo‘lgan maydon (ga)",
                       "Общая площадь возможного сенокошения (га)", "1.1.3")
         create_column(pichan_statement, hay_title, "Pichan o‘riladigan yaroqli maydon (ga)",
@@ -371,7 +372,7 @@ class Command(BaseCommand):
         create_column(yaylov_statement, pasture_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
         create_column(yaylov_statement, pasture_title, "_____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                      "Прогнозные показатели на _____ год, тыс. сум (план)", "1.1.2")
+                      "Прогнозные показатели на _____ год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(yaylov_statement, pasture_title, "Jami yaylov maydoni (ga)", "Общая площадь пастбищ (га)",
                       "1.1.3")
         create_column(yaylov_statement, pasture_title, "Mol boqishga yaroqli maydon (ga)",
