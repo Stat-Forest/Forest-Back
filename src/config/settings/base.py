@@ -10,12 +10,14 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164','localhost', '127.0.0.1', 'stat-urmon.uz']
+ALLOWED_HOSTS = ['forest.yutori.uz', 'www.forest.yutori.uz', '93.188.84.164', 'localhost', '127.0.0.1', 'stat-urmon.uz']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://forest.yutori.uz",
     "http://localhost:5173",
     "http://localhost:5174",
+    "https://localhost:5173",
+    "https://localhost:5174",
     "http://stat-urmon.uz",
     "https://stat-urmon.uz",
 ]
@@ -117,5 +119,6 @@ SPECTACULAR_SETTINGS = {
 }
 
 import socket
+
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
 INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]
