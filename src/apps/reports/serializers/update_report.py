@@ -38,8 +38,8 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         statement_columns = {col.id: col for col in statement.columns.all()}
         column_ids = [item['statement_column'] for item in report_items]
 
-        if len(statement_columns) != len(set(column_ids)):
-            raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
+        # if len(statement_columns) != len(set(column_ids)):
+        #     raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
 
         organization_ids = set()
         plan_column_ids = []
