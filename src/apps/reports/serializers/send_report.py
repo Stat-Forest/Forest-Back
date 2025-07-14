@@ -14,8 +14,12 @@ class ReportSendSerializer(serializers.ModelSerializer):
         fields = ['id', 'status']
 
     def update(self, instance, validated_data):
+        org_director = self.context['request'].user
         instance.status = Report.StatusChoices.SENT
         now = timezone.now().strftime('%Y-%m-%d %H:%M')
         instance.sent_at = datetime.strptime(now, '%Y-%m-%d %H:%M')
+        instance.sent_by= org_director
+        instance.sent_by_org = org_director.organization
+        instance.sent_by_role = org_director.role
         instance.save()
         return instance

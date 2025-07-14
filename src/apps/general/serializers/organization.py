@@ -9,7 +9,7 @@ class OrganizationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'region']
+        fields = ['id', 'name', 'stir','region']
 
     def get_name(self, obj):
         lang = get_lang_code(self.context)

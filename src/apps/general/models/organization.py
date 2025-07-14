@@ -16,12 +16,7 @@ class Organization(AbstractBaseModel):
         verbose_name=_("Region")
     )
 
-    # stir = models.CharField(
-    #     max_length=14,
-    #     unique=True,
-    #     verbose_name=_("STIR"),
-    #     help_text=_("Tashkilotning STIR raqami")
-    # )
+    stir = models.PositiveBigIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("Organization")
