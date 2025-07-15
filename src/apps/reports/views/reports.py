@@ -38,6 +38,9 @@ class ReportListAPIView(CustomListAPIView):
         'statement__name','statement', 'statement__period',
         'organization__region'
     ]
+    search_fields = [
+        'organization__name',
+    ]
     def get_queryset(self):
         user = self.request.user
         if user.organization is not None:
