@@ -143,6 +143,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
                 item = existing_items.pop(item_id)
                 for attr, value in item_data.items():
                     setattr(item, attr, value)
+                    print(item, attr, value)
                 item.save()
             else:
                 ReportItem.objects.create(report=instance, **item_data)
