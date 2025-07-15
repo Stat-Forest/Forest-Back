@@ -46,6 +46,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         plan_values = {}
 
         for item in report_items:
+            print('item')
             col_id = item['statement_column_id']
             value = item['value']
             column = statement_columns.get(col_id)
