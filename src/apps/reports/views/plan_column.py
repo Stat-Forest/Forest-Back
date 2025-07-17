@@ -2,10 +2,15 @@ from django.db.models import Q
 from apps.base.views import CustomListAPIView
 from apps.reports.models import StatementColumn
 from apps.reports.serializers.plan_column import PlanColumnSerializer
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
-@extend_schema(tags=["Plan"])
+@extend_schema(
+    tags=["Plan"],
+    parameters=[
+        OpenApiParameter(name="lang", description="Language: uz, ru", required=False, type=str),
+    ]
+)
 class PlanStatementColumnListAPIView(CustomListAPIView):
     pagination_class = None
     serializer_class = PlanColumnSerializer
@@ -24,3 +29,9 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
             "parent__parent__parent__parent",
             "parent__parent__parent__parent__parent"
         )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz").lower()
+        context["lang"] = lang
+        return context
