@@ -6,42 +6,82 @@ from apps.utils.translation import get_lang_code, get_translated_field
 
 from django.utils.translation import gettext_lazy as _
 
-class PlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Plan
-        fields = [
-            'id',
-            'statement',
-            'organization',
-            'column',
-            'year',
-            'plan_value'
-        ]
+from apps.reports.models import Plan, Statement, StatementColumn
+from apps.general.models import Organization
+from apps.reports.models import PlanItem
 
-    def validate_year(self, value):
-        from django.utils import timezone
 
-        current_year = timezone.now().year
-        if value < 1900 or value > current_year:
-            raise CustomExceptionError(
-                400,
-                {'year': _('Year must be between 1900 and current year.')}
-            )
-        return value
+class PlanItemSerializer(serializers.Serializer):
+    column = serializers.UUIDField()
+    value = serializers.IntegerField(min_value=0, source='plan_value')
 
-    def validate_plan_value(self, value):
+    def validate_value(self, value):
         if value < 0:
             raise CustomExceptionError(
                 400,
-                {'plan_value': _('Plan value cannot be negative.')}
+                {'value': _('Plan value cannot be negative.')}
             )
         return value
+
+
+class PlanSerializer(serializers.Serializer):
+    organization = serializers.UUIDField()
+    statement = serializers.UUIDField()
+    year = serializers.IntegerField(min_value=1900)
+    plan_items = PlanItemSerializer(many=True)
+
+    def validate_year(self, value):
+        from django.utils import timezone
+        current_year = timezone.now().year
+        if value < 2024 or value > current_year:
+            raise CustomExceptionError(
+                400,
+                {'year': _('Year must be between 2024 and current year.')}
+            )
+        return value
+
+    def validate(self, attrs):
+        if not attrs.get('plan_items'):
+            raise CustomExceptionError(400, {'plan_items': _('Plan items are required.')})
+        return attrs
+
+    def create(self, validated_data):
+        organization_id = validated_data["organization"]
+        statement_id = validated_data["statement"]
+        year = validated_data["year"]
+        items = validated_data["plan_items"]
+
+        organization = Organization.objects.get(id=organization_id)
+        statement = Statement.objects.get(id=statement_id)
+
+        plan, _ = Plan.objects.get_or_create(
+            organization=organization,
+            statement=statement,
+            year=year
+        )
+
+
+
+        for item in items:
+            column = StatementColumn.objects.get(id=item["column"])
+            value = item["plan_value"]
+
+            if column.statement_id != statement.id:
+                raise CustomExceptionError(400, _("Column does not belong to the given statement"))
+
+            PlanItem.objects.update_or_create(
+                plan=plan,
+                column=column,
+                defaults={"plan_value": value}
+            )
+
+        return plan
+
 
 
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
-    column_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
@@ -51,10 +91,7 @@ class PlanListSerializer(serializers.ModelSerializer):
             'statement_name',
             'organization',
             'organization_name',
-            'column',
-            'column_title',
             'year',
-            'plan_value'
         ]
 
     def get_lang(self):
@@ -66,5 +103,6 @@ class PlanListSerializer(serializers.ModelSerializer):
     def get_organization_name(self, obj):
         return get_translated_field(obj.organization, 'name', self.get_lang())
 
-    def get_column_title(self, obj):
-        return get_translated_field(obj.column, 'title', self.get_lang())
+
+
+
