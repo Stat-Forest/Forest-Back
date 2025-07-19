@@ -17,7 +17,9 @@ class Report(AbstractBaseModel):
         on_delete=models.PROTECT,
         verbose_name=_("Organization"),
         related_name="reports",
-        db_index=True
+        db_index=True,
+        blank=True,
+        null=True
     )
     statement = models.ForeignKey(
         "reports.Statement",
@@ -81,11 +83,12 @@ class Report(AbstractBaseModel):
         blank=True,
     )
 
-    def __str__(self):
-        return f"{self.organization.name} "
+    # def __str__(self):
+    #     return f"{self.organization.name} "
 
     class Meta:
         verbose_name = _("Report")
         verbose_name_plural = _("Reports")
         ordering = ['-created_at']
         unique_together = ('organization', 'statement','deadline')
+
