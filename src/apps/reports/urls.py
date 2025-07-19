@@ -8,7 +8,7 @@ from apps.reports.views import (
     StatementColumnTreeAPIView, UserListAPIView,
     ReportRetrieveUpdateAPIView, ReportDeleteAPIView,
     PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView,
+    PlanListAPIView, ReportRetrieveAPIView,
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 
@@ -33,7 +33,8 @@ urlpatterns = [
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
     path('create/', ReportCreateAPIView.as_view(), name='report-create'),
-    path('<uuid:id>/', ReportRetrieveUpdateAPIView.as_view(), name='report-detail'),
+    # path('<uuid:id>/', ReportRetrieveUpdateAPIView.as_view(), name='report-detail'),
+    path('<uuid:id>/', ReportRetrieveAPIView.as_view(), name='report-detail'),
     path('<uuid:id>/delete/', ReportDeleteAPIView.as_view(), name='report-delete'),
 
     # ====================  REPORT STATUS URL    ====================

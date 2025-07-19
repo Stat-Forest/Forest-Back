@@ -1,10 +1,4 @@
 from rest_framework import serializers
-from apps.reports.models import Report,ReportItem
-from apps.reports.serializers import ReportItemSerializer, ReportItemPlantValueSerializer
-from apps.utils.translation import get_lang_code, get_translated_field
-
-
-from rest_framework import serializers
 from apps.reports.models import Report
 from apps.utils.translation import get_lang_code, get_translated_field
 
@@ -49,55 +43,134 @@ class ReportListSerializer(serializers.ModelSerializer):
         return None
 
     def get_report_items(self, obj):
-        items = obj.report_items.all().select_related('statement_column', 'plant')
+        items = (
+            obj.report_items
+            .select_related("statement_column")
+            .prefetch_related("inners")
+            .all()
+        )
         lang = get_lang_code(self.context)
 
-        # 🌿 1. Plant-based bo‘lsa (Ko‘chat/Nihol ilovalari)
-        if items.filter(plant__isnull=False).exists():
-            result = {}
-
-            for item in items:
-                col_id = str(item.statement_column_id)
-                if col_id not in result:
-                    result[col_id] = {
-                        "statement_column_id": col_id,
-                        "statement_column_name": item.statement_column.title_uz,
-                        "plant_values": [] if item.plant_id else None,
-                        "value": None
-                    }
-
-                if item.plant_id:
-                    result[col_id]["plant_values"].append({
-                        "plant_id": str(item.plant_id),
-                        "plant_name": get_translated_field(item.plant, "name", lang),
-                        "value": item.value
-                    })
-                else:
-                    if item.statement_column.is_organization:
-                        result[col_id]["value"] = get_translated_field(obj.organization, "name", lang)
-                    else:
-                        result[col_id]["value"] = item.value
-
-            return list(result.values())
-
-        # 📄 2. Oddiy hisobotlar (plant yo‘q)
-        org_items = []
-        other_items = []
+        # 1️⃣ Tashkilotlarni aniqlash
+        org_map = {}  # {org_id: org_name}
+        column_map = {}  # {org_id: [columns]}
 
         for item in items:
-            record = {
-                "statement_column_id": str(item.statement_column_id),
-                "value": (
-                    get_translated_field(obj.organization, "name", lang)
-                    if item.statement_column.is_organization
-                    else item.value
-                )
-            }
+            column = item.statement_column
 
-            if item.statement_column.is_organization:
-                org_items.append(record)
+            # Agar bu organization ustuni bo‘lsa → org_id ni olamiz
+            if column.is_organization:
+                org_id = item.value  # bu yerda org_id saqlanadi
+                from apps.general.models import Organization
+                org = Organization.objects.filter(id=org_id).first()
+                org_name = get_translated_field(org, "name", lang) if org else "Noma'lum tashkilot"
+
+                # agar yangi org bo‘lsa, mapga qo‘shamiz
+                if org_id not in org_map:
+                    org_map[org_id] = org_name
+                    column_map[org_id] = []  # shu orgga tegishli ustunlar ro‘yxati
+                continue
+
+        # 2️⃣ Endi boshqa columnlarni organizationga bog‘lash
+        current_org = None
+        for item in items:
+            column = item.statement_column
+
+            # bu org ustuni emas → uni tegishli orgga qo‘shamiz
+            if not column.is_organization:
+                # organization ni oxirgi qo‘shilganidan aniqlash
+                if current_org is None:
+                    # agar hech qaysi org bo‘lmasa, default None bilan saqlaymiz
+                    continue
+
+                col_data = {
+                    "statement_column_id": str(column.id),
+                    "statement_column_name": get_translated_field(column, "title", lang),
+                    "organization_id": current_org,
+                    "inners": [
+                        {"id": str(inner.id), "value": inner.value}
+                        for inner in item.inners.all()
+                    ]
+                }
+                column_map[current_org].append(col_data)
             else:
-                other_items.append(record)
+                # bu yangi organization boshlanganini bildiradi
+                current_org = item.value  # org_id
 
-        # ⬆️ Organization item always first
-        return org_items + other_items
+        # 3️⃣ Yig‘ilgan natijani chiqaramiz
+        result = []
+        for org_id, columns in column_map.items():
+            result.append({
+                "organization_id": org_id,
+                "organization_name": org_map.get(org_id, "Noma'lum tashkilot"),
+                "columns": columns
+            })
+
+        return result
+
+{
+  "deadline": "a55dad33-40de-4f6b-be52-facdfc899a16",
+  "report_items": [
+    {
+      "statement_column": "6e427073-be17-4be1-94dd-4ca0abd6f508",
+      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
+    },
+    {
+      "statement_column": "95a4f08d-9263-4f45-a0e6-4b1da1fb8fa0",
+      "inners": [
+        {"value": "10"},
+        {"value": "20"},
+        {"value": "30"},
+        {"value": "30"},
+        {"value": "30"},
+        {"value": "30"},
+        {"value": "30"}
+      ]
+    },
+    {
+      "statement_column": "98c71be2-567f-418f-8a2a-6ef738700256",
+      "inners": [
+        {"value": "5"},
+        {"value": "15"},
+        {"value": "25"},
+        {"value": "25"},
+        {"value": "25"},
+        {"value": "25"},
+        {"value": "25"}
+      ]
+    },
+
+    {
+      "statement_column": "02ebf235-fb07-429d-9f56-b0697d1dfd80",
+      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
+    },
+    {
+      "statement_column": "99f4138b-e606-44f9-a3db-b8006e4bc946",
+      "inners": [
+        {"value": "11"},
+        {"value": "22"},
+        {"value": "33"}
+      ]
+    },
+    {
+      "statement_column": "b9d9255e-ece4-4223-b0e7-2985c7004d97",
+      "inners": [
+        {"value": "100"},
+        {"value": "200"},
+        {"value": "300"}
+      ]
+    },
+    {
+      "statement_column": "1f53497a-fd4d-4598-b649-683a8a86a616",
+      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
+    },
+    {
+      "statement_column": "b599e076-7e43-4629-bff6-ebd4f9f58e34",
+      "inners": [
+        {"value": "100"},
+        {"value": "200"},
+        {"value": "300"}
+      ]
+    }
+  ]
+}
