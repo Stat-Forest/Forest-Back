@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import MinValueValidator
-from django.utils import timezone
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.base.models import AbstractBaseModel
@@ -15,20 +14,33 @@ class Plan(AbstractBaseModel):
         'general.Organization',
         on_delete=models.CASCADE
     )
+    year = models.PositiveIntegerField(
+        validators=[MinValueValidator(1900)]
+    )
+
+    class Meta:
+        ordering = ('year',)
+        unique_together = (
+            'statement','organization','year'
+            )
+
+
+class PlanItem(AbstractBaseModel):
+    plan = models.ForeignKey(
+        'reports.Plan',
+        on_delete=models.CASCADE,
+        related_name='plan_items'
+    )
     column = models.ForeignKey(
         'reports.StatementColumn',
         on_delete=models.CASCADE,
         related_name='plans',
 
     )
-    year = models.PositiveIntegerField(
-        validators=[MinValueValidator(1900)]
-    )
     plan_value = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ('year',)
+        ordering = ('column',)
         unique_together = (
-            'statement','organization',
-            'column', 'year'
-            )
+            'column', 'plan'
+        )
