@@ -49,7 +49,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         column_ids = [item["statement_column"] for item in items_data]
         raw_columns_map = (
             StatementColumn.objects.filter(id__in=column_ids)
-            .filter(Q(statement=deadline.statement) | Q(is_organization=True))
             .in_bulk()
         )
         columns_map = {str(k): v for k, v in raw_columns_map.items()}
@@ -63,13 +62,26 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 if not column:
                     raise serializers.ValidationError({"detail": f"Invalid column {col_id}"})
 
+                # ✅ har doim inners orqali keladi
+                inners_data = item.get("inners", [])
+
                 if column.is_organization:
-                    org_id = item["value"]
-                    ReportItem.objects.create(report=report, statement_column=column, value=org_id)
+                    # ✅ organization bo‘lsa faqat 1ta value bo‘lishi kerak
+                    if not inners_data or "value" not in inners_data[0]:
+                        raise serializers.ValidationError(
+                            {"detail": f"Organization inners required for column {col_id}"}
+                        )
+                    org_id = inners_data[0]["value"]
+
+                    ReportItem.objects.create(
+                        report=report,
+                        statement_column=column,
+                        value=org_id
+                    )
                     organization_from_column = Organization.objects.get(id=org_id)
                     continue
 
-                inners_data = item.get("inners", [])
+                # ✅ oddiy column bo‘lsa barcha inners ni saqlaymiz
                 report_item = ReportItem.objects.create(report=report, statement_column=column)
                 inner_objects = [
                     ReportItemInner(report_item=report_item, value=inner["value"])
@@ -82,7 +94,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         if organization_from_column:
             report.organization = organization_from_column
         else:
-            # agar org ustuni kelmasa user.organization dan olamiz
+            # agar org kelmasa user.organization dan olamiz
             request_user = self.context["request"].user
             if request_user.organization:
                 report.organization = request_user.organization
