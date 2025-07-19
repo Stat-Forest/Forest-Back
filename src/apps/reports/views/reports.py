@@ -4,6 +4,7 @@ from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
 
 from apps.reports.models import Report, Plant, ReportItem
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
+from apps.reports.permissions.check_list_report import CanListReport
 from apps.reports.serializers import (
     ReportListSerializer,
     ReportCreateSerializer,
@@ -11,7 +12,7 @@ from apps.reports.serializers import (
 )
 from apps.base.views import (
     CustomListAPIView,
-    CustomCreateAPIView,
+    CustomCreateAPIView, CustomRetrieveAPIView,
 )
 
 
@@ -31,22 +32,24 @@ class ReportListAPIView(CustomListAPIView):
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
-
+    permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
     filterset_fields = [
-        'status', 'organization__name','organization',
-        'statement__name','statement', 'statement__period',
+        'status', 'organization__name', 'organization',
+        'statement__name', 'statement', 'statement__period',
         'organization__region'
     ]
+
     def get_queryset(self):
         user = self.request.user
-        if user.organization is not None:
-            return self.queryset.filter(organization_id=user.organization.pk)
 
-        elif user.statement is not None:
-            return self.queryset.filter(statement__parent_id=user.statement.pk)
+        if user.is_superuser:
+            return self.queryset
 
-        return self.queryset
+        if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma']:
+            return self.queryset.filter(organization=user.organization)
+
+        return self.queryset.none()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -55,7 +58,6 @@ class ReportListAPIView(CustomListAPIView):
         plant_qs = Plant.objects.only("id", "name")
         context["plant_map"] = {str(p.id): p.name for p in plant_qs}
         return context
-
 
 @extend_schema(tags=["Reports"])
 class ReportCreateAPIView(CustomCreateAPIView):
@@ -70,6 +72,12 @@ class ReportDeleteAPIView(DestroyAPIView):
     serializer_class = ReportDetailSerializer
     # permission_classes = (CanUpdateReport,)
     lookup_field = 'id'
+
+
+@extend_schema(tags=["Reports"])
+class ReportRetrieveAPIView(CustomRetrieveAPIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportCreateSerializer
 
 
 @extend_schema(tags=["Reports"])

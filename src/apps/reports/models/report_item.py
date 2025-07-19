@@ -22,16 +22,25 @@ class ReportItem(AbstractBaseModel):
         related_name="items",
         verbose_name=_("Statement Column")
     )
+
+    value = models.TextField(blank=True, null=True)
+    # def __str__(self):
+    #     return f"{self.report.id} - {self.value}"
+
+    class Meta:
+        verbose_name = _("Report Item")
+        verbose_name_plural = _("Report Items")
+        # unique_together = ("report", "statement_column", "plant")
+
+
+class ReportItemInner(AbstractBaseModel):
+    report_item = models.ForeignKey(
+        "reports.ReportItem",
+        on_delete=models.CASCADE,
+        related_name="inners"
+    )
     value = models.TextField(
         blank=True,
         null=True,
         verbose_name=_("Value"),
     )
-
-    def __str__(self):
-        return f"{self.report.id} - {self.value}"
-
-    class Meta:
-        verbose_name = _("Report Item")
-        verbose_name_plural = _("Report Items")
-        unique_together = ("report", "statement_column", "plant")
