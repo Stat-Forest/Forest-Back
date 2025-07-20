@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.reports.models import Report
+from apps.utils.services.general_values import build_columns_with_jami
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
@@ -100,76 +101,156 @@ class ReportListSerializer(serializers.ModelSerializer):
         # 3️⃣ Yig‘ilgan natijani chiqaramiz
         result = []
         for org_id, columns in column_map.items():
+            normal_columns, general_columns = build_columns_with_jami(columns)
             result.append({
                 "organization_id": org_id,
                 "organization_name": org_map.get(org_id, "Noma'lum tashkilot"),
-                "columns": columns
+                "columns": normal_columns,
+                "general": general_columns
             })
 
         return result
 
+# XODIM HISOBI ==========================================
 {
-  "deadline": "a55dad33-40de-4f6b-be52-facdfc899a16",
+  "deadline": "e6e475b0-313c-4cf7-8549-651f6ac8a5d9",
   "report_items": [
     {
-      "statement_column": "6e427073-be17-4be1-94dd-4ca0abd6f508",
-      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
-    },
-    {
-      "statement_column": "95a4f08d-9263-4f45-a0e6-4b1da1fb8fa0",
+      "statement_column": "ff250268-05e1-4b4a-9391-0bbf3affa2f7",
       "inners": [
-        {"value": "10"},
-        {"value": "20"},
-        {"value": "30"},
-        {"value": "30"},
-        {"value": "30"},
-        {"value": "30"},
-        {"value": "30"}
+        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
       ]
     },
     {
-      "statement_column": "98c71be2-567f-418f-8a2a-6ef738700256",
+      "statement_column": "0c2e4fc0-3190-4251-a695-122855e93cab",
       "inners": [
-        {"value": "5"},
-        {"value": "15"},
-        {"value": "25"},
-        {"value": "25"},
-        {"value": "25"},
-        {"value": "25"},
-        {"value": "25"}
+        { "value": "10" },
+        { "value": "20" },
+        { "value": "30" },
+        { "value": "30" },
+        { "value": "30" },
+        { "value": "30" },
+        { "value": "30" }
       ]
     },
+    {
+      "statement_column": "b7c8a6a9-ebe0-464d-b1b1-896d7c5b3800",
+      "inners": [
+        { "value": "5" },
+        { "value": "15" },
+        { "value": "25" },
+        { "value": "25" },
+        { "value": "25" },
+        { "value": "25" },
+        { "value": "25" }
+      ]
+    },
+    {
+      "statement_column": "94f83fd3-675c-4e22-ac33-70aef3b99515",
+      "inners": [
+        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
+      ]
+    },
+    {
+      "statement_column": "fc1f5be5-0cfd-490d-bb3f-831d7f24f520",
+      "inners": [
+        { "value": "11" },
+        { "value": "22" },
+        { "value": "33" }
+      ]
+    },
+    {
+      "statement_column": "4b1675b6-0324-4853-b9fd-eb16ad641967",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    },
+    {
+      "statement_column": "05174a66-34fa-4332-a579-4b988b98f258",
+      "inners": [
+        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
+      ]
+    },
+    {
+      "statement_column": "3105c87d-9725-40d5-bef5-df5cd133a7ba",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    }
+  ]
+}
 
+
+# DAROMAD =============================================
+
+{
+  "deadline": "67b18205-7f60-4492-a9d5-99fa8c5a3c58",
+  "report_items": [
     {
-      "statement_column": "02ebf235-fb07-429d-9f56-b0697d1dfd80",
-      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
-    },
-    {
-      "statement_column": "99f4138b-e606-44f9-a3db-b8006e4bc946",
+      "statement_column": "332bf656-956b-4da6-8c90-2bd283ed33ae",
       "inners": [
-        {"value": "11"},
-        {"value": "22"},
-        {"value": "33"}
+        { "value": "fa6b4ffc-cc9f-4a59-bd8f-190241e06392" }
       ]
     },
     {
-      "statement_column": "b9d9255e-ece4-4223-b0e7-2985c7004d97",
+      "statement_column": "369fd215-64f0-423e-a713-0e7eaf772cf9",
       "inners": [
-        {"value": "100"},
-        {"value": "200"},
-        {"value": "300"}
+        { "value": "Bagryanik" },
+        { "value": "Lotos" },
+        { "value": "Atirgul" },
+        { "value": "Jiyda" },
+        { "value": "Nimadur yana gul" }
       ]
     },
     {
-      "statement_column": "1f53497a-fd4d-4598-b649-683a8a86a616",
-      "value": "464bb31b-62a2-49cd-a077-7d2013b8b0a7"
+      "statement_column": "2115cc9b-8aff-41ec-b73a-1750b5ff42cd",
+      "inners": [
+        { "value": "mol" },
+        { "value": "qoy" },
+        { "value": "ochki" },
+        { "value": "telefon" },
+        { "value": "Davlat" },
+        { "value": "Iphone" }
+      ]
     },
     {
-      "statement_column": "b599e076-7e43-4629-bff6-ebd4f9f58e34",
+      "statement_column": "f4ff900c-bcb1-4972-b1bb-15d2df9af813",
       "inners": [
-        {"value": "100"},
-        {"value": "200"},
-        {"value": "300"}
+        { "value": "fa6b4ffc-cc9f-4a59-bd8f-190241e06392" }
+      ]
+    },
+    {
+      "statement_column": "db838543-a869-42be-a600-b38d31b1fb19",
+      "inners": [
+        { "value": "11" },
+        { "value": "22" },
+        { "value": "33" }
+      ]
+    },
+    {
+      "statement_column": "e398f48c-ab40-4c3f-b1be-c36742794edf",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    },
+    {
+      "statement_column": "84a74b5a-03c8-49e8-bc61-8bd226b0a62b",
+      "inners": [
+        { "value": "fa6b4ffc-cc9f-4a59-bd8f-190241e06392" }
+      ]
+    },
+    {
+      "statement_column": "3ac14d68-f26e-4417-9c26-60962e6bb71f",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
       ]
     }
   ]
