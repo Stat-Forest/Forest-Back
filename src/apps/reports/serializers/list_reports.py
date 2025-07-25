@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.reports.models import Report
+from apps.reports.models import Report, StatementColumn
 from apps.utils.services.general_values import build_columns_with_jami
 from apps.utils.translation import get_lang_code, get_translated_field
 
@@ -43,86 +43,94 @@ class ReportListSerializer(serializers.ModelSerializer):
             return get_translated_field(obj.sent_by_org, "name", lang)
         return None
 
-    def get_report_items(self, obj):
-        items = (
-            obj.report_items
-            .select_related("statement_column")
-            .prefetch_related("inners")
-            .all()
-        )
+    def get_report_items(self, report):
         lang = get_lang_code(self.context)
+        items = report.report_items.select_related("statement_column")
 
-        # 1️⃣ Tashkilotlarni aniqlash
-        org_map = {}  # {org_id: org_name}
-        column_map = {}  # {org_id: [columns]}
+        # ✅ AGAR GENERAL REPORT BO'LSA
+        if report.is_general:
+            # General info
+            organization_id = "general"
+            organization_name = "Barcha tashkilotlar bo‘yicha umumiy"
 
-        for item in items:
-            column = item.statement_column
+            # Barcha oddiy reportlardan organizationlarni yig‘ib olamiz
+            org_qs = Report.objects.filter(
+                statement=report.statement,
+                deadline=report.deadline,
+                is_general=False
+            ).values("organization_id", "organization__name").distinct()
 
-            # Agar bu organization ustuni bo‘lsa → org_id ni olamiz
-            if column.is_organization:
-                org_id = item.value  # bu yerda org_id saqlanadi
-                from apps.general.models import Organization
-                org = Organization.objects.filter(id=org_id).first()
-                org_name = get_translated_field(org, "name", lang) if org else "Noma'lum tashkilot"
+            org_inners = [
+                {"id": str(o["organization_id"]), "value": o["organization__name"] or ""}
+                for o in org_qs
+            ]
 
-                # agar yangi org bo‘lsa, mapga qo‘shamiz
-                if org_id not in org_map:
-                    org_map[org_id] = org_name
-                    column_map[org_id] = []  # shu orgga tegishli ustunlar ro‘yxati
-                continue
+            # Faqat bitta organization columnni topamiz
+            org_column = StatementColumn.objects.filter(
+                statement=report.statement,
+                is_organization=True
+            ).first()
 
-        # 2️⃣ Endi boshqa columnlarni organizationga bog‘lash
-        current_org = None
-        for item in items:
-            column = item.statement_column
+            org_column_json = {
+                "statement_column_id": str(org_column.id),
+                "statement_column_name": get_translated_field(org_column, "title", lang),
+                "inners": org_inners
+            }
 
-            # bu org ustuni emas → uni tegishli orgga qo‘shamiz
-            if not column.is_organization:
-                # organization ni oxirgi qo‘shilganidan aniqlash
-                if current_org is None:
-                    # agar hech qaysi org bo‘lmasa, default None bilan saqlaymiz
+            # Qolgan barcha columnlarni chiqaramiz, lekin tashkilot nomini takrorlamaymiz
+            other_columns = []
+            for item in items.exclude(statement_column=org_column):
+                # ❌ Agar yana is_organization=True bo'lsa SKIP qilamiz
+                if item.statement_column.is_organization:
                     continue
 
-                col_data = {
-                    "statement_column_id": str(column.id),
-                    "statement_column_name": get_translated_field(column, "title", lang),
-                    "organization_id": current_org,
+                other_columns.append({
+                    "statement_column_id": str(item.statement_column.id),
+                    "statement_column_name": get_translated_field(item.statement_column, "title", lang),
                     "inners": [
                         {"id": str(inner.id), "value": inner.value}
                         for inner in item.inners.all()
                     ]
-                }
-                column_map[current_org].append(col_data)
-            else:
-                # bu yangi organization boshlanganini bildiradi
-                current_org = item.value  # org_id
+                })
 
-        # 3️⃣ Yig‘ilgan natijani chiqaramiz
-        result = []
-        for org_id, columns in column_map.items():
-            normal_columns, general_columns = build_columns_with_jami(columns)
-            result.append({
-                "organization_id": org_id,
-                "organization_name": org_map.get(org_id, "Noma'lum tashkilot"),
-                "columns": normal_columns,
-                "general": general_columns
-            })
+            return [{
+                "organization_id": organization_id,
+                "organization_name": organization_name,
+                # ❗️ Faqat 1 marta organization column, keyin boshqa columnlar
+                "statement_columns": [org_column_json] + other_columns
+            }]
 
-        return result
+        # ✅ Oddiy report bo‘lsa o‘z holicha
+        else:
+            return [{
+                "organization_id": str(report.organization.id),
+                "organization_name": report.organization.name,
+                "statement_columns": [
+                    {
+                        "statement_column_id": str(item.statement_column.id),
+                        "statement_column_name": get_translated_field(item.statement_column, "title", lang),
+                        "inners": [
+                            {"id": str(inner.id), "value": inner.value}
+                            for inner in item.inners.all()
+                        ]
+                    }
+                    for item in items
+                ]
+            }]
+
 
 # XODIM HISOBI ==========================================
 {
-  "deadline": "e6e475b0-313c-4cf7-8549-651f6ac8a5d9",
+  "deadline": "9c1d32be-c555-422e-a6de-52414026da5e",
   "report_items": [
     {
-      "statement_column": "ff250268-05e1-4b4a-9391-0bbf3affa2f7",
+      "statement_column": "0ab7b707-3f6e-47b0-bc43-f749c016e109",
       "inners": [
-        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
+        { "value": "c0b0e7be-db01-48ed-bf65-0500ad608ec0" }
       ]
     },
     {
-      "statement_column": "0c2e4fc0-3190-4251-a695-122855e93cab",
+      "statement_column": "b64b093f-14fc-4c9f-a437-ef5f397b287f",
       "inners": [
         { "value": "10" },
         { "value": "20" },
@@ -134,7 +142,7 @@ class ReportListSerializer(serializers.ModelSerializer):
       ]
     },
     {
-      "statement_column": "b7c8a6a9-ebe0-464d-b1b1-896d7c5b3800",
+      "statement_column": "a034a391-7981-45ce-be8a-35eff8c70f90",
       "inners": [
         { "value": "5" },
         { "value": "15" },
@@ -146,13 +154,7 @@ class ReportListSerializer(serializers.ModelSerializer):
       ]
     },
     {
-      "statement_column": "94f83fd3-675c-4e22-ac33-70aef3b99515",
-      "inners": [
-        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
-      ]
-    },
-    {
-      "statement_column": "fc1f5be5-0cfd-490d-bb3f-831d7f24f520",
+      "statement_column": "16f981f0-a49e-43c6-b220-b1fa8d29d85f",
       "inners": [
         { "value": "11" },
         { "value": "22" },
@@ -160,7 +162,7 @@ class ReportListSerializer(serializers.ModelSerializer):
       ]
     },
     {
-      "statement_column": "4b1675b6-0324-4853-b9fd-eb16ad641967",
+      "statement_column": "46f97fde-6271-41e5-a03c-09c93fa16f1b",
       "inners": [
         { "value": "100" },
         { "value": "200" },
@@ -168,17 +170,33 @@ class ReportListSerializer(serializers.ModelSerializer):
       ]
     },
     {
-      "statement_column": "05174a66-34fa-4332-a579-4b988b98f258",
+      "statement_column": "9e153529-6db2-4b34-9f7c-a5a98f497374",
       "inners": [
-        { "value": "b8e8f89c-405c-4fdb-9f72-19f765da3f04" }
+        { "value": "c0b0e7be-db01-48ed-bf65-0500ad608ec0" }
       ]
     },
     {
-      "statement_column": "3105c87d-9725-40d5-bef5-df5cd133a7ba",
+      "statement_column": "badd2eea-19f3-4f00-bcdf-a1c81b6f66bc",
       "inners": [
         { "value": "100" },
         { "value": "200" },
         { "value": "300" }
+      ]
+    },
+    {
+      "statement_column": "8c0e85bf-3639-45a9-bd46-2de6deb05eff",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "500" }
+      ]
+    },
+    {
+      "statement_column": "929c4890-4a30-48b7-bd26-f10c48b5bdf0",
+      "inners": [
+        { "value": "100" },
+        { "value": "650" },
+        { "value": "500" }
       ]
     }
   ]
@@ -247,6 +265,62 @@ class ReportListSerializer(serializers.ModelSerializer):
     },
     {
       "statement_column": "3ac14d68-f26e-4417-9c26-60962e6bb71f",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    }
+  ]
+}
+
+
+{
+  "deadline": "34257f28-10e9-4810-b03e-a4d72259f921",
+  "report_items": [
+    {
+      "statement_column": "b57bfc34-753c-42cf-b96b-5cbb672e5fc2",
+      "inners": [
+        { "value": "db1e6111-9791-4ddc-b421-806fbe0f89fb" }
+      ]
+    },
+    {
+      "statement_column": "ea2d27d2-4949-45d9-b3ba-9b4b8b3c7f6e",
+      "inners": [
+        { "value": "Bagryanik" },
+        { "value": "Lotos" },
+        { "value": "Atirgul" },
+        { "value": "Jiyda" },
+        { "value": "Nimadur yana gul" }
+      ]
+    },
+    {
+      "statement_column": "a7f822a6-354a-41ad-b420-4b01a1b61c12",
+      "inners": [
+        { "value": "mol" },
+        { "value": "qoy" },
+        { "value": "ochki" },
+        { "value": "telefon" },
+        { "value": "Davlat" },
+        { "value": "Iphone" }
+      ]
+    },
+    {
+      "statement_column": "79a7d447-1547-4c3a-a2a1-80abe0c52426",
+      "inners": [
+        { "value": "db1e6111-9791-4ddc-b421-806fbe0f89fb" }
+      ]
+    },
+    {
+      "statement_column": "101156ec-4c6c-4e42-8607-adebe4b014e3",
+      "inners": [
+        { "value": "11" },
+        { "value": "22" },
+        { "value": "33" }
+      ]
+    },
+    {
+      "statement_column": "30e8e34b-5572-4d2f-9c6a-156bbf689d02",
       "inners": [
         { "value": "100" },
         { "value": "200" },
