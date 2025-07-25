@@ -1,9 +1,11 @@
+import uuid
+
 from django.db import transaction
-from django.db.models import Q
 from rest_framework import serializers
 
 from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
+from apps.reports.services.general_report import aggregate_general_report
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
@@ -35,25 +37,19 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
 
-        validated_data["statement"] = deadline.statement
-
-        report, created = Report.objects.get_or_create(
-            statement=deadline.statement,
-            deadline=deadline,
-            defaults={
-                "organization": None,
-                "status": Report.StatusChoices.SAVED
-            }
-        )
-
+        # columnlarni oldindan map qilamiz
         column_ids = [item["statement_column"] for item in items_data]
-        raw_columns_map = (
-            StatementColumn.objects.filter(id__in=column_ids)
-            .in_bulk()
-        )
-        columns_map = {str(k): v for k, v in raw_columns_map.items()}
+        columns_map = {
+            str(c.id): c
+            for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
+        }
 
-        organization_from_column = None
+        reports_map = {}
+        current_org_id = None
+
+        # ✅ Hamma narsani bufferga yig‘amiz
+        report_items_buffer = []  # bu ReportItem bulk_create uchun
+        report_inners_buffer = []  # bu ReportItemInner bulk_create uchun
 
         with transaction.atomic():
             for item in items_data:
@@ -62,45 +58,96 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 if not column:
                     raise serializers.ValidationError({"detail": f"Invalid column {col_id}"})
 
-                # ✅ har doim inners orqali keladi
                 inners_data = item.get("inners", [])
 
+                # 1️⃣ ORGANIZATION BLOKI
                 if column.is_organization:
-                    # ✅ organization bo‘lsa faqat 1ta value bo‘lishi kerak
                     if not inners_data or "value" not in inners_data[0]:
                         raise serializers.ValidationError(
                             {"detail": f"Organization inners required for column {col_id}"}
                         )
-                    org_id = inners_data[0]["value"]
+                    current_org_id = inners_data[0]["value"]
 
-                    ReportItem.objects.create(
-                        report=report,
-                        statement_column=column,
-                        value=org_id
+                    # bu orgga tegishli report
+                    report_key = (current_org_id, str(column.statement.id))
+                    if report_key not in reports_map:
+                        org_instance = Organization.objects.get(id=current_org_id)
+                        report, _ = Report.objects.get_or_create(
+                            organization=org_instance,
+                            statement=column.statement,
+                            deadline=deadline,
+                            defaults={"status": Report.StatusChoices.SAVED}
+                        )
+                        reports_map[report_key] = report
+
+                    report = reports_map[report_key]
+
+                    # ✅ ReportItem ni bufferga qo‘shamiz
+                    report_item_id = uuid.uuid4()
+                    report_items_buffer.append(
+                        ReportItem(
+                            id=report_item_id,
+                            report=report,
+                            statement_column=column
+                        )
                     )
-                    organization_from_column = Organization.objects.get(id=org_id)
+                    # Organization column inners
+                    for inner in inners_data:
+                        report_inners_buffer.append(
+                            ReportItemInner(
+                                report_item_id=report_item_id,
+                                value=inner["value"]
+                            )
+                        )
                     continue
 
-                # ✅ oddiy column bo‘lsa barcha inners ni saqlaymiz
-                report_item = ReportItem.objects.create(report=report, statement_column=column)
-                inner_objects = [
-                    ReportItemInner(report_item=report_item, value=inner["value"])
-                    for inner in inners_data
-                ]
-                if inner_objects:
-                    ReportItemInner.objects.bulk_create(inner_objects)
+                # 2️⃣ Oddiy columnlar
+                if not current_org_id:
+                    raise serializers.ValidationError({"detail": "Organization column required before data columns"})
 
-        # ✅ organization ni to‘ldirish
-        if organization_from_column:
-            report.organization = organization_from_column
-        else:
-            # agar org kelmasa user.organization dan olamiz
-            request_user = self.context["request"].user
-            if request_user.organization:
-                report.organization = request_user.organization
+                child_statement = column.statement
+                report_key = (current_org_id, str(child_statement.id))
+                if report_key not in reports_map:
+                    org_instance = Organization.objects.get(id=current_org_id)
+                    report, _ = Report.objects.get_or_create(
+                        organization=org_instance,
+                        statement=child_statement,
+                        deadline=deadline,
+                        defaults={"status": Report.StatusChoices.SAVED}
+                    )
+                    reports_map[report_key] = report
 
-        report.save(update_fields=["organization"])
-        return report
+                report = reports_map[report_key]
+
+                # ✅ ReportItem ni bufferga qo‘shamiz
+                report_item_id = uuid.uuid4()
+                report_items_buffer.append(
+                    ReportItem(
+                        id=report_item_id,
+                        report=report,
+                        statement_column=column
+                    )
+                )
+                # bu columnning barcha inners’larini bufferga qo‘shamiz
+                for inner in inners_data:
+                    report_inners_buffer.append(
+                        ReportItemInner(
+                            report_item_id=report_item_id,
+                            value=inner["value"]
+                        )
+                    )
+
+            # ✅ Endi 1 marta DB query bilan bulk_create qilamiz
+            ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
+            ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
+
+            # ✅ General reportni yangilaymiz (faqat 1 marta)
+            if reports_map:
+                # barcha reportlar bitta statement bo‘yicha bo‘ladi
+                any_report = list(reports_map.values())[0]
+                aggregate_general_report(any_report.statement, deadline)
+
+        return Report.objects.filter(id__in=[r.id for r in reports_map.values()])
 
 
 # class ReportCreateSerializer(serializers.ModelSerializer):
