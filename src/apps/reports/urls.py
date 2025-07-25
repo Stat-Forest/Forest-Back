@@ -8,7 +8,7 @@ from apps.reports.views import (
     StatementColumnTreeAPIView, UserListAPIView,
     ReportRetrieveUpdateAPIView, ReportDeleteAPIView,
     PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView, ReportRetrieveAPIView,
+    PlanListAPIView,PlanDeleteAPIView,PlanItemBulkUpdateView
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 
@@ -33,8 +33,7 @@ urlpatterns = [
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
     path('create/', ReportCreateAPIView.as_view(), name='report-create'),
-    # path('<uuid:id>/', ReportRetrieveUpdateAPIView.as_view(), name='report-detail'),
-    path('<uuid:id>/', ReportRetrieveAPIView.as_view(), name='report-detail'),
+    path('<uuid:id>/', ReportRetrieveUpdateAPIView.as_view(), name='report-detail'),
     path('<uuid:id>/delete/', ReportDeleteAPIView.as_view(), name='report-delete'),
 
     # ====================  REPORT STATUS URL    ====================
@@ -51,6 +50,8 @@ urlpatterns = [
     path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
     path('plan-list/', PlanListAPIView.as_view(), name='plan-create'),
     path('plan-create/', PlanCreateView.as_view(), name='plan-create'),
+    path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
+    path("plans/<uuid:pk>/update-values/", PlanItemBulkUpdateView.as_view(), name="planitem-bulk-update"),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
