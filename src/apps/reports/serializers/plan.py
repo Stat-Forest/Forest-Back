@@ -78,10 +78,10 @@ class PlanSerializer(serializers.Serializer):
         return plan
 
 
-
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
+    plan_items = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
@@ -92,6 +92,7 @@ class PlanListSerializer(serializers.ModelSerializer):
             'organization',
             'organization_name',
             'year',
+            'plan_items'
         ]
 
     def get_lang(self):
@@ -103,6 +104,22 @@ class PlanListSerializer(serializers.ModelSerializer):
     def get_organization_name(self, obj):
         return get_translated_field(obj.organization, 'name', self.get_lang())
 
+    def get_plan_items(self, obj):
+        plan_items = obj.plan_items.all()  # Fetch related PlanItem objects
+        serializer = PlanItemSerializer(plan_items, many=True)
+        return serializer.data
 
 
+
+class PlanItemValueUpdateSerializer(serializers.Serializer):
+    column = serializers.UUIDField()
+    value = serializers.IntegerField(min_value=0)
+
+    def validate(self, attrs):
+        plan = self.context.get("plan")
+        column = attrs.get("column")
+
+        if not PlanItem.objects.filter(plan=plan, column_id=column).exists():
+            raise serializers.ValidationError(f"PlanItem with column {column} does not exist in this plan.")
+        return attrs
 
