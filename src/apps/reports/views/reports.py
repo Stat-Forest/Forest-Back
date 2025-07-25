@@ -1,7 +1,10 @@
 from django.db.models import Prefetch
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
+from rest_framework.response import Response
 
+from apps.reports.filters.report_region import ReportFilter
 from apps.reports.models import Report, Plant, ReportItem
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.permissions.check_list_report import CanListReport
@@ -34,6 +37,9 @@ class ReportListAPIView(CustomListAPIView):
     ).order_by('-created_at')
     permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ReportFilter
+
     filterset_fields = [
         'status', 'organization__name', 'organization',
         'statement__name', 'statement', 'statement__period',
@@ -64,6 +70,18 @@ class ReportCreateAPIView(CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
     permission_classes = (CanCreateReport,)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        created_reports = serializer.save()
+
+        list_data = ReportListSerializer(
+            created_reports, many=True, context=self.get_serializer_context()
+        ).data
+
+        return Response(list_data, status=201)
 
 
 @extend_schema(tags=["Reports"])
