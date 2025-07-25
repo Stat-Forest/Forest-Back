@@ -68,7 +68,7 @@ class ReportType(models.TextChoices):
     ACCEPTED = 'accepted', _('Accepted')
 
 
-DAILY_STATEMENTS = [  # kundalik
+DAILY_STATEMENTS = [  # kunlik
     "urug_harakati",
     "yaylov_hisobi",
     "chorvachilik",
