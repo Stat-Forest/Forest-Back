@@ -45,15 +45,13 @@ class ReportListSerializer(serializers.ModelSerializer):
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
-        items = report.report_items.select_related("statement_column")
+        # ❗️ Bunda inner so‘rov ketmaydi, chunki oldindan prefetch bo‘lgan
+        items = report.report_items.all()
 
-        # ✅ AGAR GENERAL REPORT BO'LSA
         if report.is_general:
-            # General info
             organization_id = "general"
             organization_name = "Barcha tashkilotlar bo‘yicha umumiy"
 
-            # Barcha oddiy reportlardan organizationlarni yig‘ib olamiz
             org_qs = Report.objects.filter(
                 statement=report.statement,
                 deadline=report.deadline,
@@ -65,7 +63,6 @@ class ReportListSerializer(serializers.ModelSerializer):
                 for o in org_qs
             ]
 
-            # Faqat bitta organization columnni topamiz
             org_column = StatementColumn.objects.filter(
                 statement=report.statement,
                 is_organization=True
@@ -77,16 +74,14 @@ class ReportListSerializer(serializers.ModelSerializer):
                 "inners": org_inners
             }
 
-            # Qolgan barcha columnlarni chiqaramiz, lekin tashkilot nomini takrorlamaymiz
             other_columns = []
-            for item in items.exclude(statement_column=org_column):
-                # ❌ Agar yana is_organization=True bo'lsa SKIP qilamiz
+            for item in items:
                 if item.statement_column.is_organization:
                     continue
-
                 other_columns.append({
                     "statement_column_id": str(item.statement_column.id),
                     "statement_column_name": get_translated_field(item.statement_column, "title", lang),
+                    # ❗️ Bu yerda endi query bo‘lmaydi
                     "inners": [
                         {"id": str(inner.id), "value": inner.value}
                         for inner in item.inners.all()
@@ -96,11 +91,8 @@ class ReportListSerializer(serializers.ModelSerializer):
             return [{
                 "organization_id": organization_id,
                 "organization_name": organization_name,
-                # ❗️ Faqat 1 marta organization column, keyin boshqa columnlar
                 "statement_columns": [org_column_json] + other_columns
             }]
-
-        # ✅ Oddiy report bo‘lsa o‘z holicha
         else:
             return [{
                 "organization_id": str(report.organization.id),
@@ -109,6 +101,7 @@ class ReportListSerializer(serializers.ModelSerializer):
                     {
                         "statement_column_id": str(item.statement_column.id),
                         "statement_column_name": get_translated_field(item.statement_column, "title", lang),
+                        # ❗️ Bu yerda ham query bo‘lmaydi
                         "inners": [
                             {"id": str(inner.id), "value": inner.value}
                             for inner in item.inners.all()
@@ -276,6 +269,76 @@ class ReportListSerializer(serializers.ModelSerializer):
 
 
 {
+  "deadline": "67b18205-7f60-4492-a9d5-99fa8c5a3c58",
+  "report_items": [
+    {
+      "statement_column": "332bf656-956b-4da6-8c90-2bd283ed33ae",
+      "inners": [
+        { "value": "db1e6111-9791-4ddc-b421-806fbe0f89fb" }
+      ]
+    },
+    {
+      "statement_column": "369fd215-64f0-423e-a713-0e7eaf772cf9",
+      "inners": [
+        { "value": "Bagryanik" },
+        { "value": "Lotos" },
+        { "value": "Atirgul" },
+        { "value": "Jiyda" },
+        { "value": "Nimadur yana gul" }
+      ]
+    },
+    {
+      "statement_column": "2115cc9b-8aff-41ec-b73a-1750b5ff42cd",
+      "inners": [
+        { "value": "mol" },
+        { "value": "qoy" },
+        { "value": "ochki" },
+        { "value": "telefon" },
+        { "value": "Davlat" },
+        { "value": "Iphone" }
+      ]
+    },
+    {
+      "statement_column": "f4ff900c-bcb1-4972-b1bb-15d2df9af813",
+      "inners": [
+        { "value": "db1e6111-9791-4ddc-b421-806fbe0f89fb" }
+      ]
+    },
+    {
+      "statement_column": "db838543-a869-42be-a600-b38d31b1fb19",
+      "inners": [
+        { "value": "11" },
+        { "value": "22" },
+        { "value": "33" }
+      ]
+    },
+    {
+      "statement_column": "e398f48c-ab40-4c3f-b1be-c36742794edf",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    },
+    {
+      "statement_column": "84a74b5a-03c8-49e8-bc61-8bd226b0a62b",
+      "inners": [
+        { "value": "db1e6111-9791-4ddc-b421-806fbe0f89fb" }
+      ]
+    },
+    {
+      "statement_column": "3ac14d68-f26e-4417-9c26-60962e6bb71f",
+      "inners": [
+        { "value": "100" },
+        { "value": "200" },
+        { "value": "300" }
+      ]
+    }
+  ]
+}
+
+
+{
   "deadline": "34257f28-10e9-4810-b03e-a4d72259f921",
   "report_items": [
     {
@@ -325,6 +388,63 @@ class ReportListSerializer(serializers.ModelSerializer):
         { "value": "100" },
         { "value": "200" },
         { "value": "300" }
+      ]
+    }
+  ]
+}
+
+# ========== JAMGARMA
+
+{
+  "deadline": "d696556b-aac2-41dc-ad1c-f4f5e31952ce",
+  "report_items": [
+    {
+      "statement_column": "7013d65e-bf85-4125-be4a-454a08a78b83",
+      "inners": [
+        { "value": "6499fe70-27d3-49bc-bf07-6441edb4043c" }
+      ]
+    },
+    {
+      "statement_column": "54c01ea0-79bd-4055-853b-705070b5451f",
+      "inners": [
+        { "value": "Bagryanik" },
+        { "value": "Lotos" },
+        { "value": "Atirgul" },
+        { "value": "Jiyda" },
+        { "value": "Nimadur yana gul" }
+      ]
+    },
+    {
+      "statement_column": "2636d800-e036-4138-a3b7-811d764e74db",
+      "inners": [
+        { "value": "mol" },
+        { "value": "foiAWHFa" },
+        { "value": "iOAHFX" },
+        { "value": "AWKJLFFaKDXLnl" }
+      ]
+    },
+    {
+      "statement_column": "f4c08030-d9f9-404d-9de7-829aad620890",
+      "inners": [
+        { "value": "22" },
+        { "value": "45" },
+        { "value": "10" }
+      ]
+    },
+    {
+      "statement_column": "d9afd592-c82a-4cc3-bdf3-6dcb4e03b4ab",
+      "inners": [
+        { "value": "200" },
+        { "value": "400" },
+        { "value": "850" }
+      ]
+    },
+    {
+      "statement_column": "df28ad25-a558-45ea-b784-17978e15d85c",
+      "inners": [
+        { "value": "0.2" },
+        { "value": "0.65" },
+        { "value": "0.541" }
       ]
     }
   ]
