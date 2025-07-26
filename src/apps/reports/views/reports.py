@@ -30,7 +30,9 @@ class ReportListAPIView(CustomListAPIView):
     ).prefetch_related(
         Prefetch(
             'report_items',
-            queryset=ReportItem.objects.select_related('plant', 'statement_column')
+            queryset=ReportItem.objects
+            .select_related('plant', 'statement_column')
+            .prefetch_related("inners")
         )
     ).filter(
         statement__parent__isnull=False
