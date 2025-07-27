@@ -1,11 +1,9 @@
-import json, re
-from django.db.models import Sum, DecimalField
-from django.db.models.functions import Cast
+import re
 
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 
-def get_or_create_general_report(statement, deadline):
+def get_or_create_general_report(statement, deadline, region=None):
     general_report, _ = Report.objects.get_or_create(
         organization=None,
         statement=statement,
@@ -15,6 +13,12 @@ def get_or_create_general_report(statement, deadline):
             "is_general": True
         }
     )
+
+    if region:
+        # General reportga hududiy belgini saqlash (optional)
+        general_report.sent_by_role = f"region:{region}"
+        general_report.save(update_fields=["sent_by_role"])
+
     return general_report
 
 
@@ -30,16 +34,57 @@ def aggregate_general_report(statement, deadline):
         statement=statement,
         deadline=deadline,
         is_general=False
-    )
+    ).select_related("organization__republic")
 
-    # 2️⃣ Barcha report_items
+    if not reports.exists():
+        return None
+
+    # 2️⃣ Region va Republicni yig‘amiz
+    regions = set()
+    republics = set()
+    for r in reports:
+        if r.organization:
+            regions.add(r.organization.region)
+            if r.organization.republic:
+                republics.add(r.organization.republic)
+
+    # ✅ Bitta viloyat bo‘lsa → region
+    target_region = regions.pop() if len(regions) == 1 else None
+
+    # ✅ Bitta respublika bo‘lsa → republic
+    target_republic = republics.pop() if len(republics) == 1 else None
+
+    # 3️⃣ Barcha report_items
     all_items = ReportItem.objects.filter(report__in=reports).prefetch_related("inners")
 
-    # 3️⃣ General reportni olish yoki yaratish
-    general_report = get_or_create_general_report(statement, deadline)
+    # 4️⃣ General reportni olish yoki yaratish
+    general_report, created = Report.objects.get_or_create(
+        organization=None,
+        statement=statement,
+        deadline=deadline,
+        defaults={
+            "status": Report.StatusChoices.SAVED,
+            "is_general": True,
+            "region": target_region,
+            "republic": target_republic
+        }
+    )
+
+    # ✅ Eski general reportda region yoki republic o‘zgarsa → yangilaymiz
+    changed = False
+    if general_report.region != target_region:
+        general_report.region = target_region
+        changed = True
+    if general_report.republic != target_republic:
+        general_report.republic = target_republic
+        changed = True
+    if changed:
+        general_report.save(update_fields=["region", "republic"])
+
+    # ✅ Eski itemlarni tozalaymiz
     ReportItem.objects.filter(report=general_report).delete()
 
-    # 4️⃣ Column bo‘yicha guruhlash
+    # 5️⃣ Column bo‘yicha guruhlash
     from collections import defaultdict
     grouped = defaultdict(list)
     for item in all_items:
@@ -50,7 +95,6 @@ def aggregate_general_report(statement, deadline):
     new_inners = []
 
     for column_id, values in grouped.items():
-        # birinchi qiymatni tekshiramiz → raqammi yoki matn
         first_value = values[0] if values else None
 
         report_item = ReportItem(
@@ -60,23 +104,17 @@ def aggregate_general_report(statement, deadline):
         new_items.append(report_item)
 
         if is_number(first_value):
-            # 🔢 Agar raqam bo‘lsa → hammasini yig‘indiga aylantiramiz
             total = sum(float(v) for v in values if is_number(v))
-            new_inners.append(ReportItemInner(
-                report_item=report_item,
-                value=str(total)
-            ))
+            new_inners.append(
+                ReportItemInner(report_item=report_item, value=str(total))
+            )
         else:
-            # 🔤 Agar matn bo‘lsa → har bir qiymatni alohida inner sifatida qo‘shamiz
             for v in values:
                 new_inners.append(
-                    ReportItemInner(
-                        report_item=report_item,
-                        value=v
-                    )
+                    ReportItemInner(report_item=report_item, value=v)
                 )
 
-    # 5️⃣ Bulk yaratish
+    # 6️⃣ Bulk yaratish
     ReportItem.objects.bulk_create(new_items)
     ReportItemInner.objects.bulk_create(new_inners)
 
