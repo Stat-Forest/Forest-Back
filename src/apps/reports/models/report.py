@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from apps.base.models import AbstractBaseModel
 from apps.users.models import CustomUser
+from apps.utils.services import RegionChoices
 
 
 class Report(AbstractBaseModel):
@@ -11,6 +12,14 @@ class Report(AbstractBaseModel):
         SENT = 'sent', _('Sent')
         CANCELLED = 'cancelled', _('Cancelled')
         ACCEPTED = 'accepted', _('Accepted')
+
+    republic = models.ForeignKey(
+      "general.Republic",
+      on_delete=models.PROTECT,
+      related_name="reports",
+      blank=True,
+      null=True
+    )
 
     organization = models.ForeignKey(
         "general.Organization",
@@ -84,6 +93,15 @@ class Report(AbstractBaseModel):
     )
     is_general = models.BooleanField(
       default=False, db_index=True
+    )
+
+    region = models.CharField(
+      max_length=50,
+      choices=RegionChoices.choices,
+      null=True,
+      blank=True,
+      db_index=True,
+      help_text="Viloyatni to‘g‘ridan-to‘g‘ri bog‘lash uchun"
     )
 
     # def __str__(self):
