@@ -98,19 +98,21 @@ class PlanListSerializer(serializers.ModelSerializer):
         ]
 
     def get_statement_name(self, obj):
-        return obj.statement.title  # Faqat title dan foydalaniladi
+        lang = self.context.get("lang", "uz")
+        return getattr(obj.statement, f"name    _{lang}", obj.statement.name_uz)
 
     def get_organization_name(self, obj):
         return obj.organization.title
 
     def get_plan_items(self, obj):
+        lang = self.context.get("lang", "uz")
         return [
             {
                 "column_id": item.column.id,
-                "column_name": item.column.title,  # Faqat title dan foydalaniladi
+                "column_name": getattr(item.column, f"title_{lang}", item.column.title_uz),
                 "plan_value": item.plan_value,
             }
-            for item in obj.planitem_set.select_related("column").all()
+            for item in obj.planitem_set.select_related("column")
         ]
 
 
