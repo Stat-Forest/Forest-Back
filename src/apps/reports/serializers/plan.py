@@ -102,7 +102,7 @@ class PlanListSerializer(serializers.ModelSerializer):
         return getattr(obj.statement, f"name    _{lang}", obj.statement.name_uz)
 
     def get_organization_name(self, obj):
-        return obj.organization.title
+        return obj.organization.name
 
     def get_plan_items(self, obj):
         lang = self.context.get("lang", "uz")
