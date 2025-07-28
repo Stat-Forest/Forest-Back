@@ -92,7 +92,8 @@ class PlanListSerializer(serializers.ModelSerializer):
             'organization',
             'organization_name',
             'year',
-            'plan_items'
+            'plan_items',
+            'created_at'
         ]
 
     def get_lang(self):
@@ -110,16 +111,33 @@ class PlanListSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-
 class PlanItemValueUpdateSerializer(serializers.Serializer):
-    column = serializers.UUIDField()
+    column_id = serializers.UUIDField(write_only=True)
     value = serializers.IntegerField(min_value=0)
+    column_name = serializers.SerializerMethodField(read_only=True)
 
     def validate(self, attrs):
         plan = self.context.get("plan")
-        column = attrs.get("column")
+        column_id = attrs.get("column_id")
 
-        if not PlanItem.objects.filter(plan=plan, column_id=column).exists():
-            raise serializers.ValidationError(f"PlanItem with column {column} does not exist in this plan.")
+        try:
+            plan_item = PlanItem.objects.get(plan=plan, column_id=column_id)
+        except PlanItem.DoesNotExist:
+            raise serializers.ValidationError({
+                "column_id": f"PlanItem with column {column_id} does not exist in this plan."
+            })
+
+        attrs["column"] = column_id  # internal use
+        self._column_obj = plan_item.column
         return attrs
+
+    def get_column_name(self, obj):
+        column = getattr(self, "_column_obj", None)
+        if column is None and hasattr(obj, "column"):
+            column = obj.column
+        if column:
+            lang = get_lang_code(self.context)
+            return get_translated_field(column, 'name', lang)
+        return None
+
 
