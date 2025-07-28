@@ -82,6 +82,7 @@ class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
     plan_items = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
         model = Plan
@@ -96,19 +97,24 @@ class PlanListSerializer(serializers.ModelSerializer):
             'created_at'
         ]
 
-    def get_lang(self):
-        return get_lang_code(self.context)
-
     def get_statement_name(self, obj):
-        return get_translated_field(obj.statement, 'name', self.get_lang())
+        lang = self.context.get("lang", "uz")
+        return getattr(obj.statement, f"title_{lang}", obj.statement.title_uz)
 
     def get_organization_name(self, obj):
-        return get_translated_field(obj.organization, 'name', self.get_lang())
+        return obj.organization.title
 
     def get_plan_items(self, obj):
-        plan_items = obj.plan_items.all()  # Fetch related PlanItem objects
-        serializer = PlanItemSerializer(plan_items, many=True)
-        return serializer.data
+        lang = self.context.get("lang", "uz")
+        return [
+            {
+                "column_id": item.column.id,
+                "column_name": getattr(item.column, f"title_{lang}", item.column.title_uz),
+                "plan_value": item.plan_value,
+            }
+            for item in obj.planitem_set.select_related("column")
+        ]
+
 
 
 class PlanItemValueUpdateSerializer(serializers.Serializer):
