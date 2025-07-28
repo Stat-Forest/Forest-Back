@@ -116,7 +116,6 @@ class PlanListSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class PlanItemValueUpdateSerializer(serializers.Serializer):
     column_id = serializers.UUIDField(write_only=True)
     value = serializers.IntegerField(min_value=0)
