@@ -78,6 +78,9 @@ class PlanSerializer(serializers.Serializer):
         return plan
 
 
+from rest_framework import serializers
+from .models import Plan
+
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
@@ -94,12 +97,12 @@ class PlanListSerializer(serializers.ModelSerializer):
             'organization_name',
             'year',
             'plan_items',
-            'created_at'
+            'created_at',
         ]
 
     def get_statement_name(self, obj):
         lang = self.context.get("lang", "uz")
-        return getattr(obj.statement, f"name    _{lang}", obj.statement.name_uz)
+        return getattr(obj.statement, f"name_{lang}", obj.statement.name_uz)
 
     def get_organization_name(self, obj):
         return obj.organization.name
@@ -112,8 +115,9 @@ class PlanListSerializer(serializers.ModelSerializer):
                 "column_name": getattr(item.column, f"title_{lang}", item.column.title_uz),
                 "plan_value": item.plan_value,
             }
-            for item in obj.planitem_set.select_related("column")
+            for item in obj.plan_items.select_related("column").all()
         ]
+
 
 
 class PlanItemValueUpdateSerializer(serializers.Serializer):
