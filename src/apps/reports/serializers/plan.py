@@ -110,10 +110,13 @@ class PlanListSerializer(serializers.ModelSerializer):
         return [
             {
                 "column_id": item.column.id,
-                "column_name": getattr(item.column, f"title_{lang}", item.column.title_uz),
+                "column_name": (
+                                   f"{getattr(item.column.parent, f'title_{lang}', item.column.parent.title_uz)} — "
+                                   if item.column.parent else ""
+                               ) + getattr(item.column, f"title_{lang}", item.column.title_uz),
                 "plan_value": item.plan_value,
             }
-            for item in obj.plan_items.select_related("column").all()
+            for item in obj.plan_items.select_related("column", "column__parent").all()
         ]
 
 
