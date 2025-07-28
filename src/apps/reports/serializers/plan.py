@@ -78,8 +78,6 @@ class PlanSerializer(serializers.Serializer):
         return plan
 
 
-from rest_framework import serializers
-from .models import Plan
 
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
