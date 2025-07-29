@@ -1,7 +1,6 @@
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework.generics import DestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 
 from apps.reports.filters.report_region import ReportFilter
@@ -11,11 +10,11 @@ from apps.reports.permissions.check_list_report import CanListReport
 from apps.reports.serializers import (
     ReportListSerializer,
     ReportCreateSerializer,
-    ReportDetailSerializer,
+    ReportUpdateSerializer, ReportDetailSerializer,
 )
 from apps.base.views import (
     CustomListAPIView,
-    CustomCreateAPIView, CustomRetrieveAPIView,
+    CustomCreateAPIView, CustomRetrieveAPIView, CustomUpdateAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
 
 
@@ -37,7 +36,7 @@ class ReportListAPIView(CustomListAPIView):
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
-    permission_classes = (CanListReport,)
+    # permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
@@ -71,7 +70,7 @@ class ReportListAPIView(CustomListAPIView):
 class ReportCreateAPIView(CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
-    permission_classes = (CanCreateReport,)
+    # permission_classes = (CanCreateReport,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -87,7 +86,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportDeleteAPIView(DestroyAPIView):
+class ReportDeleteAPIView(CustomDestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
     # permission_classes = (CanUpdateReport,)
@@ -96,17 +95,34 @@ class ReportDeleteAPIView(DestroyAPIView):
 
 @extend_schema(tags=["Reports"])
 class ReportRetrieveAPIView(CustomRetrieveAPIView):
-    queryset = Report.objects.all()
-    serializer_class = ReportCreateSerializer
-
-
-@extend_schema(tags=["Reports"])
-class ReportRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     queryset = Report.objects.select_related(
         'statement',
         'deadline__statement',
         'deadline',
-    ).prefetch_related('report_items').distinct().order_by('-created_at')
+        'organization'
+    ).prefetch_related(
+        'report_items__inners',
+        'report_items__statement_column',
+    )
     serializer_class = ReportDetailSerializer
-    permission_classes = (CanUpdateReport,)
     lookup_field = 'id'
+
+
+@extend_schema(tags=["Reports"])
+class ReportUpdateAPIView(CustomRetrieveUpdateAPIView):
+    queryset = Report.objects.select_related(
+        'statement',
+        'deadline__statement',
+        'deadline',
+        'organization',
+    ).prefetch_related(
+        'report_items__inners',
+        'report_items__statement_column',
+    ).distinct().order_by('-created_at')
+    lookup_field = 'id'
+    # permission_classes = (CanUpdateReport,)
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return ReportUpdateSerializer
+        return ReportDetailSerializer

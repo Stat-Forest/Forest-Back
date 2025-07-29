@@ -22,7 +22,7 @@ class ReportItemSerializer(serializers.ModelSerializer):
         model = ReportItem
         fields = ["statement_column", "inners"]
 
-
+# 12 ta viloyat, 1ta shahar, qoraqol respublikasi. boshqa tashkilotlar.
 class ReportCreateSerializer(serializers.ModelSerializer):
     report_items = serializers.ListField(write_only=True)
 
@@ -37,7 +37,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
 
-        # columnlarni oldindan map qilamiz
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
             str(c.id): c
@@ -47,9 +46,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         reports_map = {}
         current_org_id = None
 
-        # ✅ Hamma narsani bufferga yig‘amiz
-        report_items_buffer = []  # bu ReportItem bulk_create uchun
-        report_inners_buffer = []  # bu ReportItemInner bulk_create uchun
+        report_items_buffer = []
+        report_inners_buffer = []
 
         with transaction.atomic():
             for item in items_data:
@@ -60,7 +58,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                 inners_data = item.get("inners", [])
 
-                # 1️⃣ ORGANIZATION BLOKI
                 if column.is_organization:
                     if not inners_data or "value" not in inners_data[0]:
                         raise serializers.ValidationError(
@@ -68,7 +65,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     current_org_id = inners_data[0]["value"]
 
-                    # bu orgga tegishli report
                     report_key = (current_org_id, str(column.statement.id))
                     if report_key not in reports_map:
                         org_instance = Organization.objects.get(id=current_org_id)
@@ -82,7 +78,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                     report = reports_map[report_key]
 
-                    # ✅ ReportItem ni bufferga qo‘shamiz
                     report_item_id = uuid.uuid4()
                     report_items_buffer.append(
                         ReportItem(
@@ -91,7 +86,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             statement_column=column
                         )
                     )
-                    # Organization column inners
                     for inner in inners_data:
                         report_inners_buffer.append(
                             ReportItemInner(
@@ -101,7 +95,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     continue
 
-                # 2️⃣ Oddiy columnlar
                 if not current_org_id:
                     raise serializers.ValidationError({"detail": "Organization column required before data columns"})
 
@@ -119,7 +112,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                 report = reports_map[report_key]
 
-                # ✅ ReportItem ni bufferga qo‘shamiz
                 report_item_id = uuid.uuid4()
                 report_items_buffer.append(
                     ReportItem(
@@ -128,7 +120,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         statement_column=column
                     )
                 )
-                # bu columnning barcha inners’larini bufferga qo‘shamiz
                 for inner in inners_data:
                     report_inners_buffer.append(
                         ReportItemInner(
@@ -137,13 +128,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     )
 
-            # ✅ Endi 1 marta DB query bilan bulk_create qilamiz
             ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
             ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
 
-            # ✅ General reportni yangilaymiz (faqat 1 marta)
             if reports_map:
-                # barcha reportlar bitta statement bo‘yicha bo‘ladi
                 any_report = list(reports_map.values())[0]
                 aggregate_general_report(any_report.statement, deadline)
 
