@@ -14,6 +14,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 class PlanStatementColumnListAPIView(CustomListAPIView):
     pagination_class = None
     serializer_class = PlanColumnSerializer
+    filterset_fields = ['statement']
 
     def get_queryset(self):
         user = self.request.user
