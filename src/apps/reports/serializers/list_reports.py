@@ -44,24 +44,13 @@ class ReportListSerializer(serializers.ModelSerializer):
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
-        # ❗️ Bunda inner so‘rov ketmaydi, chunki oldindan prefetch bo‘lgan
         items = report.report_items.all()
 
         if report.is_general:
             organization_id = "general"
             organization_name = "Barcha tashkilotlar bo‘yicha umumiy"
 
-            org_qs = Report.objects.filter(
-                statement=report.statement,
-                deadline=report.deadline,
-                is_general=False
-            ).values("organization_id", "organization__name").distinct()
-
-            org_inners = [
-                {"id": str(o["organization_id"]), "value": o["organization__name"] or ""}
-                for o in org_qs
-            ]
-
+            # ❗️ Bu yer endi faqat bitta "Jami" qiymatini qaytaradi
             org_column = StatementColumn.objects.filter(
                 statement=report.statement,
                 is_organization=True
@@ -70,7 +59,12 @@ class ReportListSerializer(serializers.ModelSerializer):
             org_column_json = {
                 "statement_column_id": str(org_column.id),
                 "statement_column_name": get_translated_field(org_column, "title", lang),
-                "inners": org_inners
+                "inners": [
+                    {
+                        "id": organization_id,
+                        "value": "Jami"
+                    }
+                ]
             }
 
             other_columns = []
@@ -80,7 +74,6 @@ class ReportListSerializer(serializers.ModelSerializer):
                 other_columns.append({
                     "statement_column_id": str(item.statement_column.id),
                     "statement_column_name": get_translated_field(item.statement_column, "title", lang),
-                    # ❗️ Bu yerda endi query bo‘lmaydi
                     "inners": [
                         {"id": str(inner.id), "value": inner.value}
                         for inner in item.inners.all()
@@ -95,20 +88,95 @@ class ReportListSerializer(serializers.ModelSerializer):
         else:
             return [{
                 "organization_id": str(report.organization.id),
-                "organization_name": report.organization.name,
+                "organization_name": get_translated_field(report.organization, "name", lang),
                 "statement_columns": [
                     {
                         "statement_column_id": str(item.statement_column.id),
                         "statement_column_name": get_translated_field(item.statement_column, "title", lang),
-                        # ❗️ Bu yerda ham query bo‘lmaydi
                         "inners": [
-                            {"id": str(inner.id), "value": inner.value}
+                            {
+                                "id": str(inner.id),
+                                "value": get_translated_field(report.organization, "name", lang)
+                            }
+                            if item.statement_column.is_organization
+                            else {
+                                "id": str(inner.id),
+                                "value": inner.value
+                            }
                             for inner in item.inners.all()
                         ]
                     }
                     for item in items
                 ]
             }]
+
+    # def get_report_items(self, report):
+    #     lang = get_lang_code(self.context)
+    #     # ❗️ Bunda inner so‘rov ketmaydi, chunki oldindan prefetch bo‘lgan
+    #     items = report.report_items.all()
+    #
+    #     if report.is_general:
+    #         organization_id = "general"
+    #         organization_name = "Barcha tashkilotlar bo‘yicha umumiy"
+    #
+    #         org_qs = Report.objects.filter(
+    #             statement=report.statement,
+    #             deadline=report.deadline,
+    #             is_general=False
+    #         ).values("organization_id", "organization__name").distinct()
+    #
+    #         org_inners = [
+    #             {"id": str(o["organization_id"]), "value": o["organization__name"] or ""}
+    #             for o in org_qs
+    #         ]
+    #
+    #         org_column = StatementColumn.objects.filter(
+    #             statement=report.statement,
+    #             is_organization=True
+    #         ).first()
+    #
+    #         org_column_json = {
+    #             "statement_column_id": str(org_column.id),
+    #             "statement_column_name": get_translated_field(org_column, "title", lang),
+    #             "inners": org_inners
+    #         }
+    #
+    #         other_columns = []
+    #         for item in items:
+    #             if item.statement_column.is_organization:
+    #                 continue
+    #             other_columns.append({
+    #                 "statement_column_id": str(item.statement_column.id),
+    #                 "statement_column_name": get_translated_field(item.statement_column, "title", lang),
+    #                 # ❗️ Bu yerda endi query bo‘lmaydi
+    #                 "inners": [
+    #                     {"id": str(inner.id), "value": inner.value}
+    #                     for inner in item.inners.all()
+    #                 ]
+    #             })
+    #
+    #         return [{
+    #             "organization_id": organization_id,
+    #             "organization_name": organization_name,
+    #             "statement_columns": [org_column_json] + other_columns
+    #         }]
+    #     else:
+    #         return [{
+    #             "organization_id": str(report.organization.id),
+    #             "organization_name": report.organization.name,
+    #             "statement_columns": [
+    #                 {
+    #                     "statement_column_id": str(item.statement_column.id),
+    #                     "statement_column_name": get_translated_field(item.statement_column, "title", lang),
+    #                     # ❗️ Bu yerda ham query bo‘lmaydi
+    #                     "inners": [
+    #                         {"id": str(inner.id), "value": inner.value}
+    #                         for inner in item.inners.all()
+    #                     ]
+    #                 }
+    #                 for item in items
+    #             ]
+    #         }]
 
 
 # XODIM HISOBI ==========================================
