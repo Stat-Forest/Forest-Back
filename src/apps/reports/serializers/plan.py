@@ -78,10 +78,12 @@ class PlanSerializer(serializers.Serializer):
         return plan
 
 
+
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
     plan_items = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
         model = Plan
@@ -92,34 +94,60 @@ class PlanListSerializer(serializers.ModelSerializer):
             'organization',
             'organization_name',
             'year',
-            'plan_items'
+            'plan_items',
+            'created_at',
         ]
 
-    def get_lang(self):
-        return get_lang_code(self.context)
-
     def get_statement_name(self, obj):
-        return get_translated_field(obj.statement, 'name', self.get_lang())
+        lang = self.context.get("lang", "uz")
+        return getattr(obj.statement, f"name_{lang}", obj.statement.name_uz)
 
     def get_organization_name(self, obj):
-        return get_translated_field(obj.organization, 'name', self.get_lang())
+        return obj.organization.name
 
     def get_plan_items(self, obj):
-        plan_items = obj.plan_items.all()  # Fetch related PlanItem objects
-        serializer = PlanItemSerializer(plan_items, many=True)
-        return serializer.data
+        lang = self.context.get("lang", "uz")
+        return [
+            {
+                "column_id": item.column.id,
+                "column_name": (
+                                   f"{getattr(item.column.parent, f'title_{lang}', item.column.parent.title_uz)} — "
+                                   if item.column.parent else ""
+                               ) + getattr(item.column, f"title_{lang}", item.column.title_uz),
+                "plan_value": item.plan_value,
+            }
+            for item in obj.plan_items.select_related("column", "column__parent").all()
+        ]
 
 
 
 class PlanItemValueUpdateSerializer(serializers.Serializer):
-    column = serializers.UUIDField()
+    column_id = serializers.UUIDField(write_only=True)
     value = serializers.IntegerField(min_value=0)
+    column_name = serializers.SerializerMethodField(read_only=True)
 
     def validate(self, attrs):
         plan = self.context.get("plan")
-        column = attrs.get("column")
+        column_id = attrs.get("column_id")
 
-        if not PlanItem.objects.filter(plan=plan, column_id=column).exists():
-            raise serializers.ValidationError(f"PlanItem with column {column} does not exist in this plan.")
+        try:
+            plan_item = PlanItem.objects.get(plan=plan, column_id=column_id)
+        except PlanItem.DoesNotExist:
+            raise serializers.ValidationError({
+                "column_id": f"PlanItem with column {column_id} does not exist in this plan."
+            })
+
+        attrs["column"] = column_id  # internal use
+        self._column_obj = plan_item.column
         return attrs
+
+    def get_column_name(self, obj):
+        column = getattr(self, "_column_obj", None)
+        if column is None and hasattr(obj, "column"):
+            column = obj.column
+        if column:
+            lang = get_lang_code(self.context)
+            return get_translated_field(column, 'name', lang)
+        return None
+
 

@@ -14,15 +14,25 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 class PlanStatementColumnListAPIView(CustomListAPIView):
     pagination_class = None
     serializer_class = PlanColumnSerializer
+    filterset_fields = ['statement']
 
-    def get_queryset(self):
+    def filter_queryset(self, queryset):
+        """
+        DRF filtering + custom filtering
+        """
+        queryset = super().filter_queryset(queryset) 
+
         user = self.request.user
         base_filter = Q(parent__isnull=False) & Q(status_plan__isnull=False)
 
         if hasattr(user, 'statement') and user.statement:
             base_filter &= Q(statement__parent=user.statement)
 
-        return StatementColumn.objects.filter(base_filter).select_related(
+        return queryset.filter(base_filter)
+
+    def get_queryset(self):
+        # Avval barcha obyektlarni olib kelamiz
+        return StatementColumn.objects.select_related(
             "parent",
             "parent__parent",
             "parent__parent__parent",
