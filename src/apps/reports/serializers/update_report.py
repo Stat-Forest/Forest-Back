@@ -1,155 +1,144 @@
-from datetime import date
-
+import uuid
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
+from django.db import transaction
 
-from apps.reports.models import Report, ReportItem,Plan
-from apps.reports.serializers.report_item import ReportItemSerializer
+from apps.base.serializers import CustomModelSerializer
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn, Plan
 from apps.general.models import Organization
-from apps.base.exceptions.exception_files import CustomExceptionError
-from apps.utils.services import PeriodChoices
+from apps.reports.services.general_report import aggregate_general_report
 
 
+# Inner item uchun oddiy serializer
+class ReportItemInnerSerializer(serializers.Serializer):
+    value = serializers.CharField()
 
-class ReportDetailSerializer(serializers.ModelSerializer):
+
+# Bitta report_item uchun serializer
+class ReportItemSerializer(serializers.Serializer):
+    statement_column = serializers.UUIDField(source="statement_column.id")
+    inners = ReportItemInnerSerializer(many=True)
+
+
+# Report update uchun serializer (create ham shu formatda bo‘lishi mumkin)
+class ReportUpdateSerializer(CustomModelSerializer):
     report_items = ReportItemSerializer(many=True)
 
     class Meta:
         model = Report
-        fields = ('deadline', 'report_items')
-    #
-    # def validate(self, attrs):
-    #     report_items = attrs['report_items']
-    #     deadline = attrs['deadline']
-    #     statement = deadline.statement
-    #
-    #     user = self.context['request'].user
-    #
-    #     # if not user.statement:
-    #     #     raise CustomExceptionError(400, _('User must have a statement to create report !'))
-    #
-    #     # if user.statement != statement.parent:
-    #     #     raise CustomExceptionError(400, _('User statement does not match deadline statement !'))
-    #
-    #     if not deadline.organizations.filter(id=user.organization.id).exists():
-    #         raise CustomExceptionError(400, _('User organization is not related to this deadline'))
-    #
-    #     # column ids & validation
-    #     statement_columns = {col.id: col for col in statement.columns.all()}
-    #     column_ids = [item['statement_column'] for item in report_items]
-    #
-    #     # if len(statement_columns) != len(set(column_ids)):
-    #     #     raise CustomExceptionError(400, _('Invalid statement column(s) found.'))
-    #
-    #     organization_ids = set()
-    #     plan_column_ids = []
-    #     plan_values = {}
-    #
-    #     for item in report_items:
-    #         print('item')
-    #         col_id = item['statement_column_id']
-    #         value = item['value']
-    #         column = statement_columns.get(col_id)
-    #
-    #         if column.is_organization:
-    #             organization_ids.add(value)
-    #
-    #         elif column.status_plan is not None:
-    #             try:
-    #                 plan_values[col_id] = int(value)
-    #             except ValueError:
-    #                 raise CustomExceptionError(400, _('Plan value must be an integer.'))
-    #             plan_column_ids.append(col_id)
-    #
-    #         else:
-    #             try:
-    #                 float(value)
-    #             except (ValueError, TypeError):
-    #                 raise CustomExceptionError(400, _('Value must be a number.'))
-    #
-    #     if len(organization_ids) != 1:
-    #         raise CustomExceptionError(400, _('Invalid organizations. Multiple different organizations found.'))
-    #
-    #     organization_id = organization_ids.pop()
-    #     try:
-    #         organization = Organization.objects.get(id=organization_id)
-    #     except Organization.DoesNotExist:
-    #         raise CustomExceptionError(400, _('Organization not found.'))
-    #
-    #     if Report.objects.filter(organization=organization, statement=statement, deadline=deadline).exists():
-    #         raise CustomExceptionError(400, {'report': _('This report already exists.')})
-    #
-    #     if plan_column_ids:
-    #         plans = Plan.objects.filter(column_id__in=plan_column_ids)
-    #         plans_map = {p.column_id: p for p in plans}
-    #         for col_id in plan_column_ids:
-    #             plan = plans_map.get(col_id)
-    #             if not plan or plan.plan_value != plan_values[col_id]:
-    #                 raise CustomExceptionError(400, _('Invalid Plan value'))
-    #
-    #     today = date.today()
-    #     submit_at = deadline.submit_at
-    #
-    #     def get_week_of_month(day):
-    #         first_day = day.replace(day=1)
-    #         adjusted_dom = day.day + first_day.weekday()
-    #         return (adjusted_dom - 1) // 7 + 1
-    #
-    #     if statement.period == PeriodChoices.KUNLIK:
-    #         report_day = date.fromisoformat(submit_at)
-    #         if report_day >= today:
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past days.')})
-    #
-    #     elif statement.period == PeriodChoices.HAFTALIK:
-    #         year, month, week = map(int, submit_at.split('-'))
-    #         if year > today.year or (year == today.year and month > today.month):
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
-    #         if year == today.year and month == today.month and week >= get_week_of_month(today):
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
-    #
-    #     elif statement.period == PeriodChoices.OYLIK:
-    #         year, month = map(int, submit_at.split('-'))
-    #         if year > today.year or (year == today.year and month >= today.month):
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past months.')})
-    #
-    #     elif statement.period == PeriodChoices.CHORAKLIK:
-    #         year, quarter = int(submit_at[:4]), int(submit_at[-1])
-    #         current_quarter = (today.month - 1) // 3 + 1
-    #         if year > today.year or (year == today.year and quarter >= current_quarter):
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past quarters.')})
-    #
-    #     elif statement.period == PeriodChoices.YILLIK:
-    #         year = int(submit_at)
-    #         if year >= today.year:
-    #             raise CustomExceptionError(400, {'submit_at': _('You can only submit for past years.')})
-    #
-    #     return attrs
+        fields = ["id", "deadline", "report_items"]
+
+    def validate(self, attrs):
+        items = attrs.get("report_items", [])
+        deadline = attrs.get("deadline")
+
+        if not items:
+            raise serializers.ValidationError({"detail": "report_items required"})
+
+        column_ids = [str(item["statement_column"]) for item in items]
+        columns_map = {
+            str(c.id): c
+            for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
+        }
+
+        plan_columns = []
+        organization_ids = set()
+
+        for item in items:
+            col_id = str(item["statement_column"])
+            column = columns_map.get(col_id)
+            if not column:
+                raise serializers.ValidationError({"detail": f"Invalid column {col_id}"})
+
+            inners = item.get("inners", [])
+            if not isinstance(inners, list) or not inners:
+                raise serializers.ValidationError({"detail": f"Empty or invalid inners for column {col_id}"})
+
+            for inner in inners:
+                val = inner.get("value")
+                if column.is_organization:
+                    organization_ids.add(val)
+                elif column.status_plan:
+                    try:
+                        int(val)
+                    except (ValueError, TypeError):
+                        raise serializers.ValidationError({"detail": f"Plan value must be integer at column {col_id}"})
+                    plan_columns.append(col_id)
+                else:
+                    try:
+                        float(val)
+                    except (ValueError, TypeError):
+                        raise serializers.ValidationError({"detail": f"Invalid number at column {col_id} inner"})
+
+        if len(organization_ids) != 1:
+            raise serializers.ValidationError({"detail": "Multiple or missing organizations found."})
+
+        self.validated_columns_map = columns_map
+        self.validated_org_id = list(organization_ids)[0]
+        self.validated_plan_values = {
+            str(item["statement_column"]): item["inners"][0]["value"]
+            for item in items if self.validated_columns_map[str(item["statement_column"])].status_plan
+        }
+
+        if plan_columns:
+            plans = Plan.objects.filter(
+                column_id__in=plan_columns,
+                deadline=deadline
+            )
+            plans_map = {str(p.column_id): p for p in plans}
+            for col_id in plan_columns:
+                if col_id not in plans_map or str(plans_map[col_id].plan_value) != str(self.validated_plan_values[col_id]):
+                    raise serializers.ValidationError({"detail": f"Plan value mismatch for column {col_id}"})
+
+        return attrs
 
     def update(self, instance, validated_data):
-        items_data = validated_data.pop('report_items', [])
-        deadline = validated_data.get('deadline', instance.deadline)
-        statement = deadline.statement
+        items_data = validated_data.get("report_items", [])
+        deadline = validated_data.get("deadline", instance.deadline)
+        org_id = self.validated_org_id
+        columns_map = self.validated_columns_map
 
-        if statement != instance.statement or deadline != instance.deadline:
-            instance.statement = statement
+        statement = instance.statement
+
+        with transaction.atomic():
+            ReportItemInner.objects.filter(report_item__report=instance).delete()
+            ReportItem.objects.filter(report=instance).delete()
+
+            report_items = []
+            report_inners = []
+
+            for item in items_data:
+                col_id = str(item["statement_column"])
+                column = columns_map[col_id]
+                inners = item.get("inners", [])
+
+                report_item_id = uuid.uuid4()
+                report_items.append(ReportItem(
+                    id=report_item_id,
+                    report=instance,
+                    statement_column=column
+                ))
+                for inner in inners:
+                    report_inners.append(ReportItemInner(
+                        report_item_id=report_item_id,
+                        value=inner["value"]
+                    ))
+
+            ReportItem.objects.bulk_create(report_items, batch_size=1000)
+            ReportItemInner.objects.bulk_create(report_inners, batch_size=2000)
+
             instance.deadline = deadline
             instance.save()
 
-        existing_items = {item.id: item for item in instance.report_items.all()}
-
-        for item_data in items_data:
-            item_id = item_data.get('id')
-            if item_id and item_id in existing_items:
-                item = existing_items.pop(item_id)
-                for attr, value in item_data.items():
-                    setattr(item, attr, value)
-                    print(item, attr, value)
-                item.save()
-            else:
-                ReportItem.objects.create(report=instance, **item_data)
-
-        # Delete removed items
-        for item in existing_items.values():
-            item.delete()
+            aggregate_general_report(statement, deadline)
 
         return instance
+
+
+class ReportDetailSerializer(CustomModelSerializer):
+    report_items = ReportItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Report
+        fields = [
+            "id", "deadline", "report_items"
+        ]
