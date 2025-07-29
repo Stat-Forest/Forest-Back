@@ -50,13 +50,15 @@ class ReportListAPIView(CustomListAPIView):
     def get_queryset(self):
         user = self.request.user
 
+        base_qs = self.queryset
+
         if user.is_superuser:
-            return self.queryset
+            return base_qs.order_by('is_general', '-created_at')
 
         if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma']:
-            return self.queryset.filter(organization=user.organization)
+            return base_qs.filter(organization=user.organization).order_by('is_general', '-created_at')
 
-        return self.queryset.none()
+        return base_qs.none()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
