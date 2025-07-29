@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.reports.models import Report, StatementColumn
-from apps.utils.services.general_values import build_columns_with_jami
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
