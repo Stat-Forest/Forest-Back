@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan
 from apps.utils.translation import get_lang_code, get_translated_field
@@ -8,7 +7,8 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.reports.models import Plan, Statement, StatementColumn
 from apps.general.models import Organization
-from apps.reports.models import PlanItem
+from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
+
 
 
 class PlanItemSerializer(serializers.Serializer):
@@ -151,3 +151,64 @@ class PlanItemValueUpdateSerializer(serializers.Serializer):
         return None
 
 
+class PlanUpdateSerializer(serializers.Serializer):
+    organization = serializers.UUIDField()
+    statement = serializers.UUIDField()
+    year = serializers.IntegerField(min_value=1900)
+    plan_items = PlanItemSerializer(many=True)
+
+    def validate_year(self, value):
+        from django.utils import timezone
+        current_year = timezone.now().year
+        if value < 2024 or value > current_year:
+            raise CustomExceptionError(
+                400,
+                {'year': _('Year must be between 2024 and current year.')}
+            )
+        return value
+
+    def validate(self, attrs):
+        if not attrs.get('plan_items'):
+            raise CustomExceptionError(400, {'plan_items': _('Plan items are required.')})
+        return attrs
+
+    def update(self, instance, validated_data):
+        organization_id = validated_data.get("organization")
+        statement_id = validated_data.get("statement")
+        year = validated_data.get("year")
+        items = validated_data.get("plan_items", [])
+
+        organization = Organization.objects.get(id=organization_id)
+        statement = Statement.objects.get(id=statement_id)
+
+        instance.organization = organization
+        instance.statement = statement
+        instance.year = year
+        instance.save()
+
+        existing_items = {
+            item.column_id: item for item in instance.plan_items.all()
+        }
+        incoming_column_ids = set()
+
+        for item in items:
+            column_id = item["column"]
+            plan_value = item["plan_value"]
+            incoming_column_ids.add(column_id)
+
+            column = StatementColumn.objects.get(id=column_id)
+
+            if column.statement_id != statement.id:
+                raise CustomExceptionError(400, _("Column does not belong to the given statement"))
+
+            PlanItem.objects.update_or_create(
+                plan=instance,
+                column=column,
+                defaults={"plan_value": plan_value}
+            )
+
+        for column_id, plan_item in existing_items.items():
+            if column_id not in incoming_column_ids:
+                plan_item.delete()
+
+        return instance
