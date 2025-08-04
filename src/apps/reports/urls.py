@@ -1,19 +1,22 @@
 from django.urls import path
 
 from apps.reports.views import (
-    DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
+    DeadlineListAPIView, ReportListAPIView,
+    ReportSendAPIView,PlanRetrieveAPIView,
     ReportCancelAPIView, ReportAcceptAPIView,
     ReportCreateAPIView, StatementListAPIView,
     ReportItemListAPIView, DashboardStatListView,
     StatementColumnTreeAPIView, UserListAPIView,
     ReportUpdateAPIView, ReportRetrieveAPIView, ReportDeleteAPIView,
     PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView,PlanDeleteAPIView,PlanItemBulkUpdateView
+    PlanListAPIView,PlanDeleteAPIView,
+    PlanUpdateAPIView
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 
 from apps.reports.views.plant_column import PlantListAPIView
 from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
+
 
 urlpatterns = [
 
@@ -51,8 +54,9 @@ urlpatterns = [
     path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
     path('plan-list/', PlanListAPIView.as_view(), name='plan-create'),
     path('plan-create/', PlanCreateView.as_view(), name='plan-create'),
+    path('plans/<uuid:pk>/', PlanRetrieveAPIView.as_view(), name='plan-detail'),
     path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
-    path("plans/<uuid:pk>/update-values/", PlanItemBulkUpdateView.as_view(), name="planitem-bulk-update"),
+    path('plans/<uuid:pk>/update/', PlanUpdateAPIView.as_view(), name='plan-update'),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================

@@ -70,6 +70,9 @@ class StatementColumn(AbstractBaseModel):
             return self.title
         return f"{self.parent.return_parent} - {self.title}"
 
+    def __str__(self):
+        return self.return_parent
+
     @property
     def is_leaf(self):
         return not StatementColumn.objects.filter(parent=self).exists()
@@ -79,8 +82,7 @@ class StatementColumn(AbstractBaseModel):
         if self.status_plan and self.is_organization:
             raise ValidationError(_("An instance cannot be both a plan and an organization at the same time."))
 
-    def __str__(self):
-        return self.return_parent
+
 
     class Meta:
         verbose_name = _("Statement Column")
