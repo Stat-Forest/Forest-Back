@@ -283,6 +283,50 @@ class Command(BaseCommand):
                 status_plan=SC.PlanStatus.YILLIK
             )
 
+            chorak_nomi_uz = {
+                SC.PlanStatus.CHORAK_1: "1-chorak",
+                SC.PlanStatus.CHORAK_2: "2-chorak",
+                SC.PlanStatus.CHORAK_3: "3-chorak",
+                SC.PlanStatus.CHORAK_4: "4-chorak",
+            }
+
+            chorak_nomi_ru = {
+                SC.PlanStatus.CHORAK_1: "1-й квартал",
+                SC.PlanStatus.CHORAK_2: "2-й квартал",
+                SC.PlanStatus.CHORAK_3: "3-й квартал",
+                SC.PlanStatus.CHORAK_4: "4-й квартал",
+            }
+
+            oy_nomi_uz = {
+                SC.PlanStatus.YANVAR: "Yanvar",
+                SC.PlanStatus.FEVRAL: "Fevral",
+                SC.PlanStatus.MART: "Mart",
+                SC.PlanStatus.APREL: "Aprel",
+                SC.PlanStatus.MAY: "May",
+                SC.PlanStatus.IYUN: "Iyun",
+                SC.PlanStatus.IYUL: "Iyul",
+                SC.PlanStatus.AVGUST: "Avgust",
+                SC.PlanStatus.SENTABR: "Sentabr",
+                SC.PlanStatus.OKTABR: "Oktabr",
+                SC.PlanStatus.NOYABR: "Noyabr",
+                SC.PlanStatus.DEKABR: "Dekabr",
+            }
+
+            oy_nomi_ru = {
+                SC.PlanStatus.YANVAR: "Январь",
+                SC.PlanStatus.FEVRAL: "Февраль",
+                SC.PlanStatus.MART: "Март",
+                SC.PlanStatus.APREL: "Апрель",
+                SC.PlanStatus.MAY: "Май",
+                SC.PlanStatus.IYUN: "Июнь",
+                SC.PlanStatus.IYUL: "Июль",
+                SC.PlanStatus.AVGUST: "Август",
+                SC.PlanStatus.SENTABR: "Сентябрь",
+                SC.PlanStatus.OKTABR: "Октябрь",
+                SC.PlanStatus.NOYABR: "Ноябрь",
+                SC.PlanStatus.DEKABR: "Декабрь",
+            }
+
             choraklar = {
                 SC.PlanStatus.CHORAK_1: [SC.PlanStatus.YANVAR, SC.PlanStatus.FEVRAL, SC.PlanStatus.MART],
                 SC.PlanStatus.CHORAK_2: [SC.PlanStatus.APREL, SC.PlanStatus.MAY, SC.PlanStatus.IYUN],
@@ -292,12 +336,14 @@ class Command(BaseCommand):
 
             for c_idx, (chorak_status, oylar) in enumerate(choraklar.items(), start=1):
                 chorak_order = f"2.1.{2 + c_idx * 2 - 1}"
+
+                # Chorak reja
                 chorak_reja = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
-                    title=f"{chorak_status.label} reja",
-                    title_uz=f"{chorak_status.label} reja",
-                    title_ru=f"{chorak_status.label} план",
+                    title=f"{chorak_nomi_uz[chorak_status]} reja",
+                    title_uz=f"{chorak_nomi_uz[chorak_status]} reja",
+                    title_ru=f"{chorak_nomi_ru[chorak_status]} план",
                     ordering=chorak_order
                 )
 
@@ -320,23 +366,25 @@ class Command(BaseCommand):
                     ordering=f"{chorak_order}.2"
                 )
 
+                # Chorak oylar bo'limi
                 chorak_oy_node = StatementColumn.objects.create(
                     statement=daromad_statement,
                     parent=tushum_info,
-                    title=chorak_status.label,
-                    title_uz=chorak_status.label,
-                    title_ru=chorak_status.label,
+                    title=chorak_nomi_uz[chorak_status],
+                    title_uz=chorak_nomi_uz[chorak_status],
+                    title_ru=chorak_nomi_ru[chorak_status],
                     ordering=f"2.1.{2 + c_idx * 2}"
                 )
 
                 for o_idx, oy_status in enumerate(oylar, start=1):
                     oy_order = f"2.1.{2 + c_idx * 2}.{o_idx}"
+
                     oy_node = StatementColumn.objects.create(
                         statement=daromad_statement,
                         parent=chorak_oy_node,
-                        title=oy_status.label,
-                        title_uz=oy_status.label,
-                        title_ru=oy_status.label,
+                        title=oy_nomi_uz[oy_status],
+                        title_uz=oy_nomi_uz[oy_status],
+                        title_ru=oy_nomi_ru[oy_status],
                         ordering=oy_order
                     )
 
