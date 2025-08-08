@@ -311,22 +311,58 @@ class Command(BaseCommand):
                 1):
             create_col(f2_5_1, pos, pos, f"1.5.1.3.5.2.{idx}")
 
-        # Additional items
+        # 1-2: Oddiy (childsiz) ustunlar
         tail_items = [
             ("Kasallik varaqasi ... (soni va o‘rtacha)",
              "Больничные листы ... (количество и средняя продолжительность)", "1.5.1.3.6"),
             ("Xodimlarni davolash va tibbiy profilaktika choralari uchun to‘langan mablag‘",
              "Расходы на лечение и профилактику сотрудников", "1.5.1.3.7"),
-            ("Xodimlarning kasallik turlari (5 yillik dinamikasi bilan)",
-             "Типы заболеваний сотрудников (с 5-летней динамикой)", "1.5.1.3.8"),
-            ("Sport bilan shug‘ullanuvchi xodimlar soni va to‘lovlar",
-             "Число сотрудников, занимающихся спортом и выплаты", "1.5.1.3.9"),
-            ("Madaniy-ma’rifiy tadbirlarda qatnashgan xodimlar va mablag‘lar",
-             "Участие сотрудников в культурно-просветительских мероприятиях и расходы", "1.5.1.3.10")
         ]
         for uz, ru, ord in tail_items:
             create_col(f2, uz, ru, ord)
 
+        # 3: Xodimlarning kasallik turlari (childlari bor)
+        f2_8 = create_col(
+            f2,
+            "Xodimlarning kasallik turlari (5 yillik dinamikasi bilan)",
+            "Типы заболеваний сотрудников (с 5-летней динамикой)",
+            "1.5.1.3.8"
+        )
+        create_col(f2_8, "Jami", "Всего", "1.5.1.3.8.1")
+        f2_8_1 = create_col(f2_8, "shu jumladan", "в том числе", "1.5.1.3.8.2")
+        for idx, (uz, ru) in enumerate([
+            ("Yurak va qon tomir kasalliklari", "Заболевания сердца и сосудов"),
+            ("Asab kasalliklari", "Нервные заболевания"),
+            ("Oshqozon-ichak kasalliklari", "Желудочно-кишечные заболевания"),
+        ], 1):
+            create_col(f2_8_1, uz, ru, f"1.5.1.3.8.2.{idx}")
+
+        # 4: Sport bilan shug‘ullanuvchi xodimlar (childsiz, lekin o‘rtada)
+        create_col(
+            f2,
+            "Sport bilan shug‘ullanuvchi xodimlar soni va to‘lovlar",
+            "Число сотрудников, занимающихся спортом и выплаты",
+            "1.5.1.3.9"
+        )
+
+        # 5: Madaniy-ma’rifiy tadbirlar (childlari bor)
+        f2_10 = create_col(
+            f2,
+            "Madaniy-ma’rifiy tadbirlarda qatnashgan xodimlar va mablag‘lar",
+            "Участие сотрудников в культурно-просветительских мероприятиях и расходы",
+            "1.5.1.3.10"
+        )
+        create_col(f2_10, "Jami", "Всего", "1.5.1.3.10.1")
+        f2_10_1 = create_col(f2_10, "shu jumladan", "в том числе", "1.5.1.3.10.2")
+        for idx, (uz, ru) in enumerate([
+            ("Teatr", "Театр"),
+            ("Kino", "Кино"),
+            ("Konsert", "Концерт"),
+            ("Boshqalar", "Другие"),
+        ], 1):
+            create_col(f2_10_1, uz, ru, f"1.5.1.3.10.2.{idx}")
+
+        # create_col funksiyasi (pastda qoladi)
         def create_col(parent, uz, ru, ord, is_org=False):
             return StatementColumn.objects.create(
                 statement=person_report_statement,
