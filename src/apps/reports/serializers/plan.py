@@ -153,14 +153,13 @@ class PlanItemValueUpdateSerializer(serializers.Serializer):
 
 class PlanUpdateSerializer(serializers.Serializer):
     organization = serializers.UUIDField()
-    statement = serializers.UUIDField()
     year = serializers.IntegerField(min_value=1900)
     plan_items = PlanItemSerializer(many=True)
 
     def validate_year(self, value):
         from django.utils import timezone
         current_year = timezone.now().year
-        if value < 2024 or value > current_year:
+        if value < 2020 or value > current_year:
             raise CustomExceptionError(
                 400,
                 {'year': _('Year must be between 2024 and current year.')}
@@ -174,15 +173,14 @@ class PlanUpdateSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         organization_id = validated_data.get("organization")
-        statement_id = validated_data.get("statement")
         year = validated_data.get("year")
         items = validated_data.get("plan_items", [])
 
         organization = Organization.objects.get(id=organization_id)
-        statement = Statement.objects.get(id=statement_id)
 
-        instance.organization = organization
-        instance.statement = statement
+        if instance.organization != organization:
+            instance.organization = organization
+
         instance.year = year
         instance.save()
 
@@ -197,9 +195,6 @@ class PlanUpdateSerializer(serializers.Serializer):
             incoming_column_ids.add(column_id)
 
             column = StatementColumn.objects.get(id=column_id)
-
-            if column.statement_id != statement.id:
-                raise CustomExceptionError(400, _("Column does not belong to the given statement"))
 
             PlanItem.objects.update_or_create(
                 plan=instance,
