@@ -65,15 +65,57 @@ class Command(BaseCommand):
 
             # Ijarachi ma’lumotlari
             rent_titles = [
-                ("Shartnoma sana", "Дата договора"),
                 ("JSHSHIR (Yuridik shaxs INN)", "ИНН (юридического лица)"),
                 ("To‘liq F.I.SH. (Yuridik shaxs nomi)", "Ф.И.О. полностью (наименование юридического лица)"),
                 ("Yashash manzili (Yuridik manzil)", "Адрес проживания (юридический адрес)"),
                 ("Pasport seriyasi va raqami (rahbar)", "Серия и номер паспорта (руководитель)"),
                 ("Telefon raqami / Telegram", "Номер телефона / Телеграм")
             ]
-            info_rent = self.create_column(statement=land_2, parent=info_12, title="Ijarachi ma’lumotlari", title_ru="Информация об арендаторе", ordering="1.2.1.3")
+
+            info_rent = self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Ijarachi ma’lumotlari",
+                title_ru="Информация об арендаторе",
+                ordering="1.2.1.3"
+            )
             self.create_columns_from_titles(rent_titles, "1.2.1.3", info_rent, land_2)
+
+            # Ижара ер майдони жойлашган ўрмон бўлими номи (Farzandi yo‘q)
+            self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Ижара ер майдони жойлашган ўрмон бўлими номи",
+                title_ru="Наименование лесничества, где расположен арендованный земельный участок",
+                ordering="1.2.1.4"
+            )
+
+            # "шундан" va uning farzandlari
+            shundan = self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="шундан",
+                title_ru="из них",
+                ordering="1.2.1.5"
+            )
+
+            shundan_titles = [
+                ("Aylanma raqami", "Номер обхода"),
+                ("Kvartal raqami", "Номер квартала"),
+                ("Kontur raqami", "Номер контура"),
+                ("Vidal raqami", "Номер отдела"),
+            ]
+
+            self.create_columns_from_titles(shundan_titles, "1.2.1.5", shundan, land_2)
+
+            # 1.2.1.6 Жами ижарага олинган ер майдони (га)
+            self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Жами ижарага олинган ер майдони (га)",
+                title_ru="Общая площадь арендованной земли (га)",
+                ordering="1.2.1.6"
+            )
 
             # Shundan faoliyat turlari bo‘yicha
             activity_titles = [
@@ -113,6 +155,7 @@ class Command(BaseCommand):
             self.create_columns_from_titles(land_types_titles, "1.2.1.8", land_types_block, land_2)
 
             # Imtiyozli maydon
+            # 1.2.1.9 - Shundan imtiyozli maydon (asosiy blok)
             preferred_block = self.create_column(
                 statement=land_2,
                 parent=info_12,
@@ -120,21 +163,86 @@ class Command(BaseCommand):
                 title_ru="Из них льготная площадь",
                 ordering="1.2.1.9"
             )
-            self.create_column(statement=land_2, parent=preferred_block, title="Jami", title_ru="Итого", ordering="1.2.1.9.1")
-            preferred_inner = self.create_column(statement=land_2, parent=preferred_block, title="Shundan", title_ru="Из них", ordering="1.2.1.9.2")
 
+            # 1.2.1.9.1 - Jami (bolasisiz)
+            self.create_column(
+                statement=land_2,
+                parent=preferred_block,
+                title="Jami",
+                title_ru="Итого",
+                ordering="1.2.1.9.1"
+            )
+
+            # 1.2.1.9.2 - Shundan (va uning bolalari)
+            preferred_inner = self.create_column(
+                statement=land_2,
+                parent=preferred_block,
+                title="Shundan",
+                title_ru="Из них",
+                ordering="1.2.1.9.2"
+            )
+
+            # 1.2.1.9.2.X - Plantatsiya turlari (children)
             plantation_titles = [
-                ("Cho‘l o‘simliklari (saxovul, cherkes, qandim, qoraburoq) ekish (ga) (10 yil)", "Посадка пустынных растений (саксаул, черкес, кандим, карабурук) (га) (10 лет)"),
+                ("Cho‘l o‘simliklari (saxovul, cherkes, qandim, qoraburoq) ekish (ga) (10 yil)",
+                 "Посадка пустынных растений (саксаул, черкес, кандим, карабурук) (га) (10 лет)"),
                 ("Yong‘oq mevali bog‘lar ...", "Ореховые фруктовые сады ..."),
                 ("Qishloq xo‘jaligi oziq-ovqat ekinlari ...", "Сельскохозяйственные продовольственные культуры ..."),
                 ("Dorivor o‘simliklar plantatsiyalari ...", "Плантации лекарственных растений ...")
             ]
-            self.create_columns_from_titles(plantation_titles, "1.2.1.9", preferred_inner, land_2)
+            self.create_columns_from_titles(plantation_titles, "1.2.1.9.2", preferred_inner, land_2)
 
-            # Investitsiya
-            self.create_column(statement=land_2, parent=info_12, title="Kiritiladigan investitsiya qiymati (ming so‘m)", title_ru="Объем инвестиций (тыс. сум)", ordering="1.2.1.12")
-            invest_block = self.create_column(statement=land_2, parent=info_12, title="Shundan", title_ru="Из них", ordering="1.2.1.12")
-            self.create_column(statement=land_2, parent=invest_block, title="O'z hisobidan", title_ru="За счет собственных средств", ordering="1.2.1.12.1")
+            # 1.2.1.10 - 2024-2025 yillar bloki
+            period = self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="2024-2025 йиллар",
+                title_ru="2024-2025 yillar",
+                ordering="1.2.1.10"
+            )
+
+            # 1.2.1.10.X - To‘lovlar
+            self.create_column(statement=land_2, parent=period, title="Жами ҳисобланган", title_ru="Jami hisoblangan",
+                               ordering="1.2.1.10.1")
+            self.create_column(statement=land_2, parent=period, title="Жами тўланган", title_ru="Jami to‘langan",
+                               ordering="1.2.1.10.2")
+            self.create_column(statement=land_2, parent=period, title="Жами қарздорлик", title_ru="Jami qarzdorlik",
+                               ordering="1.2.1.10.3")
+
+            # 1.2.1.11 - Yangi ish o‘rinlari (bolasisiz)
+            self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Янгидан яратилган иш ўринлар сони",
+                title_ru="Yar newly created jobs",
+                ordering="1.2.1.11"
+            )
+
+            # 1.2.1.12 - Investitsiya
+            self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Kiritiladigan investitsiya qiymati (ming so‘m)",
+                title_ru="Объем инвестиций (тыс. сум)",
+                ordering="1.2.1.12"
+            )
+
+            # 1.2.1.12.1 - Investitsiya ichidagi: O'z hisobidan
+            invest_block = self.create_column(
+                statement=land_2,
+                parent=info_12,
+                title="Shundan",
+                title_ru="Из них",
+                ordering="1.2.1.12.1"
+            )
+
+            self.create_column(
+                statement=land_2,
+                parent=invest_block,
+                title="O'z hisobidan",
+                title_ru="За счет собственных средств",
+                ordering="1.2.1.12.1.1"
+            )
 
             # Eksport
             export_block = self.create_column(statement=land_2, parent=info_12, title="20__yildagi eksport", title_ru="Экспорт за 20__ год", ordering="1.2.1.13")
