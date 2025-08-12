@@ -1,9 +1,11 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from apps.base.models import AbstractBaseModel
+from django.utils.timezone import  timezone
+from django.utils.translation import gettext_lazy as _
+
 from apps.users.models import CustomUser
 from apps.utils.services import RegionChoices
+from apps.base.models import AbstractBaseModel
 
 
 class Report(AbstractBaseModel):
@@ -106,6 +108,20 @@ class Report(AbstractBaseModel):
 
     # def __str__(self):
     #     return f"{self.organization.name} "
+
+    def cancel(self, reason: str):
+      if not reason:
+        raise ValueError("Reason must be required.")
+
+      prev = self.status
+      self.status = Report.StatusChoices.CANCELLED
+      self.cancel_reason = reason
+      self.cancelled_at = timezone.now()
+      self.save(update_fields=["status", "cancel_reason", "cancelled_at"])
+
+      if prev == Report.StatusChoices.ACCEPTED:
+        from apps.reports.services.general_report import aggregate_general_report
+        aggregate_general_report(statement=self.statement, deadline=self.deadline)
 
     class Meta:
         verbose_name = _("Report")
