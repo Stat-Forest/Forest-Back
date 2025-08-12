@@ -3,6 +3,7 @@ import uuid
 from django.db import transaction
 from rest_framework import serializers
 
+from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services.general_report import aggregate_general_report
@@ -133,10 +134,24 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
             if reports_map:
                 any_report = list(reports_map.values())[0]
-                aggregate_general_report(any_report.statement, deadline)
+                # aggregate_general_report(any_report.statement, deadline)
 
-        return Report.objects.filter(id__in=[r.id for r in reports_map.values()])
+                for report in reports_map.values():
+                    statement_name = report.statement.name_uz
+                    calculate_func = ALL_CALCULATORS.get(statement_name)
+                    if calculate_func:
+                        if statement_name == "Jamg'arma":
+                            calculate_func(
+                                statement_id=report.statement.id,
 
+                                organization=report.organization,
+                                deadline=report.deadline,
+                                user=self.context["request"].user
+                            )
+                        else:
+                            calculate_func(report)
+
+            return list(reports_map.values())
 
 # class ReportCreateSerializer(serializers.ModelSerializer):
 #     report_items = ReportItemCreateSerializer(many=True, write_only=True)
