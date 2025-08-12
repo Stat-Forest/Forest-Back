@@ -43,6 +43,12 @@ class ReportFilter(django_filters.FilterSet):
         label="General Reports"
     )
 
+    status = django_filters.ChoiceFilter(
+        field_name="status",
+        choices=Report.StatusChoices.choices,
+        label="Type of reports"
+    )
+
     class Meta:
         model = Report
         fields = [
@@ -52,7 +58,7 @@ class ReportFilter(django_filters.FilterSet):
             "year"
         ]
 
-    def filter_by_year(self, queryset, value):
+    def filter_by_year(self, queryset, name, value):
         return queryset.annotate(
             submit_year=ExtractYear("deadline__submit_at")
         ).filter(submit_year=value)
