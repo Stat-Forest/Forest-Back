@@ -1,22 +1,20 @@
 from django.urls import path
 
 from apps.reports.views import (
-    DeadlineListAPIView, ReportListAPIView,
-    ReportSendAPIView,PlanRetrieveAPIView,
+    DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
     ReportCancelAPIView, ReportAcceptAPIView,
     ReportCreateAPIView, StatementListAPIView,
     ReportItemListAPIView, DashboardStatListView,
     StatementColumnTreeAPIView, UserListAPIView,
     ReportUpdateAPIView, ReportRetrieveAPIView, ReportDeleteAPIView,
     PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView,PlanDeleteAPIView,
-    PlanUpdateAPIView
+    PlanListAPIView,PlanDeleteAPIView
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 
 from apps.reports.views.plant_column import PlantListAPIView
 from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
-
+from apps.reports.views.select_report import ReportAggregateSelectedAPIView
 
 urlpatterns = [
 
@@ -40,6 +38,9 @@ urlpatterns = [
     path('<uuid:id>/update/', ReportUpdateAPIView.as_view(), name='report-update'),
     path('<uuid:id>/delete/', ReportDeleteAPIView.as_view(), name='report-delete'),
 
+    # ====================  REPORT URL    ====================
+    path("aggregate/", ReportAggregateSelectedAPIView.as_view(), name="report-aggregate"),
+
     # ====================  REPORT STATUS URL    ====================
     path('send/', ReportSendAPIView.as_view(), name='report-send'),
     path('cancel/', ReportCancelAPIView.as_view(), name='report-cancel'),
@@ -54,9 +55,7 @@ urlpatterns = [
     path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
     path('plan-list/', PlanListAPIView.as_view(), name='plan-create'),
     path('plan-create/', PlanCreateView.as_view(), name='plan-create'),
-    path('plans/<uuid:pk>/', PlanRetrieveAPIView.as_view(), name='plan-detail'),
     path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
-    path('plans/<uuid:pk>/update/', PlanUpdateAPIView.as_view(), name='plan-update'),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
