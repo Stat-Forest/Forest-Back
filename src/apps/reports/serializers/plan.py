@@ -10,7 +10,6 @@ from apps.general.models import Organization
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
 
 
-
 class PlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField()
     value = serializers.IntegerField(min_value=0, source='plan_value')
