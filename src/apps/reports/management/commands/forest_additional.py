@@ -438,40 +438,43 @@ class Command(BaseCommand):
         )
         create_village(statement_forest_add, jami_bog_tok, "1.1.2")
 
-        urugli = create_column(
-            statement_forest_add,
-            seventh_title_forest,
-            "Urug'li",
-            "Семечковые",
-            "1.1.3"
-        )
-        create_village(statement_forest_add, urugli, "1.1.3")
-
         shu_jumladan_bogtok = create_column(
             statement_forest_add,
             seventh_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.4"
+            "1.1.3"
         )
+
+        urugli = create_column(
+            statement_forest_add,
+            shu_jumladan_bogtok,
+            "Urug'li",
+            "Семечковые",
+            "1.1.3.1"
+        )
+        create_village(statement_forest_add, urugli, "1.1.3.1")
 
         danakli = create_column(
             statement_forest_add,
             shu_jumladan_bogtok,
             "Danakli",
             "Косточковые",
-            "1.1.4.1"
+            "1.1.3.2"
         )
-        create_village(statement_forest_add, danakli, "1.1.4.1")
+        create_village(statement_forest_add, danakli, "1.1.3.2")
 
         uzumzor = create_column(
             statement_forest_add,
             shu_jumladan_bogtok,
             "Uzumzor",
             "Виноградник",
-            "1.1.4.2"
+            "1.1.3.3"
         )
-        create_village(statement_forest_add, uzumzor, "1.1.4.2")
+        create_village(statement_forest_add, uzumzor, "1.1.3.3")
+
+        create_column(statement_forest_add, seventh_title_forest, "2017-2024 yildan qo'shilgan bog'lar",
+                      "Сады, добавленные с 2017 по 2024 год", "1.1.4")
 
         # ========== Bodom va Pista ilovasi ==========
         eighth_forest_app = create_column(
@@ -508,39 +511,68 @@ class Command(BaseCommand):
         )
         create_village(statement_forest_add, jami_yongoq, "1.1.2")
 
-        grek = create_column(
+        shu_jumladan_2 = create_column(
             statement_forest_add,
             eighth_title_forest,
-            "Grek yong'og'i",
-            "Грецкий орех",
+            "Shu jumladan",
+            "В том числе",
             "1.1.3"
         )
-        create_village(statement_forest_add, grek, "1.1.3")
+
+        grek = create_column(
+            statement_forest_add,
+            shu_jumladan_2,
+            "Grek yong'og'i",
+            "Грецкий орех",
+            "1.1.3.1"
+        )
+        create_village(statement_forest_add, grek, "1.1.3.1")
 
         bodom = create_column(
             statement_forest_add,
-            eighth_title_forest,
+            shu_jumladan_2,
             "Bodom",
             "Миндаль",
-            "1.1.4"
+            "1.1.3.2"
         )
-        create_village(statement_forest_add, bodom, "1.1.4")
+        create_village(statement_forest_add, bodom, "1.1.3.2")
 
         pista = create_column(
             statement_forest_add,
-            eighth_title_forest,
+            shu_jumladan_2,
             "Pista",
             "Фисташка",
-            "1.1.5"
+            "1.1.3.3"
         )
-        create_village(statement_forest_add, pista, "1.1.5")
+        create_village(statement_forest_add, pista, "1.1.3.3")
 
-        create_column(
+        tabiiy = create_column(
             statement_forest_add,
             eighth_title_forest,
-            "Tabiiy mevalarni tayyorlash, t",
-            "Подготовка природных фруктов, т",
-            "1.1.6"
+            "Tabiiy mevalarni tayyorlash, tn",
+            "Подготовка природных фруктов, тн",
+            "1.1.4"
+        )
+        StatementColumn.objects.create(
+            statement=statement_forest_add,
+            parent=tabiiy,
+            title_uz="Ho‘l meva",
+            title_ru="Свежий фрукт",
+            ordering="1.1.4.1"
+        )
+        StatementColumn.objects.create(
+            statement=statement_forest_add,
+            parent=tabiiy,
+            title_uz="Grek yong‘og‘i",
+            title_ru="Грецкий орех",
+            ordering="1.1.4.2"
+        )
+        StatementColumn.objects.create(
+            statement=statement_forest_add,
+            parent=tabiiy,
+            title_uz="Pista",
+            title_ru="Фисташки",
+            ordering="1.1.4.3"
         )
 
         self.stdout.write(
