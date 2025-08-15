@@ -371,6 +371,7 @@ class Command(BaseCommand):
                                   "Общее количество созданных пчелиных семей по состоянию на 01.04.2025", "1.1.8")
         create_column(statement_husbandry, total_bee, "Reja", "План", "1.1.8.1",
                       status_plan=StatementColumn.PlanStatus.YILLIK)
+        create_column(statement_husbandry, total_bee, "Amalda", "Факт", "1.1.8.2")
 
         # ========== Baliqchilik ilovasi ==========
         fish_app = create_column(statement_husbandry, None, "Baliqchilik ilovasi", "Приложение: Рыбоводство", "6")

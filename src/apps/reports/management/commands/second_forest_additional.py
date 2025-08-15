@@ -283,6 +283,8 @@ class Command(BaseCommand):
         create_column(statement_mechanization, metallolom_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
 
+        create_column(statement_mechanization, metallolom_title, "Yillik reja, tonna", "Годовой план, тонн", "1.1.2")
+
         for i in range(1, 5):
             chorak = create_column(
                 statement_mechanization,
