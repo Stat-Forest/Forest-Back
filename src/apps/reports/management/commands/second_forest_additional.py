@@ -98,7 +98,7 @@ class Command(BaseCommand):
         create_column(statement_mechanization, asosiy_qiymat, "Qoldiq qiymati", "Остаточная стоимость", "1.1.10.3")
 
         # ========== K-X texnikasi ilovasi ==========
-        kx_ilova = create_column(statement_mechanization, None, "K-X texnikasi ilovasi", "Приложение: С/Х техника", "1")
+        kx_ilova = create_column(statement_mechanization, None, "Q-X texnikasi ilovasi", "Приложение: С/Х техника", "1")
 
         kx_title = create_column(
             statement_mechanization,
@@ -284,27 +284,34 @@ class Command(BaseCommand):
                       is_organization=True)
 
         create_column(statement_mechanization, metallolom_title, "Yillik reja, tonna", "Годовой план, тонн", "1.1.2")
+        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "1.1.2")
+        create_column(statement_mechanization, metallolom_title, "%", "%", "1.1.2")
 
         for i in range(1, 5):
+            chorak_ordering = f"1.1.{i + 1}"
             chorak = create_column(
                 statement_mechanization,
                 metallolom_title,
                 f"{i}-chorak",
                 f"{i}-й квартал",
-                f"1.1.{i + 1}"
+                chorak_ordering
             )
-            create_column(statement_mechanization, chorak, "Amalda", "Факт", f"1.1.{i + 1}.1")
-            create_column(statement_mechanization, chorak, "%", "%", f"1.1.{i + 1}.2")
+            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1")
+            create_column(statement_mechanization, chorak, "Amalda", "Факт", f"{chorak_ordering}.2")
+            create_column(statement_mechanization, chorak, "%", "%", f"{chorak_ordering}.3")
+
             hujjat = create_column(
                 statement_mechanization,
                 chorak,
                 "Metall parchalari topshirilgani toʻgʻrisida hujjat",
                 "Документ о сдаче металлолома",
-                f"1.1.{i + 1}.3"
+                f"{chorak_ordering}.4"
             )
-            create_column(statement_mechanization, hujjat, "Sanasi", "Дата", f"1.1.{i + 1}.3.1")
-            create_column(statement_mechanization, hujjat, "Kvit. raqami", "Номер квитанции", f"1.1.{i + 1}.3.2")
-            create_column(statement_mechanization, hujjat, "Miqdori, tonna", "Количество, тонн", f"1.1.{i + 1}.3.3")
+
+            create_column(statement_mechanization, hujjat, "Sanasi", "Дата", f"{chorak_ordering}.4.1")
+            create_column(statement_mechanization, hujjat, "Kvit. raqami", "Номер квитанции", f"{chorak_ordering}.4.2")
+            create_column(statement_mechanization, hujjat, "Miqdori, tonna", "Количество, тонн",
+                          f"{chorak_ordering}.4.3")
 
             # ========== Pichan ilovasi ==========
         pichan_statement, _ = Statement.objects.get_or_create(
@@ -387,24 +394,24 @@ class Command(BaseCommand):
                       "Yaylovga joylashtirilgan chorva mollarining jami soni (bosh)",
                       "Общее количество скота, размещенного на пастбищах (голов)", "1.1.7")
 
-        chorva_turi = create_column(yaylov_statement, pasture_title, "Chorva turlari, soni, summasi (ming so‘m)",
-                                    "Виды скота, количество и сумма (тыс. сум)", "1.1.8")
+        chorva_turi = create_column(yaylov_statement, pasture_title, "Shundan chorva mollarining turi, soni, so‘mmasi, ming so‘m",
+                                    "Из них вид, количество, сумма, тыс. сум.", "1.1.8")
         create_column(yaylov_statement, chorva_turi, "Mayda shoxli mollar", "Мелкий рогатый скот", "1.1.8.1")
         create_column(yaylov_statement, chorva_turi, "Echkilar", "Козы", "1.1.8.2")
-        create_column(yaylov_statement, chorva_turi, "To‘lov: mayda shoxli mollar va echkilar (ming so‘m)",
-                      "Плата: мелкий рогатый скот и козы (тыс. сум)", "1.1.8.3")
+        create_column(yaylov_statement, chorva_turi, "Mayda shoxli mollar va echkilar uchun to‘lanadigan so‘m, ming so‘m",
+                      "Сумы, уплачиваемые за мелкого рогатого скота и коз, тыс. сум.", "1.1.8.3")
         create_column(yaylov_statement, chorva_turi, "6 oygacha MShM (qo‘zi, uloq)",
                       "До 6 месяцев МРС (ягнята, козлята)", "1.1.8.4")
-        create_column(yaylov_statement, chorva_turi, "To‘lov: 6 oygacha qo‘zi/uloq (ming so‘m)",
-                      "Плата: до 6 месяцев (ягнята/козлята), тыс. сум", "1.1.8.5")
+        create_column(yaylov_statement, chorva_turi, "6 oygacha qo‘zi/uloq (ming so‘m)",
+                      "До 6 месяцев (ягнята/козлята), тыс. сум", "1.1.8.5")
         create_column(yaylov_statement, chorva_turi, "Yirik shoxli mollar", "Крупный рогатый скот", "1.1.8.6")
-        create_column(yaylov_statement, chorva_turi, "Otlar, tuyalar", "Лошади, верблюды", "1.1.8.7")
+        create_column(yaylov_statement, chorva_turi, "Yilqilar, tuyalar", "Лошади, верблюды", "1.1.8.7")
         create_column(yaylov_statement, chorva_turi, "Eshaklar", "Ослики", "1.1.8.8")
-        create_column(yaylov_statement, chorva_turi, "To‘lov: YSHM, otlar, tuyalar, eshaklar (ming so‘m)",
-                      "Плата: КРС, лошади, верблюды, ослы (тыс. сум)", "1.1.8.9")
+        create_column(yaylov_statement, chorva_turi, "YSHM, otlar, tuyalar, eshaklar (ming so‘m)",
+                      "КРС, лошади, верблюды, ослы (тыс. сум)", "1.1.8.9")
         create_column(yaylov_statement, chorva_turi, "2 yoshgacha YSHM", "До 2 лет КРС", "1.1.8.10")
-        create_column(yaylov_statement, chorva_turi, "To‘lov: 2 yoshgacha YSHM (ming so‘m)",
-                      "Плата: до 2 лет КРС, тыс. сум", "1.1.8.11")
+        create_column(yaylov_statement, chorva_turi, "2 yoshgacha YSHM (ming so‘m)",
+                      "До 2 лет КРС, тыс. сум", "1.1.8.11")
 
         create_column(yaylov_statement, pasture_title,
                       "Yaylov uchun tuzilgan shartnoma summasi (ming so‘m, amalda)",
