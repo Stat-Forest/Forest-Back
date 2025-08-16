@@ -285,26 +285,34 @@ class Command(BaseCommand):
             ordering="1.1.4"
         )
 
+        StatementColumn.objects.create(
+            statement=third_statement,
+            parent=hisobot,
+            title_uz="Jami",
+            title_ru="Итого",
+            ordering="1.1.4.1"
+        )
+
         child1 = StatementColumn.objects.create(
             statement=third_statement,
             parent=hisobot,
             title_uz="Xo'jalik tomonidan tayyorlandi",
             title_ru="Подготовлено хозяйством",
-            ordering="1.1.4.1"
+            ordering="1.1.4.1.1"
         )
         StatementColumn.objects.create(
             statement=third_statement,
             parent=child1,
             title_uz="Jami",
             title_ru="Итого",
-            ordering="1.1.4.1.1"
+            ordering="1.1.4.1.1.1"
         )
         StatementColumn.objects.create(
             statement=third_statement,
             parent=child1,
             title_uz="Sh.J urug'lik uchastkadan",
             title_ru="Из семенных участков Ш.Ж",
-            ordering="1.1.4.1.2"
+            ordering="1.1.4.1.1.2"
         )
 
         child2 = StatementColumn.objects.create(
@@ -312,7 +320,7 @@ class Command(BaseCommand):
             parent=hisobot,
             title_uz="Boshqa tashkilotdan sotib olindi",
             title_ru="Приобретено у других организаций",
-            ordering="1.1.4.2"
+            ordering="1.1.4.1.2"
         )
         for i, title in enumerate(["Miqdori", "Sarflangan summa"], start=1):
             StatementColumn.objects.create(
@@ -320,7 +328,7 @@ class Command(BaseCommand):
                 parent=child2,
                 title_uz=title,
                 title_ru={"Miqdori": "Количество", "Sarflangan summa": "Сумма затрат"}[title],
-                ordering=f"1.1.4.2.{i}"
+                ordering=f"1.1.4.1.2.{i}"
             )
 
         sarflandi = StatementColumn.objects.create(
@@ -329,6 +337,14 @@ class Command(BaseCommand):
             title_uz="Hisobot davrida sarflandi",
             title_ru="Израсходовано в отчетный период",
             ordering="1.1.5"
+        )
+
+        StatementColumn.objects.create(
+            statement=third_statement,
+            parent=sarflandi,
+            title_uz="Jami",
+            title_ru="Итого",
+            ordering="1.1.5.1"
         )
 
         subtitles = [
@@ -348,7 +364,7 @@ class Command(BaseCommand):
                 parent=sarflandi,
                 title_uz=title_uz,
                 title_ru=title_ru,
-                ordering=f"1.1.5.{i}"
+                ordering=f"1.1.5.1.{i}"
             )
             for j, (child_uz, child_ru) in enumerate(zip(children_uz, children_ru), start=1):
                 StatementColumn.objects.create(
@@ -356,7 +372,7 @@ class Command(BaseCommand):
                     parent=parent,
                     title_uz=child_uz,
                     title_ru=child_ru,
-                    ordering=f"1.1.5.{i}.{j}"
+                    ordering=f"1.1.5.1.{i}.{j}"
                 )
 
         StatementColumn.objects.create(

@@ -1,115 +1,28 @@
 from django.core.management import BaseCommand
+
+from apps.reports.constants.plant_title_translations import plant_translations
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
 
 
-def create_subcolumns(statement, parent, ordering):
-    StatementColumn.objects.create(
-        statement=statement,
-        parent=parent,
-        title_uz="soni",
-        title_ru="количество",
-        ordering=f"{ordering}.1"
-    )
-    StatementColumn.objects.create(
-        statement=statement,
-        parent=parent,
-        title_uz="summa",
-        title_ru="сумма",
-        ordering=f"{ordering}.2"
-    )
+def create_subcolumns(statement, parent, ordering, custom_titles=None):
+    if custom_titles is None:
+        custom_titles = [("soni", "количество"), ("summa", "сумма")]
+
+    for idx, (title_uz, title_ru) in enumerate(custom_titles, start=1):
+        StatementColumn.objects.create(
+            statement=statement,
+            parent=parent,
+            title_uz=title_uz,
+            title_ru=title_ru,
+            ordering=f"{ordering}.{idx}"
+        )
 
 
-def create_column_group(statement, parent, columns):
+def create_column_group(statement, parent, columns, section_title_uz=None):
     for title_uz, ordering in columns:
-        title_ru = {
-            "Jami": "Итого",
-            "Tyanşhan qora qarag‘ay": "Тяньшанский черный карагач",
-            "Moyiv qarag‘ay": "Синий карагач",
-            "Zarafşon archa": "Зеравшанская арча",
-            "Vergin archa": "Верджинская арча",
-            "Şarq tuya": "Восточная туя",
-            "Kompyakt tuya": "Компактная туя",
-            "Krim qarag‘ay": "Крымский карагач",
-            "Eldor qarag‘ay": "Елдорский карагач",
-            "Arizon sarvi": "Аризонский кипарис",
-            "Botkok sarvi": "Боткокский кипарис",
-            "Pixta": "Ель",
-            "Terak": "Тополь",
-            "Qayrog‘och (vaz)": "Вяз (кайрагач)",
-            "Sada qayrog‘och": "Садовый вяз",
-            "Şumtol (yasen)": "Ясень (шумтол)",
-            "Aylant": "Айлант",
-            "Gledichiya": "Гледичия",
-            "Uluğ": "Тополь черный",
-            "Majnutol": "Маджунус",
-            "Yapon safarasi": "Японский кипарис",
-            "Pavloniya": "Павлония",
-            "Savat tol": "Ива",
-            "yong‘oq": "Орех",
-            "achchiq bodom": "Горький миндаль",
-            "Şirin bodom": "Сладкий миндаль",
-            "xondan pista": "Хондонский фисташка",
-            "pekan": "Пекан",
-            "funduk": "Лесной орех",
-            "o‘rik (abrikos)": "Абрикос (урюк)",
-            "şaftoli": "Персик",
-            "olcha (vishnevyy)": "Вишня (олча)",
-            "olxuri": "Слива",
-            "pissarda olxurisi": "Писсарда слива",
-            "gilos (gayin)": "Черешня (гайн)",
-            "magalevka gilos": "Магалебская черешня",
-            "xurmo": "Хурма",
-            "Olma": "Яблоня",
-            "behi": "Айва",
-            "Tok": "Виноград",
-            "nok (murut)": "Груша (мурут)",
-            "Dulana": "Тут белый",
-            "jiyda (lox)": "Ясень (лох)",
-            "anor": "Гранат",
-            "chilonjiyda (unabi)": "Инжир (унаби)",
-            "non jiyda": "Хлебное дерево",
-            "saksovul": "Саксаул",
-            "bag‘ryannik": "Багрянник",
-            "eman chereshch (Dub)": "Манчжурский дуб",
-            "eman piramida": "Пирамидальный дуб",
-            "kashtan": "Каштан",
-            "katalpa": "Катальпа",
-            "xelokatalpa": "Гибридная катальпа",
-            "qatronğı (uchqat)": "Тис (учкват)",
-            "oq qayin (beryozka)": "Белая береза",
-            "zarang (klen)": "Клен (заранг)",
-            "ipak akasiya": "Шелковая акация",
-            "akasiya": "Акация",
-            "maklyura": "Маклюра",
-            "lipa (juka)": "Липа (жужа)",
-            "lola daraxti": "Тюльпанное дерево",
-            "qog‘oz daraxt": "Бумажное дерево",
-            "sovun daraxti": "Софора",
-            "tug‘onda": "Туганда",
-            "magnoliya": "Магнолия",
-            "na‘matak": "Нематака",
-            "amorfa": "Аморфа",
-            "biryuchina (ligustrum)": "Бирючина (лигуструм)",
-            "gibiskus": "Гибискус",
-            "beresket": "Бересклет",
-            "Zirk": "Зирк",
-            "yapon behi": "Японская айва",
-            "suriya atirguli": "Сирийская роза",
-            "magniya": "Магнолия",
-            "sireng": "Сирень",
-            "hind sireni": "Индийская сирень",
-            "atirgul": "Роза",
-            "forziçiya": "Форзиция",
-            "ispan drogi": "Испанский дрок",
-            "çakanda (oblepixa)": "Облепиха (чакада)",
-            "çizalpiniya": "Цизальпиния",
-            "ryabina (lapina)": "Рябина (лапина)",
-            "pirakanta": "Пирант",
-            "lavanda": "Лаванда",
-            "Samşod": "Самшит",
-            "smorodina": "Смородина"
-        }.get(title_uz, title_uz)
+        title_ru = plant_translations.get(title_uz, title_uz)
+
         node = StatementColumn.objects.create(
             statement=statement,
             parent=parent,
@@ -117,8 +30,25 @@ def create_column_group(statement, parent, columns):
             title_ru=title_ru,
             ordering=ordering
         )
-        create_subcolumns(statement, node, ordering)
 
+        is_jami_uz = title_uz.strip().lower() == "jami"
+        is_jami_ru = title_ru.strip().lower() in ["итого", "jami"]
+
+        if (
+            (is_jami_uz or is_jami_ru)
+            and section_title_uz in ["Tez o‘suvchilar", "Yong‘oqmevalilar", "Mevalilar"]
+        ):
+            create_subcolumns(
+                statement,
+                node,
+                ordering,
+                custom_titles=[
+                    ("ko‘chat soni", "кол-во саженцев"),
+                    ("ko‘chat narxi", "цена саженцев"),
+                ]
+            )
+        else:
+            create_subcolumns(statement, node, ordering)
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -254,6 +184,6 @@ class Command(BaseCommand):
                 title_ru=section_title_ru,
                 ordering=section_ordering
             )
-            create_column_group(statement, section, column_items)
+            create_column_group(statement, section, column_items, section_title_uz=section_title_uz)
 
         self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Ростки и саженцы, пригодные для продажи' statement."))
