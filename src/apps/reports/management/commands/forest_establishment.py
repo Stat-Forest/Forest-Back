@@ -266,7 +266,8 @@ class Command(BaseCommand):
                 title_uz=title,
                 title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
                 ordering=f"1.1.2.{i}",
-                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None
+                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
+                is_user_input=False
             )
 
         StatementColumn.objects.create(
@@ -290,7 +291,8 @@ class Command(BaseCommand):
             parent=hisobot,
             title_uz="Jami",
             title_ru="Итого",
-            ordering="1.1.4.1"
+            ordering="1.1.4.1",
+            is_user_input=False
         )
 
         child1 = StatementColumn.objects.create(
@@ -344,7 +346,8 @@ class Command(BaseCommand):
             parent=sarflandi,
             title_uz="Jami",
             title_ru="Итого",
-            ordering="1.1.5.1"
+            ordering="1.1.5.1",
+            is_user_input=False
         )
 
         subtitles = [
@@ -380,7 +383,8 @@ class Command(BaseCommand):
             parent=third_ilova_title,
             title_uz="Hisobot oxiriga qolgan qoldiq (kg)",
             title_ru="Остаток на конец отчетного периода (кг)",
-            ordering="1.1.6"
+            ordering="1.1.6",
+            is_user_input=False
         )
 
         # ============================ YAKUNIY ============================

@@ -33,17 +33,29 @@ def generate_tree_columns(statement, parent, ordering_prefix):
             parent=sub,
             title_uz="Foiz",
             title_ru="Процент",
-            ordering=f"{ordering_prefix}.{i}.3"
+            ordering=f"{ordering_prefix}.{i}.3",
+            is_user_input=False
         )
 
 
-def generate_grouped_subtree(statement, parent, ordering_prefix):
+def generate_grouped_subtree(statement, parent, ordering_prefix, section_title_uz=None, section_title_ru=None):
+    if section_title_uz and section_title_ru:
+        parent = StatementColumn.objects.create(
+            statement=statement,
+            parent=parent,
+            title_uz=section_title_uz,
+            title_ru=section_title_ru,
+            ordering=ordering_prefix
+        )
+        ordering_prefix += ".1"
+
     StatementColumn.objects.create(
         statement=statement,
         parent=parent,
         title_uz="jami ming dona",
         title_ru="всего тысяч штук",
-        ordering=f"{ordering_prefix}.1"
+        ordering=f"{ordering_prefix}.1",
+        is_user_input=False
     )
     sub = StatementColumn.objects.create(
         statement=statement,
@@ -122,21 +134,24 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.2.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=parent_1,
             title_uz="Amalda",
             title_ru="Факт",
-            ordering="1.1.2.2"
+            ordering="1.1.2.2",
+            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=statement,
             parent=parent_1,
             title_uz="Foiz",
             title_ru="Процент",
-            ordering="1.1.2.3"
+            ordering="1.1.2.3",
+            is_user_input=False
         )
 
         tree_group_column = StatementColumn.objects.create(
@@ -237,37 +252,75 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.2.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=third_statement,
             parent=jami,
             title_uz="Amalda",
             title_ru="Факт",
-            ordering="1.1.2.2"
+            ordering="1.1.2.2",
+            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=third_statement,
             parent=jami,
             title_uz="Foiz",
             title_ru="Процент",
-            ordering="1.1.2.3"
+            ordering="1.1.2.3",
+            is_user_input=False
         )
 
         subgroup = StatementColumn.objects.create(
             statement=third_statement,
-            parent=title_column_2,
+            parent=jami,
             title_uz="shundan",
             title_ru="в том числе",
             ordering="1.1.2.4"
         )
+
         generate_tree_columns(third_statement, subgroup, "1.1.2.4")
 
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.3")
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.4")
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.5")
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.6")
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.7")
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.3",
+            "Yil boshiga bo'lgan qoldiq",
+            "Осталось до начала года"
+        )
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.4",
+            "Shu jumladan: Joriy yilda yetishtirilgan nihol, qalamcha va ko‘chatlar (shkolka)",
+            "В том числе: Саженцы, черенки и саженцы, выращенные в текущем году (школка)"
+
+        )
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.5",
+            "Sotib olindi",
+            "Куплено"
+
+        )
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.6",
+            "Boshqa tashkilotlardan beg'araz olindi",
+            "Безвозмездно получено от других организаций"
+
+        )
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.7",
+            "Jami yetishtirildi (inventarizatsiya)",
+            "Всего произведено (инвентаризация)"
+
+        )
 
         sarflanishi = StatementColumn.objects.create(
             statement=third_statement,
@@ -297,7 +350,21 @@ class Command(BaseCommand):
             )
             generate_grouped_subtree(third_statement, parent, prefix)
 
-        generate_grouped_subtree(third_statement, title_column_2, "1.1.16")
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.16",
+            "Jami sarflangan",
+            "Всего потрачено"
+
+        )
+        generate_grouped_subtree(
+            third_statement,
+            title_column_2,
+            "1.1.17",
+            "Shu davrga nisbatan yakuniy qoldiq",
+            "Итоговый остаток за тот же период"
+        )
 
         # ==========================================================================  Ko‘chat
 
