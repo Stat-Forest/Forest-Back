@@ -63,6 +63,7 @@ class StatementColumn(AbstractBaseModel):
         null=True,
         verbose_name=_("Plan holati (oy, chorak, yil)")
     )
+    is_user_input = models.BooleanField(default=True)
 
     @property
     def return_parent(self):
