@@ -15,7 +15,7 @@ class Command(BaseCommand):
             period=PeriodChoices.YILLIK
         )
 
-        def create_column(statement, parent, uz, ru, ordering, is_org=False):
+        def create_column(statement, parent, uz, ru, ordering, is_org=False,is_user_input=True):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
@@ -212,7 +212,7 @@ class Command(BaseCommand):
 
         # Utility functions
 
-        def create_col(parent, uz, ru, ord, is_org=False):
+        def create_col(parent, uz, ru, ord, is_org=False,is_user_input=True):
             return StatementColumn.objects.create(
                 statement=person_report_statement,
                 parent=parent,
@@ -220,7 +220,8 @@ class Command(BaseCommand):
                 title_uz=uz,
                 title_ru=ru,
                 ordering=ord,
-                is_organization=is_org
+                is_organization=is_org,
+                is_user_input=is_user_input,
             )
 
         # 5-ilova: O‘rmon xo‘jaligi xodimlari
@@ -304,7 +305,7 @@ class Command(BaseCommand):
 
         f2_5 = create_col(f2, "Malaka oshirgan va qayta o‘qish kurslariga qatnashgan xodimlar soni",
                           "Количество сотрудников, прошедших повышение квалификации и переподготовку", "1.5.1.3.5")
-        create_col(f2_5, "Jami", "Всего", "1.5.1.3.5.1")
+        create_col(f2_5, "Jami", "Всего", "1.5.1.3.5.1",is_user_input=False)
         f2_5_1 = create_col(f2_5, "shu jumladan", "в том числе", "1.5.1.3.5.2")
         for idx, pos in enumerate(
                 ["Departament mudiri", "Boshqarma boshlig‘i", "Bo‘lim boshlig‘i", "Sho‘ba mudiri", "Mutaxassislar‑2"],
@@ -328,7 +329,7 @@ class Command(BaseCommand):
             "Типы заболеваний сотрудников (с 5-летней динамикой)",
             "1.5.1.3.8"
         )
-        create_col(f2_8, "Jami", "Всего", "1.5.1.3.8.1")
+        create_col(f2_8, "Jami", "Всего", "1.5.1.3.8.1",is_user_input=False)
         f2_8_1 = create_col(f2_8, "shu jumladan", "в том числе", "1.5.1.3.8.2")
         for idx, (uz, ru) in enumerate([
             ("Yurak va qon tomir kasalliklari", "Заболевания сердца и сосудов"),
@@ -352,7 +353,7 @@ class Command(BaseCommand):
             "Участие сотрудников в культурно-просветительских мероприятиях и расходы",
             "1.5.1.3.10"
         )
-        create_col(f2_10, "Jami", "Всего", "1.5.1.3.10.1")
+        create_col(f2_10, "Jami", "Всего", "1.5.1.3.10.1",is_user_input=False)
         f2_10_1 = create_col(f2_10, "shu jumladan", "в том числе", "1.5.1.3.10.2")
         for idx, (uz, ru) in enumerate([
             ("Teatr", "Театр"),
@@ -363,7 +364,7 @@ class Command(BaseCommand):
             create_col(f2_10_1, uz, ru, f"1.5.1.3.10.2.{idx}")
 
         # create_col funksiyasi (pastda qoladi)
-        def create_col(parent, uz, ru, ord, is_org=False):
+        def create_col(parent, uz, ru, ord, is_org=False,is_user_input=True):
             return StatementColumn.objects.create(
                 statement=person_report_statement,
                 parent=parent,
@@ -371,7 +372,8 @@ class Command(BaseCommand):
                 title_uz=uz,
                 title_ru=ru,
                 ordering=ord,
-                is_organization=is_org
+                is_organization=is_org,
+                is_user_input=is_user_input
             )
 
         # === 3-ILOVA / 6-ILOVA ===
@@ -395,7 +397,7 @@ class Command(BaseCommand):
                         "Главный лесничий, инженер, лесничий, инспектор, егермейстер и др. специалисты",
                         "1.6.1.2"
                         )
-        create_col(r1, "Jami", "Всего", "1.6.1.2.1")
+        create_col(r1, "Jami", "Всего", "1.6.1.2.1",is_user_input=False)
         r1_1 = create_col(r1, "Shundan", "В том числе", "1.6.1.2.2")
 
         # Oliy
@@ -417,7 +419,7 @@ class Command(BaseCommand):
                         "Потребность в специалистах по уровню образования",
                         "1.6.1.6"
                         )
-        create_col(r2, "Jami", "Всего", "1.6.1.6.1")
+        create_col(r2, "Jami", "Всего", "1.6.1.6.1",is_user_input=False)
         r2_1 = create_col(r2, "Shundan", "В том числе", "1.6.1.6.2")
 
         # Magister
