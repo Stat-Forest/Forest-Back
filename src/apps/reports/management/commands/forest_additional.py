@@ -18,12 +18,19 @@ class Command(BaseCommand):
                 is_organization=is_organization
             )
 
-        def create_triplet(statement, parent, base_ordering):
+        def create_triplet(statement, parent, base_ordering, is_user_input=True):
             sub_titles = [("ga", "га"), ("s/ga", "ц/га"), ("tn", "т")]
             for i, (title_uz, title_ru) in enumerate(sub_titles, start=1):
-                create_column(statement, parent, title_uz, title_ru, f"{base_ordering}.{i}")
+                create_column(
+                    statement,
+                    parent,
+                    title_uz,
+                    title_ru,
+                    f"{base_ordering}.{i}",
+                    is_user_input
+                )
 
-        def create_village(statement, parent, base_ordering):
+        def create_village(statement, parent, base_ordering, is_user_input=True):
             sub_titles = [
                 ("Jami maydon, ga", "Общая площадь, га"),
                 ("Shundan hosilga kirgani", "Из них получен урожай"),
@@ -31,7 +38,7 @@ class Command(BaseCommand):
                 ("tn", "т")
             ]
             for i, (title_uz, title_ru) in enumerate(sub_titles, start=1):
-                create_column(statement, parent, title_uz, title_ru, f"{base_ordering}.{i}")
+                create_column(statement, parent, title_uz, title_ru, f"{base_ordering}.{i}", is_user_input)
 
         forest_add = Statement.objects.create(
             name_uz="O'rmonlardan qo'shimcha foydalanish",
@@ -78,7 +85,7 @@ class Command(BaseCommand):
             "1.1.2"
         )
 
-        create_triplet(statement_forest_add, boshoqli_don, "1.1.2")
+        create_triplet(statement_forest_add, boshoqli_don, "1.1.2", is_user_input=False)
 
         create_column(
             statement_forest_add,
@@ -141,7 +148,7 @@ class Command(BaseCommand):
             "Овощи",
             "1.1.2"
         )
-        create_triplet(statement_forest_add, sabzavot, "1.1.2")
+        create_triplet(statement_forest_add, sabzavot, "1.1.2", is_user_input=False)
 
         wu_jumladan = create_column(
             statement_forest_add,
@@ -203,7 +210,7 @@ class Command(BaseCommand):
             "Бахча",
             "1.1.2"
         )
-        create_triplet(statement_forest_add, poliz, "1.1.2")
+        create_triplet(statement_forest_add, poliz, "1.1.2", is_user_input=False)
 
         jumladan_poliz = create_column(
             statement_forest_add,
@@ -256,7 +263,7 @@ class Command(BaseCommand):
             "Масличные культуры",
             "1.1.2"
         )
-        create_triplet(statement_forest_add, moyli, "1.1.2")
+        create_triplet(statement_forest_add, moyli, "1.1.2", is_user_input=False)
 
         jumladan_moyli = create_column(
             statement_forest_add,
@@ -311,7 +318,7 @@ class Command(BaseCommand):
             "Бобовые культуры",
             "1.1.2"
         )
-        create_triplet(statement_forest_add, dukkakli, "1.1.2")
+        create_triplet(statement_forest_add, dukkakli, "1.1.2", is_user_input=False)
 
         jumladan_dukkakli = create_column(
             statement_forest_add,
@@ -365,7 +372,7 @@ class Command(BaseCommand):
             "Кормовые культуры",
             "1.1.2"
         )
-        create_triplet(statement_forest_add, ozuqa, "1.1.2")
+        create_triplet(statement_forest_add, ozuqa, "1.1.2", is_user_input=False)
 
         jumladan_ozuqa = create_column(
             statement_forest_add,
@@ -436,7 +443,7 @@ class Command(BaseCommand):
             "Общие сады и виноградники",
             "1.1.2"
         )
-        create_village(statement_forest_add, jami_bog_tok, "1.1.2")
+        create_village(statement_forest_add, jami_bog_tok, "1.1.2", is_user_input=False)
 
         shu_jumladan_bogtok = create_column(
             statement_forest_add,
@@ -509,7 +516,7 @@ class Command(BaseCommand):
             "Общие орехоплодные культуры",
             "1.1.2"
         )
-        create_village(statement_forest_add, jami_yongoq, "1.1.2")
+        create_village(statement_forest_add, jami_yongoq, "1.1.2", is_user_input=False)
 
         shu_jumladan_2 = create_column(
             statement_forest_add,
