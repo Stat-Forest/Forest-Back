@@ -109,7 +109,8 @@ class Command(BaseCommand):
                         title_uz=child,
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[child],
                         ordering=f"{parent_ordering}.{i}",
-                        status_plan=status_plan
+                        status_plan=status_plan,
+                        is_user_plan=False
                     )
 
             else:
@@ -123,7 +124,8 @@ class Command(BaseCommand):
                         title_uz=child,
                         title_ru={"Reja": "План", "Amalda": "Факт"}[child],
                         ordering=f"{parent_ordering}.{i}",
-                        status_plan=status_plan
+                        status_plan=status_plan,
+                        is_user_plan=(child == "Amalda")
                     )
 
         # ================================================================ Закрытый корень крупногабаритный
@@ -196,7 +198,8 @@ class Command(BaseCommand):
                         parent=parent_col,
                         title_uz=child_uz,
                         title_ru=child_ru,
-                        ordering=f"{ordering_base}.{i}.{j}"
+                        ordering=f"{ordering_base}.{i}.{j}",
+                        is_user_plan=True
                     )
             elif has_subcolumns:
                 for j, sub in enumerate(["Reja", "Amalda", "Foiz"], start=1):
@@ -213,7 +216,8 @@ class Command(BaseCommand):
                         title_uz=sub,
                         title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
-                        status_plan=status_plan
+                        status_plan=status_plan,
+                        is_user_plan=not (title_uz == "Jami" or title_ru == "Итого")
                     )
 
         # =========================== 3-Ilova =============================
