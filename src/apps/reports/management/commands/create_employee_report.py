@@ -17,7 +17,7 @@ class Command(BaseCommand):
                 period=period
             )
 
-        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False):
+        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, is_user_input=True):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
@@ -25,7 +25,8 @@ class Command(BaseCommand):
                 title_uz=title_uz,
                 title_ru=title_ru,
                 ordering=ordering,
-                is_organization=is_organization
+                is_organization=is_organization,
+                is_user_input=is_user_input
             )
 
         # === Root Statements ===
