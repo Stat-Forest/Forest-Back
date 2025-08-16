@@ -3,31 +3,38 @@ from django.core.management import BaseCommand
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
 
+
 class Command(BaseCommand):
     help = "Create Statement Column for Hodim Hisobi with multilingual titles"
 
     def handle(self, *args, **options):
 
         def create_statement(parent, name_uz, name_ru, period=None):
-            return Statement.objects.create(
+            statement, _ = Statement.objects.get_or_create(
                 parent=parent,
                 name=name_uz,
-                name_uz=name_uz,
-                name_ru=name_ru,
-                period=period
+                defaults={
+                    "name_uz": name_uz,
+                    "name_ru": name_ru,
+                    "period": period,
+                }
             )
+            return statement
 
         def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, is_user_input=True):
-            return StatementColumn.objects.create(
+            column, _ = StatementColumn.objects.get_or_create(
                 statement=statement,
                 parent=parent,
-                title=title_uz,
-                title_uz=title_uz,
-                title_ru=title_ru,
                 ordering=ordering,
-                is_organization=is_organization,
-                is_user_input=is_user_input
+                defaults={
+                    "title": title_uz,
+                    "title_uz": title_uz,
+                    "title_ru": title_ru,
+                    "is_organization": is_organization,
+                    "is_user_input": is_user_input,
+                }
             )
+            return column
 
         # === Root Statements ===
         person_statement = create_statement(
@@ -46,13 +53,21 @@ class Command(BaseCommand):
         # === 1-Ilova ===
         ilova1 = create_column(person_report_statement, None, "1-ilova", "Приложение 1", "1.1")
 
-        title_col = create_column(person_report_statement, ilova1,
-                                  "2025 yil uchun xodimlar togrisidagi hisobat",
-                                  "Отчёт о сотрудниках за 2025 год",
-                                  "1.1.1")
+        title_col = create_column(
+            person_report_statement, ilova1,
+            "2025 yil uchun xodimlar togrisidagi hisobat",
+            "Отчёт о сотрудниках за 2025 год",
+            "1.1.1"
+        )
 
         create_column(person_report_statement, title_col, "Tashkilot nomi", "Название организации", "1.1.1.1", is_organization=True)
-        create_column(person_report_statement, title_col, "Jami xodimlar soni", "Общее количество сотрудников", "1.1.1.2")
+
+        # 👉 Jami xodimlar soni (is_user_input=False)
+        create_column(
+            person_report_statement, title_col,
+            "Jami xodimlar soni", "Общее количество сотрудников",
+            "1.1.1.2", is_user_input=False
+        )
 
         shundan1 = create_column(person_report_statement, title_col, "Shundan-1", "Из них-1", "1.1.1.3")
         create_column(person_report_statement, shundan1, "Boshqaruv xodimlari", "Руководящие работники", "1.1.1.3.1")
@@ -62,7 +77,12 @@ class Command(BaseCommand):
         create_column(person_report_statement, shundan1, "Xizmat korsatuvchi xodimlar", "Обслуживающий персонал", "1.1.1.3.5")
         create_column(person_report_statement, shundan1, "ishchilar", "Рабочие", "1.1.1.3.6")
 
-        create_column(person_report_statement, title_col, "Jami vakatlar soni", "Общее количество вакансий", "1.1.1.4")
+        # 👉 Jami vakatlar soni (is_user_input=False)
+        create_column(
+            person_report_statement, title_col,
+            "Jami vakatlar soni", "Общее количество вакансий",
+            "1.1.1.4", is_user_input=False
+        )
 
         shundan2 = create_column(person_report_statement, title_col, "shundan-2", "Из них-2", "1.1.1.5")
         create_column(person_report_statement, shundan2, "Boshqaruv hodimlari", "Руководящие работники", "1.1.1.5.1")
@@ -75,14 +95,22 @@ class Command(BaseCommand):
         # === 2-Ilova ===
         ilova2 = create_column(person_report_statement, None, "2-ilova", "Приложение 2", "1.2")
 
-        title2 = create_column(person_report_statement, ilova2,
-                               "Tizim tashkilotlaridagi xodimlarni sifat tarkibi togrisida malumot",
-                               "Информация о качественном составе сотрудников",
-                               "1.2.1")
+        title2 = create_column(
+            person_report_statement, ilova2,
+            "Tizim tashkilotlaridagi xodimlarni sifat tarkibi togrisida malumot",
+            "Информация о качественном составе сотрудников",
+            "1.2.1"
+        )
 
         create_column(person_report_statement, title2, "Tashkilot nomi", "Название организации", "1.2.1.1", is_organization=True)
         create_column(person_report_statement, title2, "Shtat bo'yicha jami", "Всего по штату", "1.2.1.2")
-        create_column(person_report_statement, title2, "Jami ishlovchi xodimlar soni", "Общее количество работающих сотрудников", "1.2.1.3")
+
+        # 👉 Jami ishlovchi xodimlar soni (is_user_input=False)
+        create_column(
+            person_report_statement, title2,
+            "Jami ishlovchi xodimlar soni", "Общее количество работающих сотрудников",
+            "1.2.1.3", is_user_input=False
+        )
 
         malumoti = create_column(person_report_statement, title2, "Ma'lumoti", "Образование", "1.2.1.4")
         create_column(person_report_statement, malumoti, "Oliy", "Высшее", "1.2.1.4.1")
@@ -105,13 +133,22 @@ class Command(BaseCommand):
 
         # === 3-Ilova ===
         ilova3 = create_column(person_report_statement, None, "3-ilova", "Приложение 3", "1.3")
-        title3 = create_column(person_report_statement, ilova3,
-                               "Tizim tashkilotlaridagi yangi ish o‘rinlari haqida ma’lumot",
-                               "Информация о новых рабочих местах в системе",
-                               "1.3.1")
+
+        title3 = create_column(
+            person_report_statement, ilova3,
+            "Tizim tashkilotlaridagi yangi ish o‘rinlari haqida ma’lumot",
+            "Информация о новых рабочих местах в системе",
+            "1.3.1"
+        )
 
         create_column(person_report_statement, title3, "Tashkilot nomi", "Название организации", "1.3.1.1", is_organization=True)
-        create_column(person_report_statement, title3, "Jami yangi yaratilgan ish o'rinlar soni", "Общее количество новых рабочих мест", "1.3.1.2")
+
+        # 👉 Jami yangi yaratilgan ish o‘rinlar soni (is_user_input=False)
+        create_column(
+            person_report_statement, title3,
+            "Jami yangi yaratilgan ish o'rinlar soni", "Общее количество новых рабочих мест",
+            "1.3.1.2", is_user_input=False
+        )
 
         shundan3 = create_column(person_report_statement, title3, "Shundan", "Из них", "1.3.1.3")
         create_column(person_report_statement, shundan3, "Doimiy", "Постоянные", "1.3.1.3.1")
@@ -125,5 +162,4 @@ class Command(BaseCommand):
         create_column(person_report_statement, shundan3, "Kambag’al axolidan olingan", "Из числа малообеспеченных", "1.3.1.3.5")
         create_column(person_report_statement, shundan3, "Kasanachilik asosida", "На основе надомного труда", "1.3.1.3.6")
 
-
-        self.stdout.write(self.style.SUCCESS(f"Employee report created ! "))
+        self.stdout.write(self.style.SUCCESS(f"✅ Employee report created/updated successfully!"))
