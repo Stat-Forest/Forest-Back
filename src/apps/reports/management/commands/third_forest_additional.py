@@ -149,8 +149,7 @@ class Command(BaseCommand):
                       status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, tashkil_block, "Amalda", "Факт", "1.1.4.2")
 
-        gosht_block = create_column(statement_husbandry, m_sh_m_title, "Go‘shtga so‘yildi", "Зарезано на мясо", "1.1.5")
-        create_column(statement_husbandry, gosht_block, "Bosh", "Голов", "1.1.5.1")
+        create_column(statement_husbandry, m_sh_m_title, "Go‘shtga so‘yildi bosh", "Зарезан на мясо", "1.1.5")
 
         create_column(statement_husbandry, m_sh_m_title, "Go‘sht ishlab chiqarish (CN)", "Производство мяса (ЦН)",
                       "1.1.6")
