@@ -140,16 +140,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                     statement_name = report.statement.name_uz
                     calculate_func = ALL_CALCULATORS.get(statement_name)
                     if calculate_func:
-                        if statement_name == "Jamg'arma":
-                            calculate_func(
-                                statement_id=report.statement.id,
-
-                                organization=report.organization,
-                                deadline=report.deadline,
-                                user=self.context["request"].user
-                            )
-                        else:
-                            calculate_func(report)
+                        calculate_func(report)
 
             return list(reports_map.values())
 
