@@ -6,7 +6,7 @@ from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, status_plan=None):
+        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, status_plan=None, is_user_input=True):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
@@ -14,7 +14,8 @@ class Command(BaseCommand):
                 title_ru=title_ru,
                 ordering=ordering,
                 is_organization=is_organization,
-                status_plan=status_plan
+                status_plan=status_plan,
+                is_user_input=is_user_input
             )
 
         forest_add = Statement.objects.get(
@@ -283,9 +284,18 @@ class Command(BaseCommand):
         create_column(statement_mechanization, metallolom_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
 
-        create_column(statement_mechanization, metallolom_title, "Yillik reja, tonna", "Годовой план, тонн", "1.1.2")
-        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "1.1.2")
-        create_column(statement_mechanization, metallolom_title, "%", "%", "1.1.2")
+        create_column(
+            statement_mechanization,
+            metallolom_title,
+            "Yillik reja, tonna",
+            "Годовой план, тонн",
+            "1.1.2",
+            is_user_input=False
+        )
+        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "1.1.2",
+                      is_user_input=False)
+        create_column(statement_mechanization, metallolom_title, "%", "%", "1.1.2",
+                      is_user_input=False)
 
         for i in range(1, 5):
             chorak_ordering = f"1.1.{i + 1}"
@@ -296,9 +306,11 @@ class Command(BaseCommand):
                 f"{i}-й квартал",
                 chorak_ordering
             )
-            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1")
+            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1",
+                          is_user_input=False)
             create_column(statement_mechanization, chorak, "Amalda", "Факт", f"{chorak_ordering}.2")
-            create_column(statement_mechanization, chorak, "%", "%", f"{chorak_ordering}.3")
+            create_column(statement_mechanization, chorak, "%", "%", f"{chorak_ordering}.3",
+                          is_user_input=False)
 
             hujjat = create_column(
                 statement_mechanization,
@@ -357,7 +369,7 @@ class Command(BaseCommand):
         create_column(pichan_statement, hay_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма, тыс. сум",
                       "1.1.9")
         create_column(pichan_statement, hay_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма, тыс. сум",
-                      "1.1.10")
+                      "1.1.10", is_user_input=False)
         create_column(pichan_statement, hay_title, "Jamg‘armalarga o‘tkazilgan mablag‘ (ming so‘m)",
                       "Средства, перечисленные в фонды, тыс. сум", "1.1.11")
 
@@ -391,8 +403,8 @@ class Command(BaseCommand):
         create_column(yaylov_statement, pasture_title, "Foydalanuvchilar soni (dona)",
                       "Количество пользователей (шт)", "1.1.6")
         create_column(yaylov_statement, pasture_title,
-                      "Yaylovga joylashtirilgan chorva mollarining jami soni (bosh)",
-                      "Общее количество скота, размещенного на пастбищах (голов)", "1.1.7")
+                      "Yaylovga joylashti-rilgan chorva mollari jami soni, (bosh)",
+                      "Общее поголовье скота, размещенного на пастбище, (голова)", "1.1.7", is_user_input=False)
 
         chorva_turi = create_column(yaylov_statement, pasture_title, "Shundan chorva mollarining turi, soni, so‘mmasi, ming so‘m",
                                     "Из них вид, количество, сумма, тыс. сум.", "1.1.8")
@@ -415,11 +427,11 @@ class Command(BaseCommand):
 
         create_column(yaylov_statement, pasture_title,
                       "Yaylov uchun tuzilgan shartnoma summasi (ming so‘m, amalda)",
-                      "Сумма заключенного договора на пастбище (тыс. сум, факт)", "1.1.9")
+                      "Сумма заключенного договора на пастбище (тыс. сум, факт)", "1.1.9", is_user_input=False)
         create_column(yaylov_statement, pasture_title, "To‘langan summa (ming so‘m)", "Уплаченная сумма (тыс. сум)",
                       "1.1.10")
         create_column(yaylov_statement, pasture_title, "Qolgan qismi (ming so‘m)", "Оставшаяся сумма (тыс. сум)",
-                      "1.1.11")
+                      "1.1.11", is_user_input=False)
         create_column(yaylov_statement, pasture_title, "Jamg‘armaga o‘tkazilgan mablag‘ (ming so‘m)",
                       "Средства, перечисленные в фонд (тыс. сум)", "1.1.12")
 
