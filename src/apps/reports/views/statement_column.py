@@ -1,5 +1,6 @@
-# views.py
 from django_filters.rest_framework import DjangoFilterBackend
+from django.forms import widgets
+
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
@@ -13,10 +14,14 @@ from apps.utils.translation import get_lang_code, get_translated_field
 
 class StatementColumnFilter(django_filters.FilterSet):
     statement = django_filters.ModelChoiceFilter(queryset=Statement.objects.filter(parent__isnull=False))
+    is_user_input = django_filters.BooleanFilter(
+        field_name="is_user_input",
+        widget=widgets.Select(choices=[('', '---------'), (True, 'True'), (False, 'False')])
+    )
 
     class Meta:
         model = StatementColumn
-        fields = ['statement']
+        fields = ['statement', "is_user_input"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
