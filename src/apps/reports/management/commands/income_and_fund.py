@@ -251,7 +251,7 @@ class Command(BaseCommand):
                 title="Tushumlar bo‘yicha",
                 title_uz="Tushumlar bo‘yicha",
                 title_ru="По поступлениям",
-                ordering="1"
+                ordering="2"
             )
 
             tushum_info = StatementColumn.objects.create(
@@ -260,7 +260,7 @@ class Command(BaseCommand):
                 title="2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
                 title_uz="2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
                 title_ru="ИНФОРМАЦИЯ о доходах по состоянию на 2025 год",
-                ordering="1.1"
+                ordering="2.1"
             )
 
             StatementColumn.objects.create(
@@ -269,7 +269,7 @@ class Command(BaseCommand):
                 title='Tashkilot nomi',
                 title_uz='Tashkilot nomi',
                 title_ru='Название организации',
-                ordering="1.1.1",
+                ordering="2.1.1",
                 is_organization=True
             )
 
@@ -279,7 +279,7 @@ class Command(BaseCommand):
                 title='Yillik reja',
                 title_uz='Yillik reja',
                 title_ru='Годовой план',
-                ordering="1.1.2",
+                ordering="2.1.2",
                 status_plan=SC.PlanStatus.YILLIK
             )
 
@@ -335,7 +335,7 @@ class Command(BaseCommand):
             }
 
             for c_idx, (chorak_status, oylar) in enumerate(choraklar.items(), start=1):
-                chorak_order = f"1.1.{2 + c_idx * 2 - 1}"
+                chorak_order = f"2.1.{2 + c_idx * 2 - 1}"
 
                 # Chorak reja
                 chorak_reja = StatementColumn.objects.create(
@@ -373,11 +373,11 @@ class Command(BaseCommand):
                     title=chorak_nomi_uz[chorak_status],
                     title_uz=chorak_nomi_uz[chorak_status],
                     title_ru=chorak_nomi_ru[chorak_status],
-                    ordering=f"1.1.{2 + c_idx * 2}"
+                    ordering=f"2.1.{2 + c_idx * 2}"
                 )
 
                 for o_idx, oy_status in enumerate(oylar, start=1):
-                    oy_order = f"1.1.{2 + c_idx * 2}.{o_idx}"
+                    oy_order = f"2.1.{2 + c_idx * 2}.{o_idx}"
 
                     oy_node = StatementColumn.objects.create(
                         statement=daromad_statement,
@@ -431,7 +431,7 @@ class Command(BaseCommand):
                 title='Yil boshidan',
                 title_uz='Yil boshidan',
                 title_ru='С начала года',
-                ordering="1.1.11",
+                ordering="2.1.11",
             )
 
             StatementColumn.objects.create(
@@ -440,7 +440,7 @@ class Command(BaseCommand):
                 title='Tushum',
                 title_uz='Tushum',
                 title_ru='Поступление',
-                ordering="1.1.11.1",
+                ordering="2.1.11.1",
             )
 
             StatementColumn.objects.create(
@@ -449,7 +449,7 @@ class Command(BaseCommand):
                 title='Yillik rejaga nisbatan %',
                 title_uz='Yillik rejaga nisbatan %',
                 title_ru='% к годовому плану',
-                ordering="1.1.11.2",
+                ordering="2.1.11.2",
             )
 
             # Svod bo‘limi
@@ -459,7 +459,7 @@ class Command(BaseCommand):
                 title="Svod",
                 title_uz="Svod",
                 title_ru="Свод",
-                ordering="1"
+                ordering="3"
             )
 
             svod_title = StatementColumn.objects.create(
@@ -468,7 +468,7 @@ class Command(BaseCommand):
                 title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
                 title_uz="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
                 title_ru="ИНФОРМАЦИЯ О ДОХОДАХ, ПОЛУЧЕННЫХ В ТЕЧЕНИЕ 2025 ГОДА",
-                ordering="1.1"
+                ordering="3.1"
             )
 
             StatementColumn.objects.create(
@@ -477,7 +477,7 @@ class Command(BaseCommand):
                 title="Tashkilot nomi",
                 title_uz="Tashkilot nomi",
                 title_ru="Наименование организации",
-                ordering="1.1.1",
+                ordering="3.1.1",
                 is_organization=True
             )
 
@@ -487,7 +487,7 @@ class Command(BaseCommand):
                 title="Yillik reja (ming sum)",
                 title_uz="Yillik reja (ming so'm)",
                 title_ru="Годовой план (в тыс. сумов)",
-                ordering="1.1.2",
+                ordering="3.1.2",
                 status_plan=SC.PlanStatus.YILLIK
             )
 
@@ -497,7 +497,7 @@ class Command(BaseCommand):
                 title="Amalda (ming sum)",
                 title_uz="Amalda (ming so'm)",
                 title_ru="Фактически (в тыс. сумов)",
-                ordering="1.1.3"
+                ordering="3.1.3"
             )
 
             StatementColumn.objects.create(
@@ -506,7 +506,7 @@ class Command(BaseCommand):
                 title="Rejaga nisbatan %",
                 title_uz="Rejaga nisbatan %",
                 title_ru="В % к плану",
-                ordering="1.1.4"
+                ordering="3.1.4"
             )
 
             self.stdout.write(self.style.SUCCESS("Daromad statement to‘liq yaratildi."))
