@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 from collections import defaultdict
@@ -9,13 +9,6 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
-
-
-@extend_schema(
-    summary="Xodim hisobi",
-    description="Xodim hisobi statistikasi"
-)
 
 @extend_schema(
     summary="Xodim hisobi",
@@ -32,8 +25,6 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
         )
     ]
 )
-
-@extend_schema(tags=["Statistics"])
 class StatisticsEmployeeReportAPIView(APIView):
 
     def get_translated_titles(self, lang):
@@ -63,13 +54,13 @@ class StatisticsEmployeeReportAPIView(APIView):
         if parent_title:
             filters[parent_key] = parent_title
 
-        return ReportItem.objects.filter(**filters).annotate(
-            numeric_value=Cast('value', FloatField())
-        ).values(
-            'report__organization__region',
-            filter_key
-        ).annotate(
-            total=Sum('numeric_value')
+        # endi ReportItemInner.value ishlatiladi
+        return (
+            ReportItem.objects.filter(**filters)
+            .values('report__organization__region', filter_key)
+            .annotate(
+                total=Sum(Cast('inners__value', FloatField()))
+            )
         )
 
     def get(self, request):
