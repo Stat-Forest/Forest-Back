@@ -121,7 +121,7 @@ class Command(BaseCommand):
             None,
             "Sabzavot ilovasi",
             "Приложение: Овощные культуры",
-            "1"
+            "2"
         )
 
         second_title_forest = create_column(
@@ -129,7 +129,7 @@ class Command(BaseCommand):
             second_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda sabzavot ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
             "Информация о посеве овощных культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "2.1"
         )
 
         create_column(
@@ -137,7 +137,7 @@ class Command(BaseCommand):
             second_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "2.1.1",
             is_organization=True
         )
 
@@ -146,31 +146,31 @@ class Command(BaseCommand):
             second_title_forest,
             "Sabzavot",
             "Овощи",
-            "1.1.2"
+            "2.1.2"
         )
-        create_triplet(statement_forest_add, sabzavot, "1.1.2", is_user_input=False)
+        create_triplet(statement_forest_add, sabzavot, "2.1.2", is_user_input=False)
 
         wu_jumladan = create_column(
             statement_forest_add,
             second_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "2.1.3"
         )
 
         vegetables = [
-            ("Sarimsoq piyoz", "Чеснок", "1.1.3.1"),
-            ("Piyoz", "Лук", "1.1.3.2"),
-            ("Achchiq qalampir", "Острый перец", "1.1.3.3"),
-            ("Bolgar qalampiri", "Сладкий перец", "1.1.3.4"),
-            ("Kartoshka", "Картофель", "1.1.3.5"),
-            ("Sabzi", "Морковь", "1.1.3.6"),
-            ("Karam", "Капуста", "1.1.3.7"),
-            ("Pomidor", "Помидор", "1.1.3.8"),
-            ("Bodring", "Огурец", "1.1.3.9"),
-            ("Qizil lavlagi", "Свёкла", "1.1.3.10"),
-            ("Sholg'om", "Репа", "1.1.3.11"),
-            ("Boshqa ekinlar", "Другие культуры", "1.1.3.12")
+            ("Sarimsoq piyoz", "Чеснок", "2.1.3.1"),
+            ("Piyoz", "Лук", "2.1.3.2"),
+            ("Achchiq qalampir", "Острый перец", "2.1.3.3"),
+            ("Bolgar qalampiri", "Сладкий перец", "2.1.3.4"),
+            ("Kartoshka", "Картофель", "2.1.3.5"),
+            ("Sabzi", "Морковь", "2.1.3.6"),
+            ("Karam", "Капуста", "2.1.3.7"),
+            ("Pomidor", "Помидор", "2.1.3.8"),
+            ("Bodring", "Огурец", "2.1.3.9"),
+            ("Qizil lavlagi", "Свёкла", "2.1.3.10"),
+            ("Sholg'om", "Репа", "2.1.3.11"),
+            ("Boshqa ekinlar", "Другие культуры", "2.1.3.12")
         ]
 
         for title_uz, title_ru, ordering in vegetables:
@@ -183,7 +183,7 @@ class Command(BaseCommand):
             None,
             "Poliz ilovasi",
             "Приложение: Бахча маҳсулотлари",
-            "1"
+            "3"
         )
 
         third_title_forest = create_column(
@@ -191,7 +191,7 @@ class Command(BaseCommand):
             third_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda poliz ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
             "Информация о посеве бахчевых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "3.1"
         )
 
         create_column(
@@ -199,7 +199,7 @@ class Command(BaseCommand):
             third_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "3.1.1",
             is_organization=True
         )
 
@@ -208,22 +208,22 @@ class Command(BaseCommand):
             third_title_forest,
             "Poliz",
             "Бахча",
-            "1.1.2"
+            "3.1.2"
         )
-        create_triplet(statement_forest_add, poliz, "1.1.2", is_user_input=False)
+        create_triplet(statement_forest_add, poliz, "3.1.2", is_user_input=False)
 
         jumladan_poliz = create_column(
             statement_forest_add,
             third_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "3.1.3"
         )
 
         poliz_crops = [
-            ("Tarvuz", "Арбуз", "1.1.3.1"),
-            ("Qovun", "Дыня", "1.1.3.2"),
-            ("Oshqovoq", "Тыква", "1.1.3.3")
+            ("Tarvuz", "Арбуз", "3.1.3.1"),
+            ("Qovun", "Дыня", "3.1.3.2"),
+            ("Oshqovoq", "Тыква", "3.1.3.3")
         ]
 
         for title_uz, title_ru, ordering in poliz_crops:
@@ -236,7 +236,7 @@ class Command(BaseCommand):
             None,
             "Moyli ilovasi",
             "Приложение: Масличные культуры",
-            "1"
+            "4"
         )
 
         fourth_title_forest = create_column(
@@ -244,7 +244,7 @@ class Command(BaseCommand):
             fourth_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda moyli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
             "Информация о посеве масличных культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "4.1"
         )
 
         create_column(
@@ -252,7 +252,7 @@ class Command(BaseCommand):
             fourth_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "4.1.1",
             is_organization=True
         )
 
@@ -261,24 +261,24 @@ class Command(BaseCommand):
             fourth_title_forest,
             "Moyli ekinlar",
             "Масличные культуры",
-            "1.1.2"
+            "4.1.2"
         )
-        create_triplet(statement_forest_add, moyli, "1.1.2", is_user_input=False)
+        create_triplet(statement_forest_add, moyli, "4.1.2", is_user_input=False)
 
         jumladan_moyli = create_column(
             statement_forest_add,
             fourth_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "4.1.3"
         )
 
         moyli_crops = [
-            ("Mashar", "Горчица", "1.1.3.1"),
-            ("Kunjut", "Кунжут", "1.1.3.2"),
-            ("Yer yong'oq", "Арахис", "1.1.3.3"),
-            ("Kungaboqar", "Подсолнечник", "1.1.3.4"),
-            ("Zig'ir", "Лён", "1.1.3.5")
+            ("Mashar", "Горчица", "4.1.3.1"),
+            ("Kunjut", "Кунжут", "4.1.3.2"),
+            ("Yer yong'oq", "Арахис", "4.1.3.3"),
+            ("Kungaboqar", "Подсолнечник", "4.1.3.4"),
+            ("Zig'ir", "Лён", "4.1.3.5")
         ]
 
         for title_uz, title_ru, ordering in moyli_crops:
@@ -291,7 +291,7 @@ class Command(BaseCommand):
             None,
             "Dukkakli ilovasi",
             "Приложение: Бобовые культуры",
-            "1"
+            "5"
         )
 
         fifth_title_forest = create_column(
@@ -299,7 +299,7 @@ class Command(BaseCommand):
             fifth_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda dukkakli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
             "Информация о посеве бобовых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "5.1"
         )
 
         create_column(
@@ -307,7 +307,7 @@ class Command(BaseCommand):
             fifth_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "5.1.1",
             is_organization=True
         )
 
@@ -316,23 +316,23 @@ class Command(BaseCommand):
             fifth_title_forest,
             "Dukkakli ekinlar",
             "Бобовые культуры",
-            "1.1.2"
+            "5.1.2"
         )
-        create_triplet(statement_forest_add, dukkakli, "1.1.2", is_user_input=False)
+        create_triplet(statement_forest_add, dukkakli, "5.1.2", is_user_input=False)
 
         jumladan_dukkakli = create_column(
             statement_forest_add,
             fifth_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "5.1.3"
         )
 
         dukkakli_crops = [
-            ("No'xat", "Нут", "1.1.3.1"),
-            ("Mosh", "Маш", "1.1.3.2"),
-            ("Loviya", "Фасоль", "1.1.3.3"),
-            ("Qizil loviya", "Красная фасоль", "1.1.3.4")
+            ("No'xat", "Нут", "5.1.3.1"),
+            ("Mosh", "Маш", "5.1.3.2"),
+            ("Loviya", "Фасоль", "5.1.3.3"),
+            ("Qizil loviya", "Красная фасоль", "5.1.3.4")
         ]
 
         for title_uz, title_ru, ordering in dukkakli_crops:
@@ -345,7 +345,7 @@ class Command(BaseCommand):
             None,
             "Ozuqa ilovasi",
             "Кормовые культуры",
-            "1"
+            "6"
         )
 
         sixth_title_forest = create_column(
@@ -353,7 +353,7 @@ class Command(BaseCommand):
             sixth_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda ozuqa ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
             "Информация о посеве кормовых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "6.1"
         )
 
         create_column(
@@ -361,7 +361,7 @@ class Command(BaseCommand):
             sixth_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "6.1.1",
             is_organization=True
         )
 
@@ -370,23 +370,23 @@ class Command(BaseCommand):
             sixth_title_forest,
             "Ozuqa ekinlari",
             "Кормовые культуры",
-            "1.1.2"
+            "6.1.2"
         )
-        create_triplet(statement_forest_add, ozuqa, "1.1.2", is_user_input=False)
+        create_triplet(statement_forest_add, ozuqa, "6.1.2", is_user_input=False)
 
         jumladan_ozuqa = create_column(
             statement_forest_add,
             sixth_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "6.1.3"
         )
 
         ozuqa_crops = [
-            ("Makkajo'xori (silos)", "Кукуруза (силос)", "1.1.3.1"),
-            ("Beda", "Люцерна", "1.1.3.2"),
-            ("Somon", "Солома", "1.1.3.3"),
-            ("Dag'al ozuqa", "Грубые корма", "1.1.3.4")
+            ("Makkajo'xori (silos)", "Кукуруза (силос)", "6.1.3.1"),
+            ("Beda", "Люцерна", "6.1.3.2"),
+            ("Somon", "Солома", "6.1.3.3"),
+            ("Dag'al ozuqa", "Грубые корма", "6.1.3.4")
         ]
 
         for title_uz, title_ru, ordering in ozuqa_crops:
@@ -398,13 +398,13 @@ class Command(BaseCommand):
             sixth_title_forest,
             "Supurgi",
             "Сенаж",
-            "1.1.4"
+            "6.1.4"
         )
 
         suprug_children = [
-            ("t/ko'", "т/куб", "1.1.4.1"),
-            ("m/ko'", "м/куб", "1.1.4.2"),
-            ("s/ko'm", "с/куб.м", "1.1.4.3")
+            ("t/ko'", "т/куб", "6.1.4.1"),
+            ("m/ko'", "м/куб", "6.1.4.2"),
+            ("s/ko'm", "с/куб.м", "6.1.4.3")
         ]
 
         for title_uz, title_ru, ordering in suprug_children:
@@ -416,7 +416,7 @@ class Command(BaseCommand):
             None,
             "Bog'-Tok ilovasi",
             "Приложение: Сады и виноградники",
-            "1"
+            "7"
         )
 
         seventh_title_forest = create_column(
@@ -424,7 +424,7 @@ class Command(BaseCommand):
             seventh_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda mevali bog'lar va tokzorlar ekish va hosil yetishtirish to'g'risida ma'lumot",
             "Информация о посеве и урожайности садов и виноградников в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "7.1"
         )
 
         create_column(
@@ -432,7 +432,7 @@ class Command(BaseCommand):
             seventh_title_forest,
             "Tashkilot nomi",
             "Наименование хозяйства",
-            "1.1.1",
+            "7.1.1",
             is_organization=True
         )
 
@@ -441,16 +441,16 @@ class Command(BaseCommand):
             seventh_title_forest,
             "Jami bog' va tokzorlar",
             "Общие сады и виноградники",
-            "1.1.2"
+            "7.1.2"
         )
-        create_village(statement_forest_add, jami_bog_tok, "1.1.2", is_user_input=False)
+        create_village(statement_forest_add, jami_bog_tok, "7.1.2", is_user_input=False)
 
         shu_jumladan_bogtok = create_column(
             statement_forest_add,
             seventh_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "7.1.3"
         )
 
         urugli = create_column(
@@ -458,30 +458,30 @@ class Command(BaseCommand):
             shu_jumladan_bogtok,
             "Urug'li",
             "Семечковые",
-            "1.1.3.1"
+            "7.1.3.1"
         )
-        create_village(statement_forest_add, urugli, "1.1.3.1")
+        create_village(statement_forest_add, urugli, "7.1.3.1")
 
         danakli = create_column(
             statement_forest_add,
             shu_jumladan_bogtok,
             "Danakli",
             "Косточковые",
-            "1.1.3.2"
+            "7.1.3.2"
         )
-        create_village(statement_forest_add, danakli, "1.1.3.2")
+        create_village(statement_forest_add, danakli, "7.1.3.2")
 
         uzumzor = create_column(
             statement_forest_add,
             shu_jumladan_bogtok,
             "Uzumzor",
             "Виноградник",
-            "1.1.3.3"
+            "7.1.3.3"
         )
-        create_village(statement_forest_add, uzumzor, "1.1.3.3")
+        create_village(statement_forest_add, uzumzor, "7.1.3.3")
 
         create_column(statement_forest_add, seventh_title_forest, "2017-2024 yildan qo'shilgan bog'lar",
-                      "Сады, добавленные с 2017 по 2024 год", "1.1.4")
+                      "Сады, добавленные с 2017 по 2024 год", "7.1.4")
 
         # ========== Bodom va Pista ilovasi ==========
         eighth_forest_app = create_column(
@@ -489,7 +489,7 @@ class Command(BaseCommand):
             None,
             "Bodom va Pista ilovasi",
             "Приложение: Миндаль и фисташка",
-            "1"
+            "8"
         )
 
         eighth_title_forest = create_column(
@@ -497,7 +497,7 @@ class Command(BaseCommand):
             eighth_forest_app,
             "Agentlik tizimidagi xo'jaliklarda 2025 yilda yong'oqmevali mahsulotlar yetishtirish to'g'risida ma'lumot",
             "Информация о производстве орехоплодных культур в хозяйствах системы Агентства в 2025 году",
-            "1.1"
+            "8.1"
         )
 
         create_column(
@@ -505,7 +505,7 @@ class Command(BaseCommand):
             eighth_title_forest,
             "Tashkilot nomi",
             "Наименование лесных хозяйств",
-            "1.1.1",
+            "8.1.1",
             is_organization=True
         )
 
@@ -514,16 +514,16 @@ class Command(BaseCommand):
             eighth_title_forest,
             "Jami yong'oqmevalilar",
             "Общие орехоплодные культуры",
-            "1.1.2"
+            "8.1.2"
         )
-        create_village(statement_forest_add, jami_yongoq, "1.1.2", is_user_input=False)
+        create_village(statement_forest_add, jami_yongoq, "8.1.2", is_user_input=False)
 
         shu_jumladan_2 = create_column(
             statement_forest_add,
             eighth_title_forest,
             "Shu jumladan",
             "В том числе",
-            "1.1.3"
+            "8.1.3"
         )
 
         grek = create_column(
@@ -531,55 +531,55 @@ class Command(BaseCommand):
             shu_jumladan_2,
             "Grek yong'og'i",
             "Грецкий орех",
-            "1.1.3.1"
+            "8.1.3.1"
         )
-        create_village(statement_forest_add, grek, "1.1.3.1")
+        create_village(statement_forest_add, grek, "8.1.3.1")
 
         bodom = create_column(
             statement_forest_add,
             shu_jumladan_2,
             "Bodom",
             "Миндаль",
-            "1.1.3.2"
+            "8.1.3.2"
         )
-        create_village(statement_forest_add, bodom, "1.1.3.2")
+        create_village(statement_forest_add, bodom, "8.1.3.2")
 
         pista = create_column(
             statement_forest_add,
             shu_jumladan_2,
             "Pista",
             "Фисташка",
-            "1.1.3.3"
+            "8.1.3.3"
         )
-        create_village(statement_forest_add, pista, "1.1.3.3")
+        create_village(statement_forest_add, pista, "8.1.3.3")
 
         tabiiy = create_column(
             statement_forest_add,
             eighth_title_forest,
             "Tabiiy mevalarni tayyorlash, tn",
             "Подготовка природных фруктов, тн",
-            "1.1.4"
+            "8.1.4"
         )
         StatementColumn.objects.create(
             statement=statement_forest_add,
             parent=tabiiy,
             title_uz="Ho‘l meva",
             title_ru="Свежий фрукт",
-            ordering="1.1.4.1"
+            ordering="8.1.4.1"
         )
         StatementColumn.objects.create(
             statement=statement_forest_add,
             parent=tabiiy,
             title_uz="Grek yong‘og‘i",
             title_ru="Грецкий орех",
-            ordering="1.1.4.2"
+            ordering="8.1.4.2"
         )
         StatementColumn.objects.create(
             statement=statement_forest_add,
             parent=tabiiy,
             title_uz="Pista",
             title_ru="Фисташки",
-            ordering="1.1.4.3"
+            ordering="8.1.4.3"
         )
 
         self.stdout.write(

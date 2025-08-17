@@ -93,73 +93,73 @@ class Command(BaseCommand):
         create_column(person_report_statement, shundan2, "Ishchilar", "Рабочие", "1.1.1.5.6")
 
         # === 2-Ilova ===
-        ilova2 = create_column(person_report_statement, None, "2-ilova", "Приложение 2", "1.2")
+        ilova2 = create_column(person_report_statement, None, "2-ilova", "Приложение 2", "2")
 
         title2 = create_column(
             person_report_statement, ilova2,
             "Tizim tashkilotlaridagi xodimlarni sifat tarkibi togrisida malumot",
             "Информация о качественном составе сотрудников",
-            "1.2.1"
+            "2.1"
         )
 
-        create_column(person_report_statement, title2, "Tashkilot nomi", "Название организации", "1.2.1.1", is_organization=True)
-        create_column(person_report_statement, title2, "Shtat bo'yicha jami", "Всего по штату", "1.2.1.2")
+        create_column(person_report_statement, title2, "Tashkilot nomi", "Название организации", "2.1.1", is_organization=True)
+        create_column(person_report_statement, title2, "Shtat bo'yicha jami", "Всего по штату", "2.1.2")
 
         # 👉 Jami ishlovchi xodimlar soni (is_user_input=False)
         create_column(
             person_report_statement, title2,
             "Jami ishlovchi xodimlar soni", "Общее количество работающих сотрудников",
-            "1.2.1.3", is_user_input=False
+            "2.1.3", is_user_input=False
         )
 
-        malumoti = create_column(person_report_statement, title2, "Ma'lumoti", "Образование", "1.2.1.4")
-        create_column(person_report_statement, malumoti, "Oliy", "Высшее", "1.2.1.4.1")
-        create_column(person_report_statement, malumoti, "O'rta maxsus", "Среднее специальное", "1.2.1.4.2")
-        create_column(person_report_statement, malumoti, "O'rta", "Среднее", "1.2.1.4.3")
+        malumoti = create_column(person_report_statement, title2, "Ma'lumoti", "Образование", "2.1.4")
+        create_column(person_report_statement, malumoti, "Oliy", "Высшее", "2.1.4.1")
+        create_column(person_report_statement, malumoti, "O'rta maxsus", "Среднее специальное", "2.1.4.2")
+        create_column(person_report_statement, malumoti, "O'rta", "Среднее", "2.1.4.3")
 
-        xodimlar = create_column(person_report_statement, title2, "Xodimlar", "Сотрудники", "1.2.1.5")
-        create_column(person_report_statement, xodimlar, "Ayol", "Женщины", "1.2.1.5.1")
-        create_column(person_report_statement, xodimlar, "Erkak xodimlar", "Мужчины", "1.2.1.5.2")
-        create_column(person_report_statement, xodimlar, "Yoshlar Jami", "Всего молодёжи", "1.2.1.5.3")
+        xodimlar = create_column(person_report_statement, title2, "Xodimlar", "Сотрудники", "2.1.5")
+        create_column(person_report_statement, xodimlar, "Ayol", "Женщины", "2.1.5.1")
+        create_column(person_report_statement, xodimlar, "Erkak xodimlar", "Мужчины", "2.1.5.2")
+        create_column(person_report_statement, xodimlar, "Yoshlar Jami", "Всего молодёжи", "2.1.5.3")
 
-        yoshlar = create_column(person_report_statement, xodimlar, "Yoshlar", "Молодёжь", "1.2.1.5.4")
-        create_column(person_report_statement, yoshlar, "Qizlar", "Девушки", "1.2.1.5.4.1")
-        create_column(person_report_statement, yoshlar, "Yigitlar", "Юноши", "1.2.1.5.4.2")
+        yoshlar = create_column(person_report_statement, xodimlar, "Yoshlar", "Молодёжь", "2.1.5.4")
+        create_column(person_report_statement, yoshlar, "Qizlar", "Девушки", "2.1.5.4.1")
+        create_column(person_report_statement, yoshlar, "Yigitlar", "Юноши", "2.1.5.4.2")
 
-        create_column(person_report_statement, xodimlar, "Nafaqadagi xodimlar", "Пенсионеры", "1.2.1.5.5")
-        create_column(person_report_statement, title2, "Ilmiy darajaga ega xodimlar", "Сотрудники с учёной степенью", "1.2.1.6")
-        create_column(person_report_statement, title2, "Xorijiy til biladigan xodimlar", "Сотрудники, владеющие иностранным языком", "1.2.1.7")
-        create_column(person_report_statement, title2, "Chet elda tahsil olgan va malaka oshirgan xodimlar", "Сотрудники, обучавшиеся за границей и повысившие квалификацию", "1.2.1.8")
+        create_column(person_report_statement, xodimlar, "Nafaqadagi xodimlar", "Пенсионеры", "2.1.5.5")
+        create_column(person_report_statement, title2, "Ilmiy darajaga ega xodimlar", "Сотрудники с учёной степенью", "2.1.6")
+        create_column(person_report_statement, title2, "Xorijiy til biladigan xodimlar", "Сотрудники, владеющие иностранным языком", "2.1.7")
+        create_column(person_report_statement, title2, "Chet elda tahsil olgan va malaka oshirgan xodimlar", "Сотрудники, обучавшиеся за границей и повысившие квалификацию", "2.1.8")
 
         # === 3-Ilova ===
-        ilova3 = create_column(person_report_statement, None, "3-ilova", "Приложение 3", "1.3")
+        ilova3 = create_column(person_report_statement, None, "3-ilova", "Приложение 3", "3")
 
         title3 = create_column(
             person_report_statement, ilova3,
             "Tizim tashkilotlaridagi yangi ish o‘rinlari haqida ma’lumot",
             "Информация о новых рабочих местах в системе",
-            "1.3.1"
+            "3.1"
         )
 
-        create_column(person_report_statement, title3, "Tashkilot nomi", "Название организации", "1.3.1.1", is_organization=True)
+        create_column(person_report_statement, title3, "Tashkilot nomi", "Название организации", "3.1.1", is_organization=True)
 
         # 👉 Jami yangi yaratilgan ish o‘rinlar soni (is_user_input=False)
         create_column(
             person_report_statement, title3,
             "Jami yangi yaratilgan ish o'rinlar soni", "Общее количество новых рабочих мест",
-            "1.3.1.2", is_user_input=False
+            "3.1.2", is_user_input=False
         )
 
-        shundan3 = create_column(person_report_statement, title3, "Shundan", "Из них", "1.3.1.3")
-        create_column(person_report_statement, shundan3, "Doimiy", "Постоянные", "1.3.1.3.1")
-        create_column(person_report_statement, shundan3, "Mavsumiy", "Сезонные", "1.3.1.3.2")
+        shundan3 = create_column(person_report_statement, title3, "Shundan", "Из них", "3.1.3")
+        create_column(person_report_statement, shundan3, "Doimiy", "Постоянные", "3.1.3.1")
+        create_column(person_report_statement, shundan3, "Mavsumiy", "Сезонные", "3.1.3.2")
 
-        yosh30 = create_column(person_report_statement, shundan3, "Yoshlar (30 yoshgacha)", "Молодёжь (до 30 лет)", "1.3.1.3.3")
-        create_column(person_report_statement, yosh30, "Erkak", "Мужчины", "1.3.1.3.3.1")
-        create_column(person_report_statement, yosh30, "Xotin qizlar", "Женщины", "1.3.1.3.3.2")
+        yosh30 = create_column(person_report_statement, shundan3, "Yoshlar (30 yoshgacha)", "Молодёжь (до 30 лет)", "3.1.3.3")
+        create_column(person_report_statement, yosh30, "Erkak", "Мужчины", "3.1.3.3.1")
+        create_column(person_report_statement, yosh30, "Xotin qizlar", "Женщины", "3.1.3.3.2")
 
-        create_column(person_report_statement, shundan3, "Temir daftar va ayollar daftariga kiritilgan", "Включённые в железную и женскую книги", "1.3.1.3.4")
-        create_column(person_report_statement, shundan3, "Kambag’al axolidan olingan", "Из числа малообеспеченных", "1.3.1.3.5")
-        create_column(person_report_statement, shundan3, "Kasanachilik asosida", "На основе надомного труда", "1.3.1.3.6")
+        create_column(person_report_statement, shundan3, "Temir daftar va ayollar daftariga kiritilgan", "Включённые в железную и женскую книги", "3.1.3.4")
+        create_column(person_report_statement, shundan3, "Kambag’al axolidan olingan", "Из числа малообеспеченных", "3.1.3.5")
+        create_column(person_report_statement, shundan3, "Kasanachilik asosida", "На основе надомного труда", "3.1.3.6")
 
         self.stdout.write(self.style.SUCCESS(f"✅ Employee report created/updated successfully!"))
