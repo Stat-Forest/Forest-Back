@@ -1,25 +1,18 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 from collections import defaultdict
 
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
-
-@extend_schema(
-    summary="Xodim hisobi taxlili",
-    description="Xodim hisobi taxlili"
-)
-
 
 
 @extend_schema(
-    summary="Xodim hisobi taxlili",
-    description="Xodim hisobi taxlili (UZ va RU tillarini qo‘llab-quvvatlaydi)",
+    summary="Xodim hisobi tahlili",
+    description="Xodim hisobi tahlili (UZ va RU tillarini qo‘llab-quvvatlaydi)",
     tags=["Statistics"],
     parameters=[
         OpenApiParameter(
@@ -32,9 +25,6 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
         )
     ]
 )
-
-
-@extend_schema(tags=["Statistics"])
 class StatisticsEmployeeReportAnalysisAPIView(APIView):
 
     def get_translated_titles(self, lang):
@@ -80,15 +70,10 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
 
         title_key = 'statement_column__title' if lang == 'uz' else 'statement_column__title_ru'
 
-        qs = ReportItem.objects.filter(
-            **{f'{title_key}__in': all_titles}
-        ).annotate(
-            numeric_value=Cast('value', FloatField())
-        ).values(
-            'report__organization__region',
-            title_key
-        ).annotate(
-            total=Sum('numeric_value')
+        qs = (
+            ReportItem.objects.filter(**{f'{title_key}__in': all_titles})
+            .values('report__organization__region', title_key)
+            .annotate(total=Sum(Cast('inners__value', FloatField())))
         )
 
         grouped_data = defaultdict(lambda: defaultdict(float))
@@ -110,7 +95,9 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
                 data[0][label].append({
                     'name': region,
                     **{
-                        (ru if lang == 'ru' else uz): grouped_data[region].get((ru if lang == 'ru' else uz), 0)
+                        (ru if lang == 'ru' else uz): grouped_data[region].get(
+                            (ru if lang == 'ru' else uz), 0
+                        )
                         for uz, ru in titles
                     }
                 })
