@@ -219,7 +219,7 @@ class Command(BaseCommand):
             statement=third_statement,
             title_uz="Ko‘chat-va-Nihol-ilova",
             title_ru="Приложение Ростки-и-Саженцы",
-            ordering="1"
+            ordering="3"
         )
 
         title_column_2 = StatementColumn.objects.create(
@@ -227,7 +227,7 @@ class Command(BaseCommand):
             parent=app_column,
             title_uz="O‘rmon xo‘jaligi davlat qo‘mitasi tizimidagi o‘rmon xo‘jaliklariida niholxona va ko‘chatxonalar tashkil etish, yillik nihol va ko‘chat yetishtirish harakati to‘g‘risida umumlashtirilgan ma‘lumot",
             title_ru="Обобщенная информация о создании питомников и теплиц, а также ежегодном выращивании саженцев и ростков в лесничествах системы Государственного комитета лесного хозяйства",
-            ordering="1.1"
+            ordering="3.1"
         )
 
         StatementColumn.objects.create(
@@ -235,7 +235,7 @@ class Command(BaseCommand):
             parent=title_column_2,
             title_uz="Tashkilot nomi",
             title_ru="Названия хозяйств",
-            ordering="1.1.1",
+            ordering="3.1.1",
             is_organization=True
         )
 
@@ -244,14 +244,14 @@ class Command(BaseCommand):
             parent=title_column_2,
             title_uz="Jami niholxona va ko‘chatxonalar tashkil etish (ga)",
             title_ru="Всего создание питомников и теплиц (га)",
-            ordering="1.1.2"
+            ordering="3.1.2"
         )
         StatementColumn.objects.create(
             statement=third_statement,
             parent=jami,
             title_uz="Reja",
             title_ru="План",
-            ordering="1.1.2.1",
+            ordering="3.1.2.1",
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
             is_user_input=False
         )
@@ -260,7 +260,7 @@ class Command(BaseCommand):
             parent=jami,
             title_uz="Amalda",
             title_ru="Факт",
-            ordering="1.1.2.2",
+            ordering="3.1.2.2",
             is_user_input=False
         )
         StatementColumn.objects.create(
@@ -268,7 +268,7 @@ class Command(BaseCommand):
             parent=jami,
             title_uz="Foiz",
             title_ru="Процент",
-            ordering="1.1.2.3",
+            ordering="3.1.2.3",
             is_user_input=False
         )
 
@@ -277,22 +277,22 @@ class Command(BaseCommand):
             parent=jami,
             title_uz="shundan",
             title_ru="в том числе",
-            ordering="1.1.2.4"
+            ordering="3.1.2.4"
         )
 
-        generate_tree_columns(third_statement, subgroup, "1.1.2.4")
+        generate_tree_columns(third_statement, subgroup, "3.1.2.4")
 
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.3",
+            "3.1.3",
             "Yil boshiga bo'lgan qoldiq",
             "Осталось до начала года"
         )
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.4",
+            "3.1.4",
             "Shu jumladan: Joriy yilda yetishtirilgan nihol, qalamcha va ko‘chatlar (shkolka)",
             "В том числе: Саженцы, черенки и саженцы, выращенные в текущем году (школка)"
 
@@ -300,7 +300,7 @@ class Command(BaseCommand):
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.5",
+            "3.1.5",
             "Sotib olindi",
             "Куплено"
 
@@ -308,7 +308,7 @@ class Command(BaseCommand):
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.6",
+            "3.1.6",
             "Boshqa tashkilotlardan beg'araz olindi",
             "Безвозмездно получено от других организаций"
 
@@ -316,7 +316,7 @@ class Command(BaseCommand):
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.7",
+            "3.1.7",
             "Jami yetishtirildi (inventarizatsiya)",
             "Всего произведено (инвентаризация)"
 
@@ -327,17 +327,17 @@ class Command(BaseCommand):
             parent=title_column_2,
             title_uz="SARFLANISHI",
             title_ru="ИЗРАСХОДОВАНИЕ",
-            ordering="1.1.8"
+            ordering="3.1.8"
         )
 
         categories = [
-            ("O‘rmon barpo qilishga", "1.1.9", "Для создания лесов"),
-            ("O‘rmonlarni xatosiga ekildi", "1.1.10", "Для восполнения потерь лесов"),
-            ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.11", "Для мероприятий по озеленению"),
-            ("Beg‘araz berildi", "1.1.12", "Передано бесплатно"),
-            ("Sotildi", "1.1.13", "Продано"),
-            ("Tarbiya bo‘limiga o‘tkazildi", "1.1.14", "Передано в питомник"),
-            ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.15", "Уничтоженные саженцы (на основании приказа)")
+            ("O‘rmon barpo qilishga", "3.1.9", "Для создания лесов"),
+            ("O‘rmonlarni xatosiga ekildi", "3.1.10", "Для восполнения потерь лесов"),
+            ("Ko‘kalamzorlashtirish tadbirlari uchun", "3.1.11", "Для мероприятий по озеленению"),
+            ("Beg‘araz berildi", "3.1.12", "Передано бесплатно"),
+            ("Sotildi", "3.1.13", "Продано"),
+            ("Tarbiya bo‘limiga o‘tkazildi", "3.1.14", "Передано в питомник"),
+            ("Nobud bo‘lgan nihollar (buyruq asosida)", "3.1.15", "Уничтоженные саженцы (на основании приказа)")
         ]
 
         for title_uz, prefix, title_ru in categories:
@@ -353,7 +353,7 @@ class Command(BaseCommand):
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.16",
+            "3.1.16",
             "Jami sarflangan",
             "Всего потрачено"
 
@@ -361,7 +361,7 @@ class Command(BaseCommand):
         generate_grouped_subtree(
             third_statement,
             title_column_2,
-            "1.1.17",
+            "3.1.17",
             "Shu davrga nisbatan yakuniy qoldiq",
             "Итоговый остаток за тот же период"
         )
@@ -435,7 +435,7 @@ class Command(BaseCommand):
                     "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
                     "ko‘chat soni, (dona)": "Количество ростков (шт)",
                     "summasi (ming so‘m)": "Сумма (тыс. сум)",
-                    "Beg`araz berildi:": "Бескорыстно",
+                    "Beg`araz berildi": "Бескорыстно",
                     "Nobud bo‘lgan ko‘chatlar (buyruq asosida)": "Уничтоженные ростки (на основании приказа)",
                     "Jami chiqim": "Общий расход",
                     "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
@@ -459,7 +459,7 @@ class Command(BaseCommand):
             statement=third_statement,
             title_uz="Nihol-ilovasi",
             title_ru="Приложение Саженцы",
-            ordering="1"
+            ordering="2"
         )
 
         title_column_nihol = StatementColumn.objects.create(
@@ -467,36 +467,36 @@ class Command(BaseCommand):
             parent=app_nihol_column,
             title_uz="O‘rmon xo‘jaligida ko‘chatxonaning tarbiya bo‘limida mavjud nihollar harakati to‘g‘risida",
             title_ru="О движении саженцев в питомнике лесного хозяйства",
-            ordering="1.1"
+            ordering="2.1"
         )
 
         data_structure = [
-            ("Nihollar", "1.1.1", [], True),
-            ("Yil boshiga qoldiq", "1.1.2", []),
-            ("Kirim", "1.1.3", [
-                ("Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)", "1.1.3.1"),
-                ("Sotib olindi", "1.1.3.2"),
-                ("Boshqa tashkilotlardan beg‘araz olindi", "1.1.3.3")
+            ("Nihollar", "2.1.1", [], True),
+            ("Yil boshiga qoldiq", "2.1.2", []),
+            ("Kirim", "2.1.3", [
+                ("Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)", "2.1.3.1"),
+                ("Sotib olindi", "2.1.3.2"),
+                ("Boshqa tashkilotlardan beg‘araz olindi", "2.1.3.3")
             ]),
-            ("Jami yetishtirildi (inventarizatsiya)", "1.1.4", []),
-            ("Chiqim", "1.1.5", [
-                ("O‘rmon barpo qilindi", "1.1.5.1"),
-                ("O‘rmon xatosiga ekildi", "1.1.5.2"),
-                ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
-                ("Tarbiya bo`limiga o`tkalizdi", "1.1.5.4"),
-                ("Sotildi", "1.1.5.5", [
-                    ("Tashkilot nomi", "1.1.5.5.1"),
-                    ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
-                    ("nihol soni", "1.1.5.5.3"),
-                    ("summasi", "1.1.5.5.4")
+            ("Jami yetishtirildi (inventarizatsiya)", "2.1.4", []),
+            ("Chiqim", "2.1.5", [
+                ("O‘rmon barpo qilindi", "2.1.5.1"),
+                ("O‘rmon xatosiga ekildi", "2.1.5.2"),
+                ("Ko‘kalamzorlashtirish tadbirlari uchun", "2.1.5.3"),
+                ("Tarbiya bo`limiga o`tkalizdi", "2.1.5.4"),
+                ("Sotildi", "2.1.5.5", [
+                    ("Tashkilot nomi", "2.1.5.5.1"),
+                    ("shartnoma raqami (№ sanasi)", "2.1.5.5.2"),
+                    ("nihol soni", "2.1.5.5.3"),
+                    ("summasi", "2.1.5.5.4")
                 ]),
-                ("Beg`araz sotildi", "1.1.5.6", [
-                    ("nihollari soni, (dona)", "1.1.5.6.1"),
-                    ("summasi (ming so‘m)", "1.1.5.6.2")
+                ("Beg`araz sotildi", "2.1.5.6", [
+                    ("nihollari soni, (dona)", "2.1.5.6.1"),
+                    ("summasi (ming so‘m)", "2.1.5.6.2")
                 ]),
-                ("Nobud bo‘lgan nihollar (buyruq asosida)", "1.1.5.7"),
-                ("Jami chiqim", "1.1.5.7"),
-                ("Shu davrga nisbatan yakuniy qoldiq", "1.1.5.9"),
+                ("Nobud bo‘lgan nihollar (buyruq asosida)", "2.1.5.7"),
+                ("Jami chiqim", "2.1.5.7"),
+                ("Shu davrga nisbatan yakuniy qoldiq", "2.1.5.9"),
             ])
         ]
 

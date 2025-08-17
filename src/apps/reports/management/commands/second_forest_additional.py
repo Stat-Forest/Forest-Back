@@ -55,161 +55,161 @@ class Command(BaseCommand):
                       "Источник финансирования (бюджет/хозрасчёт)", "1.1.7")
 
         # ========== Avto ilovasi ==========
-        avto_ilova = create_column(statement_mechanization, None, "Avto ilovasi", "Приложение: Автомашины", "1")
+        avto_ilova = create_column(statement_mechanization, None, "Avto ilovasi", "Приложение: Автомашины", "2")
 
         avto_title = create_column(
             statement_mechanization,
             avto_ilova,
             "Oʻrmon xoʻjaliklarida mavjud avtomashinalar (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
             "Информация о наличии автомобилей в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
-            "1.1"
+            "2.1"
         )
 
-        create_column(statement_mechanization, avto_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+        create_column(statement_mechanization, avto_title, "Tashkilot nomi", "Наименование организации", "2.1.1",
                       is_organization=True)
-        create_column(statement_mechanization, avto_title, "Avtomobil turi", "Тип автомобиля", "1.1.2")
-        create_column(statement_mechanization, avto_title, "Rusumi", "Марка", "1.1.3")
+        create_column(statement_mechanization, avto_title, "Avtomobil turi", "Тип автомобиля", "2.1.2")
+        create_column(statement_mechanization, avto_title, "Rusumi", "Марка", "2.1.3")
         create_column(statement_mechanization, avto_title, "Davlat raqami belgisi", "Государственный номерной знак",
-                      "1.1.4")
-        create_column(statement_mechanization, avto_title, "Ishlab chiqarilgan yili", "Год выпуска", "1.1.5")
+                      "2.1.4")
+        create_column(statement_mechanization, avto_title, "Ishlab chiqarilgan yili", "Год выпуска", "2.1.5")
 
         agregatlar = create_column(statement_mechanization, avto_title, "Agregatlar raqami", "Номера агрегатов",
-                                   "1.1.6")
-        create_column(statement_mechanization, agregatlar, "Zavod (inventar)", "Заводской (инвентарный)", "1.1.6.1")
-        create_column(statement_mechanization, agregatlar, "Dvigatel", "Двигатель", "1.1.6.2")
-        create_column(statement_mechanization, agregatlar, "Kuzov", "Кузов", "1.1.6.3")
-        create_column(statement_mechanization, agregatlar, "Shassi (rama)", "Шасси (рама)", "1.1.6.4")
+                                   "2.1.6")
+        create_column(statement_mechanization, agregatlar, "Zavod (inventar)", "Заводской (инвентарный)", "2.1.6.1")
+        create_column(statement_mechanization, agregatlar, "Dvigatel", "Двигатель", "2.1.6.2")
+        create_column(statement_mechanization, agregatlar, "Kuzov", "Кузов", "2.1.6.3")
+        create_column(statement_mechanization, agregatlar, "Shassi (rama)", "Шасси (рама)", "2.1.6.4")
 
-        yonilgilar = create_column(statement_mechanization, avto_title, "Yoqilgʻi turi", "Вид топлива", "1.1.7")
+        yonilgilar = create_column(statement_mechanization, avto_title, "Yoqilgʻi turi", "Вид топлива", "2.1.7")
         create_column(statement_mechanization, yonilgilar,
                       "(Benzin, dizel yoqilgʻisi, siqilgan tabiiy gaz yoki suyuqlashtirilgan gaz)",
-                      "(Бензин, дизельное топливо, сжатый природный газ или сжиженный газ)", "1.1.7.1")
+                      "(Бензин, дизельное топливо, сжатый природный газ или сжиженный газ)", "2.1.7.1")
 
         create_column(statement_mechanization, avto_title, "Texnik holati (soz/nosoz/yarqsiz)",
-                      "Техническое состояние (исправен/неисправен/непригоден)", "1.1.8")
+                      "Техническое состояние (исправен/неисправен/непригоден)", "2.1.8")
         create_column(statement_mechanization, avto_title, "Moliya manbai (xoʻjalik yoki byudjet)",
-                      "Источник финансирования (хозрасчёт или бюджет)", "1.1.9")
+                      "Источник финансирования (хозрасчёт или бюджет)", "2.1.9")
 
         asosiy_qiymat = create_column(statement_mechanization, avto_title,
                                       "Asosiy vositaning qiymati (ming soʻm hisobida)",
-                                      "Стоимость основного средства (в тыс. сум)", "1.1.10")
+                                      "Стоимость основного средства (в тыс. сум)", "2.1.10")
         create_column(statement_mechanization, asosiy_qiymat, "Boshlangʻich qiymati", "Первоначальная стоимость",
-                      "1.1.10.1")
-        create_column(statement_mechanization, asosiy_qiymat, "Eskirish qiymati", "Сумма износа", "1.1.10.2")
-        create_column(statement_mechanization, asosiy_qiymat, "Qoldiq qiymati", "Остаточная стоимость", "1.1.10.3")
+                      "2.1.10.1")
+        create_column(statement_mechanization, asosiy_qiymat, "Eskirish qiymati", "Сумма износа", "2.1.10.2")
+        create_column(statement_mechanization, asosiy_qiymat, "Qoldiq qiymati", "Остаточная стоимость", "2.1.10.3")
 
         # ========== K-X texnikasi ilovasi ==========
-        kx_ilova = create_column(statement_mechanization, None, "Q-X texnikasi ilovasi", "Приложение: С/Х техника", "1")
+        kx_ilova = create_column(statement_mechanization, None, "Q-X texnikasi ilovasi", "Приложение: С/Х техника", "3")
 
         kx_title = create_column(
             statement_mechanization,
             kx_ilova,
             "Oʻrmon xoʻjaliklarida mavjud oʻziyurar texnikalar (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
             "Информация о наличии самоходной техники в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
-            "1.1"
+            "3.1"
         )
 
-        create_column(statement_mechanization, kx_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+        create_column(statement_mechanization, kx_title, "Tashkilot nomi", "Наименование организации", "3.1.1",
                       is_organization=True)
-        create_column(statement_mechanization, kx_title, "Texnikaning nomi", "Наименование техники", "1.1.2")
-        create_column(statement_mechanization, kx_title, "Rusumi", "Марка", "1.1.3")
-        create_column(statement_mechanization, kx_title, "Davlat raqami belgisi", "Государственный номер", "1.1.4")
-        create_column(statement_mechanization, kx_title, "Ishlab chiqarilgan yili", "Год выпуска", "1.1.5")
+        create_column(statement_mechanization, kx_title, "Texnikaning nomi", "Наименование техники", "3.1.2")
+        create_column(statement_mechanization, kx_title, "Rusumi", "Марка", "3.1.3")
+        create_column(statement_mechanization, kx_title, "Davlat raqami belgisi", "Государственный номер", "3.1.4")
+        create_column(statement_mechanization, kx_title, "Ishlab chiqarilgan yili", "Год выпуска", "3.1.5")
 
         agregat_raqam = create_column(statement_mechanization, kx_title, "Agregatlar raqami", "Номера агрегатов",
-                                      "1.1.6")
-        create_column(statement_mechanization, agregat_raqam, "Zavod (inventar)", "Заводской (инвентарный)", "1.1.6.1")
-        create_column(statement_mechanization, agregat_raqam, "Dvigatel", "Двигатель", "1.1.6.2")
-        create_column(statement_mechanization, agregat_raqam, "Kuzov", "Кузов", "1.1.6.3")
-        create_column(statement_mechanization, agregat_raqam, "Shassi (rama)", "Шасси (рама)", "1.1.6.4")
+                                      "3.1.6")
+        create_column(statement_mechanization, agregat_raqam, "Zavod (inventar)", "Заводской (инвентарный)", "3.1.6.1")
+        create_column(statement_mechanization, agregat_raqam, "Dvigatel", "Двигатель", "3.1.6.2")
+        create_column(statement_mechanization, agregat_raqam, "Kuzov", "Кузов", "3.1.6.3")
+        create_column(statement_mechanization, agregat_raqam, "Shassi (rama)", "Шасси (рама)", "3.1.6.4")
 
-        yoqilgi_turi = create_column(statement_mechanization, kx_title, "Yoqilgʻi turi", "Вид топлива", "1.1.7")
+        yoqilgi_turi = create_column(statement_mechanization, kx_title, "Yoqilgʻi turi", "Вид топлива", "3.1.7")
         create_column(statement_mechanization, yoqilgi_turi, "(Benzin, dizel, metan, propan)",
-                      "(Бензин, дизель, метан, пропан)", "1.1.7.1")
+                      "(Бензин, дизель, метан, пропан)", "3.1.7.1")
 
         create_column(statement_mechanization, kx_title, "Texnik holati (soz/nosoz/yarqsiz)",
-                      "Техническое состояние (исправен/неисправен/непригоден)", "1.1.8")
+                      "Техническое состояние (исправен/неисправен/непригоден)", "3.1.8")
         create_column(statement_mechanization, kx_title, "Moliya manbai (xoʻjalik yoki byudjet)",
-                      "Источник финансирования (хозрасчёт или бюджет)", "1.1.9")
+                      "Источник финансирования (хозрасчёт или бюджет)", "3.1.9")
 
         asosiy_qiymat_kx = create_column(statement_mechanization, kx_title,
                                          "Asosiy vositaning qiymati (ming soʻm hisobida)",
-                                         "Стоимость основного средства (в тыс. сум)", "1.1.10")
+                                         "Стоимость основного средства (в тыс. сум)", "3.1.10")
         create_column(statement_mechanization, asosiy_qiymat_kx, "Boshlangʻich qiymati", "Первоначальная стоимость",
-                      "1.1.10.1")
-        create_column(statement_mechanization, asosiy_qiymat_kx, "Eskirish qiymati", "Сумма износа", "1.1.10.2")
-        create_column(statement_mechanization, asosiy_qiymat_kx, "Qoldiq qiymati", "Остаточная стоимость", "1.1.10.3")
+                      "3.1.10.1")
+        create_column(statement_mechanization, asosiy_qiymat_kx, "Eskirish qiymati", "Сумма износа", "3.1.10.2")
+        create_column(statement_mechanization, asosiy_qiymat_kx, "Qoldiq qiymati", "Остаточная стоимость", "3.1.10.3")
 
         # ========== Agregatlar ilovasi ==========
-        agregat_ilova = create_column(statement_mechanization, None, "Agregatlar ilovasi", "Приложение: Агрегаты", "1")
+        agregat_ilova = create_column(statement_mechanization, None, "Agregatlar ilovasi", "Приложение: Агрегаты", "4")
 
         agregat_title = create_column(
             statement_mechanization,
             agregat_ilova,
             "Oʻrmon xoʻjaliklarida mavjud qishloq xoʻjaligi agregatlari (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
             "Информация о наличии сельскохозяйственных агрегатов в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
-            "1.1"
+            "4.1"
         )
 
-        create_column(statement_mechanization, agregat_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+        create_column(statement_mechanization, agregat_title, "Tashkilot nomi", "Наименование организации", "4.1.1",
                       is_organization=True)
-        create_column(statement_mechanization, agregat_title, "Texnikaning nomi", "Наименование техники", "1.1.2")
-        create_column(statement_mechanization, agregat_title, "Rusumi", "Марка", "1.1.3")
-        create_column(statement_mechanization, agregat_title, "Ishlab chiqarilgan yili", "Год выпуска", "1.1.4")
+        create_column(statement_mechanization, agregat_title, "Texnikaning nomi", "Наименование техники", "4.1.2")
+        create_column(statement_mechanization, agregat_title, "Rusumi", "Марка", "4.1.3")
+        create_column(statement_mechanization, agregat_title, "Ishlab chiqarilgan yili", "Год выпуска", "4.1.4")
 
         agregat_numbers = create_column(statement_mechanization, agregat_title, "Agregatlar raqami", "Номера агрегатов",
-                                        "1.1.5")
+                                        "4.1.5")
         create_column(statement_mechanization, agregat_numbers, "Zavod (inventar)", "Заводской (инвентарный)",
-                      "1.1.5.1")
+                      "4.1.5.1")
         create_column(statement_mechanization, agregat_numbers, "Texnik hujjat raqami", "Номер технического документа",
-                      "1.1.5.2")
+                      "4.1.5.2")
 
         create_column(statement_mechanization, agregat_title, "Texnik holati (soz/nosoz/yarqsiz)",
-                      "Техническое состояние (исправен/неисправен/непригоден)", "1.1.6")
+                      "Техническое состояние (исправен/неисправен/непригоден)", "4.1.6")
         create_column(statement_mechanization, agregat_title, "Moliya manbai (xoʻjalik yoki byudjet)",
-                      "Источник финансирования (хозрасчёт или бюджет)", "1.1.7")
+                      "Источник финансирования (хозрасчёт или бюджет)", "4.1.7")
 
         asosiy_qiymat_agr = create_column(statement_mechanization, agregat_title,
                                           "Asosiy vositaning qiymati (ming soʻm hisobida)",
-                                          "Стоимость основного средства (в тыс. сум)", "1.1.8")
+                                          "Стоимость основного средства (в тыс. сум)", "4.1.8")
         create_column(statement_mechanization, asosiy_qiymat_agr, "Boshlangʻich qiymati", "Первоначальная стоимость",
-                      "1.1.8.1")
-        create_column(statement_mechanization, asosiy_qiymat_agr, "Eskirish qiymati", "Сумма износа", "1.1.8.2")
-        create_column(statement_mechanization, asosiy_qiymat_agr, "Qoldiq qiymati", "Остаточная стоимость", "1.1.8.3")
+                      "4.1.8.1")
+        create_column(statement_mechanization, asosiy_qiymat_agr, "Eskirish qiymati", "Сумма износа", "4.1.8.2")
+        create_column(statement_mechanization, asosiy_qiymat_agr, "Qoldiq qiymati", "Остаточная стоимость", "4.1.8.3")
 
         # ========== Yengil avto ilovasi ==========
         yengil_avto_ilova = create_column(statement_mechanization, None, "Yengil avto ilovasi",
-                                          "Приложение: Лёгковой автотранспорт", "1")
+                                          "Приложение: Лёгковой автотранспорт", "5")
 
         yengil_avto_title = create_column(
             statement_mechanization,
             yengil_avto_ilova,
             "Oʻrmon xoʻjaliklarida mavjud yengil xizmat avtomashinalari (01.01.2025 holatiga) boʻyicha maʼlumot",
             "Информация о наличии служебных легковых автомобилей в лесных хозяйствах (по состоянию на 01.01.2025)",
-            "1.1"
+            "5.1"
         )
 
-        create_column(statement_mechanization, yengil_avto_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+        create_column(statement_mechanization, yengil_avto_title, "Tashkilot nomi", "Наименование организации", "5.1.1",
                       is_organization=True)
         create_column(statement_mechanization, yengil_avto_title, "Avtotransport rusumi", "Марка автотранспорта",
-                      "1.1.2")
-        create_column(statement_mechanization, yengil_avto_title, "Ishlab chiqarilgan yili", "Год выпуска", "1.1.3")
-        create_column(statement_mechanization, yengil_avto_title, "Davlat raqami", "Государственный номер", "1.1.4")
+                      "5.1.2")
+        create_column(statement_mechanization, yengil_avto_title, "Ishlab chiqarilgan yili", "Год выпуска", "5.1.3")
+        create_column(statement_mechanization, yengil_avto_title, "Davlat raqami", "Государственный номер", "5.1.4")
 
         balans = create_column(statement_mechanization, yengil_avto_title, "Balans qiymati (ming soʻm)",
-                               "Балансовая стоимость (в тыс. сум)", "1.1.5")
-        create_column(statement_mechanization, balans, "Boshlangʻich qiymati", "Первоначальная стоимость", "1.1.5.1")
-        create_column(statement_mechanization, balans, "Qoldiq qiymati", "Остаточная стоимость", "1.1.5.2")
+                               "Балансовая стоимость (в тыс. сум)", "5.1.5")
+        create_column(statement_mechanization, balans, "Boshlangʻich qiymati", "Первоначальная стоимость", "5.1.5.1")
+        create_column(statement_mechanization, balans, "Qoldiq qiymati", "Остаточная стоимость", "5.1.5.2")
 
         create_column(statement_mechanization, yengil_avto_title, "Avtotransport holati (soz yoki nosoz)",
-                      "Техническое состояние автотранспорта (исправен или неисправен)", "1.1.6")
-        create_column(statement_mechanization, yengil_avto_title, "Bosib oʻtgan masofa (km)", "Пробег (км)", "1.1.7")
+                      "Техническое состояние автотранспорта (исправен или неисправен)", "5.1.6")
+        create_column(statement_mechanization, yengil_avto_title, "Bosib oʻtgan masofa (km)", "Пробег (км)", "5.1.7")
         create_column(statement_mechanization, yengil_avto_title, "Biriktirilgan boʻlim yoki xodim (F.I.O.)",
-                      "Прикреплённое подразделение или сотрудник (Ф.И.О.)", "1.1.8")
+                      "Прикреплённое подразделение или сотрудник (Ф.И.О.)", "5.1.8")
 
         # ========== YOQILGʻI LIMIT ilovasi ==========
         yoqilgi_limit_ilova = create_column(
-            statement_mechanization, None, "Yoqilgʻi limit ilovasi", "Приложение: Лимит топлива", "1"
+            statement_mechanization, None, "Yoqilgʻi limit ilovasi", "Приложение: Лимит топлива", "6"
         )
 
         yoqilgi_limit_title = create_column(
@@ -217,60 +217,60 @@ class Command(BaseCommand):
             yoqilgi_limit_ilova,
             "Oʻrmon xoʻjaliklarida 2025 yilda yoqilgʻi-moylash materiallari sarfi toʻgʻrisida maʼlumot",
             "Информация о расходе горюче-смазочных материалов в лесных хозяйствах в 2025 году",
-            "1.1"
+            "6.1"
         )
 
         create_column(statement_mechanization, yoqilgi_limit_title, "Tashkilot nomi", "Наименование организации",
-                      "1.1.1", is_organization=True)
-        create_column(statement_mechanization, yoqilgi_limit_title, "Hisobot davri", "Отчетный период", "1.1.2")
+                      "6.1.1", is_organization=True)
+        create_column(statement_mechanization, yoqilgi_limit_title, "Hisobot davri", "Отчетный период", "6.1.2")
 
         smeta = create_column(
             statement_mechanization,
             yoqilgi_limit_title,
-            "Smeta boʻyicha tasdiqlangan (ming soʻm)", "Утверждено по смете (в тыс. сум)", "1.1.3"
+            "Smeta boʻyicha tasdiqlangan (ming soʻm)", "Утверждено по смете (в тыс. сум)", "6.1.3"
         )
-        create_column(statement_mechanization, smeta, "Byudjet hisobidan", "За счёт бюджета", "1.1.3.1")
-        create_column(statement_mechanization, smeta, "Xoʻjalik hisobidan", "За счёт хозрасчёта", "1.1.3.2")
+        create_column(statement_mechanization, smeta, "Byudjet hisobidan", "За счёт бюджета", "6.1.3.1")
+        create_column(statement_mechanization, smeta, "Xoʻjalik hisobidan", "За счёт хозрасчёта", "6.1.3.2")
 
         byudjet = create_column(statement_mechanization, yoqilgi_limit_title, "Byudjet hisobidan", "За счёт бюджета",
-                                "1.1.4")
-        benzin = create_column(statement_mechanization, byudjet, "Benzin", "Бензин", "1.1.4.1")
-        create_column(statement_mechanization, benzin, "Tonna", "Тонн", "1.1.4.1.1")
-        create_column(statement_mechanization, benzin, "Summa", "Сумма", "1.1.4.1.2")
+                                "6.1.4")
+        benzin = create_column(statement_mechanization, byudjet, "Benzin", "Бензин", "6.1.4.1")
+        create_column(statement_mechanization, benzin, "Tonna", "Тонн", "6.1.4.1.1")
+        create_column(statement_mechanization, benzin, "Summa", "Сумма", "6.1.4.1.2")
 
-        dizel = create_column(statement_mechanization, byudjet, "Dizel", "Дизель", "1.1.4.2")
-        create_column(statement_mechanization, dizel, "Tonna", "Тонн", "1.1.4.2.1")
-        create_column(statement_mechanization, dizel, "Summa", "Сумма", "1.1.4.2.2")
+        dizel = create_column(statement_mechanization, byudjet, "Dizel", "Дизель", "6.1.4.2")
+        create_column(statement_mechanization, dizel, "Tonna", "Тонн", "6.1.4.2.1")
+        create_column(statement_mechanization, dizel, "Summa", "Сумма", "6.1.4.2.2")
 
-        metan = create_column(statement_mechanization, byudjet, "Metan gaz", "Метан газ", "1.1.4.3")
-        create_column(statement_mechanization, metan, "m³", "м³", "1.1.4.3.1")
-        create_column(statement_mechanization, metan, "Summa", "Сумма", "1.1.4.3.2")
+        metan = create_column(statement_mechanization, byudjet, "Metan gaz", "Метан газ", "6.1.4.3")
+        create_column(statement_mechanization, metan, "m³", "м³", "6.1.4.3.1")
+        create_column(statement_mechanization, metan, "Summa", "Сумма", "6.1.4.3.2")
 
-        propan = create_column(statement_mechanization, byudjet, "Propan gaz", "Пропан газ", "1.1.4.4")
-        create_column(statement_mechanization, propan, "m³", "м³", "1.1.4.4.1")
-        create_column(statement_mechanization, propan, "Summa", "Сумма", "1.1.4.4.2")
+        propan = create_column(statement_mechanization, byudjet, "Propan gaz", "Пропан газ", "6.1.4.4")
+        create_column(statement_mechanization, propan, "m³", "м³", "6.1.4.4.1")
+        create_column(statement_mechanization, propan, "Summa", "Сумма", "6.1.4.4.2")
 
         xojalik = create_column(statement_mechanization, yoqilgi_limit_title, "Xoʻjalik hisobidan",
-                                "За счёт хозрасчёта", "1.1.5")
-        benzin2 = create_column(statement_mechanization, xojalik, "Benzin", "Бензин", "1.1.5.1")
-        create_column(statement_mechanization, benzin2, "Tonna", "Тонн", "1.1.5.1.1")
-        create_column(statement_mechanization, benzin2, "Summa", "Сумма", "1.1.5.1.2")
+                                "За счёт хозрасчёта", "6.1.5")
+        benzin2 = create_column(statement_mechanization, xojalik, "Benzin", "Бензин", "6.1.5.1")
+        create_column(statement_mechanization, benzin2, "Tonna", "Тонн", "6.1.5.1.1")
+        create_column(statement_mechanization, benzin2, "Summa", "Сумма", "6.1.5.1.2")
 
-        dizel2 = create_column(statement_mechanization, xojalik, "Dizel", "Дизель", "1.1.5.2")
-        create_column(statement_mechanization, dizel2, "Tonna", "Тонн", "1.1.5.2.1")
-        create_column(statement_mechanization, dizel2, "Summa", "Сумма", "1.1.5.2.2")
+        dizel2 = create_column(statement_mechanization, xojalik, "Dizel", "Дизель", "6.1.5.2")
+        create_column(statement_mechanization, dizel2, "Tonna", "Тонн", "6.1.5.2.1")
+        create_column(statement_mechanization, dizel2, "Summa", "Сумма", "6.1.5.2.2")
 
-        metan2 = create_column(statement_mechanization, xojalik, "Metan gaz", "Метан газ", "1.1.5.3")
-        create_column(statement_mechanization, metan2, "m³", "м³", "1.1.5.3.1")
-        create_column(statement_mechanization, metan2, "Summa", "Сумма", "1.1.5.3.2")
+        metan2 = create_column(statement_mechanization, xojalik, "Metan gaz", "Метан газ", "6.1.5.3")
+        create_column(statement_mechanization, metan2, "m³", "м³", "6.1.5.3.1")
+        create_column(statement_mechanization, metan2, "Summa", "Сумма", "6.1.5.3.2")
 
-        propan2 = create_column(statement_mechanization, xojalik, "Propan gaz", "Пропан газ", "1.1.5.4")
-        create_column(statement_mechanization, propan2, "m³", "м³", "1.1.5.4.1")
-        create_column(statement_mechanization, propan2, "Summa", "Сумма", "1.1.5.4.2")
+        propan2 = create_column(statement_mechanization, xojalik, "Propan gaz", "Пропан газ", "6.1.5.4")
+        create_column(statement_mechanization, propan2, "m³", "м³", "6.1.5.4.1")
+        create_column(statement_mechanization, propan2, "Summa", "Сумма", "6.1.5.4.2")
 
         # ========== Metallolom ilovasi ==========
         metallolom_ilova = create_column(
-            statement_mechanization, None, "Metallolom ilovasi", "Приложение: Металлолом", "1"
+            statement_mechanization, None, "Metallolom ilovasi", "Приложение: Металлолом", "7"
         )
 
         metallolom_title = create_column(
@@ -278,10 +278,10 @@ class Command(BaseCommand):
             metallolom_ilova,
             "2025 yilda metallolom topshirilishi va realizatsiya qilinishi toʻgʻrisida maʼlumot",
             "Информация о сдаче и реализации металлолома в 2025 году",
-            "1.1"
+            "7.1"
         )
 
-        create_column(statement_mechanization, metallolom_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
+        create_column(statement_mechanization, metallolom_title, "Tashkilot nomi", "Наименование организации", "7.1.1",
                       is_organization=True)
 
         create_column(
@@ -289,16 +289,16 @@ class Command(BaseCommand):
             metallolom_title,
             "Yillik reja, tonna",
             "Годовой план, тонн",
-            "1.1.2",
+            "7.1.2",
             is_user_input=False
         )
-        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "1.1.2",
+        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "7.1.2",
                       is_user_input=False)
-        create_column(statement_mechanization, metallolom_title, "%", "%", "1.1.2",
+        create_column(statement_mechanization, metallolom_title, "%", "%", "7.1.2",
                       is_user_input=False)
 
         for i in range(1, 5):
-            chorak_ordering = f"1.1.{i + 1}"
+            chorak_ordering = f"7.1.{i + 1}"
             chorak = create_column(
                 statement_mechanization,
                 metallolom_title,
