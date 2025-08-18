@@ -12,7 +12,7 @@ class ReportAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('organizations', 'statement', 'deadline', 'status', 'cancel_reason')
+            'fields': ('organization', 'statement', 'deadline', 'status', 'cancel_reason')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -24,7 +24,7 @@ class ReportAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
+        return True
 
     def has_delete_permission(self, request, obj=None):
         return False
