@@ -66,7 +66,6 @@ class Command(BaseCommand):
             "Boshoqli don ilovasi",
             "Приложение: Зерновые культуры",
             "1",
-            is_user_input=False
         )
 
         title_forest_app = create_column(
