@@ -202,7 +202,7 @@ class Command(BaseCommand):
         jami_total = create_column(statement_husbandry, jami_chorva, "Jami bosh soni", "Общее количество голов",
                                    "3.1.14.1")
         create_column(statement_husbandry, jami_total, "Reja", "План", "3.1.14.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK, is_user_input=False)
+                      status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, jami_total, "Amalda", "Факт", "3.1.14.1.2", is_user_input=False)
         sovliq_total = create_column(statement_husbandry, jami_chorva, "Shundan: sovliqlar", "Из них: овцематки",
                                      "3.1.14.2")
@@ -385,7 +385,8 @@ class Command(BaseCommand):
                                   f"Общее количество созданных пчелиных семей по состоянию на {date_str}", "5.1.8")
         create_column(statement_husbandry, total_bee, "Reja", "План", "5.1.8.1",
                       status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, total_bee, "Amalda", "Факт", "5.1.8.2")
+        create_column(statement_husbandry, total_bee, "Amalda", "Факт", "5.1.8.2",
+                      is_user_input=False)
 
         # ========== Baliqchilik ilovasi ==========
         fish_app = create_column(statement_husbandry, None, "Baliqchilik ilovasi", "Приложение: Рыбоводство", "6")
