@@ -290,7 +290,6 @@ class Command(BaseCommand):
             "Yillik reja, tonna",
             "Годовой план, тонн",
             "7.1.2",
-            is_user_input=False
         )
         create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "7.1.2",
                       is_user_input=False)
@@ -306,8 +305,7 @@ class Command(BaseCommand):
                 f"{i}-й квартал",
                 chorak_ordering
             )
-            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1",
-                          is_user_input=False)
+            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1")
             create_column(statement_mechanization, chorak, "Amalda", "Факт", f"{chorak_ordering}.2")
             create_column(statement_mechanization, chorak, "%", "%", f"{chorak_ordering}.3",
                           is_user_input=False)

@@ -8,14 +8,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         # ========== Boshoqli Don ilovasi ==========
-        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False):
+        def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, is_user_input=True):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
                 title_uz=title_uz,
                 title_ru=title_ru,
                 ordering=ordering,
-                is_organization=is_organization
+                is_organization=is_organization,
+                is_user_input=is_user_input
             )
 
         def create_triplet(statement, parent, base_ordering, is_user_input=True):
@@ -27,7 +28,7 @@ class Command(BaseCommand):
                     title_uz,
                     title_ru,
                     f"{base_ordering}.{i}",
-                    is_user_input
+                    is_user_input=is_user_input
                 )
 
         def create_village(statement, parent, base_ordering, is_user_input=True):
@@ -38,7 +39,14 @@ class Command(BaseCommand):
                 ("tn", "т")
             ]
             for i, (title_uz, title_ru) in enumerate(sub_titles, start=1):
-                create_column(statement, parent, title_uz, title_ru, f"{base_ordering}.{i}", is_user_input)
+                create_column(
+                    statement,
+                    parent,
+                    title_uz,
+                    title_ru,
+                    f"{base_ordering}.{i}",
+                    is_user_input=is_user_input
+                )
 
         forest_add = Statement.objects.create(
             name_uz="O'rmonlardan qo'shimcha foydalanish",
@@ -57,7 +65,7 @@ class Command(BaseCommand):
             None,
             "Boshoqli don ilovasi",
             "Приложение: Зерновые культуры",
-            "1"
+            "1",
         )
 
         title_forest_app = create_column(
@@ -116,6 +124,7 @@ class Command(BaseCommand):
             crop = create_column(statement_forest_add, shu_jumladan, title_uz, title_ru, ordering)
             create_triplet(statement_forest_add, crop, ordering)
 
+        # ======= Sabzavotlar ilovasi ========
         second_forest_app = create_column(
             statement_forest_add,
             None,
@@ -146,7 +155,8 @@ class Command(BaseCommand):
             second_title_forest,
             "Sabzavot",
             "Овощи",
-            "2.1.2"
+            "2.1.2",
+            is_user_input=False
         )
         create_triplet(statement_forest_add, sabzavot, "2.1.2", is_user_input=False)
 
@@ -208,7 +218,8 @@ class Command(BaseCommand):
             third_title_forest,
             "Poliz",
             "Бахча",
-            "3.1.2"
+            "3.1.2",
+            is_user_input=False
         )
         create_triplet(statement_forest_add, poliz, "3.1.2", is_user_input=False)
 
@@ -261,7 +272,8 @@ class Command(BaseCommand):
             fourth_title_forest,
             "Moyli ekinlar",
             "Масличные культуры",
-            "4.1.2"
+            "4.1.2",
+            is_user_input=False
         )
         create_triplet(statement_forest_add, moyli, "4.1.2", is_user_input=False)
 
@@ -316,7 +328,8 @@ class Command(BaseCommand):
             fifth_title_forest,
             "Dukkakli ekinlar",
             "Бобовые культуры",
-            "5.1.2"
+            "5.1.2",
+            is_user_input=False
         )
         create_triplet(statement_forest_add, dukkakli, "5.1.2", is_user_input=False)
 
@@ -370,7 +383,8 @@ class Command(BaseCommand):
             sixth_title_forest,
             "Ozuqa ekinlari",
             "Кормовые культуры",
-            "6.1.2"
+            "6.1.2",
+            is_user_input=False
         )
         create_triplet(statement_forest_add, ozuqa, "6.1.2", is_user_input=False)
 
@@ -441,7 +455,8 @@ class Command(BaseCommand):
             seventh_title_forest,
             "Jami bog' va tokzorlar",
             "Общие сады и виноградники",
-            "7.1.2"
+            "7.1.2",
+            is_user_input=False
         )
         create_village(statement_forest_add, jami_bog_tok, "7.1.2", is_user_input=False)
 
@@ -514,7 +529,8 @@ class Command(BaseCommand):
             eighth_title_forest,
             "Jami yong'oqmevalilar",
             "Общие орехоплодные культуры",
-            "8.1.2"
+            "8.1.2",
+            is_user_input=False
         )
         create_village(statement_forest_add, jami_yongoq, "8.1.2", is_user_input=False)
 

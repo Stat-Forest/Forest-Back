@@ -94,12 +94,13 @@ class Command(BaseCommand):
                 parent=title_column,
                 title_uz=title_uz,
                 title_ru=title_ru,
-                ordering=parent_ordering
+                ordering=parent_ordering,
+                is_user_input=False
             )
 
             if index == 2:
-                children = ["Reja", "Amalda", "%"]
-                for i, child in enumerate(children, start=1):
+                # YILLIK_TOTAL uchun 3ta ustun: Reja, Amalda, %
+                for i, child in enumerate(["Reja", "Amalda", "%"], start=1):
                     status_plan = None
                     if child == "Reja":
                         status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
@@ -110,9 +111,8 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[child],
                         ordering=f"{parent_ordering}.{i}",
                         status_plan=status_plan,
-                        is_user_input=False
+                        is_user_input=(child in ["Reja", "Amalda"])
                     )
-
             else:
                 for i, child in enumerate(["Reja", "Amalda"], start=1):
                     status_plan = None
@@ -125,7 +125,7 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт"}[child],
                         ordering=f"{parent_ordering}.{i}",
                         status_plan=status_plan,
-                        is_user_input=(child == "Amalda")
+                        is_user_input=True
                     )
 
         # ================================================================ Закрытый корень крупногабаритный
