@@ -134,7 +134,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
             if reports_map:
                 any_report = list(reports_map.values())[0]
-                # aggregate_general_report(any_report.statement, deadline)
+                aggregate_general_report(any_report.statement, deadline)
 
                 for report in reports_map.values():
                     statement_name = report.statement.name_uz
