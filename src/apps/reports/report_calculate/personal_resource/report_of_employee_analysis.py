@@ -1,7 +1,7 @@
 from decimal import Decimal
 from collections import defaultdict
 from apps.reports.models import ReportItem, ReportItemInner, StatementColumn
-from apps.utils.report_math import sum_values
+from apps.utils.report_math import sum_values_analysis
 
 
 def upsert_calculated_item(report, column, value):
@@ -36,7 +36,7 @@ def sum_from_orderings(report, report_items_by_column_id, columns, parent_orderi
     for ordering in child_orderings:
         col = get_column_by_ordering(columns, ordering)
         if col:
-            total += Decimal(sum_values(report_items_by_column_id, col))
+            total += Decimal(sum_values_analysis(report_items_by_column_id, col))
 
     upsert_calculated_item(report, parent_col, total)
 
@@ -96,7 +96,7 @@ def calculate_employee_analysis(report):
         total = Decimal(0)
         for col in [col_oliy_jami, col_orta_maxsus_jami, col_orta]:
             if col:
-                total += Decimal(sum_values(report_items_by_column_id, col))
+                total += Decimal(sum_values_analysis(report_items_by_column_id, col))
         upsert_calculated_item(report, col_jami_target, total)
 
     # 🔢 5. Yillik bo‘yicha
@@ -111,5 +111,5 @@ def calculate_employee_analysis(report):
         for ordering in year_orderings:
             col = get_column_by_ordering(columns, ordering)
             if col:
-                total += Decimal(sum_values(report_items_by_column_id, col))
+                total += Decimal(sum_values_analysis(report_items_by_column_id, col))
         upsert_calculated_item(report, col_jami_years, total)
