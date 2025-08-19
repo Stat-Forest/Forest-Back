@@ -68,6 +68,7 @@ class ReportListAPIView(CustomListAPIView):
         context["plant_map"] = {str(p.id): p.name for p in plant_qs}
         return context
 
+
 @extend_schema(tags=["Reports"])
 class ReportCreateAPIView(CustomCreateAPIView):
     queryset = Report.objects.all()
