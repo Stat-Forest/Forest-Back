@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal
 
 from apps.utils.services.is_that_number import is_number
 
@@ -88,6 +89,7 @@ def aggregate_national_report(statement, deadline, organization, region):
 
 def aggregate_general_report(statement, deadline):
     from apps.reports.models import Report, ReportItem, ReportItemInner
+
     reports = Report.objects.filter(
         statement=statement,
         deadline=deadline,
@@ -97,21 +99,16 @@ def aggregate_general_report(statement, deadline):
     if not reports.exists():
         return None
 
-    regions = set()
-    republics = set()
-    for r in reports:
-        if r.organization:
-            regions.add(r.organization.region)
-            if r.organization.republic:
-                republics.add(r.organization.republic)
+    regions = {r.organization.region for r in reports if r.organization and r.organization.region}
+    republics = {r.organization.republic for r in reports if r.organization and r.organization.republic}
 
     target_region = regions.pop() if len(regions) == 1 else None
-
     target_republic = republics.pop() if len(republics) == 1 else None
 
-    all_items = ReportItem.objects.filter(report__in=reports).prefetch_related("inners")
+    all_items = ReportItem.objects.filter(report__in=reports).select_related("statement_column").prefetch_related("inners")
 
-    general_report, created = Report.objects.get_or_create(
+    # Jami reportni topamiz yoki yaratamiz
+    general_report, _ = Report.objects.get_or_create(
         organization=None,
         statement=statement,
         deadline=deadline,
@@ -123,6 +120,7 @@ def aggregate_general_report(statement, deadline):
         }
     )
 
+    # Region yoki Republic yangilanishi kerak bo‘lsa
     changed = False
     if general_report.region != target_region:
         general_report.region = target_region
@@ -133,46 +131,51 @@ def aggregate_general_report(statement, deadline):
     if changed:
         general_report.save(update_fields=["region", "republic"])
 
+    # Avvalgi itemlarni o‘chiramiz
     ReportItem.objects.filter(report=general_report).delete()
 
-    from collections import defaultdict
-    grouped = defaultdict(list)
+    # ✅ Column bo‘yicha barcha `value`larni yig‘amiz
+    column_values_map = defaultdict(list)
     for item in all_items:
         for inner in item.inners.all():
-            grouped[item.statement_column_id].append(inner.value)
+            column_values_map[item.statement_column_id].append(inner.value)
 
+    # Yangi ReportItem va ReportItemInner larni yaratamiz
     new_items = []
     new_inners = []
 
-    for column_id, values in grouped.items():
-        first_value = values[0] if values else None
-
+    for column_id, values in column_values_map.items():
         report_item = ReportItem(
             report=general_report,
             statement_column_id=column_id
         )
         new_items.append(report_item)
 
-        if is_number(first_value):
-            total = sum(float(v) for v in values if is_number(v))
-            new_inners.append(
-                ReportItemInner(report_item=report_item, value=str(total))
-            )
+        # 🔢 Agar son bo‘lsa — jamlab qo‘shamiz
+        numeric_values = [Decimal(v) for v in values if is_number(v)]
+        if numeric_values:
+            summed_value = str(sum(numeric_values))
+            new_inners.append(ReportItemInner(
+                report_item=report_item,
+                value=summed_value
+            ))
         else:
-            for v in values:
-                new_inners.append(
-                    ReportItemInner(report_item=report_item, value=v)
-                )
+            # Agar son emas — 1-marta kelganini saqlaymiz (masalan: "Tashkilot nomi")
+            new_inners.append(ReportItemInner(
+                report_item=report_item,
+                value=values[0] if values else ""
+            ))
 
-    ReportItem.objects.bulk_create(new_items)
-    ReportItemInner.objects.bulk_create(new_inners)
+    # Bulk yaratish
+    ReportItem.objects.bulk_create(new_items, batch_size=1000)
+    ReportItemInner.objects.bulk_create(new_inners, batch_size=2000)
 
+    # Umumrespublika jamini hisoblash
     if Report.objects.filter(
         statement=statement,
         deadline=deadline,
         is_general=True,
         status=Report.StatusChoices.ACCEPTED
     ).exists():
-        aggregate_national_report(statement, deadline)
-
+        pass # last TODO: umumiyrespublika logikasi
     return general_report
