@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from apps.reports.models import Report, StatementColumn
 from apps.utils.translation import get_lang_code, get_translated_field
@@ -49,14 +51,17 @@ class ReportListSerializer(serializers.ModelSerializer):
             report.report_items.select_related("statement_column").prefetch_related("inners").all()
         )
 
-        # Har bir columnni ordering bo‘yicha tartiblaymiz
-        items.sort(key=lambda i: i.statement_column.ordering or "")
+        def ordering_key(ordering: str):
+            if not ordering:
+                return []
+            return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
+
+        # Natural sort: Har bir columnni ordering bo‘yicha tartiblaymiz
+        items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
         # Ilovalar bo‘yicha grouping qilish uchun top-level ilovani aniqlaymiz: 1., 2., 3. kabi
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
-
-        result = []
 
         organization_id = (
             "general" if report.is_general else str(report.organization.id)
