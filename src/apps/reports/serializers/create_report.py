@@ -2,10 +2,13 @@ import uuid
 
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
+from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
+from apps.reports.services import aggregate_individual_report
 from apps.reports.services.general_report import aggregate_general_report
 from apps.utils.translation import get_lang_code, get_translated_field
 
@@ -34,6 +37,26 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             "report_items"
         ]
 
+    def validate(self, attrs):
+        organization = attrs.get("organization")
+        statement = attrs.get("statement")
+        deadline = attrs.get("deadline")
+        is_individual_general = attrs.get("is_individual_general", False)
+
+        if not is_individual_general:
+            exists = Report.objects.filter(
+                organization=organization,
+                statement=statement,
+                deadline=deadline,
+                is_individual_general=False
+            ).exists()
+
+            if exists:
+                raise ValidationError(
+                    "Bu tashkilot uchun bu hisobot turi va deadline bo‘yicha allaqachon report mavjud."
+                )
+        return attrs
+
     def create(self, validated_data):
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
@@ -54,30 +77,39 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             for item in items_data:
                 col_id = item["statement_column"]
                 column = columns_map.get(col_id)
+
                 if not column:
                     raise serializers.ValidationError({"detail": f"Invalid column {col_id}"})
 
                 inners_data = item.get("inners", [])
 
+                # === ORGANIZATION USTUNI ===
                 if column.is_organization:
                     if not inners_data or "value" not in inners_data[0]:
                         raise serializers.ValidationError(
                             {"detail": f"Organization inners required for column {col_id}"}
                         )
                     current_org_id = inners_data[0]["value"]
+                    org_instance = Organization.objects.get(id=current_org_id)
 
                     report_key = (current_org_id, str(column.statement.id))
-                    if report_key not in reports_map:
-                        org_instance = Organization.objects.get(id=current_org_id)
-                        report, _ = Report.objects.get_or_create(
+
+                    report = Report.objects.filter(
+                        organization=org_instance,
+                        statement=column.statement,
+                        deadline=deadline,
+                        is_individual_general=False
+                    ).first()
+
+                    if not report:
+                        report = Report.objects.create(
                             organization=org_instance,
                             statement=column.statement,
                             deadline=deadline,
-                            defaults={"status": Report.StatusChoices.SAVED}
+                            status=Report.StatusChoices.SAVED
                         )
-                        reports_map[report_key] = report
 
-                    report = reports_map[report_key]
+                    reports_map[report_key] = report
 
                     report_item_id = uuid.uuid4()
                     report_items_buffer.append(
@@ -88,19 +120,36 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     )
                     for inner in inners_data:
+                        inner_value = inner["value"]
+
+                        lang = get_lang_code(self.context)
+                        column_title = getattr(column, f"title_{lang}", "")
+
+                        if column_title.lower() in ["tashkilot nomi", "название организации"]:
+                            if report.is_individual_general or report.is_general:
+                                inner_value = get_translated_field(report.organization, "name", lang)
+                                suffix = " – Tashkilot Jami" if report.is_individual_general else " – Viloyat Jami"
+                                inner_value = f"{inner_value}{suffix}"
+                            else:
+                                inner_value = get_translated_field(report.organization, "name", lang)
+
                         report_inners_buffer.append(
                             ReportItemInner(
                                 report_item_id=report_item_id,
-                                value=inner["value"]
+                                value=inner_value
                             )
                         )
                     continue
 
+                # === ODDIY COLUMN (is_organization=False) ===
                 if not current_org_id:
-                    raise serializers.ValidationError({"detail": "Organization column required before data columns"})
+                    raise serializers.ValidationError({
+                        "detail": "Organization column required before data columns"
+                    })
 
                 child_statement = column.statement
                 report_key = (current_org_id, str(child_statement.id))
+
                 if report_key not in reports_map:
                     org_instance = Organization.objects.get(id=current_org_id)
                     report, _ = Report.objects.get_or_create(
@@ -129,18 +178,28 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     )
 
+            # === YIG‘ILGAN MA’LUMOTLARNI SAQLASH ===
             ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
             ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
 
+            # === HISOBLASH VA JAMI REPORTLAR ===
             if reports_map:
                 any_report = list(reports_map.values())[0]
-                aggregate_general_report(any_report.statement, deadline)
+                general_report = aggregate_general_report(any_report.statement, deadline)
 
                 for report in reports_map.values():
                     statement_name = report.statement.name_uz
                     calculate_func = ALL_CALCULATORS.get(statement_name)
                     if calculate_func:
                         calculate_func(report)
+
+                    aggregate_individual_report(report)
+
+                if general_report:
+                    statement_name = general_report.statement.name_uz
+                    calculate_func = ALL_CALCULATORS.get(statement_name)
+                    if calculate_func:
+                        calculate_func(general_report)
 
             return list(reports_map.values())
 

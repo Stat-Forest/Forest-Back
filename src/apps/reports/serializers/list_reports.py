@@ -63,14 +63,16 @@ class ReportListSerializer(serializers.ModelSerializer):
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
 
-        organization_id = (
-            "general" if report.is_general else str(report.organization.id)
-        )
-        organization_name = (
-            "Barcha tashkilotlar bo‘yicha umumiy"
-            if report.is_general
-            else get_translated_field(report.organization, "name", lang)
-        )
+        # ✅ ORGANIZATION NAME – FAQAT SHU QISM O‘ZGARGAN
+        if report.is_general:
+            organization_id = "general"
+            organization_name = "Viloyat darajasidagi Jami"
+        elif getattr(report, "is_individual_general", False):  # Agar flag mavjud bo‘lsa
+            organization_id = "individual"
+            organization_name = f"{get_translated_field(report.organization, 'name', lang)} – Tashkilot Jami"
+        else:
+            organization_id = str(report.organization.id)
+            organization_name = get_translated_field(report.organization, "name", lang)
 
         # Top-level ilovalar bo‘yicha guruhlash (1-ilova, 2-ilova, 3-ilova...)
         grouped_by_ilova = {}
@@ -87,12 +89,16 @@ class ReportListSerializer(serializers.ModelSerializer):
                 inner_values = []
 
                 for inner in item.inners.all():
-                    # Agar organization ustuni bo‘lsa, tashkilot nomini value sifatida chiqaramiz
                     if column.is_organization:
-                        val = (
-                            "Jami" if report.is_general
-                            else get_translated_field(report.organization, "name", lang)
-                        )
+                        val = inner.value  # default
+                        column_title = getattr(column, f"title_{lang}", "")
+
+                        if column_title.lower() in ["tashkilot nomi", "название организации"]:
+                            if report.is_individual_general or report.is_general:
+                                val = get_translated_field(report.organization, "name", lang)
+                                suffix = " – Tashkilot Jami" if report.is_individual_general else " – Viloyat Jami"
+                                val = f"{val}{suffix}"
+
                         inner_values.append({"id": str(inner.id), "value": val})
                     else:
                         inner_values.append({"id": str(inner.id), "value": inner.value})
@@ -103,78 +109,16 @@ class ReportListSerializer(serializers.ModelSerializer):
                     "inners": inner_values
                 })
 
-        return [{
+        data = [{
             "organization_id": organization_id,
             "organization_name": organization_name,
             "statement_columns": statement_columns
         }]
 
-    # def get_report_items(self, report):
-    #     lang = get_lang_code(self.context)
-    #     # ❗️ Bunda inner so‘rov ketmaydi, chunki oldindan prefetch bo‘lgan
-    #     items = report.report_items.all()
-    #
-    #     if report.is_general:
-    #         organization_id = "general"
-    #         organization_name = "Barcha tashkilotlar bo‘yicha umumiy"
-    #
-    #         org_qs = Report.objects.filter(
-    #             statement=report.statement,
-    #             deadline=report.deadline,
-    #             is_general=False
-    #         ).values("organization_id", "organization__name").distinct()
-    #
-    #         org_inners = [
-    #             {"id": str(o["organization_id"]), "value": o["organization__name"] or ""}
-    #             for o in org_qs
-    #         ]
-    #
-    #         org_column = StatementColumn.objects.filter(
-    #             statement=report.statement,
-    #             is_organization=True
-    #         ).first()
-    #
-    #         org_column_json = {
-    #             "statement_column_id": str(org_column.id),
-    #             "statement_column_name": get_translated_field(org_column, "title", lang),
-    #             "inners": org_inners
-    #         }
-    #
-    #         other_columns = []
-    #         for item in items:
-    #             if item.statement_column.is_organization:
-    #                 continue
-    #             other_columns.append({
-    #                 "statement_column_id": str(item.statement_column.id),
-    #                 "statement_column_name": get_translated_field(item.statement_column, "title", lang),
-    #                 # ❗️ Bu yerda endi query bo‘lmaydi
-    #                 "inners": [
-    #                     {"id": str(inner.id), "value": inner.value}
-    #                     for inner in item.inners.all()
-    #                 ]
-    #             })
-    #
-    #         return [{
-    #             "organization_id": organization_id,
-    #             "organization_name": organization_name,
-    #             "statement_columns": [org_column_json] + other_columns
-    #         }]
-    #     else:
-    #         return [{
-    #             "organization_id": str(report.organization.id),
-    #             "organization_name": report.organization.name,
-    #             "statement_columns": [
-    #                 {
-    #                     "statement_column_id": str(item.statement_column.id),
-    #                     "statement_column_name": get_translated_field(item.statement_column, "title", lang),
-    #                     # ❗️ Bu yerda ham query bo‘lmaydi
-    #                     "inners": [
-    #                         {"id": str(inner.id), "value": inner.value}
-    #                         for inner in item.inners.all()
-    #                     ]
-    #                 }
-    #                 for item in items
-    #             ]
-    #         }]
+        data.sort(key=lambda item: (
+            0 if item["organization_id"] not in ["individual", "general"]
+            else 1 if item["organization_id"] == "individual"
+            else 2
+        ))
 
-
+        return data
