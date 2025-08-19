@@ -124,10 +124,10 @@ def calculate_employee_analysis(report):
                     upsert_calculated_item(report, jami_col, total_value)
 
     # 4. Ilova-3 — Hisoblash (ordering orqali)
-    col_oliy_jami = get_column_by_ordering(columns, "1.6.1.2.2.1.1")
-    col_orta_maxsus_jami = get_column_by_ordering(columns, "1.6.1.2.2.2.1")
-    col_orta = get_column_by_ordering(columns, "1.6.1.2.2.3")
-    col_jami_target = get_column_by_ordering(columns, "1.6.1.2.1")
+    col_oliy_jami = get_column_by_ordering(columns, "6.1.2.2.1.1")
+    col_orta_maxsus_jami = get_column_by_ordering(columns, "6.1.2.2.2.1")
+    col_orta = get_column_by_ordering(columns, "6.1.2.2.3")
+    col_jami_target = get_column_by_ordering(columns, "6.1.2.1")
 
     if col_jami_target:
         total = Decimal(0)
@@ -136,13 +136,13 @@ def calculate_employee_analysis(report):
                 total += Decimal(sum_values(report, [col]))
         upsert_calculated_item(report, col_jami_target, total)
 
-    # 5. Yillik bo‘yicha (3yillik blok)
+    # 5. Yillik bo‘yicha (3 yillik blok)
     year_orderings = [
-        "1.6.1.6.2.1.1", "1.6.1.6.2.1.2", "1.6.1.6.2.1.3",
-        "1.6.1.6.2.2.1", "1.6.1.6.2.2.2", "1.6.1.6.2.2.3",
-        "1.6.1.6.2.3.1", "1.6.1.6.2.3.2", "1.6.1.6.2.3.3",
+        "6.1.6.2.1.1", "6.1.6.2.1.2", "6.1.6.2.1.3",  # Magister
+        "6.1.6.2.2.1", "6.1.6.2.2.2", "6.1.6.2.2.3",  # Oliy
+        "6.1.6.2.6.1", "6.1.6.2.6.2", "6.1.6.2.3.3",  # O‘rta-maxsus
     ]
-    col_jami_years = get_column_by_ordering(columns, "1.6.1.6.1")
+    col_jami_years = get_column_by_ordering(columns, "6.1.6.1")
     if col_jami_years:
         total = Decimal(0)
         for ordering in year_orderings:

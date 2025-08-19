@@ -12,96 +12,123 @@ def calculate_qishloq_xojaligi(report: Report):
 
     # ==================== Moyli ilovasi ====================
     calculate_ilova(
-        columns=columns,
         report=report,
-        parent_ordering="1.1.2",
-        crop_orderings=["1.1.3.1", "1.1.3.2", "1.1.3.3", "1.1.3.4", "1.1.3.5"]
+        columns=columns,
+        parent_ordering="4.1.2",  # Moyli ekinlar jami
+        crop_orderings=["4.1.3.1", "4.1.3.2", "4.1.3.3", "4.1.3.4", "4.1.3.5"]
     )
 
     # ==================== Bodom va Pista ilovasi ====================
     calculate_ilova(
-        columns=columns,
         report=report,
-        parent_ordering="1.1.2",  # Jami yong‘oqmevalilar
-        crop_orderings=["1.1.3.1", "1.1.3.2", "1.1.3.3"]  # Grek, Bodom, Pista
+        columns=columns,
+        parent_ordering="8.1.2",  # Jami yong‘oqmevalilar
+        crop_orderings=["8.1.3.1", "8.1.3.2", "8.1.3.3"]
     )
 
+    # ==================== Boshoqli Don ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="1.1.2",
+        crop_orderings=["1.1.4.1", "1.1.4.2", "1.1.4.3", "1.1.4.4", "1.1.4.5", "1.1.4.6"]
+    )
 
-def calculate_ilova(columns, report, parent_ordering, crop_orderings):
-    """
-    Har qanday ekin ilovasini hisoblab, natijani parent ustunlarga joylaydi.
-    """
+    # ==================== Sabzavot ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="2.1.2",
+        crop_orderings=[
+            "2.1.3.1", "2.1.3.2", "2.1.3.3", "2.1.3.4", "2.1.3.5", "2.1.3.6",
+            "2.1.3.7", "2.1.3.8", "2.1.3.9", "2.1.3.10", "2.1.3.11", "2.1.3.12"
+        ]
+    )
 
-    suffix_map = {"1": "ga", "2": "s/ga", "3": "tn"}
+    # ==================== Poliz ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="3.1.2",
+        crop_orderings=[
+            "3.1.3.1", "3.1.3.2", "3.1.3.3"
+        ]
+    )
+
+    # ==================== Dukkakli ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="5.1.2",
+        crop_orderings=[
+            "5.1.3.1", "5.1.3.2", "5.1.3.3", "5.1.3.4"
+        ]
+    )
+
+    # ==================== Ozuqa ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="6.1.2",
+        crop_orderings=[
+            "6.1.3.1", "6.1.3.2", "6.1.3.3", "6.1.3.4"
+        ]
+    )
+
+    # ==================== Bog` Tok ilovasi ====================
+    calculate_ilova(
+        report=report,
+        columns=columns,
+        parent_ordering="7.1.2",
+        crop_orderings=[
+            "7.1.3.1", "7.1.3.2", "7.1.3.3"
+        ]
+    )
+
+def calculate_ilova(report, columns, parent_ordering: str, crop_orderings: list[str]):
+    """
+    Har qanday ilovani hisoblab, Jami ustunlariga qiymatlarni yozadi.
+    """
+    suffix_map = {"1": "ga", "2": "s/ga", "3": "tn", "4": "tn"}
     result = {"ga": Decimal(0), "s/ga": Decimal(0), "tn": Decimal(0)}
 
+    # 1. Jami ustunlarni topamiz
     parent_cols = {
         suffix_map.get(col.ordering.rsplit(".", 1)[-1]): col
         for col in columns
         if col.parent and col.parent.ordering == parent_ordering
     }
 
-    # 🔽 Oldindan barcha itemlarni olish va dictga solish
+    # 2. Oldindan barcha itemlarni olish
     report_items_map = {
         item.statement_column_id: item
         for item in report.report_items.prefetch_related("inners").all()
     }
 
+    # 3. Mahsulotlarni yig‘amiz
     for col in columns:
-        if col.parent and col.parent.ordering in crop_orderings:
+        if any(col.ordering.startswith(order) for order in crop_orderings):
             suffix = col.ordering.rsplit(".", 1)[-1]
             key = suffix_map.get(suffix)
             if key:
                 item = report_items_map.get(col.id)
                 if item and item.inners.exists():
-                    result[key] += Decimal(item.inners.first().value or 0)
+                    try:
+                        result[key] += Decimal(item.inners.first().value or 0)
+                    except:
+                        continue
 
+    # 4. Jami ustunlarga qiymat yozamiz
     for key, value in result.items():
         if key in parent_cols:
-            item = ReportItem.objects.create(report=report, statement_column=parent_cols[key])
-            ReportItemInner.objects.create(report_item=item, value=str(value))
-
-    # Barcha ustunlar
-    # columns = report.statement.columns.prefetch_related("parent").all()
-    #
-    # # Moyli ekinlar bo‘limining 3ta ustunini aniqlaymiz
-    # moyli_columns = {
-    #     col.title_uz: col
-    #     for col in columns
-    #     if col.parent and col.parent.title_uz == "Moyli ekinlar"
-    # }
-    #
-    # # Har bir mahsulotning ustunlarini guruhlab olish
-    # crops = ["Mashar", "Kunjut", "Yer yong'oq", "Kungaboqar", "Zig'ir"]
-    # crop_columns = {crop: {} for crop in crops}
-    #
-    # for col in columns:
-    #     if col.parent and col.parent.title_uz in crops:
-    #         crop_columns[col.parent.title_uz][col.title_uz] = col
-    #
-    # # Summalarni boshlash
-    # result = {"ga": Decimal(0), "s/ga": Decimal(0), "tn": Decimal(0)}
-    #
-    # # Har bir mahsulotni aylantirib yig‘amiz
-    # for crop in crops:
-    #     for unit in ["ga", "s/ga", "tn"]:
-    #         col = crop_columns[crop].get(unit)
-    #         if not col:
-    #             continue
-    #         item = report.report_items.filter(statement_column=col).first()
-    #         if item:
-    #             value = item.inners.first().value
-    #             result[unit] += Decimal(str(value or 0))
-    #
-    # # Natijani umumiy Moyli ekinlar ustunlariga yozamiz
-    # for unit in ["ga", "s/ga", "tn"]:
-    #     col = moyli_columns.get(unit)
-    #     if col:
-    #         item = ReportItem.objects.create(
-    #             report=report,
-    #             statement_column=col
-    #         )
-    #         ReportItemInner.objects.create(
-    #             report_item=item,
-    #             value=str(result[unit])
-    #         )
+            parent_col = parent_cols[key]
+            item, _ = ReportItem.objects.get_or_create(
+                report=report,
+                statement_column=parent_col
+            )
+            inner = item.inners.first()
+            if inner:
+                inner.value = str(value)
+                inner.save(update_fields=["value"])
+            else:
+                ReportItemInner.objects.create(report_item=item, value=str(value))
