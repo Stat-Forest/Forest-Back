@@ -5,6 +5,34 @@ from apps.reports.serializers.plan_column import PlanColumnSerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
+MONTHLY_STATUSES = [
+    StatementColumn.PlanStatus.YANVAR,
+    StatementColumn.PlanStatus.FEVRAL,
+    StatementColumn.PlanStatus.MART,
+    StatementColumn.PlanStatus.APREL,
+    StatementColumn.PlanStatus.MAY,
+    StatementColumn.PlanStatus.IYUN,
+    StatementColumn.PlanStatus.IYUL,
+    StatementColumn.PlanStatus.AVGUST,
+    StatementColumn.PlanStatus.SENTABR,
+    StatementColumn.PlanStatus.OKTABR,
+    StatementColumn.PlanStatus.NOYABR,
+    StatementColumn.PlanStatus.DEKABR,
+]
+
+QUARTERLY_STATUSES = [
+    StatementColumn.PlanStatus.CHORAK_1,
+    StatementColumn.PlanStatus.CHORAK_2,
+    StatementColumn.PlanStatus.CHORAK_3,
+    StatementColumn.PlanStatus.CHORAK_4,
+]
+
+YEARLY_STATUSES = [
+    StatementColumn.PlanStatus.YILLIK,
+    StatementColumn.PlanStatus.YILLIK_TOTAL,
+]
+
+
 @extend_schema(
     tags=["Plan"],
     parameters=[
@@ -20,7 +48,7 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         """
         DRF filtering + custom filtering
         """
-        queryset = super().filter_queryset(queryset) 
+        queryset = super().filter_queryset(queryset)
 
         user = self.request.user
         base_filter = Q(parent__isnull=False) & Q(status_plan__isnull=False)
@@ -28,10 +56,22 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         if hasattr(user, 'statement') and user.statement:
             base_filter &= Q(statement__parent=user.statement)
 
-        return queryset.filter(base_filter)
+        queryset = queryset.filter(base_filter)
+
+        # Barcha mavjud statuslarni olish (distinct)
+        existing_statuses = set(queryset.values_list("status_plan", flat=True))
+
+        # Ustuvorlik bo'yicha filtr tanlash
+        if existing_statuses.intersection(MONTHLY_STATUSES):
+            queryset = queryset.filter(status_plan__in=MONTHLY_STATUSES)
+        elif existing_statuses.intersection(QUARTERLY_STATUSES):
+            queryset = queryset.filter(status_plan__in=QUARTERLY_STATUSES)
+        elif existing_statuses.intersection(YEARLY_STATUSES):
+            queryset = queryset.filter(status_plan__in=YEARLY_STATUSES)
+
+        return queryset
 
     def get_queryset(self):
-        # Avval barcha obyektlarni olib kelamiz
         return StatementColumn.objects.select_related(
             "parent",
             "parent__parent",
