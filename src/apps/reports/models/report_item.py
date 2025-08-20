@@ -1,67 +1,46 @@
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status
-#
-# from apps.reports.models import ReportItem
-# from django.db.models import Sum, IntegerField, FloatField
-# from django.db.models.functions import Cast
-# from drf_spectacular.utils import extend_schema
-#
-#
-# @extend_schema(
-#     summary="Xodim hisobi tahlili",
-#     description="Xodimlar haqidagi ma’lumotlarni 4-ilova va 5-ilova kesimida yig‘ib beradi"
-# )
-# @extend_schema(tags=["Sum"])
-# class SumEmployeeReportAnalysisListAPIView(APIView):
-#     def get(self, request):
-#         # 4-ilova (yosh, tajriba, sertifikatlar)
-#         titles_1_map = {
-#             "30 yoshgacha bo‘lgan boshqaruv xodimlari": "30 yoshgacha bolgan xodimlar soni boshqaruv xodimlari soni",
-#             "40–50 yosh oralig‘idagi boshqaruv xodimlari": "40 yoshdan 50 yoshgacha bolgan boshqaruv xodimlari soni",
-#             "60 yoshdan yuqori boshqaruv xodimlari": "60 yoshdan yuqori bolgan boshqaruv xodimlari soni",
-#             "2025 yilda pensiya yoshiga yetadigan boshqaruv xodimlari": "2025 yilda pensiya yoshiga yetadigan boshqaruv xodimlari soni",
-#             "Tajriba – 2 yilgacha": "2 yilgacha",
-#             "Tajriba – 2 yildan ortiq": "2 yildan ortiq",
-#             "Xalqaro sertifikatli xodimlar": "Xalqaro sertifikatga ega xodimlar soni",
-#             "Milliy sertifikatli xodimlar": "Milliy sertifikatga ega xodimlar soni",
-#         }
-#
-#         # 5-ilova (lavozim va mablag‘)
-#         titles_4_map = {
-#             "Tasdiqlangan shtat birligi bo‘yicha xodimlar": "Tasdiqlangan shtat birligi bo‘yicha xodimlar soni",
-#             "Shundan xotin-qizlar": "Shundan xotin-qizlar soni",
-#             "Mablag‘ sarfi (mln. so‘mda)": "Mablag‘ sarfi, mln. so‘mda",
-#             "Dam olish/bayramda ishlaganlar": "Dam olish va bayram kunlari ishga jalb qilingan xodimlar soni",
-#             "Yuqori lavozimdagilar": "Yuqori lavozimlar",
-#             "Teng lavozimdagilar": "Teng lavozimlar",
-#             "Quyi lavozimdagilar": "Quyi lavozimlar",
-#         }
-#
-#         # Barcha kerakli sarlavhalarni yig‘ib olish
-#         all_titles = list(set(titles_1_map.values()) | set(titles_4_map.values()))
-#
-#         # Ma’lumotlarni yig‘ish va summalash (inners orqali!)
-#         items = (
-#             ReportItem.objects.filter(statement_column__title__in=all_titles)
-#             .values('statement_column__title')
-#             .annotate(
-#                 total=Sum(
-#                     Cast('inners__value', FloatField())  # ReportItemInner.value dan olish
-#                 )
-#             )
-#         )
-#
-#         # Natijani dict formatga o‘tkazish
-#         result_map = {item['statement_column__title']: item['total'] or 0 for item in items}
-#
-#         # Har bir ilova bo‘yicha tartiblab qaytarish
-#         ilova_1 = {label: result_map.get(title, 0) for label, title in titles_1_map.items()}
-#         ilova_4 = {label: result_map.get(title, 0) for label, title in titles_4_map.items()}
-#
-#         data = [{
-#             '4-ilova': ilova_1,
-#             '5-ilova': ilova_4,
-#         }]
-#
-#         return Response(data, status=status.HTTP_200_OK)
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from apps.base.models import AbstractBaseModel
+
+
+
+class ReportItem(AbstractBaseModel):
+    report = models.ForeignKey(
+        "reports.Report",
+        on_delete=models.CASCADE,
+        related_name="report_items",
+        verbose_name=_("Report")
+    )
+    plant = models.ForeignKey("reports.Plant",
+                             on_delete=models.CASCADE,
+                             blank=True,
+                             null=True
+                             )
+    statement_column = models.ForeignKey(
+        "reports.StatementColumn",
+        on_delete=models.PROTECT,
+        related_name="items",
+        verbose_name=_("Statement Column")
+    )
+
+    value = models.TextField(blank=True, null=True)
+    # def __str__(self):
+    #     return f"{self.report.id} - {self.value}"
+
+    class Meta:
+        verbose_name = _("Report Item")
+        verbose_name_plural = _("Report Items")
+        # unique_together = ("report", "statement_column", "plant")
+
+
+class ReportItemInner(AbstractBaseModel):
+    report_item = models.ForeignKey(
+        "reports.ReportItem",
+        on_delete=models.CASCADE,
+        related_name="inners"
+    )
+    value = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("Value"),
+    )
