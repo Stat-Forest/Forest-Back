@@ -32,7 +32,7 @@ class StatisticsEmployeeReportAPIView(APIView):
             'uz': {
                 '1': ["Boshqaruv xodimlari", "Mutaxassislar", "Ishlab chiqarish xodimlari",
                       "Texnik hodim", "Xizmat korsatuvchi xodimlar", "ishchilar"],
-                '2': ["Oliy", "O`rta maxsus", "O`rta", "Ayol", "Erkak xodimlar", "Yoshlar Jami"],
+                '2': ["Oliy", "O`rta-mahsus", "O'rta-maxsus", "Ayol", "Erkak xodimlar", "Yoshlar Jami"],
                 '3': ["Doimiy", "Mavsumiy", "Temir daftar va ayollar daftariga kiritilgan",
                       "Kambag’al axolidan olingan", "Kasanachilik asosida"]
             },
