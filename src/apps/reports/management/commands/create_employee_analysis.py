@@ -245,8 +245,8 @@ class Command(BaseCommand):
         f1_1 = create_col(f1, "Xodimlarning yosh bo‘yicha tarkibi", "Возрастной состав сотрудников", "2.1.2.3")
         ages = [
             ("30 yoshgacha bo‘lgan xodimlar soni", "Количество сотрудников до 30 лет"),
-            ("30 yoshdan 50 yoshgacha bo‘lgan xodimlar soni", "Сотрудников от 30 до 50 лет"),
-            ("20 yoshdan yuqori bo‘lgan xodimlar soni", "Сотрудников старше 50 лет"),
+            ("30 yoshdan 50 yoshgacha bo‘lgan xodimlar soni", "Количество сотрудников от 30 до 50 лет"),
+            ("50 yoshdan yuqori bo‘lgan xodimlar soni", "Количество сотрудников старше 50 лет"),
         ]
         for idx, (uz, ru) in enumerate(ages, 1):
             create_col(f1_1, uz, ru, f"2.1.2.3.{idx}")
@@ -262,7 +262,7 @@ class Command(BaseCommand):
                    "Количество сотрудников, использовавших трудовой отпуск за отчетный год", "2.1.2.5")
         f1_4 = create_col(f1, "Xodimning ish vaqtidan tashqari ishlaganligi uchun qo‘shimcha to‘lov to‘langanligi",
                           "Оплата за переработки сотрудников", "2.1.2.6")
-        create_col(f1_4, "Mablag‘ sarfi, mln. so‘mda", "Сумма расходов (млн. сум)", "2.1.2.6.1")
+        create_col(f1_4, "Mablag‘ sarfi, mln. so‘mda", "Расход средств, в млн. сумов", "2.1.2.6.1")
         create_col(f1_4, "Dam olish va bayram kunlari ishga jalb qilingan xodimlar soni",
                    "Количество сотрудников, привлекавшихся в выходные и праздничные дни", "2.1.2.6.2")
 
