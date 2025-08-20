@@ -114,8 +114,8 @@ class Command(BaseCommand):
 
         malumoti = create_column(person_report_statement, title2, "Ma'lumoti", "Образование", "2.1.4")
         create_column(person_report_statement, malumoti, "Oliy", "Высшее", "2.1.4.1")
-        create_column(person_report_statement, malumoti, "O'rta maxsus", "Среднее специальное", "2.1.4.2")
-        create_column(person_report_statement, malumoti, "O'rta", "Среднее", "2.1.4.3")
+        create_column(person_report_statement, malumoti, "O`rta-mahsus", "Среднее специальное", "2.1.4.2")
+        create_column(person_report_statement, malumoti, "O'rta-maxsus", "Среднее", "2.1.4.3")
 
         xodimlar = create_column(person_report_statement, title2, "Xodimlar", "Сотрудники", "2.1.5")
         create_column(person_report_statement, xodimlar, "Ayol", "Женщины", "2.1.5.1")
