@@ -10,6 +10,16 @@ from apps.general.models import Organization
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
 
 
+MONTHS_BY_QUARTER = {
+    'CHORAK_1': ['YANVAR', 'FEVRAL', 'MART'],
+    'CHORAK_2': ['APREL', 'MAY', 'IYUN'],
+    'CHORAK_3': ['IYUL', 'AVGUST', 'SENTABR'],
+    'CHORAK_4': ['OKTABR', 'NOYABR', 'DEKABR'],
+}
+
+QUARTERS = ['CHORAK_1', 'CHORAK_2', 'CHORAK_3', 'CHORAK_4']
+
+
 class PlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField()
     value = serializers.IntegerField(min_value=0, source='plan_value')
@@ -22,6 +32,9 @@ class PlanItemSerializer(serializers.Serializer):
             )
         return value
 
+
+from collections import defaultdict
+from django.db import transaction
 
 class PlanSerializer(serializers.Serializer):
     organization = serializers.UUIDField()
@@ -44,14 +57,12 @@ class PlanSerializer(serializers.Serializer):
             raise CustomExceptionError(400, {'plan_items': _('Plan items are required.')})
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
-        organization_id = validated_data["organization"]
-        statement_id = validated_data["statement"]
+        organization = Organization.objects.get(id=validated_data["organization"])
+        statement = Statement.objects.get(id=validated_data["statement"])
         year = validated_data["year"]
         items = validated_data["plan_items"]
-
-        organization = Organization.objects.get(id=organization_id)
-        statement = Statement.objects.get(id=statement_id)
 
         plan, _ = Plan.objects.get_or_create(
             organization=organization,
@@ -59,7 +70,9 @@ class PlanSerializer(serializers.Serializer):
             year=year
         )
 
-
+        # Hamma kiritilgan qiymatlarni saqlab boramiz
+        monthly_values = defaultdict(int)
+        quarterly_values = defaultdict(int)
 
         for item in items:
             column = StatementColumn.objects.get(id=item["column"])
@@ -68,13 +81,53 @@ class PlanSerializer(serializers.Serializer):
             if column.statement_id != statement.id:
                 raise CustomExceptionError(400, _("Column does not belong to the given statement"))
 
+            # Asosiy itemni saqlash
             PlanItem.objects.update_or_create(
                 plan=plan,
                 column=column,
                 defaults={"plan_value": value}
             )
 
+            # Qaysi turdagi status ekanini aniqlaymiz
+            if column.status_plan in MONTHS_BY_QUARTER['CHORAK_1'] + MONTHS_BY_QUARTER['CHORAK_2'] + \
+                                    MONTHS_BY_QUARTER['CHORAK_3'] + MONTHS_BY_QUARTER['CHORAK_4']:
+                monthly_values[column.status_plan] += value
+
+            elif column.status_plan in QUARTERS:
+                quarterly_values[column.status_plan] += value
+
+        # ====== 1. Agar oylik qiymatlar kiritilgan bo'lsa -> choraklarni hisoblash ======
+        if monthly_values:
+            for q_status, months in MONTHS_BY_QUARTER.items():
+                total = sum(monthly_values[m] for m in months if m in monthly_values)
+                if total > 0:
+                    try:
+                        quarter_col = StatementColumn.objects.get(statement=statement, status_plan=q_status)
+                        PlanItem.objects.update_or_create(
+                            plan=plan,
+                            column=quarter_col,
+                            defaults={"plan_value": total}
+                        )
+                        quarterly_values[q_status] += total  # chorak yig'indisini umumiy hisobga qo'shamiz
+                    except StatementColumn.DoesNotExist:
+                        pass
+
+        # ====== 2. Agar choraklik qiymatlar (yoki oylikdan hisoblanganlar) bor bo'lsa -> yillikni hisoblash ======
+        if quarterly_values:
+            yearly_total = sum(quarterly_values.values())
+            if yearly_total > 0:
+                try:
+                    yearly_col = StatementColumn.objects.get(statement=statement, status_plan='YILLIK')
+                    PlanItem.objects.update_or_create(
+                        plan=plan,
+                        column=yearly_col,
+                        defaults={"plan_value": yearly_total}
+                    )
+                except StatementColumn.DoesNotExist:
+                    pass  # agar yillik column yo'q bo'lsa, o'tkazib yuboramiz
+
         return plan
+
 
 
 
