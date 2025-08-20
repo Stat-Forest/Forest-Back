@@ -17,14 +17,14 @@ class SumEmployeeReportListAPIView(APIView):
     def get(self, request):
         titles_map_2 = {
             "Oliy malumotli xodimlar soni ": "Oliy",
-            "O'rta-maxsus malumotli xodimlar soni": "O`rta maxsus",
-            "O'rta malumotli xodimlar soni ": "O`rta",
+            "O'rta-maxsus malumotli xodimlar soni": "O`rta-mahsus",
+            "O'rta malumotli xodimlar soni ": "O'rta-maxsus",
             "Jami erkaklar soni": "Erkak xodimlar",
             "Jami ayollar soni": "Ayol",
             "Jami nafaqadagi xodimlar soni": "Nafaqadagi xodimlar",
             "Ilmiy darajadagi xodimlar soni": "Ilmiy darajaga ega xodimlar",
             "Xorijiy til biladigan xodimlar": "Xorijiy til biladigan xodimlar",
-            "Chet elda tahsil olgan yoki malaka oshirgan xodimlar": "Chet elda tashil olgan va malaka oshirgan xodimlar"
+            "Chet elda tahsil olgan yoki malaka oshirgan xodimlar": "Chet elda tahsil olgan va malaka oshirgan xodimlar"
         }
 
         titles_map_3 = {
@@ -36,7 +36,6 @@ class SumEmployeeReportListAPIView(APIView):
             "Kasanachilik asosida": "Kasanachilik asosida"
         }
 
-        # Kerakli ustunlar
         key_titles = {
             "Jami xodimlar soni",
             "Jami vakatlar soni",
