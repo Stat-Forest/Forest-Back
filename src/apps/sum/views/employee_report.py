@@ -83,7 +83,7 @@ class SumEmployeeReportListAPIView(APIView):
                 per_report_stats[rid] = {
                     "emp": 0,
                     "vac": 0,
-                    "org": item.report.organization.name,
+                    "org": item.report.organization.name if item.report.organization else "Nomaʼlum",   
                 }
             if item.statement_column.title == "Jami xodimlar soni":
                 per_report_stats[rid]["emp"] = item.value_as_float or 0
