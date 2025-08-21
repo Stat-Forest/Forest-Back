@@ -32,9 +32,9 @@ class SumEmployeeReportAnalysisListAPIView(APIView):
         # 4-ilova (yosh, tajriba, sertifikatlar)
         titles_1_map = {
             "uz": {
-                "30 yoshgacha bo‘lgan boshqaruv xodimlari": "30 yoshgacha bolgan xodimlar soni boshqaruv xodimlari soni",
-                "40–50 yosh oralig‘idagi boshqaruv xodimlari": "40 yoshdan 50 yoshgacha bolgan boshqaruv xodimlari soni",
-                "60 yoshdan yuqori boshqaruv xodimlari": "60 yoshdan yuqori bolgan boshqaruv xodimlari soni",
+                "30 yoshgacha bo‘lgan boshqaruv xodimlari": "30 yoshgacha bo‘lgan  boshqaruv xodimlari soni",
+                "40–50 yosh oralig‘idagi boshqaruv xodimlari": "40 yoshdan 50 yoshgacha bo‘lgan  boshqaruv xodimlari soni",
+                "60 yoshdan yuqori boshqaruv xodimlari": "60 yoshdan yuqori bo‘lgan boshqaruv xodimlari soni",
                 "2025 yilda pensiya yoshiga yetadigan boshqaruv xodimlari": "2025 yilda pensiya yoshiga yetadigan boshqaruv xodimlari soni",
                 "Tajriba – 2 yilgacha": "2 yilgacha",
                 "Tajriba – 2 yildan ortiq": "2 yildan ortiq",
@@ -42,9 +42,9 @@ class SumEmployeeReportAnalysisListAPIView(APIView):
                 "Milliy sertifikatli xodimlar": "Milliy sertifikatga ega xodimlar soni",
             },
             "ru": {
-                "Руководители до 30 лет": "30 yoshgacha bolgan xodimlar soni boshqaruv xodimlari soni",
-                "Руководители 40–50 лет": "40 yoshdan 50 yoshgacha bolgan boshqaruv xodimlari soni",
-                "Руководители старше 60 лет": "60 yoshdan yuqori bolgan boshqaruv xodimlari soni",
+                "Руководители до 30 лет": "30 yoshgacha bo‘lgan  boshqaruv xodimlari soni",
+                "Руководители 40–50 лет": "40 yoshdan 50 yoshgacha bo‘lgan  boshqaruv xodimlari soni",
+                "Руководители старше 60 лет": "60 yoshdan yuqori bo‘lgan boshqaruv xodimlari soni",
                 "Руководители, достигающие пенсионного возраста в 2025 году": "2025 yilda pensiya yoshiga yetadigan boshqaruv xodimlari soni",
                 "Опыт – до 2 лет": "2 yilgacha",
                 "Опыт – более 2 лет": "2 yildan ortiq",
