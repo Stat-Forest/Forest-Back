@@ -66,7 +66,7 @@ class Command(BaseCommand):
         age_fields = [
             ("30 yoshgacha bo‘lgan", "До 30 лет"),
             ("30 yoshdan 40 yoshgacha bo‘lgan", "От 30 до 40 лет"),
-            ("10 yoshdan 50 yoshgacha bo‘lgan", "От 40 до 50 лет"),
+            ("40 yoshdan 50 yoshgacha bo‘lgan", "От 40 до 50 лет"),
             ("50 yoshdan 60 yoshgacha bo‘lgan", "От 50 до 60 лет"),
             ("60 yoshdan yuqori bo‘lgan", "Старше 60 лет"),
             ("Yoshga doir pensiya olayotgan va pensiyaga chiqish huquqiga ega bo‘lib ishlayotgan",
