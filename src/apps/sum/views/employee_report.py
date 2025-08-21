@@ -1,12 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-from apps.reports.models import ReportItem
+from drf_spectacular.utils import extend_schema
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
+from apps.reports.models import ReportItem
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 @extend_schema(
     summary="Xodim hisobi",
@@ -15,43 +16,68 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
     parameters=[
         OpenApiParameter(
             name="lang",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
+            description="Til parametri: uz (default) yoki ru",
             required=False,
-            enum=["uz", "ru"],   # 👈 swagger’da dropdown bo‘lib chiqadi
-            description="Tilni tanlang: 'uz' yoki 'ru'"
+            type=OpenApiTypes.STR,
+            enum=["uz", "ru"],
+            location=OpenApiParameter.QUERY,
         )
-    ],
+    ]
 )
 class SumEmployeeReportListAPIView(APIView):
+
     def get(self, request):
-        lang = request.query_params.get("lang", "uz")  # default uz
+        lang = request.query_params.get("lang", "uz")
+        if lang not in ["uz", "ru"]:
+            lang = "uz"
 
         titles_map_2 = {
-            "Oliy malumotli xodimlar soni ": "Oliy",
-            "O'rta-maxsus malumotli xodimlar soni": "O`rta-mahsus",
-            "O'rta malumotli xodimlar soni ": "O'rta-maxsus",
-            "Jami erkaklar soni": "Erkak xodimlar",
-            "Jami ayollar soni": "Ayol",
-            "Jami nafaqadagi xodimlar soni": "Nafaqadagi xodimlar",
-            "Ilmiy darajadagi xodimlar soni": "Ilmiy darajaga ega xodimlar",
-            "Xorijiy til biladigan xodimlar": "Xorijiy til biladigan xodimlar",
-            "Chet elda tahsil olgan yoki malaka oshirgan xodimlar": "Chet elda tahsil olgan va malaka oshirgan xodimlar"
+            "uz": {
+                "Oliy": "Oliy",
+                "O`rta-mahsus": "O`rta-mahsus",
+                "O'rta-maxsus": "O'rta-maxsus",
+                "Ayol": "Ayol",
+                "Erkak xodimlar": "Erkak xodimlar",
+                "Nafaqadagi xodimlar": "Nafaqadagi xodimlar",
+                "Ilmiy darajaga ega xodimlar": "Ilmiy darajaga ega xodimlar",
+                "Xorijiy til biladigan xodimlar": "Xorijiy til biladigan xodimlar",
+                "Chet elda tahsil olgan va malaka oshirgan xodimlar": "Chet elda tahsil olgan va malaka oshirgan xodimlar"
+            },
+            "ru": {
+                "Высшее": "Oliy",
+                "Среднее специальное": "O`rta-mahsus",
+                "Среднее": "O'rta-maxsus",
+                "Женщины": "Ayol",
+                "Мужчины": "Erkak xodimlar",
+                "Пенсионеры": "Nafaqadagi xodimlar",
+                "С ученой степенью": "Ilmiy darajaga ega xodimlar",
+                "Знающие иностранные языки": "Xorijiy til biladigan xodimlar",
+                "Обучавшиеся или проходившие стажировку за рубежом": "Chet elda tahsil olgan va malaka oshirgan xodimlar"
+            }
         }
 
         titles_map_3 = {
-            "Jami yangi yaratilgan ish o'rinlar soni": "Jami yangi yaratilgan ish o'rinlar soni",
-            "Doimiy ishlaydigan xodimlar soni": "Doimiy",
-            "Mavsumiy ishlaydigan  xodimlar soni": "Mavsumiy",
-            "Temir daftar va ayollar daftariga kiritilgan xodimlar soni": "Temir daftar va ayollar daftariga kiritilgan",
-            "Kambag’al axolidan olingan": "Kambag’al axolidan olingan",
-            "Kasanachilik asosida": "Kasanachilik asosida"
+            "uz": {
+                "Jami yangi yaratilgan ish o'rinlar soni": "Jami yangi yaratilgan ish o'rinlar soni",
+                "Doimiy": "Doimiy",
+                "Mavsumiy": "Mavsumiy",
+                "Temir daftar va ayollar daftariga kiritilgan": "Temir daftar va ayollar daftariga kiritilgan",
+                "Kambag’al axolidan olingan": "Kambag’al axolidan olingan",
+                "Kasanachilik asosida": "Kasanachilik asosida"
+            },
+            "ru": {
+                "Всего новых рабочих мест": "Jami yangi yaratilgan ish o'rinlar soni",
+                "Постоянные": "Doimiy",
+                "Сезонные": "Mavsumiy",
+                "Включённые в железную и женскую книги": "Temir daftar va ayollar daftariga kiritilgan",
+                "Из числа малообеспеченных": "Kambag’al axolidan olingan",
+                "На основе надомного труда": "Kasanachilik asosida"
+            }
         }
 
-        key_titles = {
-            "Jami xodimlar soni",
-            "Jami vakatlar soni",
-        } | set(titles_map_2.values()) | set(titles_map_3.values())
+        key_titles = {"Jami xodimlar soni", "Jami vakatlar soni"} \
+                     | set(titles_map_2["uz"].values()) \
+                     | set(titles_map_3["uz"].values())
 
         items = (
             ReportItem.objects.filter(statement_column__title__in=key_titles)
@@ -61,7 +87,6 @@ class SumEmployeeReportListAPIView(APIView):
 
         totals = {}
         per_report_stats = {}
-
         for item in items:
             title = item["statement_column__title"]
             org_name = item["report__organization__name"]
@@ -96,31 +121,26 @@ class SumEmployeeReportListAPIView(APIView):
                     highest_fill_percent = fill_percent
                     highest_fill_org = stats["org"]
 
+        # 2-ilova va 3-ilova keylari faqat lang bo‘yicha chiqadi
         ilova_2 = {
             label: round(totals.get(title, 0), 2)
-            for label, title in titles_map_2.items()
+            for label, title in titles_map_2[lang].items()
         }
         ilova_3 = {
             label: round(totals.get(title, 0), 2)
-            for label, title in titles_map_3.items()
+            for label, title in titles_map_3[lang].items()
         }
 
         data = [
             {
                 "1-ilova": {
-                    "Jami xodimlar": round(total_employees, 2),
-                    "Eng ko'p xodimli tashkilot": the_most_worker_org,
-                    f"{the_most_worker_org}ning jami xodimlari": round(most_employee["emp"], 2) if most_employee else 0,
-                    "Jami vakansiyalar": round(total_vacancies, 2),
-                    "Eng ko'p vakansiyali tashkilot": the_most_vac_org,
-                    f"{the_most_vac_org}ning jami vakansiyalari": round(most_vacancy["vac"], 2) if most_vacancy else 0,
-                    "Umumiy to'ldirilish darajasi (%)": round(
+                    "Jami xodimlar" if lang == "uz" else "Всего сотрудников": round(total_employees, 2),
+                    "Jami vakansiyalar" if lang == "uz" else "Всего вакансий": round(total_vacancies, 2),
+                    "Umumiy to'ldirilish darajasi (%)" if lang == "uz" else "Общий уровень заполненности (%)": round(
                         (total_employees / (total_employees + total_vacancies)) * 100, 2
-                    )
-                    if (total_employees + total_vacancies)
-                    else 0,
-                    "Eng yuqori to'ldirilish foiziga ega tashkilot": highest_fill_org,
-                    "Eng yuqori to'ldirilish foizi (%)": round(highest_fill_percent, 2),
+                    ) if (total_employees + total_vacancies) else 0,
+                    "Eng yuqori to'ldirilish foiziga ega tashkilot" if lang == "uz" else "Организация с самым высоким уровнем заполненности": highest_fill_org,
+                    "Eng yuqori to'ldirilish foizi (%)" if lang == "uz" else "Максимальный процент заполненности (%)": round(highest_fill_percent, 2),
                 },
                 "2-ilova": ilova_2,
                 "3-ilova": ilova_3,
