@@ -20,19 +20,6 @@ MONTHS_BY_QUARTER = {
 QUARTERS = ['CHORAK_1', 'CHORAK_2', 'CHORAK_3', 'CHORAK_4']
 
 
-class PlanItemSerializer(serializers.Serializer):
-    column = serializers.UUIDField()
-    value = serializers.IntegerField(min_value=0, source='plan_value')
-
-    def validate_value(self, value):
-        if value < 0:
-            raise CustomExceptionError(
-                400,
-                {'value': _('Plan value cannot be negative.')}
-            )
-        return value
-
-
 from collections import defaultdict
 from django.db import transaction
 from rest_framework import serializers
@@ -80,11 +67,15 @@ class PlanItemSerializer(serializers.Serializer):
     plan_value = serializers.FloatField()
 
 
-class PlanSerializer(serializers.Serializer):
-    organization = serializers.UUIDField()
-    statement = serializers.UUIDField()
-    year = serializers.IntegerField(min_value=1900)
+class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
+    organization = serializers.UUIDField()
+    statement = serializers.UUIDField(read_only=True)  # update da o‘zgarmaydi
+
+    class Meta:
+        model = Plan
+        fields = ["id", "organization", "statement", "year", "plan_items"]
+        read_only_fields = ["statement"]
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -101,24 +92,11 @@ class PlanSerializer(serializers.Serializer):
             raise CustomExceptionError(400, {'plan_items': _('Plan items are required.')})
         return attrs
 
-    @transaction.atomic
-    def create(self, validated_data):
-        organization = Organization.objects.get(id=validated_data["organization"])
-        statement = Statement.objects.get(id=validated_data["statement"])
-        year = validated_data["year"]
-        items = validated_data["plan_items"]
-
-        plan, _ = Plan.objects.get_or_create(
-            organization=organization,
-            statement=statement,
-            year=year
-        )
-
+    def _save_plan_items(self, plan, statement, items):
+        """ PlanItem larni yaratish / update qilish logikasi """
         monthly_values = defaultdict(int)
         quarterly_values = defaultdict(int)
-        yearly_values = defaultdict(int)  # yangi qo‘shildi
 
-        # 1. Foydalanuvchi yuborgan PlanItem larni saqlash
         for item in items:
             column = StatementColumn.objects.get(id=item["column"])
             value = item["plan_value"]
@@ -135,36 +113,42 @@ class PlanSerializer(serializers.Serializer):
                 defaults={"plan_value": value}
             )
 
-            # Oy bo‘lsa
             if column.status_plan in sum(MONTHS_BY_QUARTER.values(), []):
                 monthly_values[column.status_plan] += value
-
-            # Chorak bo‘lsa
             elif column.status_plan in QUARTERS:
                 quarterly_values[column.status_plan] += value
-
-            # Yillik bo‘lsa
             elif column.status_plan == StatementColumn.PlanStatus.YILLIK:
-                yearly_values[column.id] += value  # har bir yillikni yig‘amiz
-
-        # 2. Oyliklardan choraklarni hisoblash
-        for q_status, months in MONTHS_BY_QUARTER.items():
-            total = sum(monthly_values[m] for m in months if m in monthly_values)
-            if total > 0:
-                quarter_col = StatementColumn.objects.filter(
-                    statement=statement, status_plan=q_status
+                total_col = StatementColumn.objects.filter(
+                    statement=statement,
+                    status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
                 ).first()
-                if quarter_col:
+                if total_col:
                     PlanItem.objects.update_or_create(
                         plan=plan,
-                        column=quarter_col,
-                        defaults={"plan_value": total}
+                        column=total_col,
+                        defaults={"plan_value": value}
                     )
-                    quarterly_values[q_status] += total
 
-        # 3. Choraklardan yillikni hisoblash
+        # Oyliklardan choraklarni hisoblash
+        if monthly_values:
+            for q_status, months in MONTHS_BY_QUARTER.items():
+                total = sum(monthly_values[m] for m in months if m in monthly_values)
+                if total > 0:
+                    quarter_col = StatementColumn.objects.filter(
+                        statement=statement, status_plan=q_status
+                    ).first()
+                    if quarter_col:
+                        PlanItem.objects.update_or_create(
+                            plan=plan,
+                            column=quarter_col,
+                            defaults={"plan_value": total}
+                        )
+                        quarterly_values[q_status] += total
+
+        # Choraklardan yillik va totalni hisoblash
         if quarterly_values:
-            yearly_total_from_quarters = sum(quarterly_values.values())
+            yearly_total = sum(quarterly_values.values())
+
             yearly_col = StatementColumn.objects.filter(
                 statement=statement,
                 status_plan=StatementColumn.PlanStatus.YILLIK
@@ -173,12 +157,9 @@ class PlanSerializer(serializers.Serializer):
                 PlanItem.objects.update_or_create(
                     plan=plan,
                     column=yearly_col,
-                    defaults={"plan_value": yearly_total_from_quarters}
+                    defaults={"plan_value": yearly_total}
                 )
 
-        # 4. Yilliklardan totalni hisoblash (faqat foydalanuvchi yuborganda ishlaydi)
-        if yearly_values:
-            total_yillik = sum(yearly_values.values())
             total_col = StatementColumn.objects.filter(
                 statement=statement,
                 status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
@@ -187,11 +168,35 @@ class PlanSerializer(serializers.Serializer):
                 PlanItem.objects.update_or_create(
                     plan=plan,
                     column=total_col,
-                    defaults={"plan_value": total_yillik}
+                    defaults={"plan_value": yearly_total}
                 )
 
+    @transaction.atomic
+    def create(self, validated_data):
+        organization = Organization.objects.get(id=validated_data["organization"])
+        statement = Statement.objects.get(id=validated_data["statement"])
+        year = validated_data["year"]
+        items = validated_data["plan_items"]
+
+        plan, _ = Plan.objects.get_or_create(
+            organization=organization,
+            statement=statement,
+            year=year
+        )
+        self._save_plan_items(plan, statement, items)
         return plan
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        # statement update bo‘lmaydi
+        if "organization" in validated_data:
+            instance.organization = Organization.objects.get(id=validated_data["organization"])
+        instance.year = validated_data.get("year", instance.year)
+        instance.save()
+
+        items = validated_data.get("plan_items", [])
+        self._save_plan_items(instance, instance.statement, items)
+        return instance
 
 class PlanListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
