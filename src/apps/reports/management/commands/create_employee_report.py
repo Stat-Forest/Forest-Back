@@ -118,8 +118,8 @@ class Command(BaseCommand):
         create_column(person_report_statement, malumoti, "O'rta-maxsus", "Среднее", "2.1.4.3")
 
         xodimlar = create_column(person_report_statement, title2, "Xodimlar", "Сотрудники", "2.1.5")
-        create_column(person_report_statement, xodimlar, "Ayol", "Женщины", "2.1.5.1")
-        create_column(person_report_statement, xodimlar, "Erkak xodimlar", "Мужчины", "2.1.5.2")
+        create_column(person_report_statement, xodimlar, "Ayol", "Женщины-1", "2.1.5.1")
+        create_column(person_report_statement, xodimlar, "Erkak xodimlar", "Мужчины-1", "2.1.5.2")
         create_column(person_report_statement, xodimlar, "Yoshlar Jami", "Всего молодёжи", "2.1.5.3")
 
         yoshlar = create_column(person_report_statement, xodimlar, "Yoshlar", "Молодёжь", "2.1.5.4")

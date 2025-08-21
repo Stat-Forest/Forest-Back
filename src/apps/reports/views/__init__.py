@@ -6,6 +6,7 @@ from .dashboard import *
 from .send_report import *
 from .plan_column import *
 from .plan_create import *
+from .plan_update import *
 from .accept_report import *
 from .cancel_report import *
 from .statement_column import *
