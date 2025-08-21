@@ -3,6 +3,15 @@ from apps.base.views import CustomListAPIView
 from apps.reports.models import StatementColumn
 from apps.reports.serializers.plan_column import PlanColumnSerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from django.db.models.functions import Cast, Substr
+
+from django.db.models import IntegerField
+from django.db.models.functions import Cast,Coalesce
+from django.db.models.expressions import Func,Value
+
+class SplitPart(Func):
+    function = "SPLIT_PART"
+    arity = 3
 
 
 MONTHLY_STATUSES = [
@@ -29,6 +38,9 @@ QUARTERLY_STATUSES = [
 
 YEARLY_STATUSES = [
     StatementColumn.PlanStatus.YILLIK,
+]
+
+YEARLY_TOTAL_STATUSES = [
     StatementColumn.PlanStatus.YILLIK_TOTAL,
 ]
 
@@ -64,12 +76,22 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         # Ustuvorlik bo'yicha filtr tanlash
         if existing_statuses.intersection(MONTHLY_STATUSES):
             queryset = queryset.filter(status_plan__in=MONTHLY_STATUSES)
+
         elif existing_statuses.intersection(QUARTERLY_STATUSES):
             queryset = queryset.filter(status_plan__in=QUARTERLY_STATUSES)
+
         elif existing_statuses.intersection(YEARLY_STATUSES):
             queryset = queryset.filter(status_plan__in=YEARLY_STATUSES)
 
-        return queryset
+        elif existing_statuses.intersection(YEARLY_TOTAL_STATUSES):
+            queryset = queryset.filter(status_plan__in=YEARLY_TOTAL_STATUSES)
+
+        return queryset.annotate(
+            last_num=Cast(
+                SplitPart("ordering", Value("."), Value(-1)),
+                IntegerField()
+            )
+        ).order_by("last_num")
 
     def get_queryset(self):
         return StatementColumn.objects.select_related(

@@ -4,6 +4,7 @@ from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
 
 
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, status_plan=None, is_user_input=True):
@@ -290,6 +291,8 @@ class Command(BaseCommand):
             "Yillik reja, tonna",
             "Годовой план, тонн",
             "7.1.2",
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+
         )
         create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "7.1.2",
                       is_user_input=False)
@@ -298,12 +301,14 @@ class Command(BaseCommand):
 
         for i in range(1, 5):
             chorak_ordering = f"7.1.{i + 1}"
+            chorak_status = getattr(StatementColumn.PlanStatus, f"CHORAK_{i}")
             chorak = create_column(
                 statement_mechanization,
                 metallolom_title,
                 f"{i}-chorak",
                 f"{i}-й квартал",
-                chorak_ordering
+                chorak_ordering,
+                status_plan=chorak_status
             )
             create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1")
             create_column(statement_mechanization, chorak, "Amalda", "Факт", f"{chorak_ordering}.2")
