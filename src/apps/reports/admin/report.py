@@ -4,7 +4,17 @@ from apps.reports.models import Report
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ('organization', 'statement', 'deadline', 'status', 'created_at')
+    list_display = (
+        'organization',
+        'statement',
+        "is_general",
+        "is_individual_general",
+        "is_report",
+        "is_republic",
+        'deadline',
+        'status',
+        'created_at',
+    )
     list_filter = ('status', 'organization', 'statement', 'deadline')
     search_fields = ('organization__name', 'statement__name')
     ordering = ('-created_at',)
