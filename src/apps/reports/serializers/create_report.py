@@ -4,12 +4,11 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
-from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
+from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner, RegionChoices
 from apps.reports.services import aggregate_individual_report
-from apps.reports.services.general_report import aggregate_general_report
+from apps.reports.services.general_report import aggregate_general_report, aggregate_national_report
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
@@ -106,6 +105,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             organization=org_instance,
                             statement=column.statement,
                             deadline=deadline,
+                            region=org_instance.region,
                             status=Report.StatusChoices.SAVED
                         )
 
@@ -156,7 +156,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         organization=org_instance,
                         statement=child_statement,
                         deadline=deadline,
-                        defaults={"status": Report.StatusChoices.SAVED}
+                        defaults={
+                            "status": Report.StatusChoices.SAVED,
+                            "region": org_instance.region
+                        }
                     )
                     reports_map[report_key] = report
 
@@ -184,9 +187,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
             # === HISOBLASH VA JAMI REPORTLAR ===
             if reports_map:
-                any_report = list(reports_map.values())[0]
-                general_report = aggregate_general_report(any_report.statement, deadline)
-
                 for report in reports_map.values():
                     statement_name = report.statement.name_uz
                     calculate_func = ALL_CALCULATORS.get(statement_name)
@@ -194,12 +194,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         calculate_func(report)
 
                     aggregate_individual_report(report)
-
-                if general_report:
-                    statement_name = general_report.statement.name_uz
-                    calculate_func = ALL_CALCULATORS.get(statement_name)
-                    if calculate_func:
-                        calculate_func(general_report)
 
             return list(reports_map.values())
 
