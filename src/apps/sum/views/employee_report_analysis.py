@@ -80,7 +80,7 @@ class SumEmployeeReportAnalysisListAPIView(APIView):
 
         # Ma’lumotlarni yig‘ish va summalash (inners orqali)
         items = (
-            ReportItem.objects.filter(statement_column__title__in=all_titles)
+            ReportItem.objects.filter(statement_column__title__in=all_titles,report__is_report=True)
             .values("statement_column__title")
             .annotate(total=Sum(Cast("inners__value", FloatField())))
         )

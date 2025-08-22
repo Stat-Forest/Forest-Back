@@ -80,7 +80,7 @@ class SumEmployeeReportListAPIView(APIView):
                      | set(titles_map_3["uz"].values())
 
         items = (
-            ReportItem.objects.filter(statement_column__title__in=key_titles)
+            ReportItem.objects.filter(statement_column__title__in=key_titles,report__is_report=True)
             .values("report_id", "report__organization__name", "statement_column__title")
             .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
