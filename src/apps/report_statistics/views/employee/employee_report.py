@@ -50,7 +50,7 @@ class StatisticsEmployeeReportAPIView(APIView):
         filter_key = 'statement_column__title' if lang == 'uz' else 'statement_column__title_ru'
         parent_key = 'statement_column__parent__title' if lang == 'uz' else 'statement_column__parent__title_ru'
 
-        filters = {f'{filter_key}__in': titles}
+        filters = {f'{filter_key}__in': titles,'report__is_report': True}
         if parent_title:
             filters[parent_key] = parent_title
 

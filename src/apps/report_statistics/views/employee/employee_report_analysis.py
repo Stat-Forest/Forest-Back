@@ -71,7 +71,10 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
         title_key = 'statement_column__title' if lang == 'uz' else 'statement_column__title_ru'
 
         qs = (
-            ReportItem.objects.filter(**{f'{title_key}__in': all_titles})
+            ReportItem.objects.filter(
+                **{f'{title_key}__in': all_titles},
+                report__is_report=True 
+            )
             .values('report__organization__region', title_key)
             .annotate(total=Sum(Cast('inners__value', FloatField())))
         )
