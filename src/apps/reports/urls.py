@@ -77,6 +77,7 @@ urlpatterns = [
     path('cancel/', ReportCancelAPIView.as_view(), name='report-cancel'),
     path('accept/', ReportAcceptAPIView.as_view(), name='report-accept'),
 
+    # INDIVIDUAL GENERAL REPORTS
     path("individual/", IndividualGeneralReport.as_view(), name="individual-general-list"),
     path("individual/<uuid:pk>/", IndividualGeneralReportDetail.as_view(), name="individual-general-detail"),
 
