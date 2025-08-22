@@ -7,6 +7,8 @@ from apps.reports.views import (
 
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
+from apps.reports.views.list_reports import IndividualGeneralReport, IndividualGeneralReportDetail, \
+    RegionalGeneralReport, RegionalGeneralReportDetail, RepublicGeneralReport, RepublicGeneralReportDetail
 
 from apps.reports.views.plan import (
     PlanCreateView,
@@ -16,30 +18,29 @@ from apps.reports.views.plan import (
     PlanRetrieveView,
     PlanStatementColumnListAPIView,
     PlanItemDetailAPIView
-    )
+)
 
 from apps.reports.views.deadline import (
     DeadlineListAPIView,
-    )
+)
 from apps.reports.views.dashboard import (
     DashboardStatListView,
-    )
+)
 
 from apps.reports.views.statement import (
     StatementListAPIView,
     StatementColumnTreeAPIView
-    )
+)
 
 from apps.reports.views.users import (
     UserListAPIView,
-    )
+)
 
 from apps.reports.views.status_reports import (
     ReportSendAPIView,
     ReportCancelAPIView,
     ReportAcceptAPIView,
-    )
-
+)
 
 from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
 from apps.reports.views.select_report import ReportAggregateSelectedAPIView
@@ -76,10 +77,19 @@ urlpatterns = [
     path('cancel/', ReportCancelAPIView.as_view(), name='report-cancel'),
     path('accept/', ReportAcceptAPIView.as_view(), name='report-accept'),
 
+    path("individual/", IndividualGeneralReport.as_view(), name="individual-general-list"),
+    path("individual/<uuid:pk>/", IndividualGeneralReportDetail.as_view(), name="individual-general-detail"),
+
+    # REGIONAL GENERAL REPORTS
+    path("regional/", RegionalGeneralReport.as_view(), name="regional-general-list"),
+    path("regional/<uuid:pk>/", RegionalGeneralReportDetail.as_view(), name="regional-general-detail"),
+
+    # REPUBLIC GENERAL REPORTS
+    path("republic/", RepublicGeneralReport.as_view(), name="republic-general-list"),
+    path("republic/<uuid:pk>/", RepublicGeneralReportDetail.as_view(), name="republic-general-detail"),
 
     # ====================  REPORT ITEM URL    ====================
     path('report-items/', ReportItemListAPIView.as_view(), name='report-item-list'),
-
 
     # ====================  PLAN URL    ====================
     path('plan-columns/', PlanStatementColumnListAPIView.as_view(), name='plane-columns-list'),
@@ -89,7 +99,6 @@ urlpatterns = [
     path("plan/<uuid:pk>/", PlanRetrieveView.as_view(), name="plan-detail"),
     path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
     path("plan-items/", PlanItemDetailAPIView.as_view(), name="planitem-detail"),
-
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
