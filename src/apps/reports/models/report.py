@@ -103,6 +103,15 @@ class Report(AbstractBaseModel):
         default=False
     )
 
+    is_report = models.BooleanField(
+        default=True,
+        db_index=True
+    )
+
+    is_republic = models.BooleanField(
+        default=False
+    )
+
     region = models.CharField(
       max_length=50,
       choices=RegionChoices.choices,
