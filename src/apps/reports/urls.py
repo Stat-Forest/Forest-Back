@@ -1,20 +1,50 @@
 from django.urls import path
 
 from apps.reports.views import (
-    DeadlineListAPIView, ReportListAPIView, ReportSendAPIView,
-    ReportCancelAPIView, ReportAcceptAPIView,
-    ReportCreateAPIView, StatementListAPIView,
-    ReportItemListAPIView, DashboardStatListView,
-    StatementColumnTreeAPIView, UserListAPIView,
+    ReportListAPIView,
+    ReportCreateAPIView, ReportItemListAPIView,
     ReportUpdateAPIView, ReportRetrieveAPIView, ReportDeleteAPIView,
-    PlanStatementColumnListAPIView, PlanCreateView,
-    PlanListAPIView,PlanDeleteAPIView,PlanUpdateView,PlanRetrieveView
+
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 
-from apps.reports.views.plant_column import PlantListAPIView
+from apps.reports.views.plan import (
+    PlanCreateView,
+    PlanListAPIView,
+    PlanDeleteAPIView,
+    PlanUpdateView,
+    PlanRetrieveView,
+    PlanStatementColumnListAPIView,
+    PlanItemDetailAPIView
+    )
+
+from apps.reports.views.deadline import (
+    DeadlineListAPIView,
+    )
+from apps.reports.views.dashboard import (
+    DashboardStatListView,
+    )
+
+from apps.reports.views.statement import (
+    StatementListAPIView,
+    StatementColumnTreeAPIView
+    )
+
+from apps.reports.views.users import (
+    UserListAPIView,
+    )
+
+from apps.reports.views.status_reports import (
+    ReportSendAPIView,
+    ReportCancelAPIView,
+    ReportAcceptAPIView,
+    )
+
+
 from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
 from apps.reports.views.select_report import ReportAggregateSelectedAPIView
+
+from apps.reports.views.plant_column import PlantListAPIView
 
 urlpatterns = [
 
@@ -58,6 +88,7 @@ urlpatterns = [
     path("plan/<uuid:pk>/update/", PlanUpdateView.as_view(), name="plan-update"),
     path("plan/<uuid:pk>/", PlanRetrieveView.as_view(), name="plan-detail"),
     path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
+    path("plan-items/", PlanItemDetailAPIView.as_view(), name="planitem-detail"),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
