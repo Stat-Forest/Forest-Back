@@ -19,12 +19,6 @@ def handle_accepted_report(sender, instance: Report, created, **kwargs):
     if not instance.is_report:
         return
 
-    # ✅ Hisoblash
-    # statement_name = instance.statement.name_uz
-    # calculate_func = ALL_CALCULATORS.get(statement_name)
-    # if calculate_func:
-    #     calculate_func(instance)
-
     # ✅ Region Jami (individual bo‘lmaganlar uchun)
     if instance.region:
         print(">>> Viloyat Jami chaqirilyapti")
