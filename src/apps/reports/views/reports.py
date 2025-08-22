@@ -49,14 +49,22 @@ class ReportListAPIView(CustomListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
         base_qs = self.queryset
 
         if user.is_superuser:
-            return base_qs.order_by('is_general', '-created_at')
+            return base_qs.filter(
+                is_general=False,
+                is_individual_general=False,
+                is_republic=False,
+            ).order_by('-created_at')
 
         if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma']:
-            return base_qs.filter(organization=user.organization).order_by('is_general', '-created_at')
+            return base_qs.filter(
+                organization=user.organization,
+                is_general=False,
+                is_individual_general=False,
+                is_republic=False,
+            ).order_by('-created_at')
 
         return base_qs.none()
 

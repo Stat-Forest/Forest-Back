@@ -25,6 +25,7 @@ def aggregate_individual_report(source_report):
         status=Report.StatusChoices.SAVED,
         is_general=False,
         is_individual_general=True,
+        is_report=False,
         region=source_report.region,
         republic=source_report.republic,
     )

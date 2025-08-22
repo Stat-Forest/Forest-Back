@@ -1,7 +1,10 @@
 import re
 
+from django.utils.translation import gettext_lazy as _
+
 from rest_framework import serializers
 from apps.reports.models import Report, StatementColumn
+from apps.utils.services import RegionChoices
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
@@ -48,7 +51,10 @@ class ReportListSerializer(serializers.ModelSerializer):
         lang = get_lang_code(self.context)
 
         items = list(
-            report.report_items.select_related("statement_column").prefetch_related("inners").all()
+            report.report_items
+            .select_related("statement_column")
+            .prefetch_related("inners")
+            .all()
         )
 
         def ordering_key(ordering: str):
@@ -56,52 +62,71 @@ class ReportListSerializer(serializers.ModelSerializer):
                 return []
             return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
 
-        # Natural sort: Har bir columnni ordering bo‘yicha tartiblaymiz
         items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
-        # Ilovalar bo‘yicha grouping qilish uchun top-level ilovani aniqlaymiz: 1., 2., 3. kabi
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
 
-        # ✅ ORGANIZATION NAME – FAQAT SHU QISM O‘ZGARGAN
+        # ✅ ORGANIZATION NAME & ID
         if report.is_general:
             organization_id = "general"
-            organization_name = "Viloyat darajasidagi Jami"
-        elif getattr(report, "is_individual_general", False):  # Agar flag mavjud bo‘lsa
-            organization_id = "individual"
-            organization_name = f"{get_translated_field(report.organization, 'name', lang)} – Tashkilot Jami"
-        else:
-            organization_id = str(report.organization.id)
-            organization_name = get_translated_field(report.organization, "name", lang)
+            organization_name = _("Viloyat darajasidagi Jami")
 
-        # Top-level ilovalar bo‘yicha guruhlash (1-ilova, 2-ilova, 3-ilova...)
+        elif getattr(report, "is_individual_general", False):
+            organization_id = "individual"
+            organization_name = f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
+
+        elif report.is_republic:
+            organization_id = "republic"
+            organization_name = _("Respublika Jami")
+
+        else:
+            # ⚠️ Himoya: organization None bo‘lishi mumkin
+            if report.organization:
+                organization_id = str(report.organization.id)
+                organization_name = get_translated_field(report.organization, "name", lang)
+            else:
+                organization_id = "unknown"
+                organization_name = _("Nomaʼlum tashkilot")
+
+        # === Grouping ilova bo‘yicha ===
         grouped_by_ilova = {}
         for item in items:
-            top_level = get_top_level_ordering(item.statement_column.ordering)
+            column = item.statement_column
+            if column is None:
+                continue  # himoya
+
+            top_level = get_top_level_ordering(column.ordering)
             grouped_by_ilova.setdefault(top_level, []).append(item)
 
         statement_columns = []
 
-        # Ilovalar ketma-ketligi bo‘yicha aylanamiz (1, 2, 3 ...)
         for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
             for item in grouped_by_ilova[ilova_ordering]:
                 column = item.statement_column
+                if column is None:
+                    continue  # himoya
+
                 inner_values = []
-
                 for inner in item.inners.all():
+                    val = inner.value
+
                     if column.is_organization:
-                        val = inner.value  # default
-                        column_title = getattr(column, f"title_{lang}", "")
+                        column_title = getattr(column, f"title_{lang}", "").lower()
 
-                        if column_title.lower() in ["tashkilot nomi", "название организации"]:
-                            if report.is_individual_general or report.is_general:
+                        if column_title in ["tashkilot nomi", "название организации"]:
+                            if report.is_individual_general:
                                 val = get_translated_field(report.organization, "name", lang)
-                                suffix = " – Tashkilot Jami" if report.is_individual_general else " – Viloyat Jami"
-                                val = f"{val}{suffix}"
+                                val = f"{val} – {_('Tashkilot Jami')}"
 
-                        inner_values.append({"id": str(inner.id), "value": val})
-                    else:
-                        inner_values.append({"id": str(inner.id), "value": inner.value})
+                            elif report.is_general:
+                                region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
+                                val = f"{region_label} – {_('Viloyat Jami')}"
+
+                            elif report.is_republic:
+                                val = _("Respublika Jami")
+
+                    inner_values.append({"id": str(inner.id), "value": val})
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
@@ -109,6 +134,7 @@ class ReportListSerializer(serializers.ModelSerializer):
                     "inners": inner_values
                 })
 
+        # Final result
         data = [{
             "organization_id": organization_id,
             "organization_name": organization_name,
@@ -116,9 +142,10 @@ class ReportListSerializer(serializers.ModelSerializer):
         }]
 
         data.sort(key=lambda item: (
-            0 if item["organization_id"] not in ["individual", "general"]
+            0 if item["organization_id"] not in ["individual", "general", "republic"]
             else 1 if item["organization_id"] == "individual"
-            else 2
+            else 2 if item["organization_id"] == "general"
+            else 3
         ))
 
         return data
