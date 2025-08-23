@@ -10,6 +10,30 @@ from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
 
+FIELD_NAMES = {
+    "uz": {"region": "Hudud", "ilova4": "4-ilova", "ilova5": "5-ilova", "ilova6": "6-ilova"},
+    "ru": {"region": "Регион", "ilova4": "Приложение-4", "ilova5": "Приложение-5", "ilova6": "Приложение-6"},
+}
+
+# Region labels to match RegionChoices.value
+REGION_LABELS = {
+    "tashkent": {"uz": "Toshkent", "ru": "Ташкент"},
+    "namangan": {"uz": "Namangan", "ru": "Наманган"},
+    "andijon": {"uz": "Andijon", "ru": "Андижан"},
+    "fargona": {"uz": "Farg‘ona", "ru": "Фергана"},
+    "buxoro": {"uz": "Buxoro", "ru": "Бухара"},
+    "samarqand": {"uz": "Samarqand", "ru": "Самарканд"},
+    "navoiy": {"uz": "Navoiy", "ru": "Навои"},
+    "qashqadaryo": {"uz": "Qashqadaryo", "ru": "Кашкадарья"},
+    "surxondaryo": {"uz": "Surxondaryo", "ru": "Сурхандарья"},
+    "xorazm": {"uz": "Xorazm", "ru": "Хорезм"},
+    "sirdaryo": {"uz": "Sirdaryo", "ru": "Сырдарья"},
+    "jizzax": {"uz": "Jizzax", "ru": "Джизак"},
+    "qoraqalpogiston": {"uz": "Qoraqalpog‘iston", "ru": "Каракалпакстан"},
+    "republic": {"uz": "Respublika tashkilotlari", "ru": "Республиканские организации"},
+}
+
+
 @extend_schema(
     summary="Xodim hisobi tahlili",
     description="Xodim hisobi tahlili (UZ va RU tillarini qo‘llab-quvvatlaydi)",
@@ -62,6 +86,7 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
             lang = 'uz'
 
         translated = self.get_translated_titles(lang)
+        field_names = FIELD_NAMES[lang]
 
         # all titles for query
         all_titles = []
@@ -73,7 +98,7 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
         qs = (
             ReportItem.objects.filter(
                 **{f'{title_key}__in': all_titles},
-                report__is_report=True 
+                report__is_report=True
             )
             .values('report__organization__region', title_key)
             .annotate(total=Sum(Cast('inners__value', FloatField())))
@@ -86,22 +111,21 @@ class StatisticsEmployeeReportAnalysisAPIView(APIView):
             total = item['total'] or 0
             grouped_data[region][title] = total
 
-        data = [{
-            '4-ilova': [],
-            '5-ilova': [],
-            '6-ilova': []
-        }]
+        data = [{field_names["ilova4"]: [], field_names["ilova5"]: [], field_names["ilova6"]: []}]
 
-        for region in RegionChoices.values:
-            for key, label in [('4', '4-ilova'), ('5', '5-ilova'), ('6', '6-ilova')]:
+        for region_key, _ in RegionChoices.choices:
+            region_name = REGION_LABELS.get(region_key, {}).get(lang, region_key)
+
+            for key, label in [('4', field_names["ilova4"]),
+                               ('5', field_names["ilova5"]),
+                               ('6', field_names["ilova6"])]:
                 titles = translated[key]
                 data[0][label].append({
-                    'name': region,
+                    field_names["region"]: region_name,
                     **{
-                        (ru if lang == 'ru' else uz): grouped_data[region].get(
+                        (ru if lang == 'ru' else uz): grouped_data[region_key].get(
                             (ru if lang == 'ru' else uz), 0
-                        )
-                        for uz, ru in titles
+                        ) for uz, ru in titles
                     }
                 })
 
