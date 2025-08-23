@@ -1,13 +1,30 @@
+from collections import defaultdict
+from django.db.models import Sum, FloatField
+from django.db.models.functions import Cast
+from django.utils import translation
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from django.db.models import Sum, FloatField
-from django.db.models.functions import Cast
-from collections import defaultdict
 
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
+
+
+FIELD_NAMES = {
+    "uz": {
+        "region": "hudud",
+        "ilova1": "1-ilova",
+        "ilova2": "2-ilova",
+        "ilova3": "3-ilova",
+    },
+    "ru": {
+        "region": "регион",
+        "ilova1": "Приложение-1",
+        "ilova2": "Приложение-2",
+        "ilova3": "Приложение-3",
+    },
+}
 
 
 @extend_schema(
@@ -16,96 +33,159 @@ from apps.reports.models import ReportItem
     tags=["Statistics"],
     parameters=[
         OpenApiParameter(
-            name='lang',
-            description='Til parametri: uz (default) yoki ru',
+            name="lang",
+            description="Til parametri: uz (default) yoki ru",
             required=False,
             type=OpenApiTypes.STR,
-            enum=['uz', 'ru'],
-            location=OpenApiParameter.QUERY
+            enum=["uz", "ru"],
+            location=OpenApiParameter.QUERY,
         )
-    ]
+    ],
 )
 class StatisticsEmployeeReportAPIView(APIView):
 
-    def get_translated_titles(self, lang):
-        titles = {
-            'uz': {
-                '1': ["Boshqaruv xodimlari", "Mutaxassislar", "Ishlab chiqarish xodimlari",
-                      "Texnik hodim", "Xizmat korsatuvchi xodimlar", "ishchilar"],
-                '2': ["Oliy", "O`rta-mahsus", "O'rta-maxsus", "Ayol", "Erkak xodimlar", "Yoshlar Jami"],
-                '3': ["Doimiy", "Mavsumiy", "Temir daftar va ayollar daftariga kiritilgan",
-                      "Kambag’al axolidan olingan", "Kasanachilik asosida"]
+    def get_translated_titles(self, lang: str) -> dict:
+        return {
+            "uz": {
+                "1": [
+                    "Boshqaruv xodimlari",
+                    "Mutaxassislar",
+                    "Ishlab chiqarish xodimlari",
+                    "Texnik hodim",
+                    "Xizmat korsatuvchi xodimlar",
+                    "ishchilar",
+                ],
+                "2": [
+                    "Oliy",
+                    "O`rta-mahsus",
+                    "O'rta-maxsus",
+                    "Ayol",
+                    "Erak xodimlar",
+                    "Yoshlar Jami",
+                ],
+                "3": [
+                    "Doimiy",
+                    "Mavsumiy",
+                    "Temir daftar va ayollar daftariga kiritilgan",
+                    "Kambag’al axolidan olingan",
+                    "Kasanachilik asosida",
+                ],
             },
-            'ru': {
-                '1': ["Руководящие работники", "Специалисты", "Производственные работники",
-                      "Технический персонал", "Обслуживающий персонал", "Рабочие"],
-                '2': ["Высшее", "Среднее специальное", "Среднее", "Женщины-1", "Мужчины-1", "Всего молодёжи"],
-                '3': ["Постоянные", "Сезонные", "Включённые в железную и женскую книги",
-                      "Из числа малообеспеченных", "На основе надомного труда"]
-            }
-        }
-        return titles[lang]
+            "ru": {
+                "1": [
+                    "Руководящие работники",
+                    "Специалисты",
+                    "Производственные работники",
+                    "Технический персонал",
+                    "Обслуживающий персонал",
+                    "Рабочие",
+                ],
+                "2": [
+                    "Высшее",
+                    "Среднее специальное",
+                    "Среднее",
+                    "Женщины-1",
+                    "Мужчины-1",
+                    "Всего молодёжи",
+                ],
+                "3": [
+                    "Постоянные",
+                    "Сезонные",
+                    "Включённые в железную и женскую книги",
+                    "Из числа малообеспеченных",
+                    "На основе надомного труда",
+                ],
+            },
+        }[lang]
 
     def get_aggregated_data_by_titles(self, titles, lang, parent_title=None):
-        filter_key = 'statement_column__title' if lang == 'uz' else 'statement_column__title_ru'
-        parent_key = 'statement_column__parent__title' if lang == 'uz' else 'statement_column__parent__title_ru'
+        filter_key = (
+            "statement_column__title" if lang == "uz" else "statement_column__title_ru"
+        )
+        parent_key = (
+            "statement_column__parent__title"
+            if lang == "uz"
+            else "statement_column__parent__title_ru"
+        )
 
-        filters = {f'{filter_key}__in': titles,'report__is_report': True}
+        filters = {f"{filter_key}__in": titles, "report__is_report": True}
         if parent_title:
             filters[parent_key] = parent_title
 
-        # endi ReportItemInner.value ishlatiladi
         return (
             ReportItem.objects.filter(**filters)
-            .values('report__organization__region', filter_key)
-            .annotate(
-                total=Sum(Cast('inners__value', FloatField()))
-            )
+            .values("report__organization__region", filter_key)
+            .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
 
     def get(self, request):
-        lang = request.query_params.get('lang', 'uz')  # default is 'uz'
-        if lang not in ['uz', 'ru']:
-            lang = 'uz'
+        lang = request.query_params.get("lang", "uz")
+        if lang not in ["uz", "ru"]:
+            lang = "uz"
+
+        translation.activate(lang)
 
         translated_titles = self.get_translated_titles(lang)
+        parent_title_ilova_1 = "Shundan-1" if lang == "uz" else "Из них-1"
 
-        # Translate parent title if needed
-        parent_title_ilova_1 = "Shundan-1" if lang == 'uz' else "Из них-1"
+        qs1 = self.get_aggregated_data_by_titles(
+            translated_titles["1"], lang, parent_title=parent_title_ilova_1
+        )
+        qs2 = self.get_aggregated_data_by_titles(translated_titles["2"], lang)
+        qs3 = self.get_aggregated_data_by_titles(translated_titles["3"], lang)
 
-        qs1 = self.get_aggregated_data_by_titles(translated_titles['1'], lang, parent_title=parent_title_ilova_1)
-        qs2 = self.get_aggregated_data_by_titles(translated_titles['2'], lang)
-        qs3 = self.get_aggregated_data_by_titles(translated_titles['3'], lang)
-
-        title_key = 'statement_column__title' if lang == 'uz' else 'statement_column__title_ru'
+        title_key = (
+            "statement_column__title"
+            if lang == "uz"
+            else "statement_column__title_ru"
+        )
 
         grouped_data = defaultdict(lambda: defaultdict(float))
-
         for qs in (qs1, qs2, qs3):
             for item in qs:
-                region = item['report__organization__region']
+                region = item["report__organization__region"]
                 title = item[title_key]
-                total = item['total'] or 0
+                total = item["total"] or 0
                 grouped_data[region][title] += total
 
+        # 🔑 FIELD_NAMES dan foydalanamiz
+        field_names = FIELD_NAMES[lang]
+
         data = [{
-            '1-ilova': [],
-            '2-ilova': [],
-            '3-ilova': []
+            field_names["ilova1"]: [],
+            field_names["ilova2"]: [],
+            field_names["ilova3"]: []
         }]
 
-        for region in RegionChoices.values:
-            data[0]['1-ilova'].append({
-                'name': region,
-                **{title: grouped_data[region].get(title, 0) for title in translated_titles['1']}
-            })
-            data[0]['2-ilova'].append({
-                'name': region,
-                **{title: grouped_data[region].get(title, 0) for title in translated_titles['2']}
-            })
-            data[0]['3-ilova'].append({
-                'name': region,
-                **{title: grouped_data[region].get(title, 0) for title in translated_titles['3']}
-            })
+        for region_key, region_label in RegionChoices.choices:
+            region_name = str(region_label)
+
+            data[0][field_names["ilova1"]].append(
+                {
+                    field_names["region"]: region_name,
+                    **{
+                        title: grouped_data[region_key].get(title, 0)
+                        for title in translated_titles["1"]
+                    },
+                }
+            )
+            data[0][field_names["ilova2"]].append(
+                {
+                    field_names["region"]: region_name,
+                    **{
+                        title: grouped_data[region_key].get(title, 0)
+                        for title in translated_titles["2"]
+                    },
+                }
+            )
+            data[0][field_names["ilova3"]].append(
+                {
+                    field_names["region"]: region_name,
+                    **{
+                        title: grouped_data[region_key].get(title, 0)
+                        for title in translated_titles["3"]
+                    },
+                }
+            )
 
         return Response(data, status=HTTP_200_OK)

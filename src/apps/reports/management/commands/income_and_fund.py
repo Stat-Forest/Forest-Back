@@ -115,7 +115,8 @@ class Command(BaseCommand):
                     title="Jami tushum",
                     title_uz="Jami tushum",
                     title_ru="Общий доход",
-                    ordering=f"{income_order}.1"
+                    ordering=f"{income_order}.1",
+                    is_user_input=False
                 )
 
                 jamg_node = StatementColumn.objects.create(
@@ -132,13 +133,18 @@ class Command(BaseCommand):
                     ("To‘landi", "Оплачено"),
                     ("Qoldiq", "Остаток")
                 ], start=1):
+                    extra_kwargs = {}
+                    if title_uz == "Qoldiq":
+                        extra_kwargs["is_user_input"] = False
+
                     StatementColumn.objects.create(
                         statement=jamg_statement,
                         parent=jamg_node,
                         title=title_uz,
                         title_uz=title_uz,
                         title_ru=title_ru,
-                        ordering=f"{income_order}.2.{j_idx}"
+                        ordering=f"{income_order}.2.{j_idx}",
+                        **extra_kwargs
                     )
 
             jami_tushum = StatementColumn.objects.create(
@@ -148,6 +154,7 @@ class Command(BaseCommand):
                 title_uz="Jami tushum",
                 title_ru="Общий доход",
                 ordering="1.1.9"
+
             )
 
             StatementColumn.objects.create(
@@ -156,7 +163,8 @@ class Command(BaseCommand):
                 title="Jamg’arma ga jami tushum",
                 title_uz="Jamg’arma ga jami tushum",
                 title_ru="Общий доход в фонд",
-                ordering="1.1.9.1"
+                ordering="1.1.9.1",
+                is_user_input=False
             )
 
             jamg_shundan = StatementColumn.objects.create(
@@ -179,7 +187,8 @@ class Command(BaseCommand):
                     title=title_uz,
                     title_uz=title_uz,
                     title_ru=title_ru,
-                    ordering=f"1.1.9.2.{j_idx}"
+                    ordering=f"1.1.9.2.{j_idx}",
+                    is_user_input = False
                 )
 
             self.stdout.write(self.style.SUCCESS("Jamg‘arma statement yaratildi."))
@@ -241,7 +250,8 @@ class Command(BaseCommand):
                     title_uz=title_uz,
                     title_ru=title_ru,
                     ordering=f"1.1.{idx}",
-                    is_organization=(idx == 1)
+                    is_organization=(idx == 1),
+                    is_user_input=(idx != len(titles))
                 )
 
             # Tushumlar bo‘yicha
@@ -363,7 +373,8 @@ class Command(BaseCommand):
                     title="Amalda",
                     title_uz="Amalda",
                     title_ru="Факт",
-                    ordering=f"{chorak_order}.2"
+                    ordering=f"{chorak_order}.2",
+                    is_user_input=False
                 )
 
                 # Chorak oylar bo'limi
@@ -400,7 +411,8 @@ class Command(BaseCommand):
                             title_uz=title_uz,
                             title_ru=title_ru,
                             ordering=f"{oy_order}.{p_idx}",
-                            status_plan=(oy_status if title_uz == "Reja" else None)
+                            status_plan=(oy_status if title_uz == "Reja" else None),
+                            is_user_input=(title_uz == "Reja")
                         )
 
                     tushum_node = StatementColumn.objects.create(
@@ -441,6 +453,7 @@ class Command(BaseCommand):
                 title_uz='Tushum',
                 title_ru='Поступление',
                 ordering="2.1.11.1",
+                is_user_input=False
             )
 
             StatementColumn.objects.create(
@@ -450,6 +463,7 @@ class Command(BaseCommand):
                 title_uz='Yillik rejaga nisbatan %',
                 title_ru='% к годовому плану',
                 ordering="2.1.11.2",
+                is_user_input=False
             )
 
             # Svod bo‘limi
@@ -497,7 +511,8 @@ class Command(BaseCommand):
                 title="Amalda (ming sum)",
                 title_uz="Amalda (ming so'm)",
                 title_ru="Фактически (в тыс. сумов)",
-                ordering="3.1.3"
+                ordering="3.1.3",
+                is_user_input=False
             )
 
             StatementColumn.objects.create(
@@ -506,7 +521,8 @@ class Command(BaseCommand):
                 title="Rejaga nisbatan %",
                 title_uz="Rejaga nisbatan %",
                 title_ru="В % к плану",
-                ordering="3.1.4"
+                ordering="3.1.4",
+                is_user_input=False
             )
 
             self.stdout.write(self.style.SUCCESS("Daromad statement to‘liq yaratildi."))

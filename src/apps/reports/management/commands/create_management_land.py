@@ -10,14 +10,15 @@ class Command(BaseCommand):
     def create_column(self, **kwargs):
         return SC.objects.create(**kwargs)
 
-    def create_columns_from_titles(self, titles, base_ordering, parent, statement):
+    def create_columns_from_titles(self, titles, base_ordering, parent, statement,user_input=True):
         for idx, (uz_title, ru_title) in enumerate(titles, 1):
             self.create_column(
                 statement=statement,
                 parent=parent,
                 title=uz_title,
                 title_ru=ru_title,
-                ordering=f"{base_ordering}.{idx}"
+                ordering=f"{base_ordering}.{idx}",
+                is_user_input=user_input
             )
 
     def handle(self, *args, **kwargs):
@@ -48,7 +49,7 @@ class Command(BaseCommand):
 
             # Reja va boshqa ustunlar
             self.create_column(statement=land_1, parent=info_11, title="Reja", title_ru="План", ordering="1.1.2", status_plan=SC.PlanStatus.YILLIK)
-            self.create_column(statement=land_1, parent=info_11, title="Amalda", title_ru="Фактически", ordering="1.1.3")
+            self.create_column(statement=land_1, parent=info_11, title="Amalda", title_ru="Фактически", ordering="1.1.3",user_input=False)
             shundan = self.create_column(statement=land_1, parent=info_11, title="Shundan", title_ru="Из них", ordering="1.1.4")
             for i, (uz, ru) in enumerate([
                 ("1-chorak", "1-й квартал"),
@@ -57,7 +58,7 @@ class Command(BaseCommand):
                 ("4-chorak", "4-й квартал")
             ], 1):
                 self.create_column(statement=land_1, parent=shundan, title=uz, title_ru=ru, ordering=f"1.1.4.{i}")
-            self.create_column(statement=land_1, parent=info_11, title="Foiz", title_ru="Процент", ordering="1.1.5")
+            self.create_column(statement=land_1, parent=info_11, title="Foiz", title_ru="Процент", ordering="1.1.5",user_input=False)
 
             # Shartnoma
             contract = self.create_column(statement=land_2, parent=info_12, title="Shartnoma", title_ru="Договор", ordering="2.1.2")
@@ -85,7 +86,7 @@ class Command(BaseCommand):
             self.create_column(
                 statement=land_2,
                 parent=info_12,
-                title="Ижара ер майдони жойлашган ўрмон бўлими номи",
+                title="Ijara yer maydoni joylashgan o‘rmon bo‘limi nomi",
                 title_ru="Наименование лесничества, где расположен арендованный земельный участок",
                 ordering="2.1.4"
             )
@@ -112,7 +113,7 @@ class Command(BaseCommand):
             self.create_column(
                 statement=land_2,
                 parent=info_12,
-                title="Жами ижарага олинган ер майдони (га)",
+                title="Jami ijaraga olingan yer maydoni (ga)",
                 title_ru="Общая площадь арендованной земли (га)",
                 ordering="2.1.6"
             )
@@ -196,25 +197,25 @@ class Command(BaseCommand):
             period = self.create_column(
                 statement=land_2,
                 parent=info_12,
-                title="2024-2025 йиллар",
-                title_ru="2024-2025 yillar",
+                title="2024–2025 yillar",
+                title_ru="2024–2025 годы",
                 ordering="2.1.10"
             )
 
             # 1.2.1.10.X - To‘lovlar
-            self.create_column(statement=land_2, parent=period, title="Жами ҳисобланган", title_ru="Jami hisoblangan",
+            self.create_column(statement=land_2, parent=period, title="Jami hisoblangan", title_ru="Всего рассчитано",
                                ordering="2.1.10.1")
-            self.create_column(statement=land_2, parent=period, title="Жами тўланган", title_ru="Jami to‘langan",
+            self.create_column(statement=land_2, parent=period, title="Jami to‘langan", title_ru="Всего оплачено",
                                ordering="2.1.10.2")
-            self.create_column(statement=land_2, parent=period, title="Жами қарздорлик", title_ru="Jami qarzdorlik",
+            self.create_column(statement=land_2, parent=period, title="Jami qarzdorlik", title_ru="Общая задолженность",
                                ordering="2.1.10.3")
 
             # 1.2.1.11 - Yangi ish o‘rinlari (bolasisiz)
             self.create_column(
                 statement=land_2,
                 parent=info_12,
-                title="Янгидан яратилган иш ўринлар сони",
-                title_ru="Yar newly created jobs",
+                title="Yangidan yaratilgan ish o‘rinlari soni",
+                title_ru="Количество вновь созданных рабочих мест",
                 ordering="2.1.11"
             )
 
