@@ -199,18 +199,22 @@ class PlanListItemSerializer(serializers.Serializer):
     plan_value = serializers.FloatField()
 
     def get_column_parent_name(self, obj):
-        """ Parent column nomi (uz/ru) """
+        """ Barcha parent column nomlarini yuqoridan boshlab qo‘shib qaytaradi """
         lang = self.context.get("lang", "uz")
+        names = []
         parent = getattr(obj.column, "parent", None)
-        if not parent:
-            return None
-        return getattr(parent, f"title_{lang}", parent.title)
+
+        while parent:
+            names.append(getattr(parent, f"title_{lang}", parent.title))
+            parent = getattr(parent, "parent", None)
+
+        return " - ".join(reversed(names)) if names else None
 
     def get_column_name(self, obj):
         """ Columnning o‘zining nomi (uz/ru) """
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
-    
+
 
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
