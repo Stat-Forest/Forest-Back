@@ -66,12 +66,12 @@ class PlanItemSerializer(serializers.Serializer):
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
-    statement = serializers.UUIDField() 
+    statement = serializers.UUIDField(required=True)
 
     class Meta:
         model = Plan
         fields = ["id", "organization", "statement", "year", "plan_items"]
-        read_only_fields = ["statement"]
+        read_only_fields = []
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -185,6 +185,7 @@ class PlanSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         # statement update bo‘lmaydi
+        validated_data.pop("statement", None)
         if "organization" in validated_data:
             instance.organization = Organization.objects.get(id=validated_data["organization"])
         instance.year = validated_data.get("year", instance.year)
