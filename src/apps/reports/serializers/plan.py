@@ -66,7 +66,7 @@ class PlanItemSerializer(serializers.Serializer):
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
-    statement = serializers.UUIDField(read_only=True)  # update da o‘zgarmaydi
+    statement = serializers.UUIDField() 
 
     class Meta:
         model = Plan
