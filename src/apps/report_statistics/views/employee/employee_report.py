@@ -20,9 +20,9 @@ FIELD_NAMES = {
     },
     "ru": {
         "region": "регион",
-        "ilova1": "Приложение-1",
-        "ilova2": "Приложение-2",
-        "ilova3": "Приложение-3",
+        "ilova1": "1-ilova",
+        "ilova2": "2-ilova",
+        "ilova3": "3-ilova",
     },
 }
 
