@@ -53,7 +53,7 @@ QUARTERS = {
 
 
 class PlanItemSerializer(serializers.Serializer):
-    column = serializers.UUIDField(source="column_id")
+    column = serializers.UUIDField()
     column_name = serializers.SerializerMethodField()
     plan_value = serializers.FloatField()
 
