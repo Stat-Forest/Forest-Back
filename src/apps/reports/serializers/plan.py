@@ -2,23 +2,12 @@ from collections import defaultdict
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers
 
 from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
-from apps.utils.translation import get_lang_code, get_translated_field
 
-
-MONTHS_BY_QUARTER = {
-    'CHORAK_1': ['YANVAR', 'FEVRAL', 'MART'],
-    'CHORAK_2': ['APREL', 'MAY', 'IYUN'],
-    'CHORAK_3': ['IYUL', 'AVGUST', 'SENTABR'],
-    'CHORAK_4': ['OKTABR', 'NOYABR', 'DEKABR'],
-}
-
-QUARTERS = ['CHORAK_1', 'CHORAK_2', 'CHORAK_3', 'CHORAK_4']
 
 # === Konstantalar ===
 MONTHS_BY_QUARTER = {
@@ -63,15 +52,16 @@ class PlanItemSerializer(serializers.Serializer):
             return getattr(obj.column, "title_ru", obj.column.title)
         return getattr(obj.column, "title_uz", obj.column.title)
 
+
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
-    statement = serializers.UUIDField(required=True)
+    # create paytida majburiy, update paytida optional
+    statement = serializers.UUIDField(required=False)
 
     class Meta:
         model = Plan
         fields = ["id", "organization", "statement", "year", "plan_items"]
-        read_only_fields = []
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -79,13 +69,20 @@ class PlanSerializer(serializers.ModelSerializer):
         if value < 2024 or value > current_year:
             raise CustomExceptionError(
                 400,
-                {'year': _('Year must be between 2024 and current year.')}
+                {"year": _("Year must be between 2024 and current year.")}
             )
         return value
 
     def validate(self, attrs):
-        if not attrs.get('plan_items'):
-            raise CustomExceptionError(400, {'plan_items': _('Plan items are required.')})
+        # create paytida statement majburiy
+        if self.instance is None and not attrs.get("statement"):
+            raise CustomExceptionError(
+                400, {"statement": _("This field is required.")}
+            )
+        if not attrs.get("plan_items"):
+            raise CustomExceptionError(
+                400, {"plan_items": _("Plan items are required.")}
+            )
         return attrs
 
     def _save_plan_items(self, plan, statement, items):
@@ -184,8 +181,9 @@ class PlanSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        # statement update bo‘lmaydi
+        # statement update qilinmaydi
         validated_data.pop("statement", None)
+
         if "organization" in validated_data:
             instance.organization = Organization.objects.get(id=validated_data["organization"])
         instance.year = validated_data.get("year", instance.year)
