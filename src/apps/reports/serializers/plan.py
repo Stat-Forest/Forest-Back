@@ -193,10 +193,29 @@ class PlanSerializer(serializers.ModelSerializer):
         self._save_plan_items(instance, instance.statement, items)
         return instance
 
+class PlanListItemSerializer(serializers.Serializer):
+    column_parent_name = serializers.SerializerMethodField()
+    column_name = serializers.SerializerMethodField()
+    plan_value = serializers.FloatField()
+
+    def get_column_parent_name(self, obj):
+        """ Parent column nomi (uz/ru) """
+        lang = self.context.get("lang", "uz")
+        parent = getattr(obj.column, "parent", None)
+        if not parent:
+            return None
+        return getattr(parent, f"title_{lang}", parent.title)
+
+    def get_column_name(self, obj):
+        """ Columnning o‘zining nomi (uz/ru) """
+        lang = self.context.get("lang", "uz")
+        return getattr(obj.column, f"title_{lang}", obj.column.title)
+    
+
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     statement = serializers.SerializerMethodField()
-    plan_items = PlanItemSerializer(many=True, read_only=True)
+    plan_items = PlanListItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Plan
