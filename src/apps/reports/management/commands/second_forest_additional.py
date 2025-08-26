@@ -271,7 +271,8 @@ class Command(BaseCommand):
 
         # ========== Metallolom ilovasi ==========
         metallolom_ilova = create_column(
-            statement_mechanization, None, "Metallolom ilovasi", "Приложение: Металлолом", "7"
+            statement_mechanization, None,
+            "Metallolom ilovasi", "Приложение: Металлолом", "7"
         )
 
         metallolom_title = create_column(
@@ -282,51 +283,88 @@ class Command(BaseCommand):
             "7.1"
         )
 
-        create_column(statement_mechanization, metallolom_title, "Tashkilot nomi", "Наименование организации", "7.1.1",
-                      is_organization=True)
-
         create_column(
-            statement_mechanization,
-            metallolom_title,
-            "Yillik reja, tonna",
-            "Годовой план, тонн",
-            "7.1.2",
-            status_plan=StatementColumn.PlanStatus.YILLIK,
-
+            statement_mechanization, metallolom_title,
+            "Tashkilot nomi", "Наименование организации",
+            "7.1.1", is_organization=True
         )
-        create_column(statement_mechanization, metallolom_title, "Amalda", "Факт", "7.1.2",
-                      is_user_input=False)
-        create_column(statement_mechanization, metallolom_title, "%", "%", "7.1.2",
-                      is_user_input=False)
 
+        # Yillik reja (yil uchun)
+        create_column(
+            statement_mechanization, metallolom_title,
+            "Yillik reja, tonna", "Годовой план, тонн",
+            "7.1.2", status_plan=StatementColumn.PlanStatus.YILLIK
+        )
+
+        # Yil bo‘yicha umumiy natijalar va foiz (hisoblanadi)
+        create_column(
+            statement_mechanization, metallolom_title,
+            "Amalda", "Факт",
+            "7.1.3", is_user_input=False
+        )
+        create_column(
+            statement_mechanization, metallolom_title,
+            "%", "%", "7.1.4",
+            is_user_input=False
+        )
+
+        # Choraklar bo‘yicha blok
         for i in range(1, 5):
-            chorak_ordering = f"7.1.{i + 1}"
-            chorak_status = getattr(StatementColumn.PlanStatus, f"CHORAK_{i}")
-            chorak = create_column(
-                statement_mechanization,
-                metallolom_title,
-                f"{i}-chorak",
-                f"{i}-й квартал",
-                chorak_ordering,
-                status_plan=chorak_status
-            )
-            create_column(statement_mechanization, chorak, "Reja", "План", f"{chorak_ordering}.1")
-            create_column(statement_mechanization, chorak, "Amalda", "Факт", f"{chorak_ordering}.2")
-            create_column(statement_mechanization, chorak, "%", "%", f"{chorak_ordering}.3",
-                          is_user_input=False)
+            chorak_ordering = f"7.1.{i + 4}"  # 7.1.5 .. 7.1.8
+            plan_status = getattr(StatementColumn.PlanStatus, f"CHORAK_{i}")
 
+            # Chorak konteyneri: agar sizda status faqat barglarda saqlansa, bu yerda status_plan bermaslik ham mumkin
+            chorak = create_column(
+                statement_mechanization, metallolom_title,
+                f"{i}-chorak", f"{i}-й квартал",
+                chorak_ordering,
+                # status_plan=plan_status  # <-- kerak bo‘lmasa, olib tashlang
+            )
+
+            # Har chorak uchun Reja = mos CHORAK_i
+            create_column(
+                statement_mechanization, chorak,
+                "Reja", "План",
+                f"{chorak_ordering}.1",
+                status_plan=plan_status
+            )
+
+            # Har chorak uchun Amalda (foydalanuvchi kiritadi)
+            create_column(
+                statement_mechanization, chorak,
+                "Amalda", "Факт",
+                f"{chorak_ordering}.2"
+            )
+
+            # Har chorak uchun % (hisoblanadi)
+            create_column(
+                statement_mechanization, chorak,
+                "%", "%", f"{chorak_ordering}.3",
+                is_user_input=False
+            )
+
+            # Hujjatlar bo‘limi
             hujjat = create_column(
-                statement_mechanization,
-                chorak,
+                statement_mechanization, chorak,
                 "Metall parchalari topshirilgani toʻgʻrisida hujjat",
                 "Документ о сдаче металлолома",
                 f"{chorak_ordering}.4"
             )
-
-            create_column(statement_mechanization, hujjat, "Sanasi", "Дата", f"{chorak_ordering}.4.1")
-            create_column(statement_mechanization, hujjat, "Kvit. raqami", "Номер квитанции", f"{chorak_ordering}.4.2")
-            create_column(statement_mechanization, hujjat, "Miqdori, tonna", "Количество, тонн",
-                          f"{chorak_ordering}.4.3")
+            create_column(
+                statement_mechanization, hujjat,
+                "Sanasi", "Дата",
+                f"{chorak_ordering}.4.1"
+            )
+            create_column(
+                statement_mechanization, hujjat,
+                "Kvit. raqami", "Номер квитанции",
+                f"{chorak_ordering}.4.2"
+            )
+            create_column(
+                statement_mechanization, hujjat,
+                "Miqdori, tonna", "Количество, тонн",
+                f"{chorak_ordering}.4.3"
+            )
 
             # ========== Pichan ilovasi ==========
         pichan_statement, _ = Statement.objects.get_or_create(

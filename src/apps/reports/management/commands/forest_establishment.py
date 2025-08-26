@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         rows = [
             ("Yirik hajmli yopiq ildizli ko'chatlar yetishtirish miqdori",
-             "Количество выращивания крупногабаритных саженцев с закрытым корнем", True, "YILLIK_TOTAL"),
+             "Количество выращивания крупногабаритных саженцев с закрытым корнем", False, "YILLIK_TOTAL"),
             ("Tyanshan qoraqarag'ay", "Тяньшанский черный карагач", True, "YILLIK"),
             ("Tyanshan qarag'ayi", "Тяньшанский карагач", True, "YILLIK"),
             ("Virdjiniya archa", "Верджинская арча", True, "YILLIK"),
@@ -98,35 +98,36 @@ class Command(BaseCommand):
                 is_user_input=False
             )
 
-            if index == 2:
-                # YILLIK_TOTAL uchun 3ta ustun: Reja, Amalda, %
-                for i, child in enumerate(["Reja", "Amalda", "%"], start=1):
-                    status_plan = None
-                    if child == "Reja":
-                        status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
-                    StatementColumn.objects.create(
-                        statement=first_of_second_statement,
-                        parent=parent,
-                        title_uz=child,
-                        title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[child],
-                        ordering=f"{parent_ordering}.{i}",
-                        status_plan=status_plan,
-                        is_user_input=(child in ["Reja", "Amalda"])
+            for i, sub in enumerate(["Reja", "Amalda", "%"], start=1):
+                # Subcolumn ordering
+                sub_ordering = f"{parent_ordering}.{i}"
+
+                # Set status_plan for "Reja"
+                if sub == "Reja":
+                    status_plan = (
+                        StatementColumn.PlanStatus.YILLIK_TOTAL
+                        if plan_status == "YILLIK_TOTAL"
+                        else StatementColumn.PlanStatus.YILLIK
                     )
-            else:
-                for i, child in enumerate(["Reja", "Amalda"], start=1):
+                else:
                     status_plan = None
-                    if child == "Reja":
-                        status_plan = StatementColumn.PlanStatus.YILLIK
-                    StatementColumn.objects.create(
-                        statement=first_of_second_statement,
-                        parent=parent,
-                        title_uz=child,
-                        title_ru={"Reja": "План", "Amalda": "Факт"}[child],
-                        ordering=f"{parent_ordering}.{i}",
-                        status_plan=status_plan,
-                        is_user_input=True
-                    )
+
+                # Set is_user_input
+                if title_uz == "Yirik hajmli yopiq ildizli ko‘chatlar yetishtirish miqdori":
+                    is_user_input = sub == "Reja"  # Faqat Reja True, boshqalari False
+                else:
+                    is_user_input = True  # Boshqa barcha uchun True
+
+                # Create subcolumn
+                StatementColumn.objects.create(
+                    statement=first_of_second_statement,
+                    parent=parent,
+                    title_uz=sub,
+                    title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[sub],
+                    ordering=sub_ordering,
+                    status_plan=status_plan,
+                    is_user_input=is_user_input
+                )
 
         # ================================================================ Закрытый корень крупногабаритный
 
@@ -186,12 +187,13 @@ class Command(BaseCommand):
             )
 
             if title_uz == "Shundan":
-                if i == 5:
+                if i == 5:  # 1-Shundan (yong‘oq mevalar)
                     children = ["Yong'oq", "Pista", "Bodom"]
                     children_ru = ["Орех", "Писташка", "Миндаль"]
-                else:
+                else:  # 2-Shundan (tez o‘suvchilar)
                     children = ["Terak", "Pavloniya", "Qayrag'och", "Shumtol", "Chinar", "Akatsiya", "Boshqa turlar"]
-                    children_ru = ["Тополь", "Павлония", "Кайрагач", "Шумтол", "Тополь", "Акация", "Другие виды"]
+                    children_ru = ["Тополь", "Павлония", "Кайрагач", "Шумтол", "Чинар", "Акация", "Другие виды"]
+
                 for j, (child_uz, child_ru) in enumerate(zip(children, children_ru), start=1):
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
@@ -201,15 +203,26 @@ class Command(BaseCommand):
                         ordering=f"{ordering_base}.{i}.{j}",
                         is_user_input=True
                     )
+
+
             elif has_subcolumns:
                 for j, sub in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+                    # Plan status
                     status_plan = None
                     if sub == "Reja":
                         if title_uz == "Jami":
                             status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
                         else:
                             status_plan = StatementColumn.PlanStatus.YILLIK
-
+                    # is_user_input faqat kerakli hollarda True
+                    if title_uz == "Jami" and sub == "Reja":
+                        is_user_input = True
+                    elif title_uz == "Cho'l" and sub in ["Reja", "Amalda"]:
+                        is_user_input = True
+                    elif title_uz in ["Jami yong'oq mevalar", "Jami tez o'suvchilar"] and sub == "Reja":
+                        is_user_input = True
+                    else:
+                        is_user_input = False
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
                         parent=parent_col,
@@ -217,7 +230,7 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=not (title_uz == "Jami" or title_ru == "Итого")
+                        is_user_input=is_user_input
                     )
 
         # =========================== 3-Ilova =============================
@@ -267,14 +280,14 @@ class Command(BaseCommand):
                 title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
                 ordering=f"1.1.2.{i}",
                 status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
-                is_user_input=False
+                is_user_input=title in ("Reja", "Amalda") or title_ru in ("План", "Факт")
             )
 
         StatementColumn.objects.create(
             statement=third_statement,
             parent=third_ilova_title,
-            title_uz="Yil boshiga qolgan qoldiq",
-            title_ru="Остаток на начало года",
+            title_uz="Yil boshiga qolgan qoldiq (kg)",
+            title_ru="Остаток на начало года (кг)",
             ordering="1.1.3"
         )
 
@@ -289,8 +302,8 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=hisobot,
-            title_uz="Jami",
-            title_ru="Итого",
+            title_uz="Jami (kg)",
+            title_ru="Итого (кг)",
             ordering="1.1.4.1",
             is_user_input=False
         )
@@ -305,8 +318,8 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=child1,
-            title_uz="Jami",
-            title_ru="Итого",
+            title_uz="Jami (kg)",
+            title_ru="Итого (кг)",
             ordering="1.1.4.1.1.1"
         )
         StatementColumn.objects.create(
@@ -324,12 +337,12 @@ class Command(BaseCommand):
             title_ru="Приобретено у других организаций",
             ordering="1.1.4.1.2"
         )
-        for i, title in enumerate(["Miqdori", "Sarflangan summa"], start=1):
+        for i, title in enumerate(["Miqdori (kg)", "Sarflangan summa"], start=1):
             StatementColumn.objects.create(
                 statement=third_statement,
                 parent=child2,
                 title_uz=title,
-                title_ru={"Miqdori": "Количество", "Sarflangan summa": "Сумма затрат"}[title],
+                title_ru={"Miqdori (kg)": "Количество (кг)", "Sarflangan summa": "Сумма затрат"}[title],
                 ordering=f"1.1.4.1.2.{i}"
             )
 
@@ -344,19 +357,19 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=third_statement,
             parent=sarflandi,
-            title_uz="Jami",
-            title_ru="Итого",
+            title_uz="Jami (kg)",
+            title_ru="Итого (кг)",
             ordering="1.1.5.1",
             is_user_input=False
         )
 
         subtitles = [
-            ("Ko'chatzorlar barpo etish uchun", ["Miqdori (kg)", "Ish hajmi (kg)"], "Для создания питомников",
-             ["Количество (кг)", "Объем работ (кг)"]),
-            ("O'rmonzorlar barpo etish uchun", ["Miqdori (kg)", "Ish hajmi (kg)"], "Для создания лесных насаждений",
-             ["Количество (кг)", "Объем работ (кг)"]),
-            ("O'rmonlarni yo'qotilganini tiklash uchun", ["Miqdori (kg)", "Ish hajmi (kg)"],
-             "Для восполнения потерь лесов", ["Количество (кг)", "Объем работ (кг)"]),
+            ("Ko'chatzorlar barpo etish uchun", ["Miqdori (kg)", "Ish hajmi (ga)"], "Для создания питомников",
+             ["Количество (кг)", "Объем работ (на)"]),
+            ("O'rmonzorlar barpo etish uchun", ["Miqdori (kg)", "Ish hajmi (ga)"], "Для создания лесных насаждений",
+             ["Количество (кг)", "Объем работ (на)"]),
+            ("O'rmonlarni yo'qotilganini tiklash uchun", ["Miqdori (kg)", "Ish hajmi (ga)"],
+             "Для восполнения потерь лесов", ["Количество (кг)", "Объем работ (на)"]),
             ("Boshqa tashkilotlarga berildi", ["kg"], "Передано другим организациям", ["кг"]),
             ("Hisobdan chiqarildi", ["kg"], "Списано", ["кг"])
         ]
