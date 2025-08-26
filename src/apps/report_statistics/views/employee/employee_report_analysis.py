@@ -9,10 +9,19 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
-
 FIELD_NAMES = {
-    "uz": {"region": "Hudud", "ilova4": "4-ilova", "ilova5": "5-ilova", "ilova6": "6-ilova"},
-    "ru": {"region": "Регион", "ilova4": "Приложение-4", "ilova5": "Приложение-5", "ilova6": "Приложение-6"},
+    "uz": {
+        "region": "Hudud",
+        "ilova4": "4-ilova",
+        "ilova5": "5-ilova",
+        "ilova6": "6-ilova",
+    },
+    "ru": {
+        "region": "Регион",
+        "ilova4": "4-ilova",
+        "ilova5": "5-ilova",
+        "ilova6": "6-ilova",
+    },
 }
 
 # Region labels to match RegionChoices.value
