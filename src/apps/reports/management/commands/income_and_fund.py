@@ -412,7 +412,7 @@ class Command(BaseCommand):
                             title_ru=title_ru,
                             ordering=f"{oy_order}.{p_idx}",
                             status_plan=(oy_status if title_uz == "Reja" else None),
-                            is_user_input=(title_uz == "Reja")
+                            is_user_input=False if title_uz == "Foiz" else True,  
                         )
 
                     tushum_node = StatementColumn.objects.create(
@@ -444,6 +444,7 @@ class Command(BaseCommand):
                 title_uz='Yil boshidan',
                 title_ru='С начала года',
                 ordering="2.1.11",
+                is_user_input=False
             )
 
             StatementColumn.objects.create(
