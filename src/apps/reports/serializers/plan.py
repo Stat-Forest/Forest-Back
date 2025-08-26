@@ -108,16 +108,6 @@ class PlanSerializer(serializers.ModelSerializer):
             elif column.status_plan == StatementColumn.PlanStatus.YILLIK:
                 yearly_values[column.id] += value
 
-                # YILLIK bo‘lsa, YILLIK_TOTAL avtomatik yaratish
-                total_col = StatementColumn.objects.filter(
-                    statement=statement,
-                    status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
-                ).first()
-                if total_col:
-                    PlanItem.objects.update_or_create(
-                        plan=plan, column=total_col, defaults={"plan_value": value}
-                    )
-
         # --- 2. Oyliklardan choraklarni hisoblash ---
         for q_status, months in MONTHS_BY_QUARTER.items():
             total = sum(monthly_values[m] for m in months if m in monthly_values)
@@ -132,7 +122,7 @@ class PlanSerializer(serializers.ModelSerializer):
                     quarterly_values[q_status] += total
 
         # --- 3. Choraklardan YILLIK ustunini hisoblash ---
-        yearly_total = sum(quarterly_values.values()) or sum(yearly_values.values())
+        yearly_total = sum(quarterly_values.values()) + sum(yearly_values.values())
         yearly_col = StatementColumn.objects.filter(
             statement=statement,
             status_plan=StatementColumn.PlanStatus.YILLIK
@@ -182,6 +172,7 @@ class PlanSerializer(serializers.ModelSerializer):
         items = validated_data.get("plan_items", [])
         self._save_plan_items(instance, instance.statement, items)
         return instance
+
 
 
 class PlanListItemSerializer(serializers.Serializer):
