@@ -34,7 +34,7 @@ QUARTERS = set(MONTHS_BY_QUARTER.keys())
 
 
 class PlanItemSerializer(serializers.Serializer):
-    column = serializers.UUIDField(write_only=True)  
+    column = serializers.UUIDField(write_only=True)
     column_id = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
     plan_value = serializers.FloatField()
