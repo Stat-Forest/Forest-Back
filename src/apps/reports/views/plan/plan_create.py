@@ -73,12 +73,20 @@ class PlanListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         """
-        Restrict queryset to user's organization if available.
+        Restrict queryset to user's organization and user's statement if available.
         """
         user = self.request.user
+        qs = self.queryset
+
+        # Agar userning organization mavjud bo'lsa, faqat shunga tegishli planlarni olamiz
         if user.organization is not None:
-            return self.queryset.filter(organization_id=user.organization.pk)
-        return self.queryset
+            qs = qs.filter(organization_id=user.organization.pk)
+
+        # Agar user.statement mavjud bo'lsa, faqat shunga tegishli planlarni olamiz
+        if hasattr(user, 'statement') and user.statement is not None:
+            qs = qs.filter(statement_id=user.statement.pk)
+
+        return qs
 
     def get_serializer_context(self):
         """
@@ -88,6 +96,7 @@ class PlanListAPIView(generics.ListAPIView):
         lang = self.request.query_params.get("lang", "uz")
         context["lang"] = lang
         return context
+
 
 
 # -----------------------------------------------------------------------------
