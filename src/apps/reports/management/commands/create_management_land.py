@@ -10,7 +10,7 @@ class Command(BaseCommand):
     def create_column(self, **kwargs):
         return SC.objects.create(**kwargs)
 
-    def create_columns_from_titles(self, titles, base_ordering, parent, statement,user_input=True):
+    def create_columns_from_titles(self, titles, base_ordering, parent, statement, is_user_input=True):
         for idx, (uz_title, ru_title) in enumerate(titles, 1):
             self.create_column(
                 statement=statement,
@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 title=uz_title,
                 title_ru=ru_title,
                 ordering=f"{base_ordering}.{idx}",
-                is_user_input=user_input
+                is_user_input=is_user_input
             )
 
     def handle(self, *args, **kwargs):
@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
             # Reja va boshqa ustunlar
             self.create_column(statement=land_1, parent=info_11, title="Reja", title_ru="План", ordering="1.1.2", status_plan=SC.PlanStatus.YILLIK)
-            self.create_column(statement=land_1, parent=info_11, title="Amalda", title_ru="Фактически", ordering="1.1.3",user_input=False)
+            self.create_column(statement=land_1, parent=info_11, title="Amalda", title_ru="Фактически", ordering="1.1.3",is_user_input=False)
             shundan = self.create_column(statement=land_1, parent=info_11, title="Shundan", title_ru="Из них", ordering="1.1.4")
             for i, (uz, ru) in enumerate([
                 ("1-chorak", "1-й квартал"),
@@ -58,7 +58,7 @@ class Command(BaseCommand):
                 ("4-chorak", "4-й квартал")
             ], 1):
                 self.create_column(statement=land_1, parent=shundan, title=uz, title_ru=ru, ordering=f"1.1.4.{i}")
-            self.create_column(statement=land_1, parent=info_11, title="Foiz", title_ru="Процент", ordering="1.1.5",user_input=False)
+            self.create_column(statement=land_1, parent=info_11, title="Foiz", title_ru="Процент", ordering="1.1.5",is_user_input=False)
 
             # Shartnoma
             contract = self.create_column(statement=land_2, parent=info_12, title="Shartnoma", title_ru="Договор", ordering="2.1.2")

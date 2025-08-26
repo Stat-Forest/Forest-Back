@@ -126,7 +126,7 @@ class Command(BaseCommand):
             parent=title_column_1,
             title_uz="Qalamchalar tayyorlash jami",
             title_ru="Всего подготовка черенков",
-            ordering="1.1.2"
+            ordering="1.1.2",
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -135,7 +135,7 @@ class Command(BaseCommand):
             title_ru="План",
             ordering="1.1.2.1",
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
-            is_user_input=False
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -143,7 +143,7 @@ class Command(BaseCommand):
             title_uz="Amalda",
             title_ru="Факт",
             ordering="1.1.2.2",
-            is_user_input=False
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=statement,
