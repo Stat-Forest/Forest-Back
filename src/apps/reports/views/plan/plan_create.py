@@ -60,8 +60,7 @@ class PlanRetrieveAPIView(generics.RetrieveAPIView):
 )
 class PlanListAPIView(generics.ListAPIView):
     """
-    List Plans.
-    Supports filtering by statement, organization, and year.
+    List Plans filtered by user's organization and user's statement_parent_id.
     Language parameter (lang) is passed to serializer context.
     """
     queryset = (
@@ -73,20 +72,30 @@ class PlanListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         """
-        Restrict queryset to user's organization and user's statement if available.
+        Restrict queryset to user's organization and user's statement parent.
         """
         user = self.request.user
         qs = self.queryset
 
-        # Agar userning organization mavjud bo'lsa, faqat shunga tegishli planlarni olamiz
+        # Organization bo‘yicha filter
         if user.organization is not None:
             qs = qs.filter(organization_id=user.organization.pk)
 
-        # Agar user.statement mavjud bo'lsa, faqat shunga tegishli planlarni olamiz
+        # User.statement_parent_id bo‘yicha filter
         if hasattr(user, 'statement') and user.statement is not None:
-            qs = qs.filter(statement_id=user.statement.pk)
+            qs = qs.filter(statement__parent_id=user.statement.id)
 
         return qs
+
+    def get_serializer_context(self):
+        """
+        Add 'lang' parameter to serializer context (default: uz).
+        """
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz")
+        context["lang"] = lang
+        return context
+
 
     def get_serializer_context(self):
         """
