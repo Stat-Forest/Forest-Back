@@ -7,7 +7,6 @@ from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
 
-
 # === Konstantalar ===
 MONTHS_BY_QUARTER = {
     StatementColumn.PlanStatus.CHORAK_1: [
@@ -31,7 +30,6 @@ MONTHS_BY_QUARTER = {
         StatementColumn.PlanStatus.DEKABR,
     ],
 }
-
 QUARTERS = set(MONTHS_BY_QUARTER.keys())
 
 
@@ -79,11 +77,10 @@ class PlanSerializer(serializers.ModelSerializer):
         monthly_values = defaultdict(float)
         quarterly_values = defaultdict(float)
         yearly_values = defaultdict(float)
-
         yearly_columns = []  # YILLIK columnlar
         yearly_total_col = None  # YILLIK_TOTAL column
 
-        # --- 1. Asosiy foydalanuvchi yuborgan plan itemlarni saqlash ---
+        # 1️⃣ Foydalanuvchi yuborgan plan itemlarini saqlash
         for item in items:
             column = StatementColumn.objects.get(id=item["column"])
             value = item["plan_value"]
@@ -101,7 +98,6 @@ class PlanSerializer(serializers.ModelSerializer):
                 plan=plan, column=column, defaults={"plan_value": value}
             )
 
-            # Ajratib olish
             if column.status_plan in sum(MONTHS_BY_QUARTER.values(), []):
                 monthly_values[column.status_plan] = value
             elif column.status_plan in QUARTERS:
@@ -112,7 +108,7 @@ class PlanSerializer(serializers.ModelSerializer):
             elif column.status_plan == StatementColumn.PlanStatus.YILLIK_TOTAL:
                 yearly_total_col = column
 
-        # --- 2. Agar oylik yuborilgan bo‘lsa → choraklarni hisoblash ---
+        # 2️⃣ Oylik mavjud bo‘lsa → choraklarni hisoblash
         if monthly_values:
             for q_status, months in MONTHS_BY_QUARTER.items():
                 total = sum(monthly_values[m] for m in months if m in monthly_values)
@@ -126,8 +122,8 @@ class PlanSerializer(serializers.ModelSerializer):
                         )
                         quarterly_values[q_status] = total
 
-        # --- 3. Agar choraklar mavjud bo‘lsa → yillik hisoblash ---
-        if quarterly_values:
+        # 3️⃣ Chorak mavjud bo‘lsa yoki mavjud yillik → yilliklarni hisoblash
+        if quarterly_values or yearly_columns:
             col_total = sum(quarterly_values.values())
             for col in StatementColumn.objects.filter(
                     statement=statement, status_plan=StatementColumn.PlanStatus.YILLIK
@@ -137,7 +133,7 @@ class PlanSerializer(serializers.ModelSerializer):
                 )
                 yearly_values[col.id] = col_total
 
-        # --- 4. Agar yillik mavjud bo‘lsa → yillik_total hisoblash ---
+        # 4️⃣ YILLİK_TOTAL hisoblash
         if yearly_values:
             total_value = sum(yearly_values.values())
             total_col = StatementColumn.objects.filter(
@@ -178,7 +174,6 @@ class PlanSerializer(serializers.ModelSerializer):
 
 
 # === LIST SERIALIZERS ===
-
 class PlanListItemSerializer(serializers.ModelSerializer):
     column_parent_name = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
