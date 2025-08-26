@@ -90,7 +90,11 @@ class PlanSerializer(serializers.ModelSerializer):
 
             if column.statement_id != statement.id:
                 raise CustomExceptionError(
-                    400, _("Column does not belong to the given statement")
+                    400,
+                    {
+                        "detail": f"Column {column.id} belongs to statement {column.statement_id}, "
+                                  f"but you sent statement {statement.id}"
+                    }
                 )
 
             PlanItem.objects.update_or_create(
