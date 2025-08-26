@@ -32,12 +32,7 @@ MONTHS_BY_QUARTER = {
     ],
 }
 
-QUARTERS = {
-    StatementColumn.PlanStatus.CHORAK_1,
-    StatementColumn.PlanStatus.CHORAK_2,
-    StatementColumn.PlanStatus.CHORAK_3,
-    StatementColumn.PlanStatus.CHORAK_4,
-}
+QUARTERS = set(MONTHS_BY_QUARTER.keys())
 
 
 class PlanItemSerializer(serializers.Serializer):
@@ -58,7 +53,7 @@ class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
         fields = ["id", "organization", "statement", "year", "plan_items"]
-        read_only_fields = ["statement"]  # statement update qilinmaydi
+        read_only_fields = ["statement"]
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -85,7 +80,7 @@ class PlanSerializer(serializers.ModelSerializer):
         quarterly_values = defaultdict(int)
         yearly_values = defaultdict(int)
 
-        # --- 1. Foydalanuvchi tomonidan berilgan plan_items ---
+        # --- 1. Asosiy foydalanuvchi plan itemlari ---
         for item in items:
             column = StatementColumn.objects.get(id=item["column"])
             value = item["plan_value"]
@@ -95,7 +90,6 @@ class PlanSerializer(serializers.ModelSerializer):
                     400, _("Column does not belong to the given statement")
                 )
 
-            # Asosiy PlanItem yaratish
             PlanItem.objects.update_or_create(
                 plan=plan, column=column, defaults={"plan_value": value}
             )
@@ -108,7 +102,7 @@ class PlanSerializer(serializers.ModelSerializer):
             elif column.status_plan == StatementColumn.PlanStatus.YILLIK:
                 yearly_values[column.id] += value
 
-        # --- 2. Oyliklardan choraklarni hisoblash ---
+        # --- 2. Oylikdan choraklarni hisoblash ---
         for q_status, months in MONTHS_BY_QUARTER.items():
             total = sum(monthly_values[m] for m in months if m in monthly_values)
             if total > 0:
@@ -121,7 +115,7 @@ class PlanSerializer(serializers.ModelSerializer):
                     )
                     quarterly_values[q_status] += total
 
-        # --- 3. Choraklardan YILLIK ustunini hisoblash ---
+        # --- 3. Choraklardan YILLIK hisoblash ---
         yearly_total = sum(quarterly_values.values()) + sum(yearly_values.values())
         yearly_col = StatementColumn.objects.filter(
             statement=statement,
@@ -131,9 +125,9 @@ class PlanSerializer(serializers.ModelSerializer):
             PlanItem.objects.update_or_create(
                 plan=plan, column=yearly_col, defaults={"plan_value": yearly_total}
             )
-            yearly_values[yearly_col.id] += yearly_total
+            yearly_values[yearly_col.id] = yearly_total
 
-        # --- 4. YILLIK_TOTAL ustunini hisoblash ---
+        # --- 4. YILLIK_TOTAL hisoblash ---
         total_col = StatementColumn.objects.filter(
             statement=statement,
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
@@ -159,9 +153,7 @@ class PlanSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        # statement update qilinmaydi
         validated_data.pop("statement", None)
-
         if "organization" in validated_data:
             instance.organization = Organization.objects.get(
                 id=validated_data["organization"]
@@ -174,26 +166,26 @@ class PlanSerializer(serializers.ModelSerializer):
         return instance
 
 
+# === LIST SERIALIZERS ===
 
-class PlanListItemSerializer(serializers.Serializer):
+class PlanListItemSerializer(serializers.ModelSerializer):
     column_parent_name = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
-    plan_value = serializers.FloatField()
+
+    class Meta:
+        model = PlanItem
+        fields = ["column_parent_name", "column_name", "plan_value"]
 
     def get_column_parent_name(self, obj):
-        """ Barcha parent column nomlarini yuqoridan boshlab qo‘shib qaytaradi """
         lang = self.context.get("lang", "uz")
         names = []
         parent = getattr(obj.column, "parent", None)
-
         while parent:
             names.append(getattr(parent, f"title_{lang}", parent.title))
             parent = getattr(parent, "parent", None)
-
         return " - ".join(reversed(names)) if names else None
 
     def get_column_name(self, obj):
-        """ Columnning o‘zining nomi (uz/ru) """
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
 
