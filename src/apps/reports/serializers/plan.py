@@ -133,7 +133,12 @@ class PlanSerializer(serializers.ModelSerializer):
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
         ).first()
         if total_col:
-            total_value = sum(yearly_values.values())
+            # YILLIK_TOTAL = barcha YILLIK plan itemlarining yig‘indisi
+            total_value = sum(
+                PlanItem.objects.filter(
+                    plan=plan, column__status_plan=StatementColumn.PlanStatus.YILLIK
+                ).values_list('plan_value', flat=True)
+            )
             PlanItem.objects.update_or_create(
                 plan=plan, column=total_col, defaults={"plan_value": total_value}
             )
@@ -210,5 +215,3 @@ class PlanListSerializer(serializers.ModelSerializer):
         if lang == "ru":
             return getattr(obj.statement, "name_ru", obj.statement.name)
         return getattr(obj.statement, "name_uz", obj.statement.name)
-
-
