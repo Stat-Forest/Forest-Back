@@ -78,7 +78,7 @@ class PlanSerializer(serializers.ModelSerializer):
     def _save_plan_items(self, plan, statement, items):
         monthly_values = defaultdict(int)
         quarterly_values = defaultdict(int)
-        yearly_values = defaultdict(int)
+        yearly_columns = []  # YILLIK columnlar ro'yxati
 
         # --- 1. Asosiy foydalanuvchi plan itemlari ---
         for item in items:
@@ -100,7 +100,7 @@ class PlanSerializer(serializers.ModelSerializer):
             elif column.status_plan in QUARTERS:
                 quarterly_values[column.status_plan] += value
             elif column.status_plan == StatementColumn.PlanStatus.YILLIK:
-                yearly_values[column.id] += value
+                yearly_columns.append(column)
 
         # --- 2. Oylikdan choraklarni hisoblash ---
         for q_status, months in MONTHS_BY_QUARTER.items():
@@ -116,16 +116,11 @@ class PlanSerializer(serializers.ModelSerializer):
                     quarterly_values[q_status] += total
 
         # --- 3. Choraklardan YILLIK hisoblash ---
-        yearly_total = sum(quarterly_values.values()) + sum(yearly_values.values())
-        yearly_col = StatementColumn.objects.filter(
-            statement=statement,
-            status_plan=StatementColumn.PlanStatus.YILLIK
-        ).first()
-        if yearly_col:
+        for col in yearly_columns:
+            col_total = sum(quarterly_values.values())
             PlanItem.objects.update_or_create(
-                plan=plan, column=yearly_col, defaults={"plan_value": yearly_total}
+                plan=plan, column=col, defaults={"plan_value": col_total}
             )
-            yearly_values[yearly_col.id] = yearly_total
 
         # --- 4. YILLIK_TOTAL hisoblash ---
         total_col = StatementColumn.objects.filter(
@@ -133,7 +128,6 @@ class PlanSerializer(serializers.ModelSerializer):
             status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
         ).first()
         if total_col:
-            # YILLIK_TOTAL = barcha YILLIK plan itemlarining yig‘indisi
             total_value = sum(
                 PlanItem.objects.filter(
                     plan=plan, column__status_plan=StatementColumn.PlanStatus.YILLIK
