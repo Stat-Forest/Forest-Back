@@ -34,13 +34,18 @@ QUARTERS = set(MONTHS_BY_QUARTER.keys())
 
 
 class PlanItemSerializer(serializers.Serializer):
-    column = serializers.UUIDField(write_only=True)
+    column = serializers.UUIDField(write_only=True)  
+    column_id = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
     plan_value = serializers.FloatField()
 
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
+
+    def get_column_id(self, obj):
+        return obj.column.id
+
 
 
 

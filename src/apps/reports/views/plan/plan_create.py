@@ -97,17 +97,6 @@ class PlanListAPIView(generics.ListAPIView):
         return context
 
 
-    def get_serializer_context(self):
-        """
-        Add 'lang' parameter to serializer context (default: uz).
-        """
-        context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang", "uz")
-        context["lang"] = lang
-        return context
-
-
-
 # -----------------------------------------------------------------------------
 # Plan Delete API
 # -----------------------------------------------------------------------------
