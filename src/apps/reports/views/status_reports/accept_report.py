@@ -5,39 +5,45 @@ from drf_spectacular.utils import extend_schema
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
-from apps.reports.permissions import CanAcceptReport
 from apps.reports.serializers import ReportAcceptSerializer
+# from apps.reports.permissions import CanAcceptReport
 
 
 @extend_schema(tags=["Reports Status Update"])
 class ReportAcceptAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
-    permission_classes = [CanAcceptReport]
+    # permission_classes = [CanAcceptReport]
 
-    def get_object(self):
-        report_id = self.request.data.get('id')
-        if not report_id:
-            raise CustomExceptionError(
-                code=400,
-                detail={'id': ['This field is required.']}
-            )
+    def get_object(self, report_id):
         try:
-            report = self.get_queryset().get(id=report_id)
+            return self.get_queryset().get(id=report_id)
         except Report.DoesNotExist:
             raise CustomExceptionError(
                 code=404,
-                detail={'report': _('Report not found.')}
+                detail={"report": _("Report not found.")}
             )
-        self.check_object_permissions(self.request, report)
-        return report
 
     def post(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data={}, partial=True)  # faqat id kifoya
+        report_id = request.data.get("id")
+        if not report_id:
+            raise CustomExceptionError(
+                code=400,
+                detail={"id": ["This field is required."]}
+            )
+
+        instance = self.get_object(report_id)
+        serializer = self.get_serializer(
+            data=request.data,
+            context={"report_instance": instance}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        return Response({
+            "id": str(instance.id),
+            "status": instance.status,
+            "accepted_at": instance.accepted_at
+        })

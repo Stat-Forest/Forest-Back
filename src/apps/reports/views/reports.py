@@ -21,6 +21,7 @@ from apps.base.views import (
 @extend_schema(tags=["Reports"])
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
+    permission_classes = []
 
     queryset = Report.objects.select_related(
         'organization',
@@ -36,7 +37,7 @@ class ReportListAPIView(CustomListAPIView):
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
-    permission_classes = (CanListReport,)
+    # permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
@@ -66,7 +67,7 @@ class ReportListAPIView(CustomListAPIView):
                 is_republic=False,
             ).order_by('-created_at')
 
-        if user.role == 'bolim_admin':
+        elif user.role == 'bolim_admin':
             return base_qs.filter(
                 statement__parent_id=user.statement.id,
                 is_general=False,
