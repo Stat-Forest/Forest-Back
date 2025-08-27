@@ -68,7 +68,7 @@ class ReportListAPIView(CustomListAPIView):
 
         if user.role == 'bolim_admin':
             return base_qs.filter(
-                statement__parent_id=user.statement.id,  
+                statement__parent_id=user.statement.id,
                 is_general=False,
                 is_individual_general=False,
                 is_republic=False,
