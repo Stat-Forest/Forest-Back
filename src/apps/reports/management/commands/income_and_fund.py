@@ -264,6 +264,7 @@ class Command(BaseCommand):
                 ordering="2"
             )
 
+
             tushum_info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushumlar,
