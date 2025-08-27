@@ -58,7 +58,7 @@ class ReportListAPIView(CustomListAPIView):
                 is_republic=False,
             ).order_by('-created_at')
 
-        if True:
+        if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma','bolim_admin','tashkilot_rahbari']:
             return base_qs.filter(
                 organization=user.organization,
                 is_general=False,
