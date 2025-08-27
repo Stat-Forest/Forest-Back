@@ -58,9 +58,17 @@ class ReportListAPIView(CustomListAPIView):
                 is_republic=False,
             ).order_by('-created_at')
 
-        if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma','bolim_admin','tashkilot_rahbari']:
+        if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma', 'tashkilot_rahbari']:
             return base_qs.filter(
                 organization=user.organization,
+                is_general=False,
+                is_individual_general=False,
+                is_republic=False,
+            ).order_by('-created_at')
+
+        if user.role == 'bolim_admin':
+            return base_qs.filter(
+                statement__parent_id=user.statement.id,  
                 is_general=False,
                 is_individual_general=False,
                 is_republic=False,
