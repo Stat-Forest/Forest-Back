@@ -36,7 +36,7 @@ class ReportListAPIView(CustomListAPIView):
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
-    # permission_classes = (CanListReport,)
+    permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
