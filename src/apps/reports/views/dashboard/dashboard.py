@@ -16,13 +16,16 @@ class DashboardStatListView(CustomGenericAPIView):
         user = request.user
 
         if not user.organization and not user.statement:
-            report_qs = Report.objects.all()
+            report_qs = Report.objects.filter(is_report=True)
             deadline_qs = Deadline.objects.all()
             responsible_users = CustomUser.objects.count()
             plans = Plan.objects.all().count()
 
         elif user.statement:
-            report_qs = Report.objects.filter(statement__parent_id=user.statement.id)
+            report_qs = Report.objects.filter(
+                statement__parent_id=user.statement.id,
+                is_report=True
+            )
             deadline_qs = Deadline.objects.filter(
                 statement__parent_id=user.statement.id
             )
@@ -32,7 +35,10 @@ class DashboardStatListView(CustomGenericAPIView):
             plans = Plan.objects.filter(statement__parent_id=user.statement.id).count()
 
         elif user.organization:
-            report_qs = Report.objects.filter(organization_id=user.organization.id)
+            report_qs = Report.objects.filter(
+                organization_id=user.organization.id,
+                is_report=True
+            )
             deadline_qs = Deadline.objects.filter(
                 organizations__in=[user.organization]
             )
