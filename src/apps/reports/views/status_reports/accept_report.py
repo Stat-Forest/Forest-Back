@@ -1,20 +1,18 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework.response import Response
+from django.utils.translation import gettext_lazy as _
 from rest_framework.generics import UpdateAPIView
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 
+from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
 from apps.reports.permissions import CanAcceptReport
 from apps.reports.serializers import ReportAcceptSerializer
-from apps.base.exceptions.exception_files import CustomExceptionError
-
-from django.utils.translation import gettext_lazy as _
 
 
 @extend_schema(tags=["Reports Status Update"])
 class ReportAcceptAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
-
     permission_classes = [CanAcceptReport]
 
     def get_object(self):
@@ -39,7 +37,7 @@ class ReportAcceptAPIView(UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(instance, data={}, partial=True)  # faqat id kifoya
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
