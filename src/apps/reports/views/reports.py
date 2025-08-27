@@ -21,6 +21,7 @@ from apps.base.views import (
 @extend_schema(tags=["Reports"])
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
+    permission_classes = []
 
     queryset = Report.objects.select_related(
         'organization',
