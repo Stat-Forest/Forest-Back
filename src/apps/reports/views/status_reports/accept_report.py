@@ -13,7 +13,7 @@ from apps.reports.serializers import ReportAcceptSerializer
 class ReportAcceptAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
-    permission_classes = [CanAcceptReport]
+    # permission_classes = [CanAcceptReport]
 
     def get_object(self):
         report_id = self.request.data.get('id')
