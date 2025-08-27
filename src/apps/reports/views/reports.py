@@ -66,7 +66,7 @@ class ReportListAPIView(CustomListAPIView):
                 is_republic=False,
             ).order_by('-created_at')
 
-        if user.role == 'bolim_admin':
+        elif user.role == 'bolim_admin':
             return base_qs.filter(
                 statement__parent_id=user.statement.id,
                 is_general=False,

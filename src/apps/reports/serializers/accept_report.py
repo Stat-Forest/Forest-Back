@@ -8,7 +8,7 @@ from apps.reports.services.general_report import aggregate_general_report
 
 
 class ReportAcceptSerializer(serializers.Serializer):
-    id = serializers.UUIDField(write_only=True, required=True)   # Swagger input ko‘rsatadi
+    id = serializers.UUIDField(write_only=True, required=True)
     status = serializers.CharField(read_only=True)
     accepted_at = serializers.DateTimeField(read_only=True)
 
