@@ -28,6 +28,9 @@ class ReportAcceptSerializer(serializers.Serializer):
             instance.accepted_at = timezone.now()
             instance.save(update_fields=["status", "accepted_at"])
 
-            # umumiy hisobotni yangilash
-            aggregate_general_report(instance.statement, instance.deadline)
+            aggregate_general_report(
+                instance.statement,
+                instance.deadline,
+                instance.organization.region
+            )
         return instance
