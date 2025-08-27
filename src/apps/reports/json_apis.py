@@ -496,184 +496,184 @@
 
 # DAROMAD 2-ilova =============================================
 {
-    "deadline": "4d5ef895-76c2-4dcb-8603-b626888ad95e",
+    "deadline": "51939bbe-1093-424a-85aa-ea091e2ea3f7",
     "report_items": [
         {
-            "statement_column": "7b6e101c-2a82-48c0-a42f-d69f44bf5214",
+            "statement_column": "3824ac96-6c66-41fe-a897-6c2b07b3bcb7",
             "inners": [
-                {"value": "0636c686-a21c-466f-975a-0846e81e1491"}
+                {"value": "93c2d981-59b3-4031-b047-37080de08f0d"}
             ]
         },
         {
-            "statement_column": "b2a481bb-72e9-473a-a75c-bd59cf98ce7c",
+            "statement_column": "d957d435-66aa-43ef-bddb-df7b122dc4d3",
             "inners": [
                 {"value": "60"}
             ]
         },
         {
-            "statement_column": "0d232737-31d7-464a-b514-1cbb97333cbb",
+            "statement_column": "3d3e1f86-b143-4d15-a775-9e59359b2d07",
             "inners": [
                 {"value": "15"}
             ]
         },
         {
-            "statement_column": "84ad327d-10cd-4ef4-97e1-6aee07251f88",
+            "statement_column": "33a07fac-e8ec-4723-a221-90aedb74df7a",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "bac18183-d7d3-46f1-824a-c381fa73811b",
+            "statement_column": "f1ef17de-93b9-4092-ab1a-b74b1210c619",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "43304b07-e0c6-4272-ae8b-e5df0fda7ab9",
+            "statement_column": "f597b47d-a638-4cb9-833c-970a84318c0a",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "8382e0c5-e3d6-4612-a1cc-b799e0a19746",
+            "statement_column": "b2da5e17-0696-4b7f-a4b5-67d8cdf5acd5",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "349ff297-4fd8-4827-a286-e4670950e5b6",
+            "statement_column": "e257278c-07b8-464a-b68a-7a7b404bd957",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "e07b41b0-954f-473b-a294-d8a21426c84b",
+            "statement_column": "ba97235a-e372-469c-a9cf-3125a340d3ef",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "4fd7f83f-9f13-441e-bc78-c959b6addd0e",
+            "statement_column": "5ae98cef-a867-4047-8388-1f6ca80812d7",
             "inners": [
                 {"value": "15"}
             ]
         },
         {
-            "statement_column": "60fb9321-35c7-49b5-ab91-0d10bc0f62ca",
+            "statement_column": "9e984b9a-321c-4e97-9091-67c42bf3243f",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "802cfaa2-dc52-4509-98a6-f1f4b683eb87",
+            "statement_column": "b90ad357-c16c-4143-be1f-bc87bbc5a9a3",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "f8da3564-f79c-4465-9fab-07f6057e297c",
+            "statement_column": "4124642f-f74c-48ce-80c7-278f319b6e7b",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "3714aba6-5e72-4c87-859e-93002b7325db",
+            "statement_column": "664ad157-20ad-4885-b8f3-4e06d8f750f9",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "77abb8d7-c5fc-4dbe-8ac0-19cc4d11e8c3",
+            "statement_column": "cf5d9b1a-f3e7-4125-b887-00a4901b781e",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "812b5b01-b11f-4fb5-a6b6-c5f90f12f963",
+            "statement_column": "82dcd10e-f3f2-42ef-b411-17bff40f41ca",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "0df21906-e797-4bc9-a5d4-e46898fad2e7",
+            "statement_column": "1f3905ab-f035-41e8-b173-6056b820cbb4",
             "inners": [
                 {"value": "15"}
             ]
         },
         {
-            "statement_column": "1e59606b-1c81-4764-93dd-6b7780e0a5ad",
+            "statement_column": "fb2c201a-3bba-43b7-b508-38a8691d040b",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "113dba73-b98e-4aa0-b9fd-6b1d7ffc0f9f",
+            "statement_column": "1c33d182-4037-4c2a-9245-3e89919ae5a4",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "fa9302b4-36a6-4acd-a072-d1fc2f9e454c",
+            "statement_column": "31d7d37f-afff-4c03-be81-8b441dc68ba9",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "b44adbd2-3b10-4759-a615-7de2bf2818d7",
+            "statement_column": "919d3a3a-3f61-4d8b-ad74-6bae1ee9e763",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "b5ecb1ab-5739-4d4c-b26f-ca60a2e3e659",
+            "statement_column": "efb5da7d-e2ed-49e6-8cd6-a16f90cc4787",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "dd38e7db-1425-465d-ba1d-42b694e1445f",
+            "statement_column": "bbe87a37-2821-4fdb-bc2b-fc861e31fd46",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "97bbd4e6-7321-4f28-8c3d-83a92a2ae0f3",
+            "statement_column": "92f5a2e0-5056-40e2-b295-54bbc8556914",
             "inners": [
                 {"value": "15"}
             ]
         },
         {
-            "statement_column": "65774e85-cf67-46e4-bbac-fa529e615f5f",
+            "statement_column": "f85cd1ab-287b-4d97-ab1c-714872a9ee07",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "4a8ec497-208c-4042-8425-878abceb1ba3",
+            "statement_column": "3b26bcdd-a4ed-4f6f-9874-8d519a5b1e41",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "1f208f32-7ecd-4cf6-8e91-62259b801724",
+            "statement_column": "b59a5714-3a19-4553-a975-4bc953c84b90",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "d4dda8d5-33de-4196-abf2-e9b7044fac79",
+            "statement_column": "86e6d6c5-14a6-49e4-a132-a7d6fe942db3",
             "inners": [
                 {"value": "4"}
             ]
         },
         {
-            "statement_column": "4f828162-1bff-49a9-b397-e6da934dc16a",
+            "statement_column": "7d04a0ff-644d-4807-99ce-5ced5316324f",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "5124089c-c611-40a3-a265-a637eb647038",
+            "statement_column": "54b86b21-6d74-446d-b9ea-c4d37be571a4",
             "inners": [
                 {"value": "4"}
             ]
@@ -1845,68 +1845,403 @@
     ]
 }
 
-# =========== Metallalom ilovasi.
+
+# ============ Pichan o`rish
 
 
 {
-    "deadline": "3a27101d-83ef-4efe-af1d-c04025eff3db",
+    "deadline": "47ada207-5acc-4179-ad0c-1ebc60e1e87a",
     "report_items": [
         {
-            "statement_column": "37101fd8-661c-4ffb-aaea-a964dc80af14",
+            "statement_column": "4025574b-9246-4c7e-8b67-d0e869b9e4c7",
             "inners": [
-                {"value": "fcc55ac2-86f0-40ae-a5a9-7c171d0a14f9"}
+                {"value": "c5962a66-d704-4699-85c2-ecaf6515c149"}
             ]
         },
         {
-            "statement_column": "b8ff4a27-8cb2-473d-8c27-f86c91707279",
+            "statement_column": "6d3b138b-f3ce-43bd-b20f-d6adfa8f18e8",
             "inners": [
                 {"value": "240"}
             ]
         },
         {
-            "statement_column": "3d234f90-f4dc-4bf6-896d-4fe591fc8bf9",
+            "statement_column": "b40a841d-9b04-4867-a20c-332c5f5f7bb5",
             "inners": [
                 {"value": "60"}
             ]
+        }
+    ]
+}
+
+
+# ============ Asalarichilik
+
+{
+    "deadline": "5def8046-e95c-474d-a832-e467d3d3ca26",
+    "report_items": [
+        {
+            "statement_column": "82f78cb1-25c5-470c-8fce-34d7b1c90d3c",
+            "inners": [
+                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+            ]
         },
         {
-            "statement_column": "c84a4b7e-b9af-4bfe-8e81-faaaf13e6189",
+            "statement_column": "4fc2d57d-eedd-4bf1-bcb1-0c7d96f9efe3",
             "inners": [
                 {"value": "50"}
             ]
         },
         {
-            "statement_column": "83a7350f-e9ba-407e-a181-ffe0d80868ad",
+            "statement_column": "a5886161-2c73-4835-85d6-137cbcf5b471",
             "inners": [
-                {"value": "60"}
+                {"value": "100"}
             ]
         },
         {
-            "statement_column": "d239ef95-e9a6-48d3-b0d3-c40376167053",
-            "inners": [
-                {"value": "50"}
-            ]
-        },
-        {
-            "statement_column": "75bc753c-2978-4702-bfc7-09e610c6984f",
-            "inners": [
-                {"value": "60"}
-            ]
-        },
-        {
-            "statement_column": "d0360193-8818-4e32-a87d-4189714114e1",
+            "statement_column": "80fd3879-146a-4faa-b105-e864fcae5674",
             "inners": [
                 {"value": "50"}
             ]
         },
         {
-            "statement_column": "3d2207b1-f817-4adb-99a8-eea30ec75544",
+            "statement_column": "5e5f8b5f-694f-4c07-a180-90317abe08aa",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "d05c3ceb-5ed2-47a1-90e8-6cc47d28b2f2",
+            "inners": [
+                {"value": "100"}
+            ]
+        }
+    ]
+}
+
+
+# ============ Parrandachilik
+
+{
+    "deadline": "5def8046-e95c-474d-a832-e467d3d3ca26",
+    "report_items": [
+        {
+            "statement_column": "7f2d7387-06f1-48a9-b86b-bb8a82bc0f88",
+            "inners": [
+                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+            ]
+        },
+        {
+            "statement_column": "82bc7e6b-7eea-4ad1-ad14-3657df9bb7c5",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "d1b624a0-0592-4b88-9a9c-b6c9a21395f1",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "fe2e948b-52f9-4f93-814f-8f2eaad00c14",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "daa06a3a-d043-4748-8766-675ee85f01cc",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "952cd5c1-9792-4070-a543-8feaf079c990",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "e624ee6c-c074-4588-a4bf-6cce0ffeb353",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "f4855a34-af1c-481d-a1b5-e1a1a91b182e",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "a8feaf91-5e88-4190-87f6-52b4b902a3f6",
+            "inners": [
+                {"value": "20"}
+            ]
+        },
+        {
+            "statement_column": "78de0693-c421-41bf-aef0-84fa83bca9eb",
+            "inners": [
+                {"value": "200"}
+            ]
+        },
+        {
+            "statement_column": "82f78cb1-25c5-470c-8fce-34d7b1c90d3c",
+            "inners": [
+                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+            ]
+        },
+        {
+            "statement_column": "4fc2d57d-eedd-4bf1-bcb1-0c7d96f9efe3",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "a5886161-2c73-4835-85d6-137cbcf5b471",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "80fd3879-146a-4faa-b105-e864fcae5674",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "5e5f8b5f-694f-4c07-a180-90317abe08aa",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "d05c3ceb-5ed2-47a1-90e8-6cc47d28b2f2",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "07e91f91-2b13-46e1-bfac-4627b398f5f8",
+            "inners": [
+                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+            ]
+        },
+        {
+            "statement_column": "b68d9951-01d4-412a-87ca-9ef39fe63479",
+            "inners": [
+                {"value": "555"}
+            ]
+        },
+        {
+            "statement_column": "4b634e37-3379-4a7e-841d-45893f80e9b7",
+            "inners": [
+                {"value": "666"}
+            ]
+        },
+        {
+            "statement_column": "80a89150-07f6-4633-992d-49dec9353c7e",
+            "inners": [
+                {"value": "555"}
+            ]
+        },
+        {
+            "statement_column": "de54bbcc-9603-4387-99a4-ca7441c06550",
+            "inners": [
+                {"value": "666"}
+            ]
+        }
+    ]
+}
+
+
+# ============ Baliqchilik ilovasi.
+
+
+{
+    "deadline": "5def8046-e95c-474d-a832-e467d3d3ca26",
+    "report_items": [
+        {
+            "statement_column": "07e91f91-2b13-46e1-bfac-4627b398f5f8",
+            "inners": [
+                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+            ]
+        },
+        {
+            "statement_column": "b68d9951-01d4-412a-87ca-9ef39fe63479",
+            "inners": [
+                {"value": "555"}
+            ]
+        },
+        {
+            "statement_column": "4b634e37-3379-4a7e-841d-45893f80e9b7",
+            "inners": [
+                {"value": "666"}
+            ]
+        },
+        {
+            "statement_column": "80a89150-07f6-4633-992d-49dec9353c7e",
+            "inners": [
+                {"value": "555"}
+            ]
+        },
+        {
+            "statement_column": "de54bbcc-9603-4387-99a4-ca7441c06550",
+            "inners": [
+                {"value": "666"}
+            ]
+        }
+    ]
+}
+
+
+# ============ Yaylov hisoboti
+
+{
+    "deadline": "36223843-b321-49bf-aac9-9dbdf00847f0",
+    "report_items": [
+        {
+            "statement_column": "d49effbc-0056-4a52-88eb-483cb806c9b7",
+            "inners": [
+                {"value": "2930f0a3-0781-432f-be4e-3aeb901d8062"}
+            ]
+        },
+        {
+            "statement_column": "155a744c-7815-4c84-8353-90a6a7444aec",
             "inners": [
                 {"value": "60"}
             ]
         },
         {
-            "statement_column": "4d144399-0950-488f-ab3e-76102d89e7fc",
+            "statement_column": "dc821db7-9962-416c-8cf4-b47c5a4ff637",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "6bbf9ab8-2ca0-4629-8ace-da0927b5424d",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "12cc17ec-a528-4ec7-a2cd-59f5d40852cd",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "6da28c9a-ad80-4810-bd72-9d12b5c19d02",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "f740fc8d-2681-4248-9160-cf36e170ca5d",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "dfdc3016-48d9-4edf-b85d-f1f0917118d4",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "89b054f3-5a62-4add-9585-c4ddb274d23b",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "e7d091c5-b93c-46b0-b6d5-7c069cd66862",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "5cf5a9f4-ce5a-492d-972f-c83365b9d11e",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "9b8bce04-9ce1-416a-b255-f000c026f087",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "6f939860-e88f-45c5-8015-f6eba0db778b",
+            "inners": [
+                {"value": "100"}
+            ]
+        }
+    ]
+}
+
+
+# =========== Metallalom ilovasi.
+
+{
+    "deadline": "246a33ba-4eab-4eb3-a7e4-ca24c5b7470a",
+    "report_items": [
+        {
+            "statement_column": "27e20d97-2751-41e7-9a31-023704c50ee0",
+            "inners": [
+                {"value": "d719eed3-8620-430c-821a-199fead0661a"}
+            ]
+        },
+        {
+            "statement_column": "ba3f1e00-434b-4c2d-96b6-e0425be99666",
+            "inners": [
+                {"value": "240"}
+            ]
+        },
+        {
+            "statement_column": "3ab2a045-77de-4ccf-a3c3-bc696fb55b0e",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "b0e826bc-1ddb-4c8f-bab0-43884cefefef",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "d2c93ac6-821d-4e75-b4e1-705c4909f551",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "30e2e25d-1deb-4b81-9802-d5d41efac0bb",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "cb54ee7a-87d1-4e48-aeb1-0761bee5411f",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "dd7cf840-d9f4-4fdf-8dc7-9b91f9cdf6da",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "40906e7e-ceef-4692-877e-d7bd79338208",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "b135c144-cc1a-4fee-bf5d-8b6dd100df0d",
             "inners": [
                 {"value": "50"}
             ]
