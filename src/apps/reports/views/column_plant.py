@@ -1,7 +1,7 @@
 from rest_framework.generics import ListAPIView
 
 from apps.reports.models import ColumnPlant
-from apps.reports.serializers.column_plant import ColumnPlantSerializer
+from apps.reports.serializers.plant import ColumnPlantSerializer
 
 class ColumnPlantListAPIView(ListAPIView):
     serializer_class = ColumnPlantSerializer
