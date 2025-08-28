@@ -9,10 +9,12 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
+from apps.reports.models import StatusChoices
+
 
 FIELD_NAMES = {
-    "uz": {"region": "Hudud", "forest_land": "Urmon bilan qoplangan yerlar"},
-    "ru": {"region": "Регион", "forest_land": "Urmon bilan qoplangan yerlar"},  # RU da ham o‘zbekcha qoladi
+    "uz": {"region": "Hudud", "land": "Yer o‘zlashtirish"},
+    "ru": {"region": "Регион", "land": "Yer o‘zlashtириш"},
 }
 
 REGION_LABELS = {
@@ -34,8 +36,8 @@ REGION_LABELS = {
 
 
 @extend_schema(
-    summary="Urmon bilan qoplangan yerlar",
-    description="Urmon bilan qoplangan yerlar (UZ va RU tillarini qo‘llab-quvvatlaydi)",
+    summary="Yer o‘zlashtirish",
+    description="Yer o‘zlashtirish (UZ va RU tillarini qo‘llab-quvvatlaydi)",
     tags=["Statistics"],
     parameters=[
         OpenApiParameter(
@@ -48,12 +50,16 @@ REGION_LABELS = {
         )
     ],
 )
-class StatisticsForestLandAPIView(APIView):
+class StatisticsLandAcquisitionAPIView(APIView):
     def get_translated_titles(self, lang):
+        """UZ va RU title-larini qaytaradi"""
         return [
-            ("Maydoni (ga)", "Площадь (га)"),
-            ("Daraxtlar zaxirasi (m³)", "Запасы древесины (м³)"),
-            ("Qiymati (so‘m)", "Стоимость (сум)"),
+            ("Reja", "План"),
+            ("Amalda", "Факт"),
+            ("1-chorak", "1-квартал"),
+            ("2-chorak", "2-квартал"),
+            ("3-chorak", "3-квартал"),
+            ("4-chorak", "4-квартал"),
         ]
 
     def get(self, request):
@@ -64,32 +70,34 @@ class StatisticsForestLandAPIView(APIView):
         field_names = FIELD_NAMES[lang]
         titles = self.get_translated_titles(lang)
 
+        # Tanlangan tilga mos ustunlar
         all_titles = [uz if lang == "uz" else ru for uz, ru in titles]
         title_key = "statement_column__title" if lang == "uz" else "statement_column__title_ru"
 
         qs = (
             ReportItem.objects.filter(
-                statement_column__statement__name="Urmon bilan qoplangan yerlar",
+                statement_column__statement__name="Yer o'zlashtirish",
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
+                report__status=StatusChoices.ACCEPTED,
             )
-            .annotate(numeric_value=Cast("value", FloatField()))
             .values("report__organization__region", title_key)
-            .annotate(total=Sum("numeric_value"))
+            .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
 
+        # Region va title bo‘yicha yig‘ish
         grouped_data = defaultdict(lambda: defaultdict(float))
         for item in qs:
             region = item["report__organization__region"]
             title = item[title_key]
             grouped_data[region][title] = item["total"] or 0
 
-        data = [{field_names["forest_land"]: []}]
+        data = [{field_names["land"]: []}]
 
         for region_key, _ in RegionChoices.choices:
             region_name = REGION_LABELS.get(region_key, {}).get(lang, region_key)
 
-            data[0][field_names["forest_land"]].append(
+            data[0][field_names["land"]].append(
                 {
                     field_names["region"]: region_name,
                     **{

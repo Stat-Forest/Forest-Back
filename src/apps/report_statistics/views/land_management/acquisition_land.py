@@ -9,10 +9,12 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
+from apps.reports.models import StatusChoices
+
 
 FIELD_NAMES = {
     "uz": {"region": "Hudud", "land": "Yer o‘zlashtirish"},
-    "ru": {"region": "Регион", "land": "Yer o‘zlashtirish"},
+    "ru": {"region": "Регион", "land": "Yer o‘zlashtириш"},
 }
 
 REGION_LABELS = {
@@ -77,6 +79,7 @@ class StatisticsLandAcquisitionAPIView(APIView):
                 statement_column__statement__name="Yer o'zlashtirish",
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
+                report__status=StatusChoices.ACCEPTED,
             )
             .values("report__organization__region", title_key)
             .annotate(total=Sum(Cast("inners__value", FloatField())))

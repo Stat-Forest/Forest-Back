@@ -7,13 +7,13 @@ from django.db.models import Sum, IntegerField
 from django.db.models.functions import Cast
 from drf_spectacular.utils import extend_schema
 
+from apps.reports.models import StatusChoices
+
 
 @extend_schema(
     summary="Urmon bilan qoplangan yerlar",
     description="Urmon bilan qoplangan yerlar"
 )
-
-
 @extend_schema(tags=["Sum"])
 class SumCoveredForestLandAnalysisListAPIView(APIView):
     def get(self, request):
@@ -25,13 +25,15 @@ class SumCoveredForestLandAnalysisListAPIView(APIView):
 
         all_titles = list(set(titles_1_map.values()))
 
-        items = ReportItem.objects.filter(
-            statement_column__statement__name="Urmon bilan qoplangan yerlar",
-            statement_column__title__in=all_titles
-        ).annotate(
-            value_as_int=Cast('value', IntegerField())
-        ).values('statement_column__title').annotate(
-            total=Sum('value_as_int')
+        items = (
+            ReportItem.objects.filter(
+                statement_column__statement__name="Urmon bilan qoplangan yerlar",
+                statement_column__title__in=all_titles,
+                report__status=StatusChoices.ACCEPTED,
+            )
+            .annotate(value_as_int=Cast('value', IntegerField()))
+            .values('statement_column__title')
+            .annotate(total=Sum('value_as_int'))
         )
 
         result_map = {item['statement_column__title']: item['total'] for item in items}
