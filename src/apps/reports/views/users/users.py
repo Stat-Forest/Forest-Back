@@ -5,7 +5,7 @@ from django_filters import rest_framework as filters
 
 from apps.users.models import CustomUser
 from apps.general.models import Organization
-from apps.reports.serializers import UserListSerializer
+from apps.reports.serializers.users import UserListSerializer
 from apps.reports.filters import CustomUserFilter
 
 

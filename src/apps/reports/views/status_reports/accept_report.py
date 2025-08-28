@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
-from apps.reports.serializers import ReportAcceptSerializer
+from apps.reports.serializers.status_reports import ReportAcceptSerializer
 from apps.reports.permissions import CanAcceptReport
 
 

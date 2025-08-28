@@ -10,7 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 # Local apps
 from apps.reports.models import Plan, PlanItem
-from apps.reports.serializers import PlanSerializer, PlanListSerializer
+from apps.reports.serializers.plan import PlanSerializer, PlanListSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.permissions import CanCreatePlan
 from apps.utils.translation import get_lang_code, get_translated_field
