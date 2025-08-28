@@ -191,15 +191,15 @@ class PlanSerializer(serializers.ModelSerializer):
         return instance
 
 
-# === LIST SERIALIZERS ===
 class PlanListItemSerializer(serializers.ModelSerializer):
-    column_id = serializers.UUIDField(source='column', read_only=True)
+    column_id = serializers.UUIDField(source='column.id', read_only=True)
     column_parent_name = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
+    updated_at = serializers.DateTimeField(format="%d.%m.%Y %H:%M", read_only=True)
 
     class Meta:
         model = PlanItem
-        fields = ["column_id", "column_parent_name", "column_name", "plan_value"]
+        fields = ["column_id", "column_parent_name", "column_name", "plan_value", "updated_at"]
 
     def get_column_parent_name(self, obj):
         lang = self.context.get("lang", "uz")
@@ -213,8 +213,7 @@ class PlanListItemSerializer(serializers.ModelSerializer):
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
-
-
+    
 
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
