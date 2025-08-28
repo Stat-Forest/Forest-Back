@@ -9,7 +9,8 @@ from apps.reports.services.general_report import aggregate_general_report
 
 
 class ReportCancelSerializer(CustomModelSerializer):
-    cancel_reason = serializers.CharField(required=True, write_only=True)
+    id = serializers.UUIDField(write_only=True, required=True) 
+    cancel_reason = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = Report
@@ -23,7 +24,7 @@ class ReportCancelSerializer(CustomModelSerializer):
         if instance.status == Report.StatusChoices.CANCELLED:
             raise ValidationError(_("Report already cancelled."))
 
-        # cancel_reason majburiy
+        # cancel_reason majburiy (aslida required=True buni o‘zi tekshiradi)
         if not attrs.get("cancel_reason"):
             raise ValidationError(_("Cancel reason is required when cancelling a report."))
 
@@ -37,9 +38,8 @@ class ReportCancelSerializer(CustomModelSerializer):
         instance.status = Report.StatusChoices.CANCELLED
         instance.cancel_reason = self.validated_data["cancel_reason"]
 
-        # cancelled_at avtomatik qo'yiladi agar yo'q bo'lsa
-        if not instance.cancelled_at:
-            instance.cancelled_at = timezone.now()
+        # cancelled_at har safar yangilanadi
+        instance.cancelled_at = timezone.now()
 
         instance.save(update_fields=["status", "cancel_reason", "cancelled_at"])
 
