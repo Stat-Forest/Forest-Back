@@ -9,6 +9,8 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
+from apps.reports.models import StatusChoices
+
 
 FIELD_NAMES = {
     "uz": {
@@ -90,10 +92,12 @@ class StatisticsFinanceIncomeAPIView(APIView):
 
         title_key = "statement_column__title" if lang == "uz" else "statement_column__title_ru"
 
+        # 🔑 accepted status bo'yicha filter qo'shildi
         qs = (
             ReportItem.objects.filter(
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
+                report__status=StatusChoices.ACCEPTED,
             )
             .values("report__organization__region", title_key)
             .annotate(total=Sum(Cast("inners__value", FloatField())))

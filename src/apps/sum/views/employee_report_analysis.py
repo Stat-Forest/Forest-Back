@@ -1,11 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-from apps.reports.models import ReportItem
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+
+from apps.reports.models import ReportItem, StatusChoices
 
 
 @extend_schema(
@@ -75,12 +75,16 @@ class SumEmployeeReportAnalysisListAPIView(APIView):
             }
         }
 
-        # Barcha kerakli sarlavhalarni yig‘ib olish (UZ dagi qiymatlar bo‘yicha!)
+        # Barcha kerakli sarlavhalarni yig‘ish (UZ dagi qiymatlar bo‘yicha!)
         all_titles = list(set(titles_1_map["uz"].values()) | set(titles_4_map["uz"].values()))
 
-        # Ma’lumotlarni yig‘ish va summalash (inners orqali)
+        # Ma’lumotlarni yig‘ish va summalash
         items = (
-            ReportItem.objects.filter(statement_column__title__in=all_titles,report__is_report=True)
+            ReportItem.objects.filter(
+                statement_column__title__in=all_titles,
+                report__is_report=True,
+                report__status=StatusChoices.ACCEPTED,
+            )
             .values("statement_column__title")
             .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
