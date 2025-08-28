@@ -11,7 +11,7 @@ from apps.report_statistics.views.finance import (
 from apps.report_statistics.views.land_management import (
     StatisticsLandAcquisitionAPIView,
     StatisticsRentedLandAPIView,
-    StatisticsForestLandAPIView
+    StatisticsLandAcquisitionAPIView
 )
 
 
@@ -22,5 +22,5 @@ urlpatterns =[
     path('finance-income-stat/',StatisticsFinanceIncomeAPIView.as_view()),
     path('land-acquisition-stat/',StatisticsLandAcquisitionAPIView.as_view()),
     path('land-rented-stat/',StatisticsRentedLandAPIView.as_view()),
-    path('land-forest-stat/',StatisticsForestLandAPIView.as_view()),
+    path('land-forest-stat/',StatisticsLandAcquisitionAPIView.as_view()),
 ]
