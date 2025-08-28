@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.reports.serializers.plant_report import PlantReportInitSerializer
+from apps.reports.serializers.reports import PlantReportInitSerializer
 from apps.reports.services.plant_report import get_or_create_report_and_columns
 
 
