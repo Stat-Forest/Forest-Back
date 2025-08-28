@@ -57,9 +57,6 @@ class PlanItemSerializer(serializers.Serializer):
         return " - ".join(reversed(names)) if names else None
 
 
-
-
-
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
