@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.reports.permissions import CanCancelReport
 from apps.reports.models import Report
-from apps.reports.serializers import ReportCancelSerializer
+from apps.reports.serializers.status_reports import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 
 

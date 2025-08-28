@@ -2,7 +2,7 @@ from rest_framework.response import Response
 from apps.users.models import CustomUser
 from apps.reports.models import Report, Deadline, Plan
 from apps.base.views import CustomGenericAPIView
-from apps.reports.serializers import DashboardStatSerializer
+from apps.reports.serializers.dashboard import DashboardStatSerializer
 from drf_spectacular.utils import extend_schema
 
 from django.utils.translation import gettext_lazy as _
