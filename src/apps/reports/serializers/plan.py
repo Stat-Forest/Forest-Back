@@ -37,14 +37,25 @@ class PlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField(write_only=True)
     column_id = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
+    column_parent_name = serializers.SerializerMethodField()
     plan_value = serializers.FloatField()
+
+    def get_column_id(self, obj):
+        return obj.column.id
 
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
 
-    def get_column_id(self, obj):
-        return obj.column.id
+    def get_column_parent_name(self, obj):
+        lang = self.context.get("lang", "uz")
+        names = []
+        parent = getattr(obj.column, "parent", None)
+        while parent:
+            names.append(getattr(parent, f"title_{lang}", parent.title))
+            parent = getattr(parent, "parent", None)
+        return " - ".join(reversed(names)) if names else None
+
 
 
 
