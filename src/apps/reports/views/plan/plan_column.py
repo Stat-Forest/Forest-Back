@@ -6,7 +6,7 @@ from django.db.models.expressions import Func, Value
 # Project imports
 from apps.base.views import CustomListAPIView
 from apps.reports.models import StatementColumn
-from apps.reports.serializers.plan_column import PlanColumnSerializer
+from apps.reports.serializers.plan import PlanColumnSerializer
 
 # Swagger (drf-spectacular) imports
 from drf_spectacular.types import OpenApiTypes
