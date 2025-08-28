@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers 
 
 from apps.reports.models import Report
 from apps.base.serializers import CustomModelSerializer
