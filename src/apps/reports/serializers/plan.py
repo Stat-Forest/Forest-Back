@@ -37,14 +37,25 @@ class PlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField(write_only=True)
     column_id = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
+    column_parent_name = serializers.SerializerMethodField()
     plan_value = serializers.FloatField()
+
+    def get_column_id(self, obj):
+        return obj.column.id
 
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
 
-    def get_column_id(self, obj):
-        return obj.column.id
+    def get_column_parent_name(self, obj):
+        lang = self.context.get("lang", "uz")
+        names = []
+        parent = getattr(obj.column, "parent", None)
+        while parent:
+            names.append(getattr(parent, f"title_{lang}", parent.title))
+            parent = getattr(parent, "parent", None)
+        return " - ".join(reversed(names)) if names else None
+
 
 
 
@@ -52,12 +63,13 @@ class PlanItemSerializer(serializers.Serializer):
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
+    statement_id = serializers.UUIDField(source="statement.id", read_only=True)
     statement = serializers.UUIDField(required=False)
 
     class Meta:
         model = Plan
-        fields = ["id", "organization", "statement", "year", "plan_items"]
-        read_only_fields = ["statement"]
+        fields = ["id", "organization", "statement","statement_id", "year", "plan_items"]
+        read_only_fields = ["statement",'statement_id']
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -191,9 +203,8 @@ class PlanSerializer(serializers.ModelSerializer):
         return instance
 
 
-# === LIST SERIALIZERS ===
 class PlanListItemSerializer(serializers.ModelSerializer):
-    column_id = serializers.UUIDField(source='column', read_only=True)
+    column_id = serializers.UUIDField(source='column.id', read_only=True)
     column_parent_name = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
 
@@ -215,15 +226,17 @@ class PlanListItemSerializer(serializers.ModelSerializer):
         return getattr(obj.column, f"title_{lang}", obj.column.title)
 
 
+from django.utils import timezone
 
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     statement = serializers.SerializerMethodField()
     plan_items = PlanListItemSerializer(many=True, read_only=True)
+    updated_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
-        fields = ("id", "year", "organization", "statement", "plan_items")
+        fields = ("id", "year", "created_at", "updated_at", "organization", "statement", "plan_items")
 
     def get_organization(self, obj):
         lang = self.context.get("lang", "uz")
@@ -236,3 +249,7 @@ class PlanListSerializer(serializers.ModelSerializer):
         if lang == "ru":
             return getattr(obj.statement, "name_ru", obj.statement.name)
         return getattr(obj.statement, "name_uz", obj.statement.name)
+
+    def get_updated_at(self, obj):
+        dt = obj.updated_at or obj.created_at
+        return timezone.localtime(dt).strftime("%d.%m.%Y %H:%M") if dt else None

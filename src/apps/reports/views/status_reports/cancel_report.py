@@ -10,6 +10,7 @@ from apps.reports.serializers import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 
 
+
 @extend_schema(tags=["Reports Status Update"])
 class ReportCancelAPIView(UpdateAPIView):
     queryset = Report.objects.all()
