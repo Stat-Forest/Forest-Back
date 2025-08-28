@@ -22,7 +22,7 @@ class ReportAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('organization', 'statement', 'deadline', 'status', 'cancel_reason')
+            'fields': ('organization', 'statement', 'deadline', 'is_report', 'status', 'cancel_reason')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
