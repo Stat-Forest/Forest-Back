@@ -52,12 +52,13 @@ class PlanItemSerializer(serializers.Serializer):
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
+    statement_id = serializers.UUIDField(source="statement.id", read_only=True)
     statement = serializers.UUIDField(required=False)
 
     class Meta:
         model = Plan
-        fields = ["id", "organization", "statement", "year", "plan_items"]
-        read_only_fields = ["statement"]
+        fields = ["id", "organization", "statement","statement_id", "year", "plan_items"]
+        read_only_fields = ["statement",'statement_id']
 
     def validate_year(self, value):
         from django.utils import timezone
@@ -195,11 +196,10 @@ class PlanListItemSerializer(serializers.ModelSerializer):
     column_id = serializers.UUIDField(source='column.id', read_only=True)
     column_parent_name = serializers.SerializerMethodField()
     column_name = serializers.SerializerMethodField()
-    updated_at = serializers.DateTimeField(format="%d.%m.%Y %H:%M", read_only=True)
 
     class Meta:
         model = PlanItem
-        fields = ["column_id", "column_parent_name", "column_name", "plan_value", "updated_at"]
+        fields = ["column_id", "column_parent_name", "column_name", "plan_value"]
 
     def get_column_parent_name(self, obj):
         lang = self.context.get("lang", "uz")
@@ -213,7 +213,9 @@ class PlanListItemSerializer(serializers.ModelSerializer):
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
         return getattr(obj.column, f"title_{lang}", obj.column.title)
-    
+
+
+from django.utils import timezone
 
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
@@ -238,5 +240,5 @@ class PlanListSerializer(serializers.ModelSerializer):
         return getattr(obj.statement, "name_uz", obj.statement.name)
 
     def get_updated_at(self, obj):
-        # Agar updated_at yo'q bo'lsa yoki created_at bilan bir xil bo'lsa, created_at qaytariladi
-        return obj.updated_at or obj.created_at
+        dt = obj.updated_at or obj.created_at
+        return timezone.localtime(dt).strftime("%d.%m.%Y %H:%M") if dt else None
