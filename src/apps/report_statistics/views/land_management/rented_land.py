@@ -9,7 +9,7 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
-from apps.reports.models import StatusChoices
+from apps.reports.models import Report
 
 FIELD_NAMES = {
     "uz": {"region": "Hudud", "rented_land": "Ijaraga berilgan yerlar hisobi"},
@@ -73,7 +73,7 @@ class StatisticsRentedLandAPIView(APIView):
                 statement_column__statement__name="Ijaraga berilgan yerlar hisobi",
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
-                report__status=StatusChoices.ACCEPTED,
+                report__status=Report.StatusChoices.ACCEPTED,
             )
             .annotate(numeric_value=Cast("value", FloatField()))
             .values("report__organization__region", title_key)
