@@ -8,7 +8,7 @@ from rest_framework.status import HTTP_200_OK
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from apps.utils.services import RegionChoices
-from apps.reports.models import ReportItem,StatusChoices
+from apps.reports.models import ReportItem,Report
 
 
 
@@ -112,7 +112,7 @@ class StatisticsEmployeeReportAPIView(APIView):
         filters = {
             f"{filter_key}__in": titles,
             "report__is_report": True,
-            "report__status": StatusChoices.ACCEPTED,
+            "report__status": Report.StatusChoices.ACCEPTED,
         }
         if parent_title:
             filters[parent_key] = parent_title
