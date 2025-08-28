@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema
 
 # Local imports
 from apps.reports.models import Plan
-from apps.reports.serializers import PlanSerializer
+from apps.reports.serializers.plan import PlanSerializer
 
 
 # -----------------------------------------------------------------------------
