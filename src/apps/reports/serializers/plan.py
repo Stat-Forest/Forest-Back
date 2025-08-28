@@ -220,10 +220,11 @@ class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     statement = serializers.SerializerMethodField()
     plan_items = PlanListItemSerializer(many=True, read_only=True)
+    updated_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
-        fields = ("id", "year", "organization", "statement", "plan_items")
+        fields = ("id", "year", "created_at", "updated_at", "organization", "statement", "plan_items")
 
     def get_organization(self, obj):
         lang = self.context.get("lang", "uz")
@@ -236,3 +237,7 @@ class PlanListSerializer(serializers.ModelSerializer):
         if lang == "ru":
             return getattr(obj.statement, "name_ru", obj.statement.name)
         return getattr(obj.statement, "name_uz", obj.statement.name)
+
+    def get_updated_at(self, obj):
+        # Agar updated_at yo'q bo'lsa yoki created_at bilan bir xil bo'lsa, created_at qaytariladi
+        return obj.updated_at or obj.created_at
