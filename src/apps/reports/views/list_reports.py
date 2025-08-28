@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
 from apps.reports.models import Report
-from apps.reports.serializers import ReportListSerializer
+from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
 
 

@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError, NotFound
 
 from apps.reports.models import Report
 from apps.reports.permissions import CanSendReport
-from apps.reports.serializers import ReportSendSerializer
+from apps.reports.serializers.status_reports import ReportSendSerializer
 
 
 @extend_schema(tags=["Reports Status Update"])

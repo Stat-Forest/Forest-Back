@@ -5,15 +5,15 @@ from drf_spectacular.utils import extend_schema
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
-from apps.reports.serializers import ReportAcceptSerializer
-# from apps.reports.permissions import CanAcceptReport
+from apps.reports.serializers.status_reports import ReportAcceptSerializer
+from apps.reports.permissions import CanAcceptReport
 
 
 @extend_schema(tags=["Reports Status Update"])
 class ReportAcceptAPIView(UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
-    # permission_classes = [CanAcceptReport]
+    permission_classes = [CanAcceptReport]
 
     def get_object(self, report_id):
         try:

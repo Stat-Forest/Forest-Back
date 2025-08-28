@@ -57,18 +57,16 @@ class PlanItemSerializer(serializers.Serializer):
         return " - ".join(reversed(names)) if names else None
 
 
-
-
-
 class PlanSerializer(serializers.ModelSerializer):
     plan_items = PlanItemSerializer(many=True)
     organization = serializers.UUIDField()
+    organization_id = serializers.UUIDField(source="organization.id", read_only=True)
     statement_id = serializers.UUIDField(source="statement.id", read_only=True)
     statement = serializers.UUIDField(required=False)
 
     class Meta:
         model = Plan
-        fields = ["id", "organization", "statement","statement_id", "year", "plan_items"]
+        fields = ["id", "organization", "organization_id","statement","statement_id", "year", "plan_items"]
         read_only_fields = ["statement",'statement_id']
 
     def validate_year(self, value):

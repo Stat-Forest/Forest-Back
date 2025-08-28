@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend, filters
 
 from apps.reports.models import Plant
 from apps.base.views import CustomListAPIView
-from apps.reports.serializers.plant_column import PlantSerializer
+from apps.reports.serializers.plant import PlantSerializer
 
 
 class PlantFilter(django_filters.FilterSet):

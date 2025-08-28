@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from apps.reports.models import Statement
-from apps.reports.serializers import StatementSerializer
+from apps.reports.serializers.statement import StatementSerializer
 
 @extend_schema(
     tags=["Statements"],
