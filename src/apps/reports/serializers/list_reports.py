@@ -1,7 +1,5 @@
 import re
-
 from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers
 from apps.reports.models import Report, StatementColumn
 from apps.utils.services import RegionChoices
@@ -52,7 +50,7 @@ class ReportListSerializer(serializers.ModelSerializer):
 
         items = list(
             report.report_items
-            .select_related("statement_column")
+            .select_related("statement_column__parent")
             .prefetch_related("inners")
             .all()
         )
@@ -67,34 +65,28 @@ class ReportListSerializer(serializers.ModelSerializer):
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
 
-        # ✅ ORGANIZATION NAME & ID
         if report.is_general:
             organization_id = "general"
             organization_name = _("Viloyat darajasidagi Jami")
-
         elif getattr(report, "is_individual_general", False):
             organization_id = "individual"
             organization_name = f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
-
         elif report.is_republic:
             organization_id = "republic"
             organization_name = _("Respublika Jami")
-
         else:
-            # ⚠️ Himoya: organization None bo‘lishi mumkin
-            if report.organization:
-                organization_id = str(report.organization.id)
-                organization_name = get_translated_field(report.organization, "name", lang)
-            else:
-                organization_id = "unknown"
-                organization_name = _("Nomaʼlum tashkilot")
+            organization_id = str(report.organization.id) if report.organization else "unknown"
+            organization_name = get_translated_field(report.organization, "name", lang) if report.organization else _("Nomaʼlum tashkilot")
 
-        # === Grouping ilova bo‘yicha ===
+        # 🧠 Cache all statement columns for fast path generation
+        all_columns = StatementColumn.objects.filter(statement=report.statement).select_related("parent")
+        column_map = {str(col.id): col for col in all_columns}
+
         grouped_by_ilova = {}
         for item in items:
             column = item.statement_column
             if column is None:
-                continue  # himoya
+                continue
 
             top_level = get_top_level_ordering(column.ordering)
             grouped_by_ilova.setdefault(top_level, []).append(item)
@@ -105,7 +97,7 @@ class ReportListSerializer(serializers.ModelSerializer):
             for item in grouped_by_ilova[ilova_ordering]:
                 column = item.statement_column
                 if column is None:
-                    continue  # himoya
+                    continue
 
                 inner_values = []
                 for inner in item.inners.all():
@@ -113,16 +105,13 @@ class ReportListSerializer(serializers.ModelSerializer):
 
                     if column.is_organization:
                         column_title = getattr(column, f"title_{lang}", "").lower()
-
                         if column_title in ["tashkilot nomi", "название организации"]:
                             if report.is_individual_general:
                                 val = get_translated_field(report.organization, "name", lang)
                                 val = f"{val} – {_('Tashkilot Jami')}"
-
                             elif report.is_general:
                                 region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
                                 val = f"{region_label} – {_('Viloyat Jami')}"
-
                             elif report.is_republic:
                                 val = _("Respublika Jami")
 
@@ -130,11 +119,10 @@ class ReportListSerializer(serializers.ModelSerializer):
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
-                    "statement_column_name": get_translated_field(column, "title", lang),
+                    "statement_column_name": self.get_full_column_path(column, lang, column_map),
                     "inners": inner_values
                 })
 
-        # Final result
         data = [{
             "organization_id": organization_id,
             "organization_name": organization_name,
@@ -149,3 +137,12 @@ class ReportListSerializer(serializers.ModelSerializer):
         ))
 
         return data
+
+    def get_full_column_path(self, column: StatementColumn, lang: str, column_map: dict) -> str:
+        path = []
+        while column:
+            title = getattr(column, f"title_{lang}", None)
+            if title:
+                path.append(title.strip())
+            column = column_map.get(str(column.parent_id)) if column.parent_id else None
+        return " – ".join(reversed(path))

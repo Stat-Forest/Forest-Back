@@ -113,14 +113,13 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
         lang = get_lang_code(self.context)
         result = []
 
+        def ordering_key(ordering: str):
+            if not ordering:
+                return []
+            return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
+
         for child in children:
             child_items = list(child.report_items.all())
-
-            def ordering_key(ordering: str):
-                if not ordering:
-                    return []
-                return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
-
             child_items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
             grouped_by_ilova = defaultdict(list)
