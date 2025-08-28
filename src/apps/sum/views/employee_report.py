@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 
-from apps.reports.models import ReportItem, StatusChoices
+from apps.reports.models import ReportItem, Report
 
 
 @extend_schema(
@@ -82,7 +82,7 @@ class SumEmployeeReportListAPIView(APIView):
             ReportItem.objects.filter(
                 statement_column__title__in=key_titles,
                 report__is_report=True,
-                report__status=StatusChoices.ACCEPTED,   # <-- faqat tasdiqlangan hisobotlar
+                report__status=Report.StatusChoices.ACCEPTED,
             )
             .values("report_id", "report__organization__name", "statement_column__title")
             .annotate(total=Sum(Cast("inners__value", FloatField())))

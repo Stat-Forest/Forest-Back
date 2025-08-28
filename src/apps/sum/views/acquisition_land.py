@@ -7,7 +7,7 @@ from django.db.models import Sum, IntegerField
 from django.db.models.functions import Cast
 from drf_spectacular.utils import extend_schema
 
-from apps.reports.models import StatusChoices
+from apps.reports.models import Report
 
 @extend_schema(
     summary="Yer o'zlashtirish",
@@ -27,7 +27,7 @@ class SumAcquisitionLandAnalysisListAPIView(APIView):
             ReportItem.objects.filter(
                 statement_column__parent__title='2025 yilda foydalanishga kiritiladigan o‘rmon fondi yerlari maydoni to‘g‘risida ma’lumot',
                 statement_column__title__in=all_titles,
-                report__status=StatusChoices.ACCEPTED,
+                report__status=Report.StatusChoices.ACCEPTED,
             )
             .annotate(value_as_int=Cast('value', IntegerField()))
             .values('statement_column__title')

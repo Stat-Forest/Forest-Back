@@ -9,7 +9,7 @@ from collections import defaultdict
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem
 
-from apps.reports.models import StatusChoices
+from apps.reports.models import Report
 
 FIELD_NAMES = {
     "uz": {"region": "Hudud", "fund": "Jamg‘arma"},
@@ -77,7 +77,7 @@ class StatisticsFinanceFundAPIView(APIView):
             ReportItem.objects.filter(
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
-                report__status = StatusChoices.ACCEPTED,
+                report__status = Report.StatusChoices.ACCEPTED,
             )
             .values("report__organization__region", title_key)
             .annotate(total=Sum(Cast("inners__value", FloatField())))
