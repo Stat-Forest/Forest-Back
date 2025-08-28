@@ -6,9 +6,8 @@ from rest_framework.exceptions import ValidationError
 
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
-from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner, RegionChoices
+from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services import aggregate_individual_report
-from apps.reports.services.general_report import aggregate_general_report, aggregate_national_report
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
