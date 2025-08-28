@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from apps.reports.models import Report
-from apps.reports.serializers.select_report import ReportAggregateSelectSerializer
+from apps.reports.serializers.reports import ReportAggregateSelectSerializer
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
