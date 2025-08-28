@@ -1,5 +1,5 @@
 from apps.reports.models import Deadline
-from apps.reports.serializers import DeadlineSerializer
+from apps.reports.serializers.deadline import DeadlineSerializer
 
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema

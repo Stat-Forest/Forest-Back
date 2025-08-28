@@ -2,7 +2,7 @@ from rest_framework.generics import ListAPIView
 from drf_spectacular.utils import extend_schema
 
 from apps.reports.models.report_item import ReportItem
-from apps.reports.serializers import ReportItemSerializer
+from apps.reports.serializers.report_item import ReportItemSerializer
 
 
 @extend_schema(tags=["Reports Items"])

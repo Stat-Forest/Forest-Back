@@ -7,7 +7,7 @@ from apps.reports.filters.report_region import ReportFilter
 from apps.reports.models import Report, Plant, ReportItem
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.permissions.check_list_report import CanListReport
-from apps.reports.serializers import (
+from apps.reports.serializers.reports import (
     ReportListSerializer,
     ReportCreateSerializer,
     ReportUpdateSerializer, ReportDetailSerializer,
