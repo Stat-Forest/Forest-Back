@@ -8,7 +8,8 @@ from rest_framework.status import HTTP_200_OK
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from apps.utils.services import RegionChoices
-from apps.reports.models import ReportItem
+from apps.reports.models import ReportItem,StatusChoices
+
 
 
 FIELD_NAMES = {
@@ -108,7 +109,11 @@ class StatisticsEmployeeReportAPIView(APIView):
             else "statement_column__parent__title_ru"
         )
 
-        filters = {f"{filter_key}__in": titles, "report__is_report": True}
+        filters = {
+            f"{filter_key}__in": titles,
+            "report__is_report": True,
+            "report__status": StatusChoices.ACCEPTED,
+        }
         if parent_title:
             filters[parent_key] = parent_title
 
@@ -148,7 +153,6 @@ class StatisticsEmployeeReportAPIView(APIView):
                 total = item["total"] or 0
                 grouped_data[region][title] += total
 
-        # 🔑 FIELD_NAMES dan foydalanamiz
         field_names = FIELD_NAMES[lang]
 
         data = [{

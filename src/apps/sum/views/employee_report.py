@@ -1,13 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 
-from apps.reports.models import ReportItem
+from apps.reports.models import ReportItem, StatusChoices
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 @extend_schema(
     summary="Xodim hisobi",
@@ -80,7 +79,11 @@ class SumEmployeeReportListAPIView(APIView):
                      | set(titles_map_3["uz"].values())
 
         items = (
-            ReportItem.objects.filter(statement_column__title__in=key_titles,report__is_report=True)
+            ReportItem.objects.filter(
+                statement_column__title__in=key_titles,
+                report__is_report=True,
+                report__status=StatusChoices.ACCEPTED,   # <-- faqat tasdiqlangan hisobotlar
+            )
             .values("report_id", "report__organization__name", "statement_column__title")
             .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
@@ -121,7 +124,6 @@ class SumEmployeeReportListAPIView(APIView):
                     highest_fill_percent = fill_percent
                     highest_fill_org = stats["org"]
 
-        # 2-ilova va 3-ilova keylari faqat lang bo‘yicha chiqadi
         ilova_2 = {
             label: round(totals.get(title, 0), 2)
             for label, title in titles_map_2[lang].items()
