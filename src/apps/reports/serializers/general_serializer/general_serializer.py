@@ -107,6 +107,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             statement=report.statement,
             deadline=report.deadline,
             is_general=False,
+            is_individual_general=False,
+            is_report=True,
             region=report.region,
         ).select_related("organization").prefetch_related("report_items__statement_column", "report_items__inners")
 
