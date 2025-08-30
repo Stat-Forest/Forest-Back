@@ -139,6 +139,7 @@ class ReportUpdateAPIView(CustomRetrieveUpdateAPIView):
         'report_items__inners',
         'report_items__statement_column',
     ).distinct().order_by('-created_at')
+    serializer_class = ReportUpdateSerializer
     lookup_field = 'id'
     # permission_classes = (CanUpdateReport,)
 

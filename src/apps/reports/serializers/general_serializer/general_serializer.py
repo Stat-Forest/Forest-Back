@@ -44,120 +44,128 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
+        organization_name = self.get_organization_name(report)
 
-        items = list(
-            report.report_items
-            .select_related("statement_column")
-            .prefetch_related("inners")
-        )
+        items = report.report_items.select_related("statement_column").prefetch_related("inners")
 
-        def ordering_key(ordering: str):
+        def ordering_key(ordering):
             if not ordering:
                 return []
             return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
 
-        items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
-
-        def get_top_level_ordering(ordering: str) -> str:
+        def get_top_level_ordering(ordering):
             return ordering.split(".")[0] if ordering else "0"
 
-        organization_id = "general"
-        organization_name = self.get_organization_name(report)
+        # Sort by ordering
+        items = sorted(items, key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
         grouped_by_ilova = defaultdict(list)
         for item in items:
-            column = item.statement_column
-            if column is None:
-                continue
-            top_level = get_top_level_ordering(column.ordering)
-            grouped_by_ilova[top_level].append(item)
+            col = item.statement_column
+            if col:
+                top_level = get_top_level_ordering(col.ordering)
+                grouped_by_ilova[top_level].append(item)
 
         statement_columns = []
-        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
-            for item in grouped_by_ilova[ilova_ordering]:
+        for ilova_order in sorted(grouped_by_ilova.keys(), key=int):
+            for item in grouped_by_ilova[ilova_order]:
                 column = item.statement_column
-                if column is None:
+                if not column:
                     continue
 
-                inner_values = []
+                column_title = getattr(column, f"title_{lang}", "").lower()
+                inners = []
+
                 for inner in item.inners.all():
                     val = inner.value
-                    column_title = getattr(column, f"title_{lang}", "").lower()
-
                     if column.is_organization and column_title in ["tashkilot nomi", "название организации"]:
                         val = organization_name
 
-                    inner_values.append({"id": str(inner.id), "value": val})
+                    inners.append({
+                        "id": str(inner.id),
+                        "value": val
+                    })
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
                     "statement_column_name": get_translated_field(column, "title", lang),
-                    "inners": inner_values
+                    "inners": inners
                 })
 
         return [{
-            "organization_id": organization_id,
+            "organization_id": "general",
             "organization_name": organization_name,
             "statement_columns": statement_columns
         }]
 
     def get_children_reports(self, report):
-        from apps.reports.models import Report  # avoid circular imports
+        from apps.reports.models import Report
+        if not report.region:
+            return []
+
+        lang = get_lang_code(self.context)
+
         children = Report.objects.filter(
             statement=report.statement,
             deadline=report.deadline,
             is_general=False,
             is_individual_general=False,
             is_report=True,
-            region=report.region,
-        ).select_related("organization").prefetch_related("report_items__statement_column", "report_items__inners")
+            region=report.region
+        ).select_related("organization").prefetch_related(
+            "report_items__statement_column", "report_items__inners"
+        )
 
-        lang = get_lang_code(self.context)
-        result = []
-
-        def ordering_key(ordering: str):
+        def ordering_key(ordering):
             if not ordering:
                 return []
             return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
 
+        result = []
         for child in children:
-            child_items = list(child.report_items.all())
-            child_items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
+            items = list(child.report_items.all())
+            items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
             grouped_by_ilova = defaultdict(list)
-            for item in child_items:
-                top_level = item.statement_column.ordering.split(".")[0] if item.statement_column.ordering else "0"
-                grouped_by_ilova[top_level].append(item)
+            for item in items:
+                col = item.statement_column
+                if col:
+                    top_level = col.ordering.split(".")[0] if col.ordering else "0"
+                    grouped_by_ilova[top_level].append(item)
 
             statement_columns = []
-            for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
-                for item in grouped_by_ilova[ilova_ordering]:
+            for ilova_order in sorted(grouped_by_ilova.keys(), key=int):
+                for item in grouped_by_ilova[ilova_order]:
                     column = item.statement_column
-                    if column is None:
+                    if not column:
                         continue
 
-                    inner_values = []
+                    column_title = getattr(column, f"title_{lang}", "").lower()
+                    inners = []
+
                     for inner in item.inners.all():
                         val = inner.value
-                        column_title = getattr(column, f"title_{lang}", "").lower()
-
                         if column.is_organization and column_title in ["tashkilot nomi", "название организации"]:
                             val = get_translated_field(child.organization, "name", lang)
 
-                        inner_values.append({"id": str(inner.id), "value": val})
+                        inners.append({
+                            "id": str(inner.id),
+                            "value": val
+                        })
 
                     statement_columns.append({
                         "statement_column_id": str(column.id),
                         "statement_column_name": get_translated_field(column, "title", lang),
-                        "inners": inner_values
+                        "inners": inners
                     })
 
+            org_name = get_translated_field(child.organization, "name", lang)
             result.append({
                 "id": str(child.id),
-                "organization_name": get_translated_field(child.organization, "name", lang),
+                "organization_name": org_name,
                 "report_items": [{
                     "organization_id": str(child.organization.id),
-                    "organization_name": get_translated_field(child.organization, "name", lang),
+                    "organization_name": org_name,
                     "statement_columns": statement_columns
                 }]
             })

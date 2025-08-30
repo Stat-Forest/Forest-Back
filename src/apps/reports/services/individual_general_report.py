@@ -17,7 +17,10 @@ def aggregate_individual_report(source_report):
 
     all_items = source_report.report_items.prefetch_related("inners")
 
-    # Individual Jami reportni yaratamiz
+    # 🛠 Har doim region va republic ni aniq ajratib olamiz
+    region = source_report.organization.region if source_report.organization else source_report.region
+    republic = source_report.organization.republic if source_report.organization else source_report.republic
+
     individual_report = Report.objects.create(
         organization=source_report.organization,
         statement=source_report.statement,
@@ -26,8 +29,8 @@ def aggregate_individual_report(source_report):
         is_general=False,
         is_individual_general=True,
         is_report=False,
-        region=source_report.region,
-        republic=source_report.republic,
+        region=region,
+        republic=republic,
     )
 
     column_values_map = defaultdict(list)

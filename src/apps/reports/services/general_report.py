@@ -119,11 +119,15 @@ def aggregate_general_report(statement, deadline, region):
     if not reports.exists():
         return None
 
-    regions = {r.organization.region for r in reports if r.organization and r.organization.region}
-    republics = {r.organization.republic for r in reports if r.organization and r.organization.republic}
+    regions = {r.region for r in reports if r.region}
+    republics = {r.republic for r in reports if r.republic}
 
     target_region = regions.pop() if len(regions) == 1 else region
     target_republic = republics.pop() if len(republics) == 1 else None
+
+    if not target_region:
+        # fallback: olish uchun birinchi reportdan
+        target_region = reports.first().region
 
     all_items = ReportItem.objects.filter(
         report__in=reports
