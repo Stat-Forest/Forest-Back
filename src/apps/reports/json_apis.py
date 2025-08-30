@@ -1922,12 +1922,12 @@
 # ============ Parrandachilik
 
 {
-    "deadline": "5def8046-e95c-474d-a832-e467d3d3ca26",
+    "deadline": "5a7619c6-5066-4863-9dfd-bf82f2367ebd",
     "report_items": [
         {
             "statement_column": "7f2d7387-06f1-48a9-b86b-bb8a82bc0f88",
             "inners": [
-                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+                {"value": "d719eed3-8620-430c-821a-199fead0661a"}
             ]
         },
         {
@@ -1987,7 +1987,7 @@
         {
             "statement_column": "82f78cb1-25c5-470c-8fce-34d7b1c90d3c",
             "inners": [
-                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+                {"value": "d719eed3-8620-430c-821a-199fead0661a"}
             ]
         },
         {
@@ -2023,7 +2023,7 @@
         {
             "statement_column": "07e91f91-2b13-46e1-bfac-4627b398f5f8",
             "inners": [
-                {"value": "6bdad6b8-26d8-44be-8f59-5da97e35d680"}
+                {"value": "d719eed3-8620-430c-821a-199fead0661a"}
             ]
         },
         {
@@ -2097,12 +2097,12 @@
 # ============ Yaylov hisoboti
 
 {
-    "deadline": "36223843-b321-49bf-aac9-9dbdf00847f0",
+    "deadline": "5ebfae28-f683-424e-833d-3aa51dafef9b",
     "report_items": [
         {
             "statement_column": "d49effbc-0056-4a52-88eb-483cb806c9b7",
             "inners": [
-                {"value": "2930f0a3-0781-432f-be4e-3aeb901d8062"}
+                {"value": "c5962a66-d704-4699-85c2-ecaf6515c149"}
             ]
         },
         {
