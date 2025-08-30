@@ -49,19 +49,15 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop("report_items")
-        deadline = validated_data.get("deadline", instance.deadline)
 
+        deadline = validated_data.get("deadline", instance.deadline)
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
             str(c.id): c
             for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
         }
 
-        organization_id = instance.organization_id
         organization_name = instance.organization.name
-
-        report_items_buffer = []
-        report_inners_buffer = []
 
         with transaction.atomic():
             for item in items_data:
@@ -73,43 +69,45 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
 
                 inners_data = item.get("inners", [])
 
-                # 1. Eski ustunni va ichki qiymatlarini tozalash
-                ReportItemInner.objects.filter(
-                    report_item__report=instance,
-                    report_item__statement_column=column
-                ).delete()
-
-                ReportItem.objects.filter(
+                # 1. ReportItem-ni olish yoki yaratish
+                report_item, _ = ReportItem.objects.get_or_create(
                     report=instance,
                     statement_column=column
-                ).delete()
-
-                # 2. Yangi qiymatlarni bufferga yig‘ish
-                report_item_id = uuid.uuid4()
-                report_items_buffer.append(
-                    ReportItem(
-                        id=report_item_id,
-                        report=instance,
-                        statement_column=column
-                    )
                 )
-                for inner in inners_data:
-                    value = inner["value"]
 
-                    # 🔥 Tashkilot nomi ustuni uchun value ni tashkilot nomi qilib yozamiz
+                # 2. Mavjud inners-ni olish (dict: id → obj)
+                existing_inners = {
+                    str(inner.id): inner
+                    for inner in report_item.inners.all()
+                }
+
+                existing_inner_ids = set(existing_inners.keys())
+                received_inner_ids = set()
+
+                for inner_data in inners_data:
+                    inner_id = str(inner_data.get("id", ""))
+                    value = inner_data["value"]
+
                     if column.title_uz.strip().lower() == "tashkilot nomi":
                         value = organization_name
 
-                    report_inners_buffer.append(
-                        ReportItemInner(
-                            report_item_id=report_item_id,
+                    # 2a. Update bor bo‘lsa
+                    if inner_id and inner_id in existing_inners:
+                        inner_obj = existing_inners[inner_id]
+                        inner_obj.value = value
+                        inner_obj.save()
+                        received_inner_ids.add(inner_id)
+                    else:
+                        # 2b. Yangi obyekt yaratish
+                        ReportItemInner.objects.create(
+                            report_item=report_item,
                             value=value
                         )
-                    )
 
-            # 3. Yangi qiymatlarni bulk_create bilan saqlash
-            ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
-            ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
+                # 3. Ortiqcha (frontenddan kelmagan) `inners` ni o‘chirish
+                to_delete_ids = existing_inner_ids - received_inner_ids
+                if to_delete_ids:
+                    ReportItemInner.objects.filter(id__in=to_delete_ids).delete()
 
             # 4. Eski hisoblangan ustunlarni o‘chirish (CALCULATED_COLUMNS asosida)
             statement_name = instance.statement.name_uz
@@ -129,12 +127,10 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
             if calculate_func:
                 calculate_func(instance)
 
-            # 6. Individual Jami hisoblash
+            # 6. Individual, viloyat, respublika jami
             aggregate_individual_report(instance)
-
-            aggregate_general_report(instance.statement, instance.deadline, instance.region)
-
-            aggregate_national_report(instance.statement, instance.deadline, instance.region)
+            # aggregate_general_report(instance.statement, instance.deadline, instance.region)
+            # aggregate_national_report(instance.statement, instance.deadline, instance.region)
 
         return instance
 
