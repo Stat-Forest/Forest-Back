@@ -22,10 +22,10 @@ class CustomUserAdmin(admin.ModelAdmin):
         "role", "gender", "is_active", "is_disabled", "nationality", "is_superuser"
     )
     search_fields = (
-        "email", "first_name", "last_name", "phone_number", "passport_number", "user_number"
+        "email", "first_name", "last_name", "phone_number", "passport_number", "jshshr", "user_number"
     )
     ordering = ("-created_at",)
-    readonly_fields = ("last_login", "created_at", "updated_at")
+    readonly_fields = ("last_login", "created_at", "updated_at", "user_number")
 
     fieldsets = (
         (_("Login Credentials"), {
@@ -35,7 +35,7 @@ class CustomUserAdmin(admin.ModelAdmin):
             "fields": (
                 "first_name", "last_name", "father_name", "gender", "user_number", "statement",
                 "organization", "date_of_birth", "date_of_place", "nationality", "passport_number",
-                "phone_number", "address"
+                "jshshr", "phone_number", "address"
             )
         }),
         (_("Permissions and Role"), {
@@ -55,7 +55,7 @@ class CustomUserAdmin(admin.ModelAdmin):
                 "email", "password1", "password2",
                 "first_name", "last_name", "father_name",
                 "gender", "nationality", "passport_number", "phone_number", "date_of_birth",
-                "date_of_place", "address", "role", "user_number", "statement", "organization",
+                "date_of_place", "address", "role", "statement", "organization",
                 "is_active", "is_staff", "is_superuser", "is_disabled", "groups", "user_permissions"
             ),
         }),
