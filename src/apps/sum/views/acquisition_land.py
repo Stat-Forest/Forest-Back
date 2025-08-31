@@ -41,7 +41,7 @@ class SumAcquisitionLandAnalysisListAPIView(APIView):
                 "Фактически": "Amalda",
             }
         }
-        
+
 
         # Baza faqat UZ sarlavhalar bo‘yicha filterlanadi
         all_titles = list(titles_map["uz"].values())
