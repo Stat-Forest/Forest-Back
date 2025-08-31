@@ -13,8 +13,14 @@ from apps.reports.models import Report
 
 
 FIELD_NAMES = {
-    "uz": {"region": "Hudud", "land": "Yer o‘zlashtirish"},
-    "ru": {"region": "Регион", "land": "Yer o‘zlashtириш"},
+    "uz": {
+        "region": "Hudud",
+        "by_income_types": "Yer o‘zlashtirish",
+    },
+    "ru": {
+        "region": "Регион",
+        "by_income_types": "Yer o‘zlashtirish",
+    },
 }
 
 REGION_LABELS = {
@@ -50,17 +56,14 @@ REGION_LABELS = {
         )
     ],
 )
-class StatisticsLandAcquisitionAPIView(APIView):
-    def get_translated_titles(self, lang):
-        """UZ va RU title-larini qaytaradi"""
-        return [
-            ("Reja", "План"),
-            ("Amalda", "Факт"),
-            ("1-chorak", "1-квартал"),
-            ("2-chorak", "2-квартал"),
-            ("3-chorak", "3-квартал"),
-            ("4-chorak", "4-квартал"),
-        ]
+class StatisticsFinanceIncomeAPIView(APIView):
+    def get_translated_titles(self):
+        return {
+            "by_income_types": [
+                ("Reja", "План"),
+                ("Amalda", "Фактически")
+            ]
+        }
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
@@ -68,45 +71,53 @@ class StatisticsLandAcquisitionAPIView(APIView):
             lang = "uz"
 
         field_names = FIELD_NAMES[lang]
-        titles = self.get_translated_titles(lang)
+        translated = self.get_translated_titles()
 
-        # Tanlangan tilga mos ustunlar
-        all_titles = [uz if lang == "uz" else ru for uz, ru in titles]
+        # Queryga kerakli title-lar
+        all_titles = [
+            (uz if lang == "uz" else ru)
+            for section in translated.values()
+            for uz, ru in section
+        ]
+
         title_key = "statement_column__title" if lang == "uz" else "statement_column__title_ru"
 
+        # 🔑 accepted status bo'yicha filter qo'shildi
         qs = (
             ReportItem.objects.filter(
-                statement_column__statement__name="Yer o'zlashtirish",
                 **{f"{title_key}__in": all_titles},
                 report__is_report=True,
                 report__status=Report.StatusChoices.ACCEPTED,
+                report__statement__name='Yer o‘zlashtirish',
             )
             .values("report__organization__region", title_key)
             .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
 
-        # Region va title bo‘yicha yig‘ish
+        # Natijalarni region va title bo‘yicha guruhlash
         grouped_data = defaultdict(lambda: defaultdict(float))
         for item in qs:
             region = item["report__organization__region"]
             title = item[title_key]
             grouped_data[region][title] = item["total"] or 0
 
-        data = [{field_names["land"]: []}]
+        # Response data
+        data = [{field_names["by_income_types"]: []}]
 
         for region_key, _ in RegionChoices.choices:
             region_name = REGION_LABELS.get(region_key, {}).get(lang, region_key)
 
-            data[0][field_names["land"]].append(
-                {
-                    field_names["region"]: region_name,
-                    **{
-                        (ru if lang == "ru" else uz): grouped_data[region_key].get(
-                            (ru if lang == "ru" else uz), 0
-                        )
-                        for uz, ru in titles
-                    },
-                }
-            )
+            for section_key in ["by_income_types"]:
+                data[0][field_names[section_key]].append(
+                    {
+                        field_names["region"]: region_name,
+                        **{
+                            (ru if lang == "ru" else uz): grouped_data[region_key].get(
+                                (ru if lang == "ru" else uz), 0
+                            )
+                            for uz, ru in translated[section_key]
+                        },
+                    }
+                )
 
         return Response(data, status=HTTP_200_OK)
