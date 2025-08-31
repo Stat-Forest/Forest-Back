@@ -4,24 +4,47 @@ from rest_framework import status
 
 from django.db.models import Sum, IntegerField
 from django.db.models.functions import Cast
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from apps.reports.models import ReportItem, Report
 
 
 @extend_schema(
     summary="Yer o‘zlashtirish",
-    description="Yer o‘zlashtirish",
-    tags=["Sum"]
+    description="Yer o‘zlashtirish (UZ va RU tillarini qo‘llab-quvvatlaydi)",
+    tags=["Sum"],
+    parameters=[
+        OpenApiParameter(
+            name="lang",
+            description="Til parametri: uz (default) yoki ru",
+            required=False,
+            type=OpenApiTypes.STR,
+            enum=["uz", "ru"],
+            location=OpenApiParameter.QUERY,
+        )
+    ]
 )
 class SumAcquisitionLandAnalysisListAPIView(APIView):
     def get(self, request):
-        titles_map = {
-            "Reja": "Reja",
-            "Amalda": "Amalda",
-        }
+        lang = request.query_params.get("lang", "uz")
+        if lang not in ["uz", "ru"]:
+            lang = "uz"
 
-        all_titles = list(titles_map.values())
+        # Har ikkala til uchun nomlar
+        titles_map = {
+            "uz": {
+                "Reja": "Reja",
+                "Amalda": "Amalda",
+            },
+            "ru": {
+                "План": "Reja",
+                "Фактически": "Amalda",
+            }
+        }
+        
+
+        # Baza faqat UZ sarlavhalar bo‘yicha filterlanadi
+        all_titles = list(titles_map["uz"].values())
 
         items = (
             ReportItem.objects.filter(
@@ -36,8 +59,11 @@ class SumAcquisitionLandAnalysisListAPIView(APIView):
             .annotate(total=Sum("value_as_int"))
         )
 
+        # Querydan chiqqan natijani dictga o'tkazish
         result_map = {item["statement_column__title"]: item["total"] or 0 for item in items}
-        ilova_1 = {label: result_map.get(title, 0) for label, title in titles_map.items()}
+
+        # Lang bo‘yicha chiqishini ta’minlash
+        ilova_1 = {label: result_map.get(title, 0) for label, title in titles_map[lang].items()}
 
         data = {
             "1-ilova": ilova_1
