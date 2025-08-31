@@ -1,3 +1,4 @@
+import random
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
@@ -6,7 +7,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 
 from apps.base.models import AbstractBaseModel
 from apps.users.manager import CustomUserManager
-from apps.users.validations.passport_number_validate import validate_passport_number
+from apps.users.validations.passport_number_validate import validate_passport_number, validate_jshshr
 
 
 class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
@@ -65,7 +66,8 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     user_number = models.CharField(
         max_length=10,
         unique=True,
-        help_text="Foydalanuvchiga biriktirilgan noyob raqam"
+        help_text="Foydalanuvchiga biriktirilgan noyob raqam",
+        blank=True
     )
 
     role = models.CharField(
@@ -135,6 +137,13 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Foydalanuvchining pasport raqami (2 harf va 7 raqam)"
     )
 
+    jshshr = models.CharField(
+        max_length=14,
+        validators=[validate_jshshr],
+        help_text="Foydalanuvchining JSHSHR (14 xonali son)",
+        blank=True
+    )
+
     date_of_birth = models.DateField(
         blank=True,
         null=True,
@@ -191,12 +200,16 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
     )
 
-
-
     
     def save(self, *args, **kwargs):
         if self.is_superuser:
             self.role = self.Role.SUPER_ADMIN
+        if not self.user_number:
+            while True:
+                rand_num = str(random.randint(100000, 999999))
+                if not CustomUser.objects.filter(user_number=rand_num).exists():
+                    self.user_number = rand_num
+                    break
         super().save(*args, **kwargs)
     
     def __str__(self):
