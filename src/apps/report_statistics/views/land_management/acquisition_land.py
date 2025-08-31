@@ -56,7 +56,7 @@ REGION_LABELS = {
         )
     ],
 )
-class StatisticsFinanceIncomeAPIView(APIView):
+class StatisticsLandAcquisitionAPIView(APIView):
     def get_translated_titles(self):
         return {
             "by_income_types": [
