@@ -1,4 +1,5 @@
 import random
+import string
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy
 
@@ -35,6 +36,18 @@ def split_full_name(full_name: str):
 def generate_phone_number():
     """+99893xxxxxxx formatida telefon raqam generatsiya qiladi"""
     return f"+99893{random.randint(1000000, 9999999)}"
+
+
+def generate_passport_number():
+    """2 harf + 7 raqam (AA1234567)"""
+    letters = ''.join(random.choices(string.ascii_uppercase, k=2))
+    digits = ''.join(random.choices(string.digits, k=7))
+    return f"{letters}{digits}"
+
+
+def generate_jshshr():
+    """14 xonali JSHSHR"""
+    return ''.join(random.choices(string.digits, k=14))
 
 
 class EimzoJWTLoginView(APIView):
@@ -78,9 +91,14 @@ class EimzoJWTLoginView(APIView):
             }
         )
 
-        # faqat yangi yaratilganda telefon raqam qo‘shiladi
-        if created and not user.phone_number:
-            user.phone_number = generate_phone_number()
+        # faqat yangi user yaratilganda random qiymatlar beriladi
+        if created:
+            if not user.phone_number:
+                user.phone_number = generate_phone_number()
+            if not user.passport_number:
+                user.passport_number = generate_passport_number()
+            if not user.jshshr:
+                user.jshshr = generate_jshshr()
 
         user.set_password(uid)
         user.save()
@@ -90,6 +108,8 @@ class EimzoJWTLoginView(APIView):
             "access": str(refresh.access_token),
             "email": email,
             "phone_number": user.phone_number,
+            "passport_number": user.passport_number,
+            "jshshr": user.jshshr,
             "refresh": str(refresh),
             "role": user.role,
             "user_id": user.id
