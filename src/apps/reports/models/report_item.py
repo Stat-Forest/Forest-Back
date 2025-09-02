@@ -11,21 +11,23 @@ class ReportItem(AbstractBaseModel):
         related_name="report_items",
         verbose_name=_("Report")
     )
-    plant = models.ForeignKey("reports.Plant",
-                             on_delete=models.CASCADE,
-                             blank=True,
-                             null=True
-                             )
+    plant = models.ForeignKey(
+        "reports.Plant",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
     statement_column = models.ForeignKey(
         "reports.StatementColumn",
         on_delete=models.PROTECT,
         related_name="items",
         verbose_name=_("Statement Column")
     )
-
     value = models.TextField(blank=True, null=True)
-    # def __str__(self):
-    #     return f"{self.report.id} - {self.value}"
+
+    def __str__(self):
+        plant_name = self.plant.name if self.plant else _("No Plant")
+        return f"Report {self.report.id} | Column: {self.statement_column.title_uz}  Value: {self.value}"
 
     class Meta:
         verbose_name = _("Report Item")
@@ -44,3 +46,6 @@ class ReportItemInner(AbstractBaseModel):
         null=True,
         verbose_name=_("Value"),
     )
+
+    def __str__(self):
+        return f"Inner of ReportItem {self.report_item.id} | Value: {self.value}"
