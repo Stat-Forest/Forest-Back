@@ -1,3 +1,4 @@
+import random
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy
 
@@ -22,13 +23,18 @@ def split_full_name(full_name: str):
     first_name, last_name, father_name = "", "", ""
 
     if len(parts) == 1:
-        last_name = parts[0]  
+        last_name = parts[0]
     elif len(parts) == 2:
         first_name, last_name = parts
     elif len(parts) >= 3:
         first_name, last_name, father_name = parts[:3]
 
     return first_name, last_name, father_name
+
+
+def generate_phone_number():
+    """+99893xxxxxxx formatida telefon raqam generatsiya qiladi"""
+    return f"+99893{random.randint(1000000, 9999999)}"
 
 
 class EimzoJWTLoginView(APIView):
@@ -57,7 +63,7 @@ class EimzoJWTLoginView(APIView):
             if not organization:
                 return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
 
-        user, _ = User.objects.update_or_create(
+        user, created = User.objects.update_or_create(
             email=email,
             defaults={
                 "tin": legal_stir,
@@ -72,6 +78,10 @@ class EimzoJWTLoginView(APIView):
             }
         )
 
+        # faqat yangi yaratilganda telefon raqam qo‘shiladi
+        if created and not user.phone_number:
+            user.phone_number = generate_phone_number()
+
         user.set_password(uid)
         user.save()
 
@@ -79,6 +89,7 @@ class EimzoJWTLoginView(APIView):
         return Response({
             "access": str(refresh.access_token),
             "email": email,
+            "phone_number": user.phone_number,
             "refresh": str(refresh),
             "role": user.role,
             "user_id": user.id
