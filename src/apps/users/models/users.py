@@ -127,8 +127,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
                 code="uzb_phone_number_validation"
             )
         ],
-        help_text="Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX",
-        unique=True
+        help_text="Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX"
     )
 
     passport_number = models.CharField(
