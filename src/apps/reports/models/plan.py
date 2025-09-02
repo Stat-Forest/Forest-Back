@@ -21,8 +21,11 @@ class Plan(AbstractBaseModel):
     class Meta:
         ordering = ('year',)
         unique_together = (
-            'statement','organization','year'
-            )
+            'statement', 'organization', 'year'
+        )
+
+    def __str__(self):
+        return f"{self.organization.name_uz} - {self.statement.name_uz} ({self.year})"
 
 
 class PlanItem(AbstractBaseModel):
@@ -35,7 +38,6 @@ class PlanItem(AbstractBaseModel):
         'reports.StatementColumn',
         on_delete=models.CASCADE,
         related_name='plans',
-
     )
     plan_value = models.PositiveIntegerField(default=0)
 
@@ -44,3 +46,6 @@ class PlanItem(AbstractBaseModel):
         unique_together = (
             'column', 'plan'
         )
+
+    def __str__(self):
+        return f"{self.plan.id} | {self.column.title_uz}: {self.plan_value}"
