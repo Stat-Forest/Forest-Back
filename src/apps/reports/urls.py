@@ -26,6 +26,7 @@ from apps.reports.views.deadline import (
 from apps.reports.views.dashboard import (
     DashboardStatListView,
 )
+from apps.reports.views.plant_report import PlantBasedReportCreateAPIView, PlantBasedReportInitAPIView
 
 from apps.reports.views.statement import (
     StatementListAPIView,
@@ -42,7 +43,6 @@ from apps.reports.views.status_reports import (
     ReportAcceptAPIView,
 )
 
-from apps.reports.views.plant_report import KochatReportListAPIView, NiXolReportListAPIView
 from apps.reports.views.select_report import ReportAggregateSelectedAPIView
 
 from apps.reports.views.plant_column import PlantListAPIView
@@ -103,7 +103,8 @@ urlpatterns = [
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
-    path("plant-report/kochat/", KochatReportListAPIView.as_view(), name="plant-report-kochat-list"),
-    path("plant-report/nihol/", NiXolReportListAPIView.as_view(), name="plant-report-nixol-list"),
-    path("column-plants/", ColumnPlantListAPIView.as_view(), name="column-plant-lists")
+    path("column-plants/", ColumnPlantListAPIView.as_view(), name="column-plant-lists"),
+
+    path("plant/create/", PlantBasedReportCreateAPIView.as_view(), name="plant-based-report-create"),
+    path("plant/init/", PlantBasedReportInitAPIView.as_view(), name="plant-based-report-create")
 ]

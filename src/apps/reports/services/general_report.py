@@ -54,7 +54,7 @@ def aggregate_national_report(statement, deadline, region):
         deadline=deadline,
         is_republic=True,
         region=region,
-        defaults={"status": Report.StatusChoices.SAVED}
+        defaults={"status": Report.StatusChoices.SAVED, "is_report": False}
     )
 
     print(">>> [REPUBLIC] Umumiy Jami report:", national_report.id)
