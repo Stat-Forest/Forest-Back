@@ -120,7 +120,6 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(
         max_length=13,
         blank=True,
-        null=True,
         validators=[
             RegexValidator(
                 regex=r"^\+998\d{9}$",
@@ -128,19 +127,22 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
                 code="uzb_phone_number_validation"
             )
         ],
-        help_text="Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX"
+        help_text="Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX",
+        unique=True
     )
 
     passport_number = models.CharField(
         max_length=9,
         validators=[validate_passport_number],
-        help_text="Foydalanuvchining pasport raqami (2 harf va 7 raqam)"
+        help_text="Foydalanuvchining pasport raqami (2 harf va 7 raqam)",
+        unique=True
     )
 
     jshshr = models.CharField(
         max_length=14,
         validators=[validate_jshshr],
         help_text="Foydalanuvchining JSHSHR (14 xonali son)",
+        unique=True,
         blank=True
     )
 
