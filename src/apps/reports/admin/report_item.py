@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ReportItem, ReportItemInner
+from apps.reports.models.report_item import ReportItem, ReportItemInner
 
 
 class ReportItemInnerInline(admin.TabularInline):

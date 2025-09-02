@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Plan, PlanItem
+from apps.reports.models.plan import Plan, PlanItem
 
 
 class PlanItemInline(admin.TabularInline):
     model = PlanItem
-    extra = 1 
+    extra = 1
     autocomplete_fields = ("column",)
 
 
