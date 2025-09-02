@@ -134,14 +134,12 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         max_length=9,
         validators=[validate_passport_number],
         help_text="Foydalanuvchining pasport raqami (2 harf va 7 raqam)",
-        unique=True
     )
 
     jshshr = models.CharField(
         max_length=14,
         validators=[validate_jshshr],
         help_text="Foydalanuvchining JSHSHR (14 xonali son)",
-        unique=True,
         blank=True
     )
 
