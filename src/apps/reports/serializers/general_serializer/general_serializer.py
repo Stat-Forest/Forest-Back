@@ -100,11 +100,13 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
     def get_children_reports(self, report):
         from apps.reports.models import Report
+
         if not report.region:
             return []
 
         lang = get_lang_code(self.context)
 
+        # Hamma bolalar reportlar oldindan kerakli ma'lumotlar bilan yuklab olinadi
         children = Report.objects.filter(
             statement=report.statement,
             deadline=report.deadline,
@@ -113,7 +115,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             is_report=True,
             region=report.region
         ).select_related("organization").prefetch_related(
-            "report_items__statement_column", "report_items__inners"
+            "report_items__statement_column",
+            "report_items__inners"
         )
 
         def ordering_key(ordering):
@@ -122,8 +125,11 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', ordering)]
 
         result = []
+
         for child in children:
+            # 🟢 oldindan keltirilgan obyektlar: no additional query
             items = list(child.report_items.all())
+
             items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
             grouped_by_ilova = defaultdict(list)
@@ -134,6 +140,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                     grouped_by_ilova[top_level].append(item)
 
             statement_columns = []
+            org_name = get_translated_field(child.organization, "name", lang)
+
             for ilova_order in sorted(grouped_by_ilova.keys(), key=int):
                 for item in grouped_by_ilova[ilova_order]:
                     column = item.statement_column
@@ -143,10 +151,11 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                     column_title = getattr(column, f"title_{lang}", "").lower()
                     inners = []
 
+                    # 🔁 No additional queries here — prefetch ishlayapti
                     for inner in item.inners.all():
                         val = inner.value
                         if column.is_organization and column_title in ["tashkilot nomi", "название организации"]:
-                            val = get_translated_field(child.organization, "name", lang)
+                            val = org_name
 
                         inners.append({
                             "id": str(inner.id),
@@ -159,7 +168,6 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                         "inners": inners
                     })
 
-            org_name = get_translated_field(child.organization, "name", lang)
             result.append({
                 "id": str(child.id),
                 "organization_name": org_name,

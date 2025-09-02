@@ -52,10 +52,18 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
 
         deadline = validated_data.get("deadline", instance.deadline)
         column_ids = [item["statement_column"] for item in items_data]
-        columns_map = {
-            str(c.id): c
-            for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
-        }
+
+        columns = StatementColumn.objects.filter(
+            id__in=column_ids,
+            is_user_input=True
+        ).select_related("statement")
+
+        columns_map = {str(c.id): c for c in columns}
+
+        # columns_map = {
+        #     str(c.id): c
+        #     for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
+        # }
 
         organization_name = instance.organization.name
 
@@ -65,7 +73,7 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
                 column = columns_map.get(col_id)
 
                 if not column:
-                    raise serializers.ValidationError({"detail": f"Invalid column {col_id}"})
+                    continue
 
                 inners_data = item.get("inners", [])
 
@@ -129,15 +137,17 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
 
             # 6. Individual, viloyat, respublika jami
             aggregate_individual_report(instance)
-            # aggregate_general_report(instance.statement, instance.deadline, instance.region)
-            # aggregate_national_report(instance.statement, instance.deadline, instance.region)
 
         return instance
 
 
 class ReportDetailSerializer(CustomModelSerializer):
-    report_items = ReportItemUpdateSerializer(many=True, read_only=True)
+    report_items = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = ["id", "deadline", "report_items"]
+
+    def get_report_items(self, obj):
+        items = obj.report_items.filter(statement_column__is_user_input=True)
+        return ReportItemUpdateSerializer(items, many=True).data
