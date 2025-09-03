@@ -106,5 +106,8 @@ urlpatterns = [
     path("column-plants/", ColumnPlantListAPIView.as_view(), name="column-plant-lists"),
 
     path("plant/create/", PlantBasedReportCreateAPIView.as_view(), name="plant-based-report-create"),
-    path("plant/init/", PlantBasedReportInitAPIView.as_view(), name="plant-based-report-create")
+    path("plant/init/kochat", PlantBasedReportInitAPIView.as_view(statement_name="Ko‘chat-ilovasi"),
+         name="plant-init-kochat"),
+    path("plant/init/nihol", PlantBasedReportInitAPIView.as_view(statement_name="Nihol-ilovasi"),
+         name="plant-init-nihol"),
 ]
