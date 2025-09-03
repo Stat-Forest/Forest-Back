@@ -28,6 +28,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
     report_items = serializers.SerializerMethodField()
     children_reports = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
+    sent_by_full_name = serializers.SerializerMethodField()
+    sent_by_org_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
@@ -36,11 +38,25 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             "organization_name",
             "report_items",
             "children_reports",
+            "sent_by_full_name",
+            "sent_by_org_name",
+            "sent_by_role"
         ]
 
     def get_organization_name(self, report):
         region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
         return f"{region_label} – Viloyat Jami"
+
+    def get_sent_by_full_name(self, obj):
+        if obj.sent_by:
+            return obj.sent_by.full_name
+        return None
+
+    def get_sent_by_org_name(self, obj):
+        lang = get_lang_code(self.context)
+        if obj.sent_by_org:
+            return get_translated_field(obj.sent_by_org, "name", lang)
+        return None
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
