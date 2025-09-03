@@ -1,16 +1,19 @@
 import uuid
 
-from rest_framework import serializers
-
+from rest_framework import serializers, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
-from apps.general.models import Organization
 from apps.base.serializers import CustomSerializer
-from apps.reports.report_calculate import ALL_CALCULATORS
-from apps.reports.serializers.reports import ReportItemInnerSerializer
-from apps.utils.translation import get_lang_code, get_translated_field
+from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.report_calculate import ALL_CALCULATORS
+from apps.reports.serializers.reports import ReportItemInnerSerializer, PlantReportInitSerializer
 from apps.reports.services.individual_general_report import aggregate_individual_report
+from apps.reports.services.plant_report import get_or_create_report_and_columns
+from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class PlantBasedReportItemSerializer(CustomSerializer):
@@ -79,7 +82,7 @@ class PlantBasedReportCreateSerializer(CustomSerializer):
                     for inner in inners:
                         val = inner["value"]
                         title = getattr(column, f"title_{lang}", "").lower()
-                        if title in ["Tashkilot nomi", "Название организации"]:
+                        if title in ["tashkilot nomi", "название организации"]:
                             val = get_translated_field(org_instance, "name", lang)
                         report_inners_buffer.append(ReportItemInner(
                             report_item_id=report_item_id,
@@ -87,7 +90,6 @@ class PlantBasedReportCreateSerializer(CustomSerializer):
                         ))
                     continue
 
-                # regular plant-based column
                 if not current_org_id:
                     raise serializers.ValidationError("Organization not yet set")
 
