@@ -3,11 +3,14 @@ from apps.reports.serializers.deadline import DeadlineSerializer
 
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 @extend_schema(tags=["Deadlines"])
 class DeadlineListAPIView(generics.ListAPIView):
     serializer_class = DeadlineSerializer
+    queryset = Deadline.objects.all()  # kerak bo‘lsa
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ["statement", "statement__period"]
 
     def get_queryset(self):
@@ -15,20 +18,14 @@ class DeadlineListAPIView(generics.ListAPIView):
 
         qs = Deadline.objects.select_related(
             "statement", "statement__parent"
-        ).prefetch_related(
-            "organizations"
-        )
+        ).prefetch_related("organizations")
 
         user_org = getattr(user, 'organization', None)
 
-        if user_org :
-            qs = qs.filter(
-                organizations=user_org,
-            )
-        elif user.statement is not None:
-            qs = qs.filter(
-                statement__parent_id=user.statement.pk,
-            )
+        if user_org:
+            qs = qs.filter(organizations=user_org)
+        elif getattr(user, "statement", None) is not None:
+            qs = qs.filter(statement__parent_id=user.statement.pk)
 
         return qs
 
