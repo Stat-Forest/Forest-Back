@@ -73,7 +73,10 @@ class ReportListSerializer(serializers.ModelSerializer):
             organization_name = f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
         elif report.is_republic:
             organization_id = "republic"
-            organization_name = _("Respublika Jami")
+            organization_name = {
+                "uz": "Respublika Jami",
+                "ru": "Республиканский итог"
+            }.get(lang, "uz")
         else:
             organization_id = str(report.organization.id) if report.organization else "unknown"
             organization_name = get_translated_field(report.organization, "name", lang) if report.organization else _("Nomaʼlum tashkilot")
@@ -104,16 +107,20 @@ class ReportListSerializer(serializers.ModelSerializer):
                     val = inner.value
 
                     if column.is_organization:
-                        column_title = getattr(column, f"title_{lang}", "").lower()
-                        if column_title in ["tashkilot nomi", "название организации"]:
+                        col_title = getattr(column, f"title_{lang}", "").strip().lower()
+                        if col_title in ["tashkilot nomi", "наименование организации", "название организации"]:
+                            val = get_translated_field(report.organization, "name", lang)
+
                             if report.is_individual_general:
-                                val = get_translated_field(report.organization, "name", lang)
                                 val = f"{val} – {_('Tashkilot Jami')}"
                             elif report.is_general:
                                 region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
                                 val = f"{region_label} – {_('Viloyat Jami')}"
                             elif report.is_republic:
-                                val = _("Respublika Jami")
+                                val = {
+                                    "uz": "Respublika Jami",
+                                    "ru": "Республиканский итог"
+                                }.get(lang, "Respublika Jami")
 
                     inner_values.append({"id": str(inner.id), "value": val})
 
