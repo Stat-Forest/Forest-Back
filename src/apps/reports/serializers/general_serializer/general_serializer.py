@@ -45,6 +45,10 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
     def get_organization_name(self, report):
         region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
+        lang = get_lang_code(self.context)
+
+        if lang == "ru":
+            return f"{region_label} – Вилоятный итог"
         return f"{region_label} – Viloyat Jami"
 
     def get_sent_by_full_name(self, obj):
@@ -88,12 +92,12 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                 if not column:
                     continue
 
-                col_title = getattr(column, f"title_{lang}", "").lower()
+                col_title = getattr(column, f"title_{lang}", "").strip().lower()
                 inners = []
 
                 for inner in item.inners.all():
                     val = inner.value
-                    if column.is_organization and col_title in ["tashkilot nomi", "название организации"]:
+                    if column.is_organization and col_title in ["tashkilot nomi", "название организации", "наименование организации"]:
                         val = organization_name
                     inners.append({
                         "id": str(inner.id),
@@ -120,6 +124,7 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
         lang = get_lang_code(self.context)
 
+        # ✅ Children reports queryset
         children = Report.objects.filter(
             statement=report.statement,
             deadline=report.deadline,
@@ -127,7 +132,9 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             is_individual_general=False,
             is_report=True,
             region=report.region
-        ).select_related("organization", "statement", "sent_by", "sent_by_org").prefetch_related(
+        ).select_related(
+            "organization", "statement", "sent_by", "sent_by_org"
+        ).prefetch_related(
             "report_items__statement_column",
             "report_items__inners"
         )
@@ -140,32 +147,39 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
         result = []
 
         for child in children:
-            items = child.report_items.all()  # ✅ prefetch ishlaydi
-            items = sorted(items, key=lambda i: ordering_key(i.statement_column.ordering or ""))
+            items = sorted(
+                child.report_items.all(),
+                key=lambda i: ordering_key(i.statement_column.ordering or "")
+            )
 
+            # ✅ Group by top-level ilova (e.g. 1., 2., 3.)
             grouped_by_ilova = defaultdict(list)
             for item in items:
                 col = item.statement_column
-                if col:
-                    top_level = col.ordering.split(".")[0] if col.ordering else "0"
+                if col and col.ordering:
+                    top_level = col.ordering.split(".")[0]
                     grouped_by_ilova[top_level].append(item)
 
-            statement_columns = []
+            # ✅ Tashkilot nomi tarjimada
             org_name = get_translated_field(child.organization, "name", lang)
 
+            statement_columns = []
             for ilova_order in sorted(grouped_by_ilova.keys(), key=int):
                 for item in grouped_by_ilova[ilova_order]:
                     column = item.statement_column
                     if not column:
                         continue
 
-                    col_title = getattr(column, f"title_{lang}", "").lower()
+                    col_title = getattr(column, f"title_{lang}", "").strip().lower()
                     inners = []
 
                     for inner in item.inners.all():
                         val = inner.value
-                        if column.is_organization and col_title in ["tashkilot nomi", "название организации"]:
+                        # ✅ Tashkilot nomini tarjimada ko‘rsatish
+                        if column.is_organization and col_title in ["tashkilot nomi", "название организации",
+                                                                    "наименование организации"]:
                             val = org_name
+
                         inners.append({
                             "id": str(inner.id),
                             "value": val
