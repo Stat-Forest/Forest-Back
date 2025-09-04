@@ -26,6 +26,12 @@ class IndividualGeneralReport(CustomListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExtraReportFilter
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz")
+        context["lang"] = lang
+        return context
+
 
 @extend_schema(tags=["Individual-Reports"])
 class IndividualGeneralReportDetail(CustomRetrieveAPIView):
@@ -71,6 +77,12 @@ class RepublicGeneralReport(CustomListAPIView):
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExtraReportFilter
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz")
+        context["lang"] = lang
+        return context
 
 
 @extend_schema(tags=["Republic-Reports"])
