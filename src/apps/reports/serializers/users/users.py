@@ -27,9 +27,11 @@ class UserListSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'organization',
+            'statement',
             'organization_name',
             'nationality',
             'information',
+            'phone_number',
             'role',
-            'role_display'
+            'role_display',
         )
