@@ -1,9 +1,9 @@
+import re
+from collections import defaultdict
 from rest_framework import serializers
+from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItemInner, Report
 from apps.utils.translation import get_lang_code, get_translated_field
-from apps.utils.services import RegionChoices
-from collections import defaultdict
-import re
 
 
 class GeneralReportItemInnerSerializer(serializers.ModelSerializer):
@@ -28,8 +28,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
     report_items = serializers.SerializerMethodField()
     children_reports = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
-    sent_by_full_name = serializers.SerializerMethodField()
-    sent_by_org_name = serializers.SerializerMethodField()
+    # sent_by_full_name = serializers.SerializerMethodField()
+    # sent_by_org_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
@@ -38,9 +38,9 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             "organization_name",
             "report_items",
             "children_reports",
-            "sent_by_full_name",
-            "sent_by_org_name",
-            "sent_by_role"
+            # "sent_by_full_name",
+            # "sent_by_org_name",
+            # "sent_by_role"
         ]
 
     def get_organization_name(self, report):
@@ -62,7 +62,7 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
         lang = get_lang_code(self.context)
         organization_name = self.get_organization_name(report)
 
-        items = report.report_items.select_related("statement_column").prefetch_related("inners")
+        items = report.report_items.all()
 
         def ordering_key(ordering):
             if not ordering:
@@ -72,7 +72,6 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
         def get_top_level_ordering(ordering):
             return ordering.split(".")[0] if ordering else "0"
 
-        # Sort by ordering
         items = sorted(items, key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
         grouped_by_ilova = defaultdict(list)
@@ -89,14 +88,13 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                 if not column:
                     continue
 
-                column_title = getattr(column, f"title_{lang}", "").lower()
+                col_title = getattr(column, f"title_{lang}", "").lower()
                 inners = []
 
                 for inner in item.inners.all():
                     val = inner.value
-                    if column.is_organization and column_title in ["tashkilot nomi", "название организации"]:
+                    if column.is_organization and col_title in ["tashkilot nomi", "название организации"]:
                         val = organization_name
-
                     inners.append({
                         "id": str(inner.id),
                         "value": val
@@ -104,7 +102,7 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
-                    "statement_column_name": get_translated_field(column, "title", lang),
+                    "statement_column_name": getattr(column, f"title_{lang}", ""),
                     "inners": inners
                 })
 
@@ -122,7 +120,6 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
         lang = get_lang_code(self.context)
 
-        # Hamma bolalar reportlar oldindan kerakli ma'lumotlar bilan yuklab olinadi
         children = Report.objects.filter(
             statement=report.statement,
             deadline=report.deadline,
@@ -130,7 +127,7 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             is_individual_general=False,
             is_report=True,
             region=report.region
-        ).select_related("organization").prefetch_related(
+        ).select_related("organization", "statement", "sent_by", "sent_by_org").prefetch_related(
             "report_items__statement_column",
             "report_items__inners"
         )
@@ -143,10 +140,8 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
         result = []
 
         for child in children:
-            # 🟢 oldindan keltirilgan obyektlar: no additional query
-            items = list(child.report_items.all())
-
-            items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
+            items = child.report_items.all()  # ✅ prefetch ishlaydi
+            items = sorted(items, key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
             grouped_by_ilova = defaultdict(list)
             for item in items:
@@ -164,15 +159,13 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                     if not column:
                         continue
 
-                    column_title = getattr(column, f"title_{lang}", "").lower()
+                    col_title = getattr(column, f"title_{lang}", "").lower()
                     inners = []
 
-                    # 🔁 No additional queries here — prefetch ishlayapti
                     for inner in item.inners.all():
                         val = inner.value
-                        if column.is_organization and column_title in ["tashkilot nomi", "название организации"]:
+                        if column.is_organization and col_title in ["tashkilot nomi", "название организации"]:
                             val = org_name
-
                         inners.append({
                             "id": str(inner.id),
                             "value": val
@@ -180,7 +173,7 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
 
                     statement_columns.append({
                         "statement_column_id": str(column.id),
-                        "statement_column_name": get_translated_field(column, "title", lang),
+                        "statement_column_name": getattr(column, f"title_{lang}", ""),
                         "inners": inners
                     })
 
@@ -191,7 +184,11 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
                     "organization_id": str(child.organization.id),
                     "organization_name": org_name,
                     "statement_columns": statement_columns
-                }]
+                }],
+                "sent_by_full_name": child.sent_by.full_name if child.sent_by else None,
+                "sent_by_org_name": get_translated_field(child.sent_by_org, "name",
+                                                         lang) if child.sent_by_org else None,
+                "sent_by_role": child.sent_by_role
             })
 
         return result
