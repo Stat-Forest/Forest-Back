@@ -45,7 +45,7 @@ class ReportListAPIView(CustomListAPIView):
     filterset_fields = [
         'status', 'organization__name', 'organization',
         'statement__name', 'statement', 'statement__period',
-        'organization__region'
+        'organization__region', 'deadline__submit_at'
     ]
 
     def get_queryset(self):
