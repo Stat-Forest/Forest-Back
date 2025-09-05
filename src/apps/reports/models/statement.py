@@ -14,7 +14,7 @@ class Statement(AbstractBaseModel):
         blank=True,
         null=True,
     )
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
     period = models.CharField(
         max_length=100,
         choices=PeriodChoices.choices,
@@ -34,6 +34,9 @@ class Statement(AbstractBaseModel):
             if not hasattr(self, "name_ru") or not self.name_ru:
                 self.name_ru = self.name_uz
         super().save(*args, **kwargs)
+
+    def natural_key(self):
+        return (self.name,)
 
     def __str__(self):
         return self.name_uz

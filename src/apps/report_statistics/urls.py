@@ -15,6 +15,12 @@ from apps.report_statistics.views.land_management import (
 )
 
 
+from apps.report_statistics.views.establishment_forest import (
+    StatisticsClosedRootAPIView,
+    StatisticsBuildForestAPIView
+)
+
+
 urlpatterns =[
     path('employee-report-stat/',StatisticsEmployeeReportAPIView.as_view()),
     path('employee-analysis-stat/',StatisticsEmployeeReportAnalysisAPIView.as_view()),
@@ -23,4 +29,6 @@ urlpatterns =[
     path('land-acquisition-stat/',StatisticsLandAcquisitionAPIView.as_view()),
     path('land-rented-stat/',StatisticsRentLandAPIView.as_view()),
     path('land-covered-stat/',StatisticsCoveredLandAPIView.as_view()),
+    path('closed-forest-stat/',StatisticsClosedRootAPIView.as_view()),
+    path('build-forest-stat/',StatisticsBuildForestAPIView.as_view()),
 ]
