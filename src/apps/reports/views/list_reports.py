@@ -1,22 +1,63 @@
-from django_filters import rest_framework as filters
-from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 from drf_spectacular.utils import extend_schema
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
 from apps.reports.models import Report
 from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
+from apps.utils.services import PeriodChoices, RegionChoices
 
 
-class ExtraReportFilter(filters.FilterSet):
-    class Meta:
-        model = Report
-        fields = {
-            'statement': ['exact'],
-            'deadline': ['exact'],
-            'organization': ['exact'],
-            'region': ['exact'],
-        }
+class ExtraReportFilter(django_filters.FilterSet):
+    statement_period = django_filters.ChoiceFilter(
+        method='filter_statement_period',
+        label="Hisobot davri",
+        choices=[('', 'All')] + list(PeriodChoices.choices),
+    )
+    organization = django_filters.CharFilter(
+        method='filter_organization',
+        label="Tashkilot",
+    )
+    region = django_filters.ChoiceFilter(
+        method='filter_region',
+        choices=[('', 'All')] + list(RegionChoices.choices),
+        label="Hudud"
+    )
+    statement = django_filters.CharFilter(
+        method='filter_statement',
+        label="Hisobot turi"
+    )
+    deadline = django_filters.CharFilter(
+        method='filter_deadline',
+        label="Muddat"
+    )
+
+    def filter_statement_period(self, queryset, name, value):
+        if value:
+            return queryset.filter(statement__period=value)
+        return queryset
+
+    def filter_organization(self, queryset, name, value):
+        if value:
+            return queryset.filter(organization=value)
+        return queryset
+
+    def filter_region(self, queryset, name, value):
+        if value:
+            return queryset.filter(region=value)
+        return queryset
+
+    def filter_statement(self, queryset, name, value):
+        if value:
+            return queryset.filter(statement=value)
+        return queryset
+
+    def filter_deadline(self, queryset, name, value):
+        if value:
+            return queryset.filter(deadline=value)
+        return queryset
 
 
 @extend_schema(tags=["Individual-Reports"])
