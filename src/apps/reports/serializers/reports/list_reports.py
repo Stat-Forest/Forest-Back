@@ -112,7 +112,7 @@ class ReportListSerializer(serializers.ModelSerializer):
                             val = get_translated_field(report.organization, "name", lang)
 
                             if report.is_individual_general:
-                                val = f"{val} – {_('Tashkilot Jami')}"
+                                val = f"{_('Tashkilot Jami')}"
                             elif report.is_general:
                                 region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
                                 val = f"{region_label} – {_('Viloyat Jami')}"
