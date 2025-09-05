@@ -27,7 +27,8 @@ class Republic(AbstractBaseModel):
 class Organization(AbstractBaseModel):
     name = models.CharField(
         max_length=255,
-        verbose_name=_("Name")
+        verbose_name=_("Name"),
+        unique=True
     )
     republic = models.ForeignKey(
         Republic,
@@ -43,6 +44,10 @@ class Organization(AbstractBaseModel):
     )
 
     stir = models.PositiveBigIntegerField(null=True, blank=True)
+
+    def natural_key(self):
+        return (self.name,)
+
 
     class Meta:
         verbose_name = _("Organization")
