@@ -1,6 +1,6 @@
 import django_filters
 from django.db.models import Q
-from django.db.models.functions import ExtractYear
+from django.db.models.functions import Substr
 
 from apps.general.models import Republic
 from apps.reports.models import Report, StatementColumn, Statement
@@ -58,11 +58,6 @@ class ReportFilter(django_filters.FilterSet):
         label="Yil"
     )
 
-    general_report = django_filters.BooleanFilter(
-        field_name="is_general",
-        label="General Reports"
-    )
-
     status = django_filters.ChoiceFilter(
         field_name="status",
         choices=Report.StatusChoices.choices,
@@ -98,7 +93,7 @@ class ReportFilter(django_filters.FilterSet):
 
     def filter_by_year(self, queryset, name, value):
         return queryset.annotate(
-            submit_year=ExtractYear("deadline__submit_at")
+            submit_year=Substr("deadline__submit_at", 1, 4)
         ).filter(submit_year=value)
 
     def filter_by_organization_region(self, queryset, name, value):
@@ -109,8 +104,3 @@ class ReportFilter(django_filters.FilterSet):
     def filter_by_republic(self, queryset, name, republic_obj):
         return queryset.filter(
             Q(organization__republic=republic_obj) | Q(republic=republic_obj))
-
-    def filter_by_general_report(self, queryset):
-        return queryset.filter(
-            is_general=True
-        )
