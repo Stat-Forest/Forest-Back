@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.db.models.functions import Substr
 
 from apps.general.models import Republic
-from apps.reports.models import Report, StatementColumn, Statement
+from apps.reports.models import Report, StatementColumn, Statement, Deadline
 from apps.utils.services import PeriodChoices, RegionChoices
 from apps.utils.translation import get_translated_field
 
@@ -47,6 +47,12 @@ class ReportFilter(django_filters.FilterSet):
         label="Hisobot Davri"
     )
 
+    submit_at = django_filters.ChoiceFilter(
+        method="filter_by_submit_at",
+        label="Yuborish muddati",
+        choices=[],
+    )
+
     organization_name = django_filters.CharFilter(
         field_name="organization__name",
         lookup_expr="icontains",
@@ -77,7 +83,8 @@ class ReportFilter(django_filters.FilterSet):
             "statement_period",
             "organization_name",
             "year",
-            "statement"
+            "statement",
+            "submit_at"
         ]
 
     def __init__(self, *args, **kwargs):
@@ -90,6 +97,27 @@ class ReportFilter(django_filters.FilterSet):
 
         if 'statement_column' in self.filters:
             self.filters['statement_column'].label_from_instance = lambda obj: get_translated_field(obj, 'title', lang)
+
+        # Submit_at tanlovlari (bo'sh qiymat bilan)
+        submit_at_values = (
+            Deadline.objects
+            .order_by("submit_at")
+            .values_list("submit_at", flat=True)
+            .distinct()
+        )
+        choices = [('', 'Hammasi')] + [(val, val) for val in submit_at_values]
+        self.filters['submit_at'].extra['choices'] = choices
+
+        for name, f in self.filters.items():
+            if isinstance(f, (django_filters.ChoiceFilter, django_filters.ModelChoiceFilter)):
+                if not f.extra.get('choices') and hasattr(f, 'field'):
+                    try:
+                        original_choices = list(f.field.choices)
+                        if ('', 'Hammasi') not in original_choices:
+                            f.extra['choices'] = [('', 'Hammasi')] + original_choices
+                    except Exception:
+                        pass
+
 
     def filter_by_year(self, queryset, name, value):
         return queryset.annotate(
@@ -104,3 +132,8 @@ class ReportFilter(django_filters.FilterSet):
     def filter_by_republic(self, queryset, name, republic_obj):
         return queryset.filter(
             Q(organization__republic=republic_obj) | Q(republic=republic_obj))
+
+    def filter_by_submit_at(self, queryset, name, value):
+        if value:
+            return queryset.filter(deadline__submit_at=value)
+        return queryset
