@@ -193,6 +193,12 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS("Jamg‘arma statement yaratildi."))
 
+            from django.utils import timezone
+            from apps.reports.models import Statement, StatementColumn
+            from apps.utils.services import PeriodChoices
+
+            current_year = timezone.now().year
+
             daromad_statement = Statement.objects.create(
                 name="Daromad",
                 name_uz="Daromad",
@@ -211,12 +217,13 @@ class Command(BaseCommand):
                 ordering="1"
             )
 
+            # Dinamik yil bilan ma’lumot
             info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=daromad_turlari,
-                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
-                title_uz="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
-                title_ru="ИНФОРМАЦИЯ о доходах, полученных в 2025 году",
+                title=f"{current_year} yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title_uz=f"{current_year} yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title_ru=f"ИНФОРМАЦИЯ о доходах, полученных в {current_year} году",
                 ordering="1.1"
             )
 
@@ -264,13 +271,12 @@ class Command(BaseCommand):
                 ordering="2"
             )
 
-
             tushum_info = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=tushumlar,
-                title="2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
-                title_uz="2025 yil holatiga daromad tushumi to‘g‘risida ma’lumot",
-                title_ru="ИНФОРМАЦИЯ о доходах по состоянию на 2025 год",
+                title=f"{current_year} yil holatiga daromad tushumi to‘g‘risida ma’lumot",
+                title_uz=f"{current_year} yil holatiga daromad tushumi to‘g‘risida ma’lumot",
+                title_ru=f"ИНФОРМАЦИЯ о доходах по состоянию на {current_year} год",
                 ordering="2.1"
             )
 
@@ -481,9 +487,9 @@ class Command(BaseCommand):
             svod_title = StatementColumn.objects.create(
                 statement=daromad_statement,
                 parent=svod,
-                title="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
-                title_uz="2025 yil davomida topilgan daromadlar haqida MA'LUMOT",
-                title_ru="ИНФОРМАЦИЯ О ДОХОДАХ, ПОЛУЧЕННЫХ В ТЕЧЕНИЕ 2025 ГОДА",
+                title=f"{current_year} yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title_uz=f"{current_year} yil davomida topilgan daromadlar haqida MA'LUMOT",
+                title_ru=f"ИНФОРМАЦИЯ О ДОХОДАХ, ПОЛУЧЕННЫХ В ТЕЧЕНИЕ {current_year} ГОДА",
                 ordering="3.1"
             )
 

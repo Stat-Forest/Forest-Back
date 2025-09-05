@@ -19,3 +19,16 @@ app.autodiscover_tasks()
 def debug_task(self):
     # ======== Debug task to verify Celery is working ========
     print(f'Request: {self.request!r}')
+
+
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    "update-statement-columns-every-month": {
+        "task": "apps.reports.tasks.employee_report.update_date_employee_report.update_year_in_statement_columns",
+        "schedule": crontab(minute=0, hour=0, day_of_month=1),
+    },
+}
+
+
+
