@@ -1,21 +1,29 @@
 from django.core.management import BaseCommand
+from django.utils import timezone
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
+
 
 class Command(BaseCommand):
     help = "Create Statement Columns for 'Xodimlar hisobi taxlili'"
 
     def handle(self, *args, **options):
-        person_statement = Statement.objects.filter(name="Insoniyat resurslarini boshqarish").first()
+        # Root parent olish
+        person_statement = Statement.objects.filter(
+            name="Insoniyat resurslarini boshqarish"
+        ).first()
 
+        # Yillik statement yaratish
         person_report_statement = Statement.objects.create(
             parent=person_statement,
             name_uz="Xodimlar hisobi taxlili",
             name_ru="Анализ учета кадров",
-            period=PeriodChoices.YILLIK
+            period=PeriodChoices.YILLIK,
         )
 
-        def create_column(statement, parent, uz, ru, ordering, is_org=False,is_user_input=True):
+        def create_column(
+            statement, parent, uz, ru, ordering, is_org=False, is_user_input=True
+        ):
             return StatementColumn.objects.create(
                 statement=statement,
                 parent=parent,
@@ -23,7 +31,8 @@ class Command(BaseCommand):
                 title_uz=uz,
                 title_ru=ru,
                 ordering=ordering,
-                is_organization=is_org
+                is_organization=is_org,
+                is_user_input=is_user_input,
             )
 
         # --- 4-ilova: Xodimlar statistikasi ---
@@ -35,13 +44,19 @@ class Command(BaseCommand):
             "1"
         )
 
+        # Hozirgi yilni olish
+        current_year = timezone.now().year
+        title_uz = f"{current_year} yil uchun xodimlar statistikasi to‘g‘risidagi ma’lumot"
+        title_ru = f"Информация о статистике сотрудников за {current_year} год"
+
         stats_root = create_column(
             person_report_statement,
             ilova_4,
-            "2025 yil uchun xodimlar statistikasi to‘g‘risidagi ma’lumot",
-            "Информация о статистике сотрудников за 2025 год",
+            title_uz,
+            title_ru,
             "1.1"
         )
+
 
         # Statik ustunlar
         static_columns = [

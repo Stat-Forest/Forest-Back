@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand
+from django.utils import timezone
 
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
@@ -53,10 +54,16 @@ class Command(BaseCommand):
         # === 1-Ilova ===
         ilova1 = create_column(person_report_statement, None, "1-ilova", "Приложение 1", "1.1")
 
+        # hozirgi vaqtni to‘liq formatda qo‘shamiz
+        current_year = timezone.now().strftime("%Y")
+        title_uz = f"{current_year} yil uchun xodimlar to‘g‘risidagi hisobat"
+        title_ru = f"Отчёт о сотрудниках за {current_year} год"
+
         title_col = create_column(
-            person_report_statement, ilova1,
-            "2025 yil uchun xodimlar togrisidagi hisobat",
-            "Отчёт о сотрудниках за 2025 год",
+            person_report_statement,
+            ilova1,
+            title_uz,
+            title_ru,
             "1.1.1"
         )
 

@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 @extend_schema(tags=["Deadlines"])
 class DeadlineListAPIView(generics.ListAPIView):
     serializer_class = DeadlineSerializer
-    queryset = Deadline.objects.all()  # kerak bo‘lsa
+    queryset = Deadline.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["statement", "statement__period"]
 
