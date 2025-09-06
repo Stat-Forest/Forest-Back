@@ -35,9 +35,25 @@ class Command(BaseCommand):
 
             info_14 = self.create_column(statement=land_3, parent=col_14, title="Urmon bilan qoplangan yerlar tematik qatlam atributiv ma'lumotlari", title_ru="Атрибутивные данные тематического слоя покрытых лесом земель", ordering="4.1")
             info_13 = self.create_column(statement=land_3, parent=col_13, title="O‘rmon bo‘limlari tematik qatlamining atributiv ma’lumotlari", title_ru="Атрибутивные данные тематического слоя лесных участков", ordering="3.1")
-            info_12 = self.create_column(statement=land_2, parent=col_12, title="2025 yilda xar bir ijarachi bo‘yicha ma’lumot", title_ru="Информация по каждому арендатору за 2025 год", ordering="2.1")
-            info_11 = self.create_column(statement=land_1, parent=col_11, title="2025 yilda foydalanishga kiritiladigan o‘rmon fondi yerlari maydoni to‘g‘risida ma’lumot", title_ru="Информация о площади земель лесного фонда, вводимых в эксплуатацию в 2025 году", ordering="1.1")
+            from django.utils import timezone
 
+            current_year = timezone.now().strftime("%Y")
+
+            info_12 = self.create_column(
+                statement=land_2,
+                parent=col_12,
+                title=f"{current_year} yilda xar bir ijarachi bo‘yicha ma’lumot",
+                title_ru=f"Информация по каждому арендатору за {current_year} год",
+                ordering="2.1"
+            )
+
+            info_11 = self.create_column(
+                statement=land_1,
+                parent=col_11,
+                title=f"{current_year} yilda foydalanishga kiritiladigan o‘rmon fondi yerlari maydoni to‘g‘risida ma’lumot",
+                title_ru=f"Информация о площади земель лесного фонда, вводимых в эксплуатацию в {current_year} году",
+                ordering="1.1"
+            )
             # Tashkilot nomi
             for info, ord, stmt in [
                 (info_11, "1.1.1", land_1),
@@ -193,12 +209,14 @@ class Command(BaseCommand):
             ]
             self.create_columns_from_titles(plantation_titles, "2.1.9.2", preferred_inner, land_2)
 
-            # 1.2.1.10 - 2024-2025 yillar bloki
+            current_year = int(timezone.now().strftime("%Y"))
+            next_year = current_year + 1
+
             period = self.create_column(
                 statement=land_2,
                 parent=info_12,
-                title="2024–2025 yillar",
-                title_ru="2024–2025 годы",
+                title=f"{current_year}–{next_year} yillar",
+                title_ru=f"{current_year}–{next_year} годы",
                 ordering="2.1.10"
             )
 
@@ -246,7 +264,7 @@ class Command(BaseCommand):
             )
 
             # Eksport
-            export_block = self.create_column(statement=land_2, parent=info_12, title="20__yildagi eksport", title_ru="Экспорт за 20__ год", ordering="2.1.13")
+            export_block = self.create_column(statement=land_2, parent=info_12, title=f"{current_year} yildagi eksport", title_ru=f"Экспорт за {current_year} год", ordering="2.1.13")
             export_titles = [
                 ("Mahsulot turi", "Вид продукции"),
                 ("Mahsulot miqdori", "Количество продукции"),
