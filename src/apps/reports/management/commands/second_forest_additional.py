@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand
+from django.utils import timezone
 
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
@@ -7,6 +8,11 @@ from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        now = timezone.now()
+        current_year = now.strftime("%Y")
+        current_month = now.month
+        current_date_str = f"01.{current_month:02d}.{current_year}"
+
         def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, status_plan=None, is_user_input=True):
             return StatementColumn.objects.create(
                 statement=statement,
@@ -22,12 +28,12 @@ class Command(BaseCommand):
         forest_add = Statement.objects.get(
             name_uz="O'rmonlardan qo'shimcha foydalanish",
             name_ru="Дополнительное использование лесов",
-            period=PeriodChoices.YILLIK
         )
         statement_mechanization = Statement.objects.create(
             parent=forest_add,
             name_uz="Mexanizatsiya hisobi",
-            name_ru="Счет механизации"
+            name_ru="Счет механизации",
+            period=PeriodChoices.YILLIK
         )
 
         # ========== Neftbaza ilovasi ==========
@@ -36,8 +42,8 @@ class Command(BaseCommand):
         neftbaza_title = create_column(
             statement_mechanization,
             neftbaza_ilova,
-            "Oʻrmon xoʻjaliklarida 2025 yil 1-yanvargacha olingan YOQM miqdori toʻgʻrisida maʼlumot",
-            "Информация о количестве полученных ГСМ в лесных хозяйствах до 1 января 2025 года",
+            f"Oʻrmon xoʻjaliklarida {current_year} yil 1-yanvargacha olingan YOQM miqdori toʻgʻrisida maʼlumot",
+            f"Информация о количестве полученных ГСМ в лесных хозяйствах до 1 января {current_year} года",
             "1.1"
         )
 
@@ -61,8 +67,8 @@ class Command(BaseCommand):
         avto_title = create_column(
             statement_mechanization,
             avto_ilova,
-            "Oʻrmon xoʻjaliklarida mavjud avtomashinalar (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
-            "Информация о наличии автомобилей в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
+            f"Oʻrmon xoʻjaliklarida mavjud avtomashinalar ({current_date_str}) va ularning holati toʻgʻrisida maʼlumot",
+            f"Информация о наличии автомобилей в лесных хозяйствах (по состоянию на {current_date_str}) и их техническом состоянии",
             "2.1"
         )
 
@@ -105,8 +111,8 @@ class Command(BaseCommand):
         kx_title = create_column(
             statement_mechanization,
             kx_ilova,
-            "Oʻrmon xoʻjaliklarida mavjud oʻziyurar texnikalar (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
-            "Информация о наличии самоходной техники в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
+            f"Oʻrmon xoʻjaliklarida mavjud oʻziyurar texnikalar ({current_date_str} holatiga) va ularning holati toʻgʻrisida maʼlumot",
+            f"Информация о наличии самоходной техники в лесных хозяйствах (по состоянию на {current_date_str}) и их техническом состоянии",
             "3.1"
         )
 
@@ -147,8 +153,8 @@ class Command(BaseCommand):
         agregat_title = create_column(
             statement_mechanization,
             agregat_ilova,
-            "Oʻrmon xoʻjaliklarida mavjud qishloq xoʻjaligi agregatlari (01.01.2025 holatiga) va ularning holati toʻgʻrisida maʼlumot",
-            "Информация о наличии сельскохозяйственных агрегатов в лесных хозяйствах (по состоянию на 01.01.2025) и их техническом состоянии",
+            f"Oʻrmon xoʻjaliklarida mavjud qishloq xoʻjaligi agregatlari ({current_date_str} holatiga) va ularning holati toʻgʻrisida maʼlumot",
+            f"Информация о наличии сельскохозяйственных агрегатов в лесных хозяйствах (по состоянию на {current_date_str}) и их техническом состоянии",
             "4.1"
         )
 
@@ -185,8 +191,8 @@ class Command(BaseCommand):
         yengil_avto_title = create_column(
             statement_mechanization,
             yengil_avto_ilova,
-            "Oʻrmon xoʻjaliklarida mavjud yengil xizmat avtomashinalari (01.01.2025 holatiga) boʻyicha maʼlumot",
-            "Информация о наличии служебных легковых автомобилей в лесных хозяйствах (по состоянию на 01.01.2025)",
+            f"Oʻrmon xoʻjaliklarida mavjud yengil xizmat avtomashinalari ({current_date_str} holatiga) boʻyicha maʼlumot",
+            f"Информация о наличии служебных легковых автомобилей в лесных хозяйствах (по состоянию на {current_date_str})",
             "5.1"
         )
 
@@ -216,8 +222,8 @@ class Command(BaseCommand):
         yoqilgi_limit_title = create_column(
             statement_mechanization,
             yoqilgi_limit_ilova,
-            "Oʻrmon xoʻjaliklarida 2025 yilda yoqilgʻi-moylash materiallari sarfi toʻgʻrisida maʼlumot",
-            "Информация о расходе горюче-смазочных материалов в лесных хозяйствах в 2025 году",
+            f"Oʻrmon xoʻjaliklarida {current_year} yilda yoqilgʻi-moylash materiallari sarfi toʻgʻrisida maʼlumot",
+            f"Информация о расходе горюче-смазочных материалов в лесных хозяйствах в {current_year} году",
             "6.1"
         )
 
@@ -278,8 +284,8 @@ class Command(BaseCommand):
         metallolom_title = create_column(
             statement_mechanization,
             metallolom_ilova,
-            "2025 yilda metallolom topshirilishi va realizatsiya qilinishi toʻgʻrisida maʼlumot",
-            "Информация о сдаче и реализации металлолома в 2025 году",
+            f"{current_year} yilda metallolom topshirilishi va realizatsiya qilinishi toʻgʻrisida maʼlumot",
+            f"Информация о сдаче и реализации металлолома в {current_year} году",
             "7.1"
         )
 
@@ -385,15 +391,15 @@ class Command(BaseCommand):
         hay_title = create_column(
             pichan_statement,
             hay_app,
-            "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yerlarida pichan o‘rish uchun berilgan yerlar hisoboti bo‘yicha ________ yil holatiga maʼlumot",
-            "Информация по состоянию на ________ год о сенокосных угодьях, предоставленных в лесном фонде хозяйствам в системе Агентства лесного хозяйства",
+            f"O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yerlarida pichan o‘rish uchun berilgan yerlar hisoboti bo‘yicha {current_year} yil holatiga maʼlumot",
+            f"Информация по состоянию на {current_year} год о сенокосных угодьях, предоставленных в лесном фонде хозяйствам в системе Агентства лесного хозяйства",
             "1.1"
         )
 
         create_column(pichan_statement, hay_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
-        create_column(pichan_statement, hay_title, "____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                      "Прогнозные показатели на ____ год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
+        create_column(pichan_statement, hay_title, f"{current_year} yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
+                      f"Прогнозные показатели на {current_year} год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(pichan_statement, hay_title, "Jami pichan o‘rish mumkin bo‘lgan maydon (ga)",
                       "Общая площадь возможного сенокошения (га)", "1.1.3")
         create_column(pichan_statement, hay_title, "Pichan o‘riladigan yaroqli maydon (ga)",
@@ -426,15 +432,15 @@ class Command(BaseCommand):
         pasture_title = create_column(
             yaylov_statement,
             pasture_app,
-            "O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yaylov hududlariga chorva mollarini joylashtirish boʻyicha ________ yil holatiga maʼlumot",
-            "Информация по размещению скота на пастбищных участках лесного фонда в хозяйствах системы Агентства лесного хозяйства по состоянию на ________ год",
+            f"O‘rmon xo‘jaligi agentligi tizimidagi xo‘jaliklarda o‘rmon fondi yaylov hududlariga chorva mollarini joylashtirish boʻyicha {current_year} yil holatiga maʼlumot",
+            f"Информация по размещению скота на пастбищных участках лесного фонда в хозяйствах системы Агентства лесного хозяйства по состоянию на {current_year} год",
             "1.1"
         )
 
         create_column(yaylov_statement, pasture_title, "Tashkilot nomi", "Наименование организации", "1.1.1",
                       is_organization=True)
-        create_column(yaylov_statement, pasture_title, "_____ yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
-                      "Прогнозные показатели на _____ год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
+        create_column(yaylov_statement, pasture_title, f"{current_year} yil prognoz ko‘rsatkichlari, ming so‘m (reja)",
+                      f"Прогнозные показатели на {current_year} год, тыс. сум (план)", "1.1.2", status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(yaylov_statement, pasture_title, "Jami yaylov maydoni (ga)", "Общая площадь пастбищ (га)",
                       "1.1.3")
         create_column(yaylov_statement, pasture_title, "Mol boqishga yaroqli maydon (ga)",
