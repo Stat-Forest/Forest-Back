@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand
+from django.utils import timezone
 
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
@@ -8,6 +9,8 @@ class Command(BaseCommand):
     help = "Создание заявления об учреждении леса"
 
     def handle(self, *args, **options):
+
+        current_year = timezone.now().strftime("%Y")
 
         first_statement = Statement.objects.create(
             parent=None,
@@ -34,13 +37,13 @@ class Command(BaseCommand):
             statement=first_of_second_statement,
             parent=app_column,
             title_uz=(
-                "O'rmon xo'jaligi agentligi tizimidagi o'rmon xo'jaliklari tomonidan "
-                "2025 yildan yirik hajmli yopiq ko'chatlarni yetishtirish to'g'risida "
+                f"O'rmon xo'jaligi agentligi tizimidagi o'rmon xo'jaliklari tomonidan "
+                f"{current_year} yildan yirik hajmli yopiq ko'chatlarni yetishtirish to'g'risida "
                 "tezkor ma'lumot."
             ),
             title_ru=(
-                "Срочная информация о выращивании крупногабаритных закрытых саженцев "
-                "лесничествами в системе Агентства лесного хозяйства с 2025 года."
+                f"Срочная информация о выращивании крупногабаритных закрытых саженцев "
+                f"лесничествами в системе Агентства лесного хозяйства с {current_year} года."
             ),
             ordering="1.1"
         )
@@ -251,8 +254,8 @@ class Command(BaseCommand):
         third_ilova_title = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_app_column,
-            title_uz="O'rmon xo'jaligida 2025 yilda tayyorlangan o'rmon daraxt va buta urug'larining harakati to'g'risida",
-            title_ru="О движении семян лесных деревьев и кустарников, подготовленных в лесном хозяйстве в 2025 году",
+            title_uz=f"O'rmon xo'jaligida {current_year} yilda tayyorlangan o'rmon daraxt va buta urug'larining harakati to'g'risida",
+            title_ru=f"О движении семян лесных деревьев и кустарников, подготовленных в лесном хозяйстве в {current_year} году",
             ordering="1.1"
         )
 

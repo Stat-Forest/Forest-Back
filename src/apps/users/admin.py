@@ -11,6 +11,7 @@ class PersonalInfoInline(admin.StackedInline):
     extra = 0
     can_delete = False
 
+
     # bolim_admin da organizations bo`midi
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
