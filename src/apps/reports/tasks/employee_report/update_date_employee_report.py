@@ -72,6 +72,116 @@ def update_year_in_statement_columns():
             column.title_ru = title_ru_svod
             column.save(update_fields=["title_uz", "title_ru"])
 
+    # === 1) Ijarachilar bo‘yicha ma’lumot ===
+    title_uz_ijarachi = f"{current_year} yilda xar bir ijarachi bo‘yicha ma’lumot"
+    title_ru_ijarachi = f"Информация по каждому арендатору за {current_year} год"
+
+    ijarachi_qs = StatementColumn.objects.filter(
+        statement__name='Ijaraga berilgan yerlar hisobi',
+        title_uz__regex=r"^\d{4} yilda xar bir ijarachi bo‘yicha ma’lumot$"
+    )
+    for column in ijarachi_qs:
+        if column.title_uz != title_uz_ijarachi:
+            column.title_uz = title_uz_ijarachi
+            column.title_ru = title_ru_ijarachi
+            column.save(update_fields=["title_uz", "title_ru"])
+
+    # === 2) O‘rmon fondi yerlari maydoni ===
+    title_uz_fondi = f"{current_year} yilda foydalanishga kiritiladigan o‘rmon fondi yerlari maydoni to‘g‘risida ma’lumot"
+    title_ru_fondi = f"Информация о площади земель лесного фонда, вводимых в эксплуатацию в {current_year} году"
+
+    fondi_qs = StatementColumn.objects.filter(
+        statement_name='Yer o‘zlashtirish',
+        title_uz__regex=r"^\d{4} yilda foydalanishga kiritiladigan o‘rmon fondi yerlari maydoni to‘g‘risida ma’lumot$"
+    )
+    for column in fondi_qs:
+        if column.title_uz != title_uz_fondi:
+            column.title_uz = title_uz_fondi
+            column.title_ru = title_ru_fondi
+            column.save(update_fields=["title_uz", "title_ru"])
+
+    from django.utils import timezone
+    current_year = int(timezone.now().strftime("%Y"))
+    next_year = current_year + 1
+
+    # === 2) 2 yillik blok (masalan: 2025–2026 yillar) ===
+    title_uz_period = f"{current_year}–{next_year} yillar"
+    title_ru_period = f"{current_year}–{next_year} годы"
+
+    period_qs = StatementColumn.objects.filter(
+        statement__name='Ijaraga berilgan yerlar hisobi',
+        title_uz__regex=r"^\d{4}–\d{4} yillar$"
+    )
+    for column in period_qs:
+        if column.title_uz != title_uz_period:
+            column.title_uz = title_uz_period
+            column.title_ru = title_ru_period
+            column.save(update_fields=["title_uz", "title_ru"])
+
+
+    title_uz_export = f"{current_year} yildagi eksport"
+    title_ru_export = f"Экспорт за {current_year} год"
+
+    export_qs = StatementColumn.objects.filter(
+        statement__name='Ijaraga berilgan yerlar hisobi',
+        title_uz__regex=r"^\d{4} yildagi eksport$"
+    )
+    for column in export_qs:
+        if column.title_uz != title_uz_export:
+            column.title_uz = title_uz_export
+            column.title_ru = title_ru_export
+            column.save(update_fields=["title_uz", "title_ru"])
+
+
+    from django.utils import timezone
+    import re
+
+    today = timezone.now().date()
+    current_year = today.year
+
+    # Uzbek oy nomlari
+    months_uz = [
+        "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+        "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"
+    ]
+    month_name_uz = months_uz[today.month - 1]
+
+    # Rus oy nomlari
+    months_ru = [
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ]
+    month_name_ru = months_ru[today.month - 1]
+
+    # Oy ichidagi hafta raqami
+    first_day = today.replace(day=1)
+    week_number = ((today - first_day).days // 7) + 1
+
+    # Yangi title qiymatlari
+    title_uz_new = (
+        f"{current_year}-yil 1-yanvardan {current_year}-yil {month_name_uz} "
+        f"{week_number}-haftaligigacha tushgan tushum "
+        "O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazilgan tushum haqida HISOBOT"
+    )
+
+    title_ru_new = (
+        f"О поступлениях за период с 1 января {current_year} года по "
+        f"{today.day} {month_name_ru} {current_year} года "
+        f"( {week_number}-я неделя месяца ) и перечисленных в Фонд развития лесов"
+    )
+
+    # Eski yozuvlarni regex orqali topish
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"^\d{4}-yil 1-yanvardan \d{4}-yil .+ haftaligigacha tushgan tushum O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazilgan tushum haqida HISOBOT$"
+    )
+
+    # Yangilash
+    for column in qs:
+        if column.title_uz != title_uz_new:
+            column.title_uz = title_uz_new
+            column.title_ru = title_ru_new
+            column.save(update_fields=["title_uz", "title_ru"])
+
 
     # ========== ⬇️ Forest Column Celery of Oybek  ==========
 

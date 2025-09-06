@@ -2,16 +2,19 @@ import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.reports.models import Statement, StatementColumn
+from apps.reports.models import StatementColumn
 from apps.reports.models.statement_column import StatementColumn as SC
 from apps.utils.services import PeriodChoices
-
+from apps.reports.models import Statement
 
 class Command(BaseCommand):
     help = 'Create Jamg‘arma va Daromad statementlari bilan to‘liq column tuzilmasi'
 
     def handle(self, *args, **kwargs):
         with transaction.atomic():
+            from apps.reports.models import Statement
+            from apps.reports.models import StatementColumn
+            from apps.utils.services import PeriodChoices
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
                 name_uz="Moliya-iqtisod va buxgalteriya",
@@ -35,12 +38,49 @@ class Command(BaseCommand):
                 ordering="1"
             )
 
+            from django.utils import timezone
+
+            today = timezone.now().date()
+            current_year = today.year
+
+            # Uzbek oy nomlari
+            months_uz = [
+                "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+                "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"
+            ]
+            month_name_uz = months_uz[today.month - 1]
+
+            # Rus oy nomlari
+            months_ru = [
+                "января", "февраля", "марта", "апреля", "мая", "июня",
+                "июля", "августа", "сентября", "октября", "ноября", "декабря"
+            ]
+            month_name_ru = months_ru[today.month - 1]
+
+            # Joriy oy ichida nechinchi haftada turganini aniqlash
+            first_day = today.replace(day=1)
+            week_number = ((today - first_day).days // 7) + 1
+
+            # Dinamik matnlar
+            title_uz = (
+                f"{current_year}-yil 1-yanvardan {current_year}-yil {month_name_uz} "
+                f"{week_number}-haftaligigacha tushgan tushum "
+                "O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazilgan tushum haqida HISOBOT"
+            )
+
+            title_ru = (
+                f"О поступлениях за период с 1 января {current_year} года по "
+                f"{today.day} {month_name_ru} {current_year} года "
+                f"( {week_number}-я неделя месяца ) и перечисленных в Фонд развития лесов"
+            )
+
+            # Bazaga yozish
             info_child = StatementColumn.objects.create(
                 statement=jamg_statement,
                 parent=parent_info,
-                title="O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazgan tushumi to‘g‘risida HISOBOT",
-                title_uz="O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazgan tushumi to‘g‘risida HISOBOT",
-                title_ru="ОТЧЁТ о средствах, перечисленных в фонд развития лесов",
+                title=title_uz,
+                title_uz=title_uz,
+                title_ru=title_ru,
                 ordering="1.1"
             )
 
