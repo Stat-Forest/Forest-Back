@@ -28,7 +28,8 @@ app.conf.beat_schedule = {
         "task": "apps.reports.tasks.employee_report.update_date_employee_report.update_year_in_statement_columns",
         "schedule": crontab(minute=0, hour=0, day_of_month=1),
     },
+    "update-monthly-statement-columns": {
+        "task": "apps.reports.tasks.employee_report.update_monthly_employee_reports.update_monthly_statement_columns",
+        "schedule": crontab(minute=0, hour=0, day_of_month=1)
+    }
 }
-
-
-

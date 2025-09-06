@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand
+from django.utils import timezone
 
 from apps.utils.services import PeriodChoices
 from apps.reports.models import Statement, StatementColumn
@@ -83,6 +84,7 @@ def generate_grouped_subtree(statement, parent, ordering_prefix, section_title_u
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # ==========================================================================  Qalamcha tayyorlash
+        current_year = timezone.now().strftime("%Y")
 
         parent_statement = Statement.objects.get(
             name_uz="O'rmon barpo qilish",
@@ -107,8 +109,8 @@ class Command(BaseCommand):
         title_column_1 = StatementColumn.objects.create(
             statement=statement,
             parent=app_column,
-            title_uz="O‘rmon xo‘jaliklari tomonidan 2025 yil bahor mavsumlarida qalamchalar tayyorlash bo‘yicha tezkor ma‘lumot.",
-            title_ru="Срочная информация о подготовке черенков лесничествами в весенние сезоны 2025 года.",
+            title_uz=f"O‘rmon xo‘jaliklari tomonidan {current_year} yil bahor mavsumlarida qalamchalar tayyorlash bo‘yicha tezkor ma‘lumot.",
+            title_ru=f"Срочная информация о подготовке черенков лесничествами в весенние сезоны {current_year} года.",
             ordering="1.1"
         )
 

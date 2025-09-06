@@ -35,12 +35,14 @@ class Command(BaseCommand):
         statement_husbandry = Statement.objects.create(
             parent=forest_statement,
             name_uz="Chorvachilik",
-            name_ru="Животноводство"
+            name_ru="Животноводство",
+            period=PeriodChoices.YILLIK
         )
         statement_medicine = Statement.objects.create(
             parent=forest_statement,
             name_uz="Dorivor yetishtirish",
-            name_ru="Лекарственное выращивание"
+            name_ru="Лекарственное выращивание",
+            period=PeriodChoices.OYLIK
         )
 
         # ========== Й.Ш.М ilovasi ==========

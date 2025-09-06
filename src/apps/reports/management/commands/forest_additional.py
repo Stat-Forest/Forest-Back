@@ -1,4 +1,7 @@
+
+
 from django.core.management import BaseCommand
+from django.utils import timezone
 
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.services import PeriodChoices
@@ -6,7 +9,7 @@ from apps.utils.services import PeriodChoices
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-
+        current_year = timezone.now().strftime("%Y")
         # ========== Boshoqli Don ilovasi ==========
         def create_column(statement, parent, title_uz, title_ru, ordering, is_organization=False, is_user_input=True):
             return StatementColumn.objects.create(
@@ -71,8 +74,8 @@ class Command(BaseCommand):
         title_forest_app = create_column(
             statement_forest_add,
             forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda boshoqli don ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве зерновых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda boshoqli don ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве зерновых культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "1.1"
         )
 
@@ -136,8 +139,8 @@ class Command(BaseCommand):
         second_title_forest = create_column(
             statement_forest_add,
             second_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda sabzavot ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве овощных культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda sabzavot ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве овощных культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "2.1"
         )
 
@@ -199,8 +202,8 @@ class Command(BaseCommand):
         third_title_forest = create_column(
             statement_forest_add,
             third_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda poliz ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве бахчевых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda poliz ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве бахчевых культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "3.1"
         )
 
@@ -253,8 +256,8 @@ class Command(BaseCommand):
         fourth_title_forest = create_column(
             statement_forest_add,
             fourth_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda moyli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве масличных культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda moyli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве масличных культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "4.1"
         )
 
@@ -309,8 +312,8 @@ class Command(BaseCommand):
         fifth_title_forest = create_column(
             statement_forest_add,
             fifth_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda dukkakli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве бобовых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda dukkakli ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве бобовых культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "5.1"
         )
 
@@ -364,8 +367,8 @@ class Command(BaseCommand):
         sixth_title_forest = create_column(
             statement_forest_add,
             sixth_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda ozuqa ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве кормовых культур и производстве продукции в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda ozuqa ekinlarini ekish va mahsulot yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве кормовых культур и производстве продукции в хозяйствах системы Агентства в {current_year} году",
             "6.1"
         )
 
@@ -436,8 +439,8 @@ class Command(BaseCommand):
         seventh_title_forest = create_column(
             statement_forest_add,
             seventh_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda mevali bog'lar va tokzorlar ekish va hosil yetishtirish to'g'risida ma'lumot",
-            "Информация о посеве и урожайности садов и виноградников в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda mevali bog'lar va tokzorlar ekish va hosil yetishtirish to'g'risida ma'lumot",
+            f"Информация о посеве и урожайности садов и виноградников в хозяйствах системы Агентства в {current_year} году",
             "7.1"
         )
 
@@ -495,8 +498,8 @@ class Command(BaseCommand):
         )
         create_village(statement_forest_add, uzumzor, "7.1.3.3")
 
-        create_column(statement_forest_add, seventh_title_forest, "2017-2024 yildan qo'shilgan bog'lar",
-                      "Сады, добавленные с 2017 по 2024 год", "7.1.4")
+        create_column(statement_forest_add, seventh_title_forest, f"2017-{current_year} yildan qo'shilgan bog'lar",
+                      f"Сады, добавленные с 2017 по {current_year} год", "7.1.4")
 
         # ========== Bodom va Pista ilovasi ==========
         eighth_forest_app = create_column(
@@ -510,8 +513,8 @@ class Command(BaseCommand):
         eighth_title_forest = create_column(
             statement_forest_add,
             eighth_forest_app,
-            "Agentlik tizimidagi xo'jaliklarda 2025 yilda yong'oqmevali mahsulotlar yetishtirish to'g'risida ma'lumot",
-            "Информация о производстве орехоплодных культур в хозяйствах системы Агентства в 2025 году",
+            f"Agentlik tizimidagi xo'jaliklarda {current_year} yilda yong'oqmevali mahsulotlar yetishtirish to'g'risida ma'lumot",
+            f"Информация о производстве орехоплодных культур в хозяйствах системы Агентства в {current_year} году",
             "8.1"
         )
 
