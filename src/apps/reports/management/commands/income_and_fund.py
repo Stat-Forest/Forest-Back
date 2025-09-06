@@ -2,16 +2,19 @@ import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.reports.models import Statement, StatementColumn
+from apps.reports.models import StatementColumn
 from apps.reports.models.statement_column import StatementColumn as SC
 from apps.utils.services import PeriodChoices
-
+from apps.reports.models import Statement
 
 class Command(BaseCommand):
     help = 'Create Jamg‘arma va Daromad statementlari bilan to‘liq column tuzilmasi'
 
     def handle(self, *args, **kwargs):
         with transaction.atomic():
+            from apps.reports.models import Statement
+            from apps.reports.models import StatementColumn
+            from apps.utils.services import PeriodChoices
             moliya_statement = Statement.objects.create(
                 name="Moliya-iqtisod va buxgalteriya",
                 name_uz="Moliya-iqtisod va buxgalteriya",
