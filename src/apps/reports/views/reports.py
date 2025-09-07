@@ -21,7 +21,7 @@ from apps.base.views import (
 @extend_schema(tags=["Reports"])
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
-    permission_classes = []
+    permission_classes = (CanListReport,)
 
     queryset = Report.objects.select_related(
         'organization',
@@ -37,7 +37,6 @@ class ReportListAPIView(CustomListAPIView):
     ).filter(
         statement__parent__isnull=False
     ).order_by('-created_at')
-    # permission_classes = (CanListReport,)
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
@@ -90,7 +89,7 @@ class ReportListAPIView(CustomListAPIView):
 class ReportCreateAPIView(CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
-    # permission_classes = (CanCreateReport,)
+    permission_classes = (CanCreateReport,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -109,7 +108,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
 class ReportDeleteAPIView(CustomDestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
-    # permission_classes = (CanUpdateReport,)
+    permission_classes = (CanUpdateReport,)
     lookup_field = 'id'
 
 
@@ -141,7 +140,7 @@ class ReportUpdateAPIView(CustomRetrieveUpdateAPIView):
     ).distinct().order_by('-created_at')
     serializer_class = ReportUpdateSerializer
     lookup_field = 'id'
-    # permission_classes = (CanUpdateReport,)
+    permission_classes = (CanUpdateReport,)
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
