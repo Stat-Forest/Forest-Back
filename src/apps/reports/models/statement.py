@@ -5,6 +5,11 @@ from apps.utils.services import PeriodChoices
 from apps.base.models import AbstractBaseModel
 
 
+class StatementManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Statement(AbstractBaseModel):
     parent = models.ForeignKey(
         'self',
@@ -14,7 +19,7 @@ class Statement(AbstractBaseModel):
         blank=True,
         null=True,
     )
-    name = models.CharField(max_length=100,unique=True)
+    name = models.CharField(max_length=100, unique=True)
     period = models.CharField(
         max_length=100,
         choices=PeriodChoices.choices,
@@ -28,6 +33,8 @@ class Statement(AbstractBaseModel):
         null=True,
     )
 
+    objects = StatementManager()
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         if is_new and hasattr(self, "name_uz") and self.name_uz:
@@ -39,4 +46,4 @@ class Statement(AbstractBaseModel):
         return (self.name,)
 
     def __str__(self):
-        return self.name_uz
+        return getattr(self, "name_uz", self.name)
