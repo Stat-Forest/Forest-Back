@@ -50,7 +50,7 @@ class Organization(AbstractBaseModel):
 
     stir = models.PositiveBigIntegerField(null=True, blank=True)
 
-    objects = OrganizationManager()  
+    objects = OrganizationManager()
 
     def natural_key(self):
         return (self.name,)
