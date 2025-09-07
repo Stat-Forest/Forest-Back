@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from django.utils import timezone
 from celery import shared_task
 from apps.reports.models import StatementColumn
 
@@ -9,7 +9,7 @@ def update_monthly_statement_columns():
     """
     Oylik ustunlardagi (01.MM.YYYY holatiga) sanalarni avtomatik yangilaydi.
     """
-    now = datetime.now()
+    now = timezone.now()
     current_date_str = f"01.{now.month:02d}.{now.year}"
 
     patterns = [
