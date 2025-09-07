@@ -24,6 +24,11 @@ class Republic(AbstractBaseModel):
         ordering = ["name"]
 
 
+class OrganizationManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Organization(AbstractBaseModel):
     name = models.CharField(
         max_length=255,
@@ -45,9 +50,10 @@ class Organization(AbstractBaseModel):
 
     stir = models.PositiveBigIntegerField(null=True, blank=True)
 
+    objects = OrganizationManager()  
+
     def natural_key(self):
         return (self.name,)
-
 
     class Meta:
         verbose_name = _("Organization")
@@ -55,4 +61,4 @@ class Organization(AbstractBaseModel):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name_uz}"
+        return getattr(self, "name_uz", self.name)
