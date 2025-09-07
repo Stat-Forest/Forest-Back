@@ -11,6 +11,8 @@ services:
     volumes:
       - ../../staticfiles:/app/staticfiles
       - ../../media:/app/media
+      - ../../src:/app
+
     ports:
       - "8000:8000"
     depends_on:
