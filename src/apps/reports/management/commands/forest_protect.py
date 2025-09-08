@@ -195,8 +195,8 @@ class Command(BaseCommand):
         third_title_column = StatementColumn.objects.create(
             statement=third_statement,
             parent=third_app_column,
-            title_uz="HISOBOTLAR",
-            title_ru="ОТЧЕТЫ",
+            title_uz="O‘rmon fondi yerlarida aniqlangan huquqbuzarliklar to‘g‘risida",
+            title_ru="О выявленных нарушениях на землях лесного фонда",
             ordering="1.1"
         )
 
