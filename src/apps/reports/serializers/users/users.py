@@ -4,6 +4,7 @@ from apps.users.models import CustomUser
 class UserListSerializer(serializers.ModelSerializer):
     information = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
+    statement_name = serializers.SerializerMethodField()
     role_display = serializers.SerializerMethodField()
 
     def get_information(self, obj):
@@ -20,6 +21,12 @@ class UserListSerializer(serializers.ModelSerializer):
         # Agar modelda name_ru va name_uz maydonlari mavjud bo‘lsa
         return getattr(obj.organization, f"name_{lang}", obj.organization.name or "")
 
+    def get_statement_name(self, obj):
+        lang = self.context.get("lang", "uz")
+        if not obj.statement:
+            return ""
+        return getattr(obj.statement, f"name_{lang}", obj.statement.name or "")
+
     class Meta:
         model = CustomUser
         fields = (
@@ -29,6 +36,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'organization',
             'statement',
             'organization_name',
+            'statement_name',
             'nationality',
             'information',
             'phone_number',
