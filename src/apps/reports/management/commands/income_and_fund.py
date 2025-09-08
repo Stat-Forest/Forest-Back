@@ -7,6 +7,8 @@ from apps.reports.models.statement_column import StatementColumn as SC
 from apps.utils.services import PeriodChoices
 from apps.reports.models import Statement
 
+from calendar import monthrange
+
 class Command(BaseCommand):
     help = 'Create Jamg‘arma va Daromad statementlari bilan to‘liq column tuzilmasi'
 
@@ -37,41 +39,50 @@ class Command(BaseCommand):
                 title_ru="Фонд",
                 ordering="1"
             )
-
             from django.utils import timezone
-
             today = timezone.now().date()
             current_year = today.year
+            current_month = today.month
 
             # Uzbek oy nomlari
             months_uz = [
                 "yanvar", "fevral", "mart", "aprel", "may", "iyun",
                 "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"
             ]
-            month_name_uz = months_uz[today.month - 1]
+            month_name_uz = months_uz[current_month - 1]
 
             # Rus oy nomlari
             months_ru = [
                 "января", "февраля", "марта", "апреля", "мая", "июня",
                 "июля", "августа", "сентября", "октября", "ноября", "декабря"
             ]
-            month_name_ru = months_ru[today.month - 1]
+            month_name_ru = months_ru[current_month - 1]
 
-            # Joriy oy ichida nechinchi haftada turganini aniqlash
-            first_day = today.replace(day=1)
-            week_number = ((today - first_day).days // 7) + 1
+            # Oyning oxirgi kuni
+            last_day = monthrange(current_year, current_month)[1]
+
+            # Sanaga qarab oraliqni aniqlash
+            day = today.day
+            if day <= 8:
+                end_day = 8
+            elif day <= 16:
+                end_day = 16
+            elif day <= 23:
+                end_day = 23
+            else:
+                end_day = last_day
 
             # Dinamik matnlar
             title_uz = (
-                f"{current_year}-yil 1-yanvardan {current_year}-yil {month_name_uz} "
-                f"{week_number}-haftaligigacha tushgan tushum "
+                f"{current_year}-yil 1-yanvardan "
+                f"{current_year}-yil {end_day}-{month_name_uz}gacha tushgan tushum "
                 "O‘rmonlarni rivojlantirish jamg‘armasiga o‘tkazilgan tushum haqida HISOBOT"
             )
 
             title_ru = (
                 f"О поступлениях за период с 1 января {current_year} года по "
-                f"{today.day} {month_name_ru} {current_year} года "
-                f"( {week_number}-я неделя месяца ) и перечисленных в Фонд развития лесов"
+                f"{end_day} {month_name_ru} {current_year} года "
+                f"и перечисленных в Фонд развития лесов"
             )
 
             # Bazaga yozish
