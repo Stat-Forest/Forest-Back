@@ -28,12 +28,16 @@ class Command(BaseCommand):
             land_2 = Statement.objects.create(name="Ijaraga berilgan yerlar hisobi", name_ru="Учет арендованных земель", parent=urmon, period=PeriodChoices.OYLIK)
             land_3 = Statement.objects.create(name="O‘rmon bilan qoplangan yerlar", name_ru="Покрытые лесом земли", parent=urmon, period=PeriodChoices.YILLIK)
 
+            col_16 = self.create_column(statement=land_3, title="4-ilova", title_ru="Приложение-4", ordering="6")
+            col_15 = self.create_column(statement=land_3, title="3-ilova", title_ru="Приложение-3", ordering="5")
             col_14 = self.create_column(statement=land_3, title="2-ilova", title_ru="Приложение-2", ordering="4")
             col_13 = self.create_column(statement=land_3, title="1-ilova", title_ru="Приложение-1", ordering="3")
             col_12 = self.create_column(statement=land_2, title="1-ilova", title_ru="Приложение-1", ordering="2")
             col_11 = self.create_column(statement=land_1, title="1-ilova", title_ru="Приложение-1", ordering="1")
 
-            info_14 = self.create_column(statement=land_3, parent=col_14, title="Urmon bilan qoplangan yerlar tematik qatlam atributiv ma'lumotlari", title_ru="Атрибутивные данные тематического слоя покрытых лесом земель", ordering="4.1")
+            info_16 = self.create_column(statement=land_3, parent=col_16, title="O‘rmon bilan qoplanmagan yerlar tematik qatlamining atributiv ma’lumotlari", title_ru="Атрибутивные данные тематического слоя земель, не покрытых лесом", ordering="6.1")
+            info_15 = self.create_column(statement=land_3, parent=col_15, title="O‘rmon bilan qoplanmagan yerlar tematik qatlamining atributiv ma’lumotlari", title_ru="Атрибутивные данные тематического слоя покрытых лесом земель", ordering="5.1")
+            info_14 = self.create_column(statement=land_3, parent=col_14, title="O‘rmon kvartallari tematik qatlamining atributiv ma’lumotlari", title_ru="Атрибутивные данные тематического слоя лесных кварталов", ordering="4.1")
             info_13 = self.create_column(statement=land_3, parent=col_13, title="O‘rmon bo‘limlari tematik qatlamining atributiv ma’lumotlari", title_ru="Атрибутивные данные тематического слоя лесных участков", ordering="3.1")
             from django.utils import timezone
 
@@ -58,8 +62,10 @@ class Command(BaseCommand):
             for info, ord, stmt in [
                 (info_11, "1.1.1", land_1),
                 (info_12, "2.1.1", land_2),
-                (info_13, "3.1.1", land_3),
-                (info_14, "4.1.1", land_3)
+                (info_13, "3.1.0", land_3),
+                (info_14, "4.1.0", land_3),
+                (info_15, "5.1.0", land_3),
+                (info_16, "6.1.0", land_3),
             ]:
                 self.create_column(statement=stmt, parent=info, title="Tashkilot nomi", title_ru="Наименование организации", ordering=ord, is_organization=True)
 
@@ -282,8 +288,8 @@ class Command(BaseCommand):
 
             # O‘rmon bo‘limi
             forest_titles = [
-                ("O‘rmon bo‘limining nomi", "Название лесного участка"),
                 ("O‘rmon bo‘limining identifikatsiya raqami", "Идентификационный номер участка"),
+                ("O‘rmon bo‘limining nomi", "Название лесного участка"),
                 ("O‘rmon bo‘limi tashkil etilgan sana", "Дата создания участка"),
                 ("Idoraviy mansubligi", "Ведомственная принадлежность"),
                 ("O‘rmon bo‘limining joylashgan joyi", "Местоположение участка"),
@@ -291,19 +297,14 @@ class Command(BaseCommand):
             ]
             self.create_columns_from_titles(forest_titles, "3.1", info_13, land_3)
 
-            # Tematik qatlam
-            them_layer = self.create_column(
-                statement=land_3,
-                parent=info_13,
-                title="Tematik qatlam atributiv ma’lumotlari",
-                title_ru="Атрибутивные данные тематического слоя",
-                ordering="3.1.8"
-            )
-            self.create_columns_from_titles([
+
+
+            four_titles = [
                 ("Kvartalning identifikatsiya raqami", "Идентификационный номер квартала"),
                 ("Kvartal raqami", "Номер квартала"),
-                ("Izoh", "Примечание")
-            ], "3.1.8", them_layer, land_3)
+                ("Izoh", "Примечание"),
+            ]
+            self.create_columns_from_titles(four_titles, "4.1", info_14, land_3)
 
             # Kontur
             contour_titles = [
@@ -321,6 +322,12 @@ class Command(BaseCommand):
                 ("Daraxtlar zaxirasi (m³)", "Запас деревьев (м³)"),
                 ("Qiymati (so‘m)", "Стоимость (сум)")
             ]
-            self.create_columns_from_titles(contour_titles, "4.1", info_14, land_3)
+            self.create_columns_from_titles(contour_titles, "5.1", info_15, land_3)
+
+            unforested_titles = [
+                ("Kontur identifikatsiya raqami", "Идентификационный номер контура"),
+                ("O‘rmon bilan qoplanmagan yerlar (ga)", "Земли, не покрытые лесом (га)"),
+            ]
+            self.create_columns_from_titles(unforested_titles, "6.1", info_16, land_3)
 
             self.stdout.write(self.style.SUCCESS(f" Land management created successfully."))
