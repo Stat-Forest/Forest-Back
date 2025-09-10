@@ -2,13 +2,39 @@ from datetime import datetime
 from django import forms
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+
+from apps.general.models import Organization
 from apps.reports.models import Deadline
 
 
 class DeadlineAdminForm(forms.ModelForm):
+    organizations = forms.MultipleChoiceField(
+        required=True,
+    )
+
     class Meta:
         model = Deadline
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Organizations queryset
+        qs = Organization.objects.all()
+
+        # Sun’iy ALL variantini qo‘shamiz
+        choices = [("ALL", "All organizations")] + [(org.id, org.name) for org in qs]
+        self.fields['organizations'].choices = choices
+
+    def clean_organizations(self):
+        data = self.cleaned_data['organizations']
+
+        if "ALL" in data:
+            # Agar ALL tanlansa → barcha organization id-larni qaytaramiz
+            return Organization.objects.all()
+        else:
+            # Oddiy holatda faqat tanlangan id-lar
+            return Organization.objects.filter(id__in=data)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -16,6 +42,9 @@ class DeadlineAdminForm(forms.ModelForm):
         statement = cleaned_data.get('statement')
         submission_at = cleaned_data.get('submit_at')
         period = statement.period if statement else None
+
+        if organizations and "ALL" in [org.name for org in organizations]:
+            cleaned_data['organizations'] = Organization.objects.all()
 
         if organizations and statement and submission_at:
             existing_deadlines = Deadline.objects.filter(statement=statement, submit_at=submission_at)
