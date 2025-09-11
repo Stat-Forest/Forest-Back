@@ -28,7 +28,6 @@ class Statement(AbstractBaseModel):
     )
     icon = models.FileField(
         upload_to='statements/icons/%Y/%m/%d/',
-        validators=[FileExtensionValidator(['svg'])],
         blank=True,
         null=True,
     )
