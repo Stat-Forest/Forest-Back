@@ -168,7 +168,7 @@ class Command(BaseCommand):
         )
 
         rows = [
-            ("Jami", "Итого", True),
+            ("Jami o'rmonlar barpo etish va qayta tiklash", "Полное лесовосстановление и восстановление", True),
             ("Cho'l", "Пустыня", True),
             ("Jami yong'oq mevalar", "Итого ореховые плоды", True),
             ("Shundan", "Из них", False),
