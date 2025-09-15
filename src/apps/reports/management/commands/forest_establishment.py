@@ -60,34 +60,107 @@ class Command(BaseCommand):
         rows = [
             ("Yirik hajmli yopiq ildizli ko'chatlar yetishtirish miqdori",
              "Количество выращивания крупногабаритных саженцев с закрытым корнем", False, "YILLIK_TOTAL"),
-            ("Tyanshan qoraqarag'ay", "Тяньшанский черный карагач", True, "YILLIK"),
-            ("Tyanshan qarag'ayi", "Тяньшанский карагач", True, "YILLIK"),
-            ("Virdjiniya archa", "Верджинская арча", True, "YILLIK"),
-            ("Sharq tuya", "Восточная туя", True, "YILLIK"),
-            ("Eldor qarag'ay", "Елдорский карагач", True, "YILLIK"),
-            ("Qrim qarag'ayi", "Крымский карагач", True, "YILLIK"),
-            ("Tuya sharq", "Туя восточная", True, "YILLIK"),
-            ("Kiparis", "Кипарис", True, "YILLIK"),
-            ("Qayrag'och", "Кайрагач", True, "YILLIK"),
-            ("Shumtol", "Шумтол", True, "YILLIK"),
-            ("Zarang", "Заранг", True, "YILLIK"),
-            ("Sadaqayrag'och", "Садакайраггач", True, "YILLIK"),
-            ("Yapon saforasi", "Японский кипарис", True, "YILLIK"),
-            ("Akatsiya", "Акация", True, "YILLIK"),
-            ("Ipak akatsiya", "Шелковая акация", True, "YILLIK"),
-            ("Aylant", "Айлант", True, "YILLIK"),
-            ("Katalpa", "Катальпа", True, "YILLIK"),
-            ("Pavloniya", "Павлония", True, "YILLIK"),
-            ("Chinar", "Тополь", True, "YILLIK"),
-            ("Kashtan", "Каштан", True, "YILLIK"),
-            ("Pisardi", "Писарди", True, "YILLIK"),
-            ("Bag'rik", "Багрянник", True, "YILLIK"),
-            ("Qora tut", "Шелковица черная", True, "YILLIK"),
-            ("Yapon tut", "Японская шелковица", True, "YILLIK"),
-            ("Eman", "Еман", True, "YILLIK"),
-            ("Oqqayin", "Белая акация", True, "YILLIK"),
-            ("Boshqa turlar", "Другие виды", True, "YILLIK"),
-            ("Atirgul", "Роза", True, "YILLIK")
+
+            # Yaproqbarglilar
+            ("bagrannik", "багрянник", True, "YILLIK"),
+            ("eman chereshch (dub)", "эман черешч (дуб)", True, "YILLIK"),
+            ("eman piramid (dub)", "эман пирамид (дуб)", True, "YILLIK"),
+            ("qayrogoch (vyaz)", "қайрогоч (вяз)", True, "YILLIK"),
+            ("sada qayrog‘och (gujum)", "сада қайроғоч (гужум)", True, "YILLIK"),
+            ("shumtol (yasen)", "шумтол (ясень)", True, "YILLIK"),
+            ("aylant", "айлант", True, "YILLIK"),
+            ("savatol", "саваттол", True, "YILLIK"),
+            ("gledichiya", "гледичия", True, "YILLIK"),
+            ("chinor", "чинор", True, "YILLIK"),
+            ("yapon saforasi", "япон сафораси", True, "YILLIK"),
+            ("kashtan", "каштан", True, "YILLIK"),
+            ("katalpa", "катальпа", True, "YILLIK"),
+            ("xilo katalpa", "хило каталпа", True, "YILLIK"),
+            ("oq qayin (beryoza)", "оқ қайин (берёза)", True, "YILLIK"),
+            ("zarang (klen)", "заранг (клен)", True, "YILLIK"),
+            ("ipak akatsiya", "ипак акация", True, "YILLIK"),
+            ("akatsiya", "акация", True, "YILLIK"),
+            ("maklyura", "маклюра", True, "YILLIK"),
+            ("lipa", "липа", True, "YILLIK"),
+            ("qog‘oz daraxt", "қогоз дарахт", True, "YILLIK"),
+            ("sovun daraxti", "совун дарахти", True, "YILLIK"),
+            ("magnoliya", "магнолия", True, "YILLIK"),
+            ("lola daraxti", "лола дарахти", True, "YILLIK"),
+
+            # Tez o‘suvchilar
+            ("terak", "терак", True, "YILLIK"),
+            ("tol (iva)", "тол (ива)", True, "YILLIK"),
+            ("majnuntol", "мажнунтол", True, "YILLIK"),
+            ("pavlovniya", "павловния", True, "YILLIK"),
+
+            # Yong‘oqmevalilar
+            ("yong‘oq", "ёнгок", True, "YILLIK"),
+            ("achchiq bodom", "аччиқ бодом", True, "YILLIK"),
+            ("shirin bodom", "ширин бодом", True, "YILLIK"),
+            ("pekan", "пекан", True, "YILLIK"),
+            ("pista", "писта", True, "YILLIK"),
+            ("funduk", "фундук", True, "YILLIK"),
+
+            # Mevalilar
+            ("o‘rik (abrikos)", "ўрик (абрикос)", True, "YILLIK"),
+            ("shaftoli", "шафтоли", True, "YILLIK"),
+            ("olchcha (vishnya)", "олча (вишневый)", True, "YILLIK"),
+            ("olxuri, qorali GAYLOLU", "олхури, қорали ГАЙЛОЛУ", True, "YILLIK"),
+            ("pissarda olxurisi", "писсарда олхуриси", True, "YILLIK"),
+            ("gilos (vishnya)", "гилос  (вышня)", True, "YILLIK"),
+            ("magalepka gilos", "магалепка гилос", True, "YILLIK"),
+            ("xurmo", "хурмо", True, "YILLIK"),
+            ("olma", "олма", True, "YILLIK"),
+            ("bexi", "бехи", True, "YILLIK"),
+            ("nok (murut)", "нок (мурут)", True, "YILLIK"),
+            ("uzum (tok)", "узум (ток)", True, "YILLIK"),
+            ("anor", "анор", True, "YILLIK"),
+            ("anjir", "анжир", True, "YILLIK"),
+            ("qizil do‘lona", "қизил дўлана", True, "YILLIK"),
+            ("tut", "тут", True, "YILLIK"),
+            ("chappa tut", "чаппа тут", True, "YILLIK"),
+            ("jiyda (lox)", "жийда (лох)", True, "YILLIK"),
+            ("non jiyda", "нон жийда", True, "YILLIK"),
+            ("chilonjiyda (unabi)", "чилонжийда (унаби)", True, "YILLIK"),
+            ("palma", "Палма", True, "YILLIK"),
+            ("limon", "лимон", True, "YILLIK"),
+
+            # Ignabarglilar
+            ("tyanshan qora qarag‘ayi", "тяншан қора қарағайи", True, "YILLIK"),
+            ("zarafshon archasi", "Зарафшон арчаси", True, "YILLIK"),
+            ("virgin archa", "виргин арча", True, "YILLIK"),
+            ("sharq tuya", "шарқ туя", True, "YILLIK"),
+            ("kompakt tuya", "компакт туя", True, "YILLIK"),
+            ("qrim qarag‘ayi", "қрим қарағайи", True, "YILLIK"),
+            ("eldor qarag‘ayi", "эльдор қарағайи", True, "YILLIK"),
+            ("sarvi (kiparis)", "сарви (кипарис)", True, "YILLIK"),
+            ("tog‘ archa", "тоғ арча", True, "YILLIK"),
+
+            # Buta va gullar
+            ("na‘matak (shipovnik)", "наъматак (шиповник)", True, "YILLIK"),
+            ("amorfa", "аморфа", True, "YILLIK"),
+            ("ligustrum (biryuchina)", "лигуструм (бирючина)", True, "YILLIK"),
+            ("beresklet", "бересклет", True, "YILLIK"),
+            ("yapon bexi", "япон бехи", True, "YILLIK"),
+            ("magoniya", "магония", True, "YILLIK"),
+            ("forzitsiya", "форзиция", True, "YILLIK"),
+            ("samshit", "самшит", True, "YILLIK"),
+            ("sireni", "сирень", True, "YILLIK"),
+            ("hind sireni", "ҳинд сирени", True, "YILLIK"),
+            ("atirgul", "атиргул", True, "YILLIK"),
+            ("suriya atirguli (gibiskus)", "сурия атиргули (гибискус)", True, "YILLIK"),
+            ("tsizalpiniya", "цизалпиния", True, "YILLIK"),
+            ("chakanda (oblepixa)", "чаканда (облепиха)", True, "YILLIK"),
+            ("ispan drek", "испан дрок", True, "YILLIK"),
+            ("sumax", "сумах", True, "YILLIK"),
+            ("yukka", "юкка", True, "YILLIK"),
+            ("smorodina", "смородина", True, "YILLIK"),
+            ("arxideya", "архидея", True, "YILLIK"),
+            ("ryabina", "рябина", True, "YILLIK"),
+            ("pirakanta", "пираканта", True, "YILLIK"),
+            ("lovanda", "лованда", True, "YILLIK"),
+            ("zirk", "зирк", True, "YILLIK"),
+            ("boshqalar", "бошқалар", True, "YILLIK"),
         ]
 
         for index, (title_uz, title_ru, has_children, plan_status) in enumerate(rows, start=2):
@@ -101,36 +174,27 @@ class Command(BaseCommand):
                 is_user_input=False
             )
 
-            for i, sub in enumerate(["Reja", "Amalda", "%"], start=1):
-                # Subcolumn ordering
-                sub_ordering = f"{parent_ordering}.{i}"
+            if title_uz == "Yirik hajmli yopiq ildizli ko'chatlar yetishtirish miqdori":
+                for i, sub in enumerate(["Reja", "Amalda", "%"], start=1):
+                    sub_ordering = f"{parent_ordering}.{i}"
 
-                # Set status_plan for "Reja"
-                if sub == "Reja":
                     status_plan = (
                         StatementColumn.PlanStatus.YILLIK_TOTAL
-                        if plan_status == "YILLIK_TOTAL"
-                        else StatementColumn.PlanStatus.YILLIK
+                        if plan_status == "YILLIK_TOTAL" and sub == "Reja"
+                        else None
                     )
-                else:
-                    status_plan = None
 
-                # Set is_user_input
-                if title_uz == "Yirik hajmli yopiq ildizli ko‘chatlar yetishtirish miqdori":
-                    is_user_input = sub == "Reja"  # Faqat Reja True, boshqalari False
-                else:
-                    is_user_input = True  # Boshqa barcha uchun True
+                    is_user_input = False
 
-                # Create subcolumn
-                StatementColumn.objects.create(
-                    statement=first_of_second_statement,
-                    parent=parent,
-                    title_uz=sub,
-                    title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[sub],
-                    ordering=sub_ordering,
-                    status_plan=status_plan,
-                    is_user_input=is_user_input
-                )
+                    StatementColumn.objects.create(
+                        statement=first_of_second_statement,
+                        parent=parent,
+                        title_uz=sub,
+                        title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[sub],
+                        ordering=sub_ordering,
+                        status_plan=status_plan,
+                        is_user_input=is_user_input
+                    )
 
         # ================================================================ Закрытый корень крупногабаритный
 
@@ -169,13 +233,25 @@ class Command(BaseCommand):
 
         rows = [
             ("Jami o'rmonlar barpo etish va qayta tiklash", "Полное лесовосстановление и восстановление", True),
-            ("Cho'l", "Пустыня", True),
-            ("Jami yong'oq mevalar", "Итого ореховые плоды", True),
-            ("Shundan", "Из них", False),
+            ("O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)",
+             "Создание и восстановление лесов (зеленых покровов) (га)", True),
+            ("Himoya o‘rmonzorlarini barpo etish (ga)", "Создание защитных лесов (га)", True),
+            ("Terassa uslubida o'rmonlar barpo etish (ga)", "Террасные лесные насаждения (га)", True),
+            ("Orolbo‘yi mintaqasida yashil qoplama barpo etish (ga)", "Создание зеленого покрова в Приаралье (га)",
+             True),
+            ("Galofit bog‘lar barpo etish (ga)", "Создание галофитных садов (га)", True),
+            ("Orolning qurigan tubida yashil qoplamalar barpo etish (ga)",
+             "Создание зеленого покрова на сухом дне острова (га)", True),
+
+            ("Jami yong‘oq-mevalilar", "Всего орехов и фруктов", False),
+            ("Shu jumladan", "Включая", False),
+
             ("Jami tez o'suvchilar", "Итого быстрорастущие", True),
-            ("Shundan", "Из них", False),
+            ("Shu jumladan", "Включая", False),
+
+            ("Boshqa turlar", "Другие типы", False),
             ("Tabiiy tiklanishga ko'maklashish va boshqa daraxt turlaridan ekish",
-             "Помощь в естественном восстановлении и посадка других видов деревьев", False)
+             "Помощь в естественном восстановлении и посадка других видов деревьев", False),
         ]
 
         ordering_base = "1.1"
@@ -189,14 +265,45 @@ class Command(BaseCommand):
                 ordering=f"{ordering_base}.{i}"
             )
 
-            if title_uz == "Shundan":
-                if i == 5:  # 1-Shundan (yong‘oq mevalar)
-                    children = ["Yong'oq", "Pista", "Bodom"]
-                    children_ru = ["Орех", "Писташка", "Миндаль"]
-                else:  # 2-Shundan (tez o‘suvchilar)
-                    children = ["Terak", "Pavloniya", "Qayrag'och", "Shumtol", "Chinar", "Akatsiya", "Boshqa turlar"]
-                    children_ru = ["Тополь", "Павлония", "Кайрагач", "Шумтол", "Чинар", "Акация", "Другие виды"]
+            # 1️⃣ Jami o‘rmonlar → Reja, Amalda, %
+            if title_uz == "Jami o'rmonlar barpo etish va qayta tiklash":
+                for j, sub in enumerate(["Reja", "Amalda", "%"], start=1):
+                    status_plan = StatementColumn.PlanStatus.YILLIK if sub == "Reja" else None
+                    StatementColumn.objects.create(
+                        statement=second_statement_of_forest,
+                        parent=parent_col,
+                        title_uz=sub,
+                        title_ru={"Reja": "План", "Amalda": "Факт", "%": "Процент"}[sub],
+                        ordering=f"{ordering_base}.{i}.{j}",
+                        status_plan=status_plan,
+                        is_user_input=(sub == "Reja")  # ✅ faqat Reja user input
+                    )
 
+            # 2️⃣ Oddiy bo‘limlar (gA) → Reja, Amalda
+            elif title_uz in [
+                "O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)",
+                "Himoya o‘rmonzorlarini barpo etish (ga)",
+                "Terassa uslubida o'rmonlar barpo etish (ga)",
+                "Orolbo‘yi mintaqasida yashil qoplama barpo etish (ga)",
+                "Galofit bog‘lar barpo etish (ga)",
+                "Orolning qurigan tubida yashil qoplamalar barpo etish (ga)",
+            ]:
+                for j, sub in enumerate(["Reja", "Amalda"], start=1):
+                    status_plan = StatementColumn.PlanStatus.YILLIK if sub == "Reja" else None
+                    StatementColumn.objects.create(
+                        statement=second_statement_of_forest,
+                        parent=parent_col,
+                        title_uz=sub,
+                        title_ru={"Reja": "План", "Amalda": "Факт"}[sub],
+                        ordering=f"{ordering_base}.{i}.{j}",
+                        status_plan=status_plan,
+                        is_user_input=True  # ✅ ikkalasi ham user input
+                    )
+
+            # 3️⃣ 1-chi Shu jumladan → Yong‘oq, Pista, Bodom
+            elif title_uz == "Shu jumladan" and i == 9:
+                children = ["Yong'oq", "Pista", "Bodom"]
+                children_ru = ["Орех", "Писташка", "Миндаль"]
                 for j, (child_uz, child_ru) in enumerate(zip(children, children_ru), start=1):
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
@@ -207,34 +314,37 @@ class Command(BaseCommand):
                         is_user_input=True
                     )
 
-
-            elif has_subcolumns:
-                for j, sub in enumerate(["Reja", "Amalda", "Foiz"], start=1):
-                    # Plan status
-                    status_plan = None
-                    if sub == "Reja":
-                        if title_uz == "Jami":
-                            status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL
-                        else:
-                            status_plan = StatementColumn.PlanStatus.YILLIK
-                    # is_user_input faqat kerakli hollarda True
-                    if title_uz == "Jami" and sub == "Reja":
-                        is_user_input = True
-                    elif title_uz == "Cho'l" and sub in ["Reja", "Amalda"]:
-                        is_user_input = True
-                    elif title_uz in ["Jami yong'oq mevalar", "Jami tez o'suvchilar"] and sub == "Reja":
-                        is_user_input = True
-                    else:
-                        is_user_input = False
+            # 4️⃣ Jami tez o‘suvchilar → Reja, Amalda, %
+            elif title_uz == "Jami tez o'suvchilar":
+                for j, sub in enumerate(["Reja", "Amalda", "%"], start=1):
+                    status_plan = StatementColumn.PlanStatus.YILLIK if sub == "Reja" else None
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
                         parent=parent_col,
                         title_uz=sub,
-                        title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[sub],
+                        title_ru={"Reja": "План", "Amalda": "Факт", "%": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=is_user_input
+                        is_user_input=(sub in ["Reja", "Amalda"])
                     )
+
+            # 5️⃣ 2-chi Shu jumladan → Tez o‘suvchilar ro‘yxati
+            elif title_uz == "Shu jumladan" and i == 11:
+                children = ["Terak", "Pavloniya", "Qayrag'och", "Shumtol", "Chinar", "Akatsiya", "Boshqa turlar"]
+                children_ru = ["Тополь", "Павлония", "Кайрагач", "Шумтол", "Чинар", "Акация", "Другие виды"]
+                for j, (child_uz, child_ru) in enumerate(zip(children, children_ru), start=1):
+                    StatementColumn.objects.create(
+                        statement=second_statement_of_forest,
+                        parent=parent_col,
+                        title_uz=child_uz,
+                        title_ru=child_ru,
+                        ordering=f"{ordering_base}.{i}.{j}",
+                        is_user_input=True
+                    )
+
+            # 6️⃣ Qolganlar → faqat o‘zlari
+            else:
+                continue
 
         # =========================== 3-Ilova =============================
         third_statement = Statement.objects.create(

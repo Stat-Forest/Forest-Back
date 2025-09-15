@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         # hozirgi vaqtni to‘liq formatda qo‘shamiz
         current_year = timezone.now().strftime("%Y")
-        title_uz = f"{current_year} yil uchun xodimlar to‘g‘risidagi hisobat"
+        title_uz = f"{current_year} yil uchun xodimlar to‘g‘risidagi hisobot"
         title_ru = f"Отчёт о сотрудниках за {current_year} год"
 
         title_col = create_column(

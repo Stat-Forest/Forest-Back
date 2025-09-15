@@ -170,6 +170,9 @@ class Command(BaseCommand):
             "majnutol",
             "tol",
             "Xilokatalpa",
+            "Lavanda",
+            "Atirgul",
+            "Namatak",
             "Boshqa turlar"
         ]
         daraxt_turlari_ru = [
@@ -179,33 +182,22 @@ class Command(BaseCommand):
             "Маджунус",
             "Ива",
             "Гибридная катальпа",
+            "Лаванда",
+            "Роза",
+            "Шиповник",
             "Другие виды"
         ]
 
         for i, (tree_name_uz, tree_name_ru) in enumerate(zip(daraxt_turlari, daraxt_turlari_ru), start=1):
             tree_ordering = f"1.1.3.{i}"
-            tree_column = StatementColumn.objects.create(
+            StatementColumn.objects.create(
                 statement=statement,
                 parent=tree_group_column,
                 title_uz=tree_name_uz,
                 title_ru=tree_name_ru,
                 ordering=tree_ordering
             )
-            StatementColumn.objects.create(
-                statement=statement,
-                parent=tree_column,
-                title_uz="Reja",
-                title_ru="План",
-                ordering=f"{tree_ordering}.1",
-                status_plan=StatementColumn.PlanStatus.YILLIK
-            )
-            StatementColumn.objects.create(
-                statement=statement,
-                parent=tree_column,
-                title_uz="Amalda",
-                title_ru="Факт",
-                ordering=f"{tree_ordering}.2"
-            )
+
 
         # ==========================================================================  Ko‘chat va Nihol
 
