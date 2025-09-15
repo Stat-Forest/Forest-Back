@@ -32,8 +32,8 @@ app.conf.beat_schedule = {
         "task": "apps.reports.tasks.employee_report.update_monthly_employee_reports.update_monthly_statement_columns",
         "schedule": crontab(minute=0, hour=0, day_of_month=1)
     },
-    "update-tushum-report-weekly": {
+    "update-tushum-statement-columns-task": {
         "task": "apps.reports.tasks.employee_report.fund.update_tushum_statement_columns_task",
-        "schedule": crontab(minute=0, hour=0, day_of_week="sunday"),
+        "schedule": crontab(minute=5, hour=0, day_of_month="1,9,17,24"),
     },
 }
