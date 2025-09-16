@@ -1,63 +1,74 @@
-from decimal import Decimal
-from collections import defaultdict
+from decimal import Decimal, InvalidOperation
 
 from apps.reports.models import Report, ReportItem, ReportItemInner
-from apps.reports.report_calculate.forest_create.forest_create_statement import create_calculated_items
+
+
+def safe_decimal(val):
+    try:
+        return Decimal(str(val)) if val is not None else Decimal(0)
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal(0)
 
 
 def calculate_make_pencil(report: Report):
     """
     4-ilova: Qalamchalar tayyorlash bo‘limi hisoboti
-    Daraxt turlarining "Amalda" qiymatlari yig‘ilib, umumiy Amalda ustuniga yoziladi.
-    Reja ustuniga nisbatan Foiz hisoblanadi.
+    1.1.2.2 = 1.1.3.1 + ... + 1.1.3.10
+    1.1.2.3 = (1.1.2.2 / 1.1.2.1) * 100
     """
 
-    # Orderinglar
-    jami_reja_ordering = "1.1.2.1"
-    jami_amalda_ordering = "1.1.2.2"
-    jami_foiz_ordering = "1.1.2.3"
-    tree_base_orderings = [
-        "1.1.3.1.2",  # Terak Amalda
-        "1.1.3.2.2",  # Jiyda Amalda
-        "1.1.3.3.2",  # Chinar Amalda
-        "1.1.3.4.2",  # Majnutol Amalda
-        "1.1.3.5.2",  # Tol Amalda
-        "1.1.3.6.2",  # Xilokatalpa Amalda
-        "1.1.3.7.2",  # Boshqa turlar Amalda
-    ]
+    ordering_reja = "1.1.2.1"
+    ordering_amalda = "1.1.2.2"
+    ordering_foiz = "1.1.2.3"
+    tree_orderings = [f"1.1.3.{i}" for i in range(1, 11)]
 
-    all_needed_orderings = [jami_reja_ordering, jami_foiz_ordering, jami_amalda_ordering] + tree_base_orderings
+    all_orderings = [ordering_reja, ordering_amalda, ordering_foiz] + tree_orderings
 
-    # Barcha kerakli columnlarni topamiz
-    columns = report.statement.columns.prefetch_related("children").all()
-    column_map = {col.ordering: col for col in columns if col.ordering in all_needed_orderings}
+    # Barcha kerakli StatementColumn lar
+    columns = {
+        col.ordering: col for col in report.statement.columns.filter(ordering__in=all_orderings)
+    }
 
-    # Barcha kerakli item va innerlar
-    items = ReportItem.objects.filter(
-        report=report,
-        statement_column__ordering__in=all_needed_orderings
-    ).select_related("statement_column")
-    inners = ReportItemInner.objects.filter(report_item__in=items).select_related(
-        "report_item", "report_item__statement_column"
+    # Barcha mavjud ReportItem lar va ularning innerlari
+    report_items = (
+        ReportItem.objects
+        .filter(report=report, statement_column__ordering__in=all_orderings)
+        .select_related("statement_column")
+        .prefetch_related("inners")
     )
+    item_map = {item.statement_column.ordering: item for item in report_items}
 
-    # Qiymatlarni ordering bo‘yicha to‘plash
-    inner_map = defaultdict(list)
-    for inner in inners:
-        ordering = inner.report_item.statement_column.ordering
-        try:
-            inner_map[ordering].append(Decimal(inner.value))
-        except (ValueError, TypeError):
-            continue
-
+    # Qiymatlarni olish uchun yordamchi
     def get_value(ordering: str) -> Decimal:
-        return sum(inner_map[ordering]) if ordering in inner_map else Decimal(0)
+        item = item_map.get(ordering)
+        if not item:
+            return Decimal(0)
+        return sum(safe_decimal(inner.value) for inner in item.inners.all())
 
-    # Amalda jami
-    total_amalda = sum(get_value(ordering) for ordering in tree_base_orderings)
-    create_calculated_items(report, column_map.get(jami_amalda_ordering), total_amalda)
+    # Amalda = daraxt turlarining jami
+    total_amalda = sum(get_value(ordering) for ordering in tree_orderings)
 
-    # Foiz hisoblash
-    reja = get_value(jami_reja_ordering)
-    foiz = (total_amalda / reja * 100) if reja else Decimal(0)
-    create_calculated_items(report, column_map.get(jami_foiz_ordering), foiz)
+    # Reja
+    total_reja = get_value(ordering_reja)
+
+    # Foiz = (Amalda / Reja) * 100
+    total_foiz = (total_amalda / total_reja * 100) if total_reja else Decimal(0)
+
+    # Yozib qo‘yamiz
+    def save_to_report(ordering: str, value: Decimal):
+        column = columns.get(ordering)
+        if not column:
+            return
+
+        item = item_map.get(ordering)
+        if not item:
+            item = ReportItem.objects.create(report=report, statement_column=column)
+            item_map[ordering] = item
+
+        ReportItemInner.objects.update_or_create(
+            report_item=item,
+            defaults={"value": str(value)}
+        )
+
+    save_to_report(ordering_amalda, total_amalda)
+    save_to_report(ordering_foiz, total_foiz)
