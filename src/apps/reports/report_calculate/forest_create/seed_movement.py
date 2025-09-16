@@ -1,22 +1,15 @@
 from collections import defaultdict
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner
-from apps.reports.report_calculate.forest_create.forest_create_statement import create_calculated_items
 
 
 def calculate_seed_movement(report: Report):
     ordering_map = {
-        "REJA": "1.1.2.1",
-        "AMALDA": "1.1.2.2",
-        "FOIZ": "1.1.2.3",
-
         "YIL_BOSHIGA_QOLDIQ": "1.1.3",
-
         "XOJALIK_JAMI": "1.1.4.1.1.1",
         "XOJALIK_UCHASTKA": "1.1.4.1.1.2",
         "BOSHQADAN_OLINDI": "1.1.4.1.2.1",
         "JAMI_TAYYORLANDI": "1.1.4.1",
-
         "SARFLANDI_JAMI": "1.1.5.1",
         "SARFLANDI_KG_LIST": [
             "1.1.5.1.1.1",
@@ -25,65 +18,107 @@ def calculate_seed_movement(report: Report):
             "1.1.5.1.4.1",
             "1.1.5.1.5.1",
         ],
-
         "OXIRGI_QOLDIQ": "1.1.6",
     }
 
-    # Step 1: Barcha kerakli columnlar va ularning orderinglarini yig‘ib olamiz
+    # === ALL ORDERINGS
     all_orderings = set()
     for val in ordering_map.values():
-        if isinstance(val, list):
-            all_orderings.update(val)
-        else:
-            all_orderings.add(val)
+        all_orderings.update(val if isinstance(val, list) else [val])
 
-    all_columns = report.statement.columns.prefetch_related("children").all()
-    columns_by_ordering = {col.ordering: col for col in all_columns if col.ordering in all_orderings}
+    # === Load statement columns
+    columns = {
+        col.ordering: col for col in
+        report.statement.columns.filter(ordering__in=all_orderings)
+    }
 
-    # Step 2: Kerakli report item innerlarini oldindan olish
-    items = ReportItem.objects.filter(
+    # === Load existing items and their inners
+    report_items = ReportItem.objects.filter(
         report=report,
         statement_column__ordering__in=all_orderings
-    ).select_related("statement_column")
+    ).select_related("statement_column").prefetch_related("inners")
 
-    item_inners = ReportItemInner.objects.filter(
-        report_item__in=items
-    ).select_related("report_item", "report_item__statement_column")
+    item_map = {item.statement_column.ordering: item for item in report_items}
 
-    # Step 3: Innerlarni ordering bo‘yicha guruhlab olamiz
-    inner_map = defaultdict(list)
-    for inner in item_inners:
-        ordering = inner.report_item.statement_column.ordering
-        try:
-            inner_map[ordering].append(Decimal(inner.value))
-        except (ValueError, TypeError):
-            continue
+    inner_values = defaultdict(list)
+    for item in report_items:
+        ordering = item.statement_column.ordering
+        for inner in item.inners.all():
+            try:
+                inner_values[ordering].append(Decimal(inner.value))
+            except:
+                pass
 
-    # Step 4: Foydali funksiya
+    # === Getter
     def get_value(ordering: str | list[str]) -> Decimal:
         if isinstance(ordering, str):
-            return sum(inner_map[ordering])
-        return sum(sum(inner_map[o]) for o in ordering if o in inner_map)
+            return sum(inner_values.get(ordering, []))
+        return sum(sum(inner_values.get(o, [])) for o in ordering)
 
-    # Hisoblashlar
-    reja = get_value(ordering_map["REJA"])
-    amalda = get_value(ordering_map["AMALDA"])
-    foiz = (amalda / reja * 100) if reja else Decimal(0)
-    create_calculated_items(report, columns_by_ordering.get(ordering_map["FOIZ"]), foiz)
-
+    # === Hisoblash
     tayyorlangan_jami = (
-            get_value(ordering_map["XOJALIK_JAMI"]) +
-            get_value(ordering_map["XOJALIK_UCHASTKA"]) +
-            get_value(ordering_map["BOSHQADAN_OLINDI"])
+        get_value(ordering_map["XOJALIK_JAMI"]) +
+        get_value(ordering_map["XOJALIK_UCHASTKA"]) +
+        get_value(ordering_map["BOSHQADAN_OLINDI"])
     )
-    create_calculated_items(report, columns_by_ordering.get(ordering_map["JAMI_TAYYORLANDI"]), tayyorlangan_jami)
-
     sarflangan_jami = get_value(ordering_map["SARFLANDI_KG_LIST"])
-    create_calculated_items(report, columns_by_ordering.get(ordering_map["SARFLANDI_JAMI"]), sarflangan_jami)
-
     oxirgi_qoldiq = (
-            get_value(ordering_map["YIL_BOSHIGA_QOLDIQ"]) +
-            tayyorlangan_jami +
-            sarflangan_jami
+        get_value(ordering_map["YIL_BOSHIGA_QOLDIQ"]) +
+        tayyorlangan_jami -
+        sarflangan_jami
     )
-    create_calculated_items(report, columns_by_ordering.get(ordering_map["OXIRGI_QOLDIQ"]), oxirgi_qoldiq)
+
+    # === Saqlash uchun cache
+    to_create_items = []
+    to_create_inners = []
+    to_update_inners = []
+    cached_values_for_new_items = {}  # ordering: value
+
+    def buffer_value(ordering: str, value: Decimal):
+        column = columns.get(ordering)
+        if not column:
+            return
+
+        report_item = item_map.get(ordering)
+        if report_item:
+            inner = next(iter(report_item.inners.all()), None)
+            if inner:
+                inner.value = str(value)
+                to_update_inners.append(inner)
+            else:
+                to_create_inners.append(ReportItemInner(
+                    report_item=report_item,
+                    value=str(value)
+                ))
+        else:
+            report_item = ReportItem(
+                report=report,
+                statement_column=column
+            )
+            item_map[ordering] = report_item
+            to_create_items.append(report_item)
+            cached_values_for_new_items[ordering] = value  # ⬅️ Saqlab qo‘yamiz
+
+    # Yozishlar
+    buffer_value(ordering_map["JAMI_TAYYORLANDI"], tayyorlangan_jami)
+    buffer_value(ordering_map["SARFLANDI_JAMI"], sarflangan_jami)
+    buffer_value(ordering_map["OXIRGI_QOLDIQ"], oxirgi_qoldiq)
+
+    # === Save block
+    if to_create_items:
+        ReportItem.objects.bulk_create(to_create_items)
+
+        # assign va inner create
+        for item in to_create_items:
+            ordering = item.statement_column.ordering
+            real_value = cached_values_for_new_items.get(ordering, Decimal(0))
+            to_create_inners.append(ReportItemInner(
+                report_item=item,
+                value=str(real_value)
+            ))
+
+    if to_create_inners:
+        ReportItemInner.objects.bulk_create(to_create_inners)
+
+    if to_update_inners:
+        ReportItemInner.objects.bulk_update(to_update_inners, ["value"])
