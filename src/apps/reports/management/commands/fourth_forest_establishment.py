@@ -116,8 +116,8 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.2.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK,
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -157,7 +157,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.1.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            status_plan=StatementColumn.PlanStatus.YILLIK,
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -172,6 +172,7 @@ class Command(BaseCommand):
             title_uz="Foiz",
             title_ru="Процент",
             ordering="1.1.3.1.3",
+            is_user_input=False
         )
 
         kochatxona_2 = StatementColumn.objects.create(
@@ -187,7 +188,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.2.1",
-            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            status_plan=StatementColumn.PlanStatus.YILLIK,
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -202,9 +203,8 @@ class Command(BaseCommand):
             title_uz="Foiz",
             title_ru="Процент",
             ordering="1.1.3.2.3",
+            is_user_input=False
         )
-
-
 
 # ===================================== Tut Ko`chat va Tut Nihol ===========================================
 
@@ -246,7 +246,7 @@ class Command(BaseCommand):
             title_ru="План",
             ordering="1.1.2.1",
             status_plan=StatementColumn.PlanStatus.YILLIK,
-            is_user_input=False
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=second_statement,
@@ -327,7 +327,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3",
-            is_user_input=False
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=brusanetta_statement,
@@ -335,7 +335,8 @@ class Command(BaseCommand):
             title_uz="Maydoni (gektar)",
             title_ru="Площадь (га)",
             ordering="1.1.3.1",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=brusanetta_statement,
@@ -343,7 +344,8 @@ class Command(BaseCommand):
             title_uz="Ekiladigan ko'chatlar soni (maydon)",
             title_ru="Количество высаживаемых саженцев (площадь)",
             ordering="1.1.3.2",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
 
         practise_column = StatementColumn.objects.create(
@@ -358,16 +360,14 @@ class Command(BaseCommand):
             parent=practise_column,
             title_uz="Maydoni (gektar)",
             title_ru="Площадь (га)",
-            ordering="1.1.4.1",
-            is_user_input=False
+            ordering="1.1.4.1"
         )
         StatementColumn.objects.create(
             statement=brusanetta_statement,
             parent=practise_column,
             title_uz="Ekiladigan ko'chatlar soni (maydon)",
             title_ru="Количество высаживаемых саженцев (площадь)",
-            ordering="1.1.4.2",
-            is_user_input=False
+            ordering="1.1.4.2"
         )
 
 # ====================================== Og'ir Mahalla ===============================
@@ -398,44 +398,37 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=high_region_statement,
             parent=title_column_4,
-            title_uz="Tuman shahar nomi",
+            title_uz="Tuman shahar nomi, MFY",
             title_ru="Название города района",
             ordering="1.1.2"
         )
         StatementColumn.objects.create(
             statement=high_region_statement,
             parent=title_column_4,
-            title_uz="Og'ir toifadagi mahallalar noni",
+            title_uz="Og'ir toifadagi mahallalar nomi",
             title_ru="Количество районов с интенсивной застройкой",
             ordering="1.1.3"
         )
         StatementColumn.objects.create(
             statement=high_region_statement,
             parent=title_column_4,
-            title_uz="O'rmon xo'jaliklari nomi",
-            title_ru="Название лесничества",
-            ordering="1.1.4"
-        )
-        StatementColumn.objects.create(
-            statement=high_region_statement,
-            parent=title_column_4,
             title_uz="Yetkazib beriladigan ko'chatlar soni (dona)",
             title_ru="Количество поставляемых саженцев (шт.)",
-            ordering="1.1.5"
+            ordering="1.1.4"
         )
         StatementColumn.objects.create(
             statement=high_region_statement,
             parent=title_column_4,
             title_uz="Amalda yetkazib berildi",
             title_ru="Практически доставлено",
-            ordering="1.1.6"
+            ordering="1.1.5"
         )
         StatementColumn.objects.create(
             statement=high_region_statement,
             parent=title_column_4,
             title_uz="%",
             title_ru="%",
-            ordering="1.1.7",
+            ordering="1.1.6",
             is_user_input=False
         )
 
@@ -484,7 +477,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.1",
-            is_user_input=False
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=healthy_statement,
@@ -492,7 +485,8 @@ class Command(BaseCommand):
             title_uz="Jami",
             title_ru="Общий",
             ordering="1.1.3.1.1",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=healthy_statement,
@@ -500,7 +494,8 @@ class Command(BaseCommand):
             title_uz="Manzaralilar",
             title_ru="Живописные",
             ordering="1.1.3.1.2",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=healthy_statement,
@@ -508,7 +503,8 @@ class Command(BaseCommand):
             title_uz="Mevalilar",
             title_ru="Фрукты",
             ordering="1.1.3.1.3",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
 
         practise_health_column = StatementColumn.objects.create(
@@ -598,7 +594,6 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.1",
-            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=education_statement,
@@ -606,7 +601,8 @@ class Command(BaseCommand):
             title_uz="Jami",
             title_ru="Общий",
             ordering="1.1.3.1.1",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=education_statement,
@@ -614,7 +610,8 @@ class Command(BaseCommand):
             title_uz="Manzaralilar",
             title_ru="Живописные",
             ordering="1.1.3.1.2",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
         StatementColumn.objects.create(
             statement=education_statement,
@@ -622,7 +619,8 @@ class Command(BaseCommand):
             title_uz="Mevalilar",
             title_ru="Фрукты",
             ordering="1.1.3.1.3",
-            is_user_input=False
+            status_plan=StatementColumn.PlanStatus.YILLIK,
+            is_user_input=True
         )
 
         practise_health_column_3 = StatementColumn.objects.create(
@@ -663,6 +661,7 @@ class Command(BaseCommand):
             ordering="1.1.3.3",
             is_user_input=False
         )
+
 # ==============================  Yashil makonga Ko`chat yetkazib berish ====================================
         new_app_column_6 = StatementColumn.objects.create(
             statement=green_place_statement,
@@ -694,7 +693,6 @@ class Command(BaseCommand):
             title_uz="Jami yetkazib berilgan ko'chatlar soni",
             title_ru="Общее количество поставленных саженцев",
             ordering="1.1.2",
-            is_user_input=False
         )
 
         StatementColumn.objects.create(
@@ -703,7 +701,6 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.2.1",
-            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
@@ -735,7 +732,6 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.1",
-            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
@@ -766,7 +762,6 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.4.1",
-            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
@@ -812,7 +807,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=terassa_statement,
             parent=title_column_8,
-            title_uz="O'rmon xo'jaliklari nomi",
+            title_uz="Tumanlar nomi",
             title_ru="Наименование лесных хозяйств",
             ordering="1.1.2"
         )
@@ -822,7 +817,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3",
-            status_plan=StatementColumn.PlanStatus.CHORAK_1
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
 
         StatementColumn.objects.create(
@@ -837,7 +832,8 @@ class Command(BaseCommand):
             parent=title_column_8,
             title_uz="%",
             title_ru="%",
-            ordering="1.1.5"
+            ordering="1.1.5",
+            is_user_input=False
         )
 
 # ======================== Golofit =========================
@@ -848,7 +844,7 @@ class Command(BaseCommand):
             ordering="1"
         )
 
-        StatementColumn.objects.create(
+        title_column_9 = StatementColumn.objects.create(
             statement=golofit_statement,
             parent=new_app_column_8,
             title_uz="2025-yilda galofit bog‘lar barpo etish to‘g‘risida ma’lumot",
@@ -857,7 +853,7 @@ class Command(BaseCommand):
         )
         StatementColumn.objects.create(
             statement=golofit_statement,
-            parent=new_app_column_8,
+            parent=title_column_9,
             title_uz="Tashkilot nomi",
             title_ru="Названия регионов",
             ordering="1.1.1",
@@ -865,32 +861,33 @@ class Command(BaseCommand):
         )
         StatementColumn.objects.create(
             statement=golofit_statement,
-            parent=new_app_column_8,
-            title_uz="O'rmon xo'jaliklari nomi",
+            parent=title_column_9,
+            title_uz="Tumanlar nomi",
             title_ru="Наименование лесных хозяйств",
             ordering="1.1.2"
         )
         StatementColumn.objects.create(
             statement=golofit_statement,
-            parent=new_app_column_8,
+            parent=title_column_9,
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3",
-            status_plan=StatementColumn.PlanStatus.CHORAK_1
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
         StatementColumn.objects.create(
             statement=golofit_statement,
-            parent=new_app_column_8,
+            parent=title_column_9,
             title_uz="Amalda",
             title_ru="Факт",
             ordering="1.1.4"
         )
         StatementColumn.objects.create(
             statement=golofit_statement,
-            parent=new_app_column_8,
+            parent=title_column_9,
             title_uz="%",
             title_ru="%",
-            ordering="1.1.5"
+            ordering="1.1.5",
+            is_user_input=False
         )
 
         self.stdout.write(self.style.SUCCESS("✅ Успешно создано 'Детский сад и ясли' statement."))

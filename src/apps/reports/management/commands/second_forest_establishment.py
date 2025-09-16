@@ -144,7 +144,7 @@ class Command(BaseCommand):
             title_uz="Amalda",
             title_ru="Факт",
             ordering="1.1.2.2",
-            is_user_input=True
+            is_user_input=False
         )
         StatementColumn.objects.create(
             statement=statement,
@@ -231,49 +231,6 @@ class Command(BaseCommand):
             ordering="3.1.1",
             is_organization=True
         )
-
-        # jami = StatementColumn.objects.create(
-        #     statement=third_statement,
-        #     parent=title_column_2,
-        #     title_uz="Jami niholxona va ko‘chatxonalar tashkil etish (ga)",
-        #     title_ru="Всего создание питомников и теплиц (га)",
-        #     ordering="3.1.2"
-        # )
-        # StatementColumn.objects.create(
-        #     statement=third_statement,
-        #     parent=jami,
-        #     title_uz="Reja",
-        #     title_ru="План",
-        #     ordering="3.1.2.1",
-        #     status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL,
-        #     is_user_input=False
-        # )
-        # StatementColumn.objects.create(
-        #     statement=third_statement,
-        #     parent=jami,
-        #     title_uz="Amalda",
-        #     title_ru="Факт",
-        #     ordering="3.1.2.2",
-        #     is_user_input=False
-        # )
-        # StatementColumn.objects.create(
-        #     statement=third_statement,
-        #     parent=jami,
-        #     title_uz="Foiz",
-        #     title_ru="Процент",
-        #     ordering="3.1.2.3",
-        #     is_user_input=False
-        # )
-        #
-        # subgroup = StatementColumn.objects.create(
-        #     statement=third_statement,
-        #     parent=jami,
-        #     title_uz="shundan",
-        #     title_ru="в том числе",
-        #     ordering="3.1.2.4"
-        # )
-        #
-        # generate_tree_columns(third_statement, subgroup, "3.1.2.4")
 
         generate_grouped_subtree(
             third_statement,

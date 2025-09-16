@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
         rows = [
             ("Yirik hajmli yopiq ildizli ko'chatlar yetishtirish miqdori",
-             "Количество выращивания крупногабаритных саженцев с закрытым корнем", False, "YILLIK_TOTAL"),
+             "Количество выращивания крупногабаритных саженцев с закрытым корнем", False, "YILLIK"),
 
             # Yaproqbarglilar
             ("bagrannik", "багрянник", True, "YILLIK"),
@@ -88,9 +88,6 @@ class Command(BaseCommand):
             ("lola daraxti", "лола дарахти", True, "YILLIK"),
 
             # Tez o‘suvchilar
-            ("terak", "терак", True, "YILLIK"),
-            ("tol (iva)", "тол (ива)", True, "YILLIK"),
-            ("majnuntol", "мажнунтол", True, "YILLIK"),
             ("pavlovniya", "павловния", True, "YILLIK"),
 
             # Yong‘oqmevalilar
@@ -171,7 +168,7 @@ class Command(BaseCommand):
                 title_uz=title_uz,
                 title_ru=title_ru,
                 ordering=parent_ordering,
-                is_user_input=False
+                is_user_input=has_children
             )
 
             if title_uz == "Yirik hajmli yopiq ildizli ko'chatlar yetishtirish miqdori":
@@ -179,12 +176,10 @@ class Command(BaseCommand):
                     sub_ordering = f"{parent_ordering}.{i}"
 
                     status_plan = (
-                        StatementColumn.PlanStatus.YILLIK_TOTAL
-                        if plan_status == "YILLIK_TOTAL" and sub == "Reja"
+                        StatementColumn.PlanStatus.YILLIK
+                        if plan_status == "YILLIK" and sub == "Reja"
                         else None
                     )
-
-                    is_user_input = False
 
                     StatementColumn.objects.create(
                         statement=first_of_second_statement,
@@ -193,7 +188,7 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "%"}[sub],
                         ordering=sub_ordering,
                         status_plan=status_plan,
-                        is_user_input=is_user_input
+                        is_user_input=(sub in ["Reja", "%"])
                     )
 
         # ================================================================ Закрытый корень крупногабаритный
@@ -236,22 +231,19 @@ class Command(BaseCommand):
             ("O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)",
              "Создание и восстановление лесов (зеленых покровов) (га)", True),
             ("Himoya o‘rmonzorlarini barpo etish (ga)", "Создание защитных лесов (га)", True),
-            ("Terassa uslubida o'rmonlar barpo etish (ga)", "Террасные лесные насаждения (га)", True),
             ("Orolbo‘yi mintaqasida yashil qoplama barpo etish (ga)", "Создание зеленого покрова в Приаралье (га)",
              True),
-            ("Galofit bog‘lar barpo etish (ga)", "Создание галофитных садов (га)", True),
             ("Orolning qurigan tubida yashil qoplamalar barpo etish (ga)",
              "Создание зеленого покрова на сухом дне острова (га)", True),
 
             ("Jami yong‘oq-mevalilar", "Всего орехов и фруктов", False),
-            ("Shu jumladan", "Включая", False),
+            ("Shu jumladan (yong‘oq-mevalilar)", "Включая (ореховые)", True),
 
             ("Jami tez o'suvchilar", "Итого быстрорастущие", True),
-            ("Shu jumladan", "Включая", False),
+            ("Shu jumladan (tez o‘suvchilar)", "Включая (быстрорастущие)", True),
 
-            ("Boshqa turlar", "Другие типы", False),
             ("Tabiiy tiklanishga ko'maklashish va boshqa daraxt turlaridan ekish",
-             "Помощь в естественном восстановлении и посадка других видов деревьев", False),
+             "Помощь в естественном восстановлении и посадка других видов деревьев", True),
         ]
 
         ordering_base = "1.1"
@@ -262,7 +254,8 @@ class Command(BaseCommand):
                 parent=second_ilova_title,
                 title_uz=title_uz,
                 title_ru=title_ru,
-                ordering=f"{ordering_base}.{i}"
+                ordering=f"{ordering_base}.{i}",
+                is_user_input=False if title_uz == "Jami yong‘oq-mevalilar" else has_subcolumns
             )
 
             # 1️⃣ Jami o‘rmonlar → Reja, Amalda, %
@@ -276,16 +269,14 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=(sub == "Reja")  # ✅ faqat Reja user input
+                        is_user_input=(sub == "Reja")
                     )
 
             # 2️⃣ Oddiy bo‘limlar (gA) → Reja, Amalda
             elif title_uz in [
                 "O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)",
                 "Himoya o‘rmonzorlarini barpo etish (ga)",
-                "Terassa uslubida o'rmonlar barpo etish (ga)",
                 "Orolbo‘yi mintaqasida yashil qoplama barpo etish (ga)",
-                "Galofit bog‘lar barpo etish (ga)",
                 "Orolning qurigan tubida yashil qoplamalar barpo etish (ga)",
             ]:
                 for j, sub in enumerate(["Reja", "Amalda"], start=1):
@@ -297,11 +288,11 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=True  # ✅ ikkalasi ham user input
+                        is_user_input=True
                     )
 
-            # 3️⃣ 1-chi Shu jumladan → Yong‘oq, Pista, Bodom
-            elif title_uz == "Shu jumladan" and i == 9:
+            # 3️⃣ Shu jumladan (yong‘oq-mevalilar)
+            elif title_uz.startswith("Shu jumladan (yong‘oq-mevalilar)"):
                 children = ["Yong'oq", "Pista", "Bodom"]
                 children_ru = ["Орех", "Писташка", "Миндаль"]
                 for j, (child_uz, child_ru) in enumerate(zip(children, children_ru), start=1):
@@ -325,11 +316,11 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=(sub in ["Reja", "Amalda"])
+                        is_user_input=(sub in ["Reja"])
                     )
 
-            # 5️⃣ 2-chi Shu jumladan → Tez o‘suvchilar ro‘yxati
-            elif title_uz == "Shu jumladan" and i == 11:
+            # 5️⃣ Shu jumladan (tez o‘suvchilar)
+            elif title_uz.startswith("Shu jumladan (tez o‘suvchilar)"):
                 children = ["Terak", "Pavloniya", "Qayrag'och", "Shumtol", "Chinar", "Akatsiya", "Boshqa turlar"]
                 children_ru = ["Тополь", "Павлония", "Кайрагач", "Шумтол", "Чинар", "Акация", "Другие виды"]
                 for j, (child_uz, child_ru) in enumerate(zip(children, children_ru), start=1):
@@ -342,9 +333,58 @@ class Command(BaseCommand):
                         is_user_input=True
                     )
 
-            # 6️⃣ Qolganlar → faqat o‘zlari
-            else:
-                continue
+        # ==========================  Urug` xarakati Jami    =============================
+        urug_statement = Statement.objects.create(
+            parent=first_statement,
+            name_uz="Urug' xarakati Reja",
+            name_ru="План движения семян",
+            period=PeriodChoices.KUNLIK
+        )
+
+        app_column_1 = StatementColumn.objects.create(
+            statement=urug_statement,
+            title_uz="1-ilova",
+            title_ru="Приложение 1",
+            ordering="1"
+        )
+
+        title_column_1 = StatementColumn.objects.create(
+            statement=urug_statement,
+            parent=app_column_1,
+            title_uz=f"O‘rmon xo‘jaligi agentligi tizimidagi o‘rmon xo‘jaliklari tomonidan {current_year}-yilda"
+                     " tayyorlanadigan urug‘larni turlari bo‘yicha prognoz ko‘rsatgichlari (kilogramm)",
+            title_ru=f"Прогнозные показатели по видам семян, заготавливаемых лесными хозяйствами в системе"
+                     f" Агентства по лесному хозяйству в {current_year} году (в килограммах)",
+            ordering="1.1"
+        )
+
+        StatementColumn.objects.create(
+            statement=urug_statement,
+            parent=title_column_1,
+            title_uz="Tashkilot nomi",
+            title_ru="Название организации",
+            ordering="1.1.1",
+            is_organization=True
+        )
+
+        parent = StatementColumn.objects.create(
+            statement=urug_statement,
+            parent=title_column_1,
+            title_uz="Urug' jamg'arish miqdori",
+            title_ru="Объем сбора семян",
+            ordering="1.1.2"
+        )
+        for i, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+            StatementColumn.objects.create(
+                statement=urug_statement,
+                parent=parent,
+                title_uz=title,
+                title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
+                ordering=f"1.1.2.{i}",
+                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
+                is_user_input=title in ("Reja", "Amalda") or title_ru in ("План", "Факт")
+            )
+
 
         # =========================== 3-Ilova =============================
         third_statement = Statement.objects.create(
@@ -377,24 +417,6 @@ class Command(BaseCommand):
             ordering="1.1.1",
             is_organization=True
         )
-
-        parent = StatementColumn.objects.create(
-            statement=third_statement,
-            parent=third_ilova_title,
-            title_uz="Urug' jamg'arish miqdori",
-            title_ru="Объем сбора семян",
-            ordering="1.1.2"
-        )
-        for i, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
-            StatementColumn.objects.create(
-                statement=third_statement,
-                parent=parent,
-                title_uz=title,
-                title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
-                ordering=f"1.1.2.{i}",
-                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
-                is_user_input=title in ("Reja", "Amalda") or title_ru in ("План", "Факт")
-            )
 
         StatementColumn.objects.create(
             statement=third_statement,
