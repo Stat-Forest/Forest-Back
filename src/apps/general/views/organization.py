@@ -7,6 +7,7 @@ from apps.base.views import CustomListAPIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.serializers import OrganizationListSerializer
 
+
 @extend_schema(tags=["General"])
 class OrganizationListAPIView(CustomListAPIView):
     serializer_class = OrganizationListSerializer
@@ -23,9 +24,9 @@ class OrganizationListAPIView(CustomListAPIView):
         user = self.request.user
 
         if hasattr(user, 'organization') and user.organization is not None:
-            return Organization.objects.filter(id=user.organization.id)
+            return Organization.objects.filter(id=user.organization.id).order_by("name")
         else:
-            return Organization.objects.all()
+            return Organization.objects.all().order_by("name")
 
     def list(self, request, *args, **kwargs):
         cache_key = self.get_cache_key(request)
