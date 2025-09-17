@@ -26,12 +26,15 @@ class ReportListAPIView(CustomListAPIView):
     queryset = Report.objects.select_related(
         'organization',
         'statement',
+        'statement__parent',
         'deadline',
+        'sent_by',
+        'sent_by_org'
     ).prefetch_related(
         Prefetch(
             'report_items',
             queryset=ReportItem.objects
-            .select_related('plant', 'statement_column')
+            .select_related('plant', 'statement_column', 'statement_column__parent')
             .prefetch_related("inners")
         )
     ).filter(
