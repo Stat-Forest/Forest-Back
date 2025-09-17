@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.validators import FileExtensionValidator
 
 from apps.utils.services import PeriodChoices
 from apps.base.models import AbstractBaseModel
