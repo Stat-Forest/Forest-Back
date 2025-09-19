@@ -261,7 +261,7 @@ class Command(BaseCommand):
             # 1️⃣ Jami o‘rmonlar → Reja, Amalda, %
             if title_uz == "Jami o'rmonlar barpo etish va qayta tiklash":
                 for j, sub in enumerate(["Reja", "Amalda", "%"], start=1):
-                    status_plan = StatementColumn.PlanStatus.YILLIK if sub == "Reja" else None
+                    status_plan = StatementColumn.PlanStatus.YILLIK_TOTAL if sub == "Reja" else None
                     StatementColumn.objects.create(
                         statement=second_statement_of_forest,
                         parent=parent_col,
@@ -382,7 +382,7 @@ class Command(BaseCommand):
                 title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
                 ordering=f"1.1.2.{i}",
                 status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
-                is_user_input=title in ("Reja", "Amalda") or title_ru in ("План", "Факт")
+                is_user_input=title in ("Reja") or title_ru in ("План")
             )
 
 
