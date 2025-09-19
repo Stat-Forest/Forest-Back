@@ -21,13 +21,12 @@ class Deadline(AbstractBaseModel):
     submit_at = models.CharField(
         max_length=100,
         help_text=_(
-           f'Kunlik-YYYY-MM-DD , '
-           f'Haftalik -YYYY-MM-W(1,2,3,4), '
-           f'Oylik -YYYY-MM, '
-           f'Choraklik-YYYY-Qx(Q1,Q2,Q3,Q4)'
-           f'Yillik-YYYY'
+            'Kunlik - YYYY-MM-DD, '
+            'Haftalik - YYYY-MM-HAFTALIK_1 / HAFTALIK_2 / HAFTALIK_3 / HAFTALIK_4, '
+            'Oylik - YYYY-MM, '
+            'Choraklik - YYYY-CHORAK_1 / CHORAK_2 / CHORAK_3 / CHORAK_4, '
+            'Yillik - YYYY'
         )
-
     )
 
     def __str__(self):
