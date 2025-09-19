@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 from django import forms
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
@@ -63,16 +64,10 @@ class DeadlineAdminForm(forms.ModelForm):
 
         # === WEEKLY ===
         elif period == 'weekly':
-            if (
-                    len(submission_at) != 10 or
-                    not submission_at[:4].isdigit() or
-                    submission_at[4] != '-' or
-                    not submission_at[5:7].isdigit() or
-                    submission_at[7] != '-' or
-                    submission_at[8] != 'W' or
-                    not submission_at[9].isdigit()
-            ):
-                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-Wx format"))
+            # Kutilyotgan format: YYYY-MM-HAFTALIK_x (x=1..4)
+            pattern = r'^\d{4}-\d{2}-HAFTALIK_[1-4]$'
+            if not re.match(pattern, submission_at):
+                raise forms.ValidationError(_("Invalid week format. Please use the YYYY-MM-HAFTALIK_x format"))
 
         # === MONTHLY ===
         elif period == 'monthly':
@@ -83,14 +78,10 @@ class DeadlineAdminForm(forms.ModelForm):
 
         # === QUARTERLY ===
         elif period == 'quarterly':
-            if (
-                    len(submission_at) != 7 or
-                    not submission_at[:4].isdigit() or
-                    submission_at[4] != '-' or
-                    submission_at[5] != 'Q' or
-                    submission_at[6] not in ['1', '2', '3', '4']
-            ):
-                raise forms.ValidationError(_("Invalid quarter format. Please use the YYYY-Qx format"))
+            # Kutilyotgan format: YYYY-CHORAK_x (x=1..4)
+            pattern = r'^\d{4}-CHORAK_[1-4]$'
+            if not re.match(pattern, submission_at):
+                raise forms.ValidationError(_("Invalid quarter format. Please use the YYYY-CHORAK_x format"))
 
         # === YEARLY ===
         elif period == 'yearly':
