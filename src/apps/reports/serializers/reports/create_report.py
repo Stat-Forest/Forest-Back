@@ -47,7 +47,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         organization = user.organization
 
-        # 1. Duplicated reportni tekshir (eski kod)
+        # 1. Duplicated reportni tekshir
         if not is_individual_general:
             exists = Report.objects.filter(
                 organization=organization,
@@ -73,7 +73,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             adjusted_dom = day.day + first_day.weekday()
             return (adjusted_dom - 1) // 7 + 1
 
-        # 4. Deadline vaqt tekshiruvi (kunlik, haftalik, oylik, choraklik, yillik)
+        # 4. Deadline vaqt tekshiruvi
         today = date.today()
         submit_at = deadline.submit_at
 
@@ -81,38 +81,54 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             report_day = date.fromisoformat(submit_at)
             if report_day >= today:
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past days.')})
+
         elif statement.period == PeriodChoices.HAFTALIK:
-            try:
-                year, month, week_str = submit_at.split('-')
-                year = int(year)
-                month = int(month)
-                week = int(week_str.lstrip('W'))
-            except (ValueError, AttributeError):
-                raise CustomExceptionError(400, {'submit_at': _('Invalid weekly format. Must be YYYY-MM-Wn')})
+            # Kutilyotgan format: YYYY-MM-HAFTALIK_x
+            import re
+            match = re.match(r'^(?P<year>\d{4})-(?P<month>\d{2})-HAFTALIK_(?P<week>[1-4])$', submit_at)
+            if not match:
+                raise CustomExceptionError(400, {'submit_at': _('Invalid weekly format. Must be YYYY-MM-HAFTALIK_x')})
+
+            year = int(match.group('year'))
+            month = int(match.group('month'))
+            week = int(match.group('week'))
 
             if year > today.year or (year == today.year and month > today.month):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
             if year == today.year and month == today.month and week >= get_week_of_month(today):
-                raise CustomExceptionError(400, {'submit_at': ['You can only submit for past weeks.']})
+                raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
+
         elif statement.period == PeriodChoices.OYLIK:
             year, month = map(int, submit_at.split('-'))
             if year > today.year or (year == today.year and month >= today.month):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past months.')})
+
         elif statement.period == PeriodChoices.CHORAKLIK:
-            year, quarter = int(submit_at[:4]), int(submit_at[-1])
+            # Kutilyotgan format: YYYY-CHORAK_x
+            import re
+            match = re.match(r'^(?P<year>\d{4})-CHORAK_(?P<quarter>[1-4])$', submit_at)
+            if not match:
+                raise CustomExceptionError(400, {'submit_at': _('Invalid quarterly format. Must be YYYY-CHORAK_x')})
+
+            year = int(match.group('year'))
+            quarter = int(match.group('quarter'))
             current_quarter = (today.month - 1) // 3 + 1
             if year > today.year or (year == today.year and quarter >= current_quarter):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past quarters.')})
+
         elif statement.period == PeriodChoices.YILLIK:
             year = int(submit_at)
             if year >= today.year:
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past years.')})
-        # 5. Report allaqachon mavjudmi? (ikkinchi tekshiruv)
-        if Report.objects.filter(organization=user.organization,
-                                 statement=statement,
-                                 deadline=deadline,
-                                 is_individual_general=False,
-                                 is_report=True).exists():
+
+        # 5. Report allaqachon mavjudmi?
+        if Report.objects.filter(
+                organization=user.organization,
+                statement=statement,
+                deadline=deadline,
+                is_individual_general=False,
+                is_report=True
+        ).exists():
             raise CustomExceptionError(400, {'report': _('This report already exists.')})
 
         return attrs
