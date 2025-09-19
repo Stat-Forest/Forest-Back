@@ -341,7 +341,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=brusanetta_statement,
             parent=plan_column,
-            title_uz="Ekiladigan ko'chatlar soni (maydon)",
+            title_uz="Ekiladigan ko'chatlar soni",
             title_ru="Количество высаживаемых саженцев (площадь)",
             ordering="1.1.3.2",
             status_plan=StatementColumn.PlanStatus.YILLIK,
@@ -365,7 +365,7 @@ class Command(BaseCommand):
         StatementColumn.objects.create(
             statement=brusanetta_statement,
             parent=practise_column,
-            title_uz="Ekiladigan ko'chatlar soni (maydon)",
+            title_uz="Ekiladigan ko'chatlar soni",
             title_ru="Количество высаживаемых саженцев (площадь)",
             ordering="1.1.4.2"
         )
@@ -414,7 +414,8 @@ class Command(BaseCommand):
             parent=title_column_4,
             title_uz="Yetkazib beriladigan ko'chatlar soni (dona)",
             title_ru="Количество поставляемых саженцев (шт.)",
-            ordering="1.1.4"
+            ordering="1.1.4",
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
         StatementColumn.objects.create(
             statement=high_region_statement,
@@ -701,6 +702,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.2.1",
+            status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
@@ -732,6 +734,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.3.1",
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
@@ -762,6 +765,7 @@ class Command(BaseCommand):
             title_uz="Reja",
             title_ru="План",
             ordering="1.1.4.1",
+            status_plan=StatementColumn.PlanStatus.YILLIK
         )
         StatementColumn.objects.create(
             statement=green_place_statement,
