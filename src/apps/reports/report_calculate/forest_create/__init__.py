@@ -1,3 +1,4 @@
+from apps.reports.report_calculate.forest_create.calculate_seed_general import calculate_seed_plants
 from apps.reports.report_calculate.forest_create.catch_seed import calculate_catch_seed
 from apps.reports.report_calculate.forest_create.education_seed import calculate_education_seed
 from apps.reports.report_calculate.forest_create.forest_large_volume import calculate_large_volume
@@ -23,6 +24,7 @@ calculators = {
     "Sotish uchun yaroqli ko‘chatlar": calculate_sale_seedlings,
     "Ko‘chat va Nihol": calculate_seedlings,
     "Tut Ko'chat va Tut Nihol": calculate_catch_seed,
+    "Ko'chatxona va Niholxona Jami": calculate_seed_plants,
     "Og'ir mahalla": calculate_heavy_neighborhood,
     "Sog'liqni saqlash": calculate_save_healthy,
     "Talim muassasalariga yetkazib berilgan ko'chatlar": calculate_education_seed,
