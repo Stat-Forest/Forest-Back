@@ -1,5 +1,6 @@
 from decimal import Decimal
 from apps.reports.models import ReportItem, Report, ReportItemInner
+from apps.reports.report_calculate.additional_use_forests.k_x_svod import calculate_kxsvod
 
 
 def calculate_qishloq_xojaligi(report: Report):
@@ -84,6 +85,8 @@ def calculate_qishloq_xojaligi(report: Report):
             "7.1.3.1", "7.1.3.2", "7.1.3.3"
         ]
     )
+    # ==================== K-X SVOD(9-ilova) ====================
+    calculate_kxsvod(report, columns)
 
 def calculate_ilova(report, columns, parent_ordering: str, crop_orderings: list[str]):
     """

@@ -587,7 +587,6 @@ class Command(BaseCommand):
             title_uz="Yetkazib beriladigan daraxt ba butalar ko'chatlari miqdori, dona",
             title_ru="Количество поставляемых саженцев деревьев и кустарников, шт.",
             ordering="1.1.3",
-            is_user_input=False
         )
         plan_health_column_2 = StatementColumn.objects.create(
             statement=education_statement,
