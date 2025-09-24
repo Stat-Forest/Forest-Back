@@ -168,6 +168,9 @@ class PlanSerializer(serializers.ModelSerializer):
         # 4️⃣ Faqat yillik yuborilgan bo‘lsa → yillik_total
         elif yearly_values:
             total_value = sum(yearly_values.values())
+            yearly_total_col = StatementColumn.objects.filter(
+                statement=statement, status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+            ).first()
             if yearly_total_col:
                 PlanItem.objects.update_or_create(
                     plan=plan, column=yearly_total_col, defaults={"plan_value": total_value}
