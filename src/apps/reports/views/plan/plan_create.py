@@ -85,7 +85,7 @@ class PlanListAPIView(generics.ListAPIView):
         if hasattr(user, 'statement') and user.statement is not None:
             qs = qs.filter(statement__parent_id=user.statement.id)
 
-        return qs
+        return qs.order_by("-created_at")
 
     def get_serializer_context(self):
         """
