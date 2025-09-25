@@ -20,7 +20,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class StatementLightSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     parent_name = serializers.SerializerMethodField()
-    period = serializers.SerializerMethodField()  # <-- qo‘shildi
+    period = serializers.SerializerMethodField()
 
     class Meta:
         model = Statement
@@ -35,8 +35,7 @@ class StatementLightSerializer(serializers.ModelSerializer):
         return get_translated_field(obj.parent, "name", lang) if obj.parent else None
 
     def get_period(self, obj):
-        # Har doim uz qaytadi
-        return get_translated_field(obj, "period", "uz")
+        return obj.get_period_display()
 
 
 class DeadlineSerializer(serializers.ModelSerializer):
