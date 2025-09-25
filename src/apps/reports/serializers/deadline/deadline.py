@@ -20,6 +20,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class StatementLightSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     parent_name = serializers.SerializerMethodField()
+    period = serializers.SerializerMethodField()  # <-- qo‘shildi
 
     class Meta:
         model = Statement
@@ -32,6 +33,11 @@ class StatementLightSerializer(serializers.ModelSerializer):
     def get_parent_name(self, obj):
         lang = get_lang_code(self.context)
         return get_translated_field(obj.parent, "name", lang) if obj.parent else None
+
+    def get_period(self, obj):
+        # Har doim uz qaytadi
+        return get_translated_field(obj, "period", "uz")
+
 
 class DeadlineSerializer(serializers.ModelSerializer):
     organizations = OrganizationSerializer(many=True, read_only=True)
