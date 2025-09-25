@@ -3,22 +3,31 @@ from django_filters import rest_framework as filters
 from apps.users.models import CustomUser
 from apps.general.models import Organization
 from apps.utils.services import RegionChoices
+from apps.users.serializers import UserListSerializer
 
 
 class CustomUserFilter(filters.FilterSet):
-    organization__name = filters.ModelChoiceFilter(
+    # Organization bo‘yicha filter (id orqali)
+    organization = filters.ModelChoiceFilter(
         field_name="organization",
         queryset=Organization.objects.all(),
-        to_field_name="name",
-        label="Organization Name"
+        label="Organization"
     )
 
+    # Organization region bo‘yicha filter
     organization__region = filters.ChoiceFilter(
         field_name="organization__region",
         choices=RegionChoices.choices,
         label="Organization Region"
     )
 
+    # Role bo‘yicha filter
+    role = filters.ChoiceFilter(
+        field_name="role",
+        choices=CustomUser.Role.choices,
+        label="User Role"
+    )
+
     class Meta:
         model = CustomUser
-        fields = ['first_name','id']
+        fields = ["organization", "organization__region", "role"]
