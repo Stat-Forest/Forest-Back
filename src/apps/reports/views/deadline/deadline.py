@@ -27,7 +27,7 @@ class DeadlineListAPIView(generics.ListAPIView):
         elif getattr(user, "statement", None) is not None:
             qs = qs.filter(statement__parent_id=user.statement.pk)
 
-        return qs
+        return qs.order_by("-created_at")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
