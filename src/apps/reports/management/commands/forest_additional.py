@@ -629,51 +629,52 @@ class Command(BaseCommand):
         create_column(statement_forest_add, jami_qishloq, "Amalda (tonna)", "Факт (тонна)",
                       "9.1.2.4", is_user_input=False)
         wu_jumladan_2 = create_column(statement_forest_add, k_x_title, "Shu jumladan", "В том числе",
-                                      "9.1.3")
+                                      "9.1.3", is_user_input=False)
         boshoqli_don_2 = create_column(statement_forest_add, wu_jumladan_2, "Boshoqli don",
-                                       "Зерновые культуры", "9.1.3.1")
-        create_triplet(statement_forest_add, boshoqli_don_2, "9.1.3.1")
+                                       "Зерновые культуры", "9.1.3.1", is_user_input=False)
+        create_triplet(statement_forest_add, boshoqli_don_2, "9.1.3.1", is_user_input=False)
 
         sabzavot_2 = create_column(statement_forest_add, wu_jumladan_2, "Sabzavot",
-                                       "Овощной", "9.1.3.2")
-        create_triplet(statement_forest_add, sabzavot_2, "9.1.3.2")
+                                       "Овощной", "9.1.3.2", is_user_input=False)
+        create_triplet(statement_forest_add, sabzavot_2, "9.1.3.2", is_user_input=False)
 
-        poliz_2 = create_column(statement_forest_add, wu_jumladan_2, "Poliz", "Бахча", "9.1.3.3")
-        create_triplet(statement_forest_add, poliz_2, "9.1.3.3")
+        poliz_2 = create_column(statement_forest_add, wu_jumladan_2, "Poliz", "Бахча",
+                                "9.1.3.3", is_user_input=False)
+        create_triplet(statement_forest_add, poliz_2, "9.1.3.3", is_user_input=False)
 
         moyli_crops_2 = create_column(statement_forest_add, wu_jumladan_2, "Moyli ekinlar",
-                                      "Масличные культуры", "9.1.3.4")
-        create_triplet(statement_forest_add, moyli_crops_2, "9.1.3.4")
+                                      "Масличные культуры", "9.1.3.4", is_user_input=False)
+        create_triplet(statement_forest_add, moyli_crops_2, "9.1.3.4", is_user_input=False)
 
         dukkakli_crops_2 = create_column(statement_forest_add, wu_jumladan_2, "Dukkakli ekinlar",
-                                         "Бобовые культуры", "9.1.3.5")
-        create_triplet(statement_forest_add, dukkakli_crops_2, "9.1.3.5")
+                                         "Бобовые культуры", "9.1.3.5", is_user_input=False)
+        create_triplet(statement_forest_add, dukkakli_crops_2, "9.1.3.5", is_user_input=False)
 
         ozuqa_crops_2 = create_column(statement_forest_add, wu_jumladan_2, "Ozuqa ekinlari",
-                                      "Кормовые культуры", "9.1.3.6")
-        create_triplet(statement_forest_add, ozuqa_crops_2, "9.1.3.6")
+                                      "Кормовые культуры", "9.1.3.6", is_user_input=False)
+        create_triplet(statement_forest_add, ozuqa_crops_2, "9.1.3.6", is_user_input=False)
 
         jami_bog_toglar = create_column(statement_forest_add, k_x_title, "Jami bog` va tokzorlar",
-                                        "Всего садов и виноградников", "9.1.4")
+                                        "Всего садов и виноградников", "9.1.4", is_user_input=False)
 
         wundan = create_column(statement_forest_add, jami_bog_toglar, "shundan: urug‘li, danakli, uzmzor",
-                               "из них: семенные, косточковые, виноградники", "9.1.4.1")
-        create_column(statement_forest_add, wundan, "ga", "га", "9.1.4.1.1")
+                               "из них: семенные, косточковые, виноградники", "9.1.4.1", is_user_input=False)
+        create_column(statement_forest_add, wundan, "ga", "га", "9.1.4.1.1", is_user_input=False)
         create_column(statement_forest_add, wundan, "shundan hosilga kirgan",
-                      "Из них получен урожай", "9.1.4.1.2")
-        create_column(statement_forest_add, wundan, "s/ga", "ц/га", "9.1.4.1.3")
-        create_column(statement_forest_add, wundan, "tn", "тн", "9.1.4.1.4")
+                      "Из них получен урожай", "9.1.4.1.2", is_user_input=False)
+        create_column(statement_forest_add, wundan, "s/ga", "ц/га", "9.1.4.1.3", is_user_input=False)
+        create_column(statement_forest_add, wundan, "tn", "тн", "9.1.4.1.4", is_user_input=False)
         # create_village(statement_forest_add, wundan, "9.1.4.1")
 
         yongoq_mevalilar = create_column(statement_forest_add, k_x_title, "Yong`oq mevalilar",
-                                         "Орехоплоды", "9.1.5")
+                                         "Орехоплоды", "9.1.5", is_user_input=False)
         wundan_2 = create_column(statement_forest_add, yongoq_mevalilar, "shundan: grek yongogi, bodom, pista",
-                                 "из них: грецкий орех, миндаль, фисташка", "9.1.5.1")
-        create_column(statement_forest_add, wundan_2, "ga", "га", "9.1.5.1.1")
+                                 "из них: грецкий орех, миндаль, фисташка", "9.1.5.1", is_user_input=False)
+        create_column(statement_forest_add, wundan_2, "ga", "га", "9.1.5.1.1", is_user_input=False)
         create_column(statement_forest_add, wundan_2, "shundan hosilga kirgan",
-                      "Из них получен урожай", "9.1.5.1.2")
-        create_column(statement_forest_add, wundan_2, "s/ga", "ц/га", "9.1.5.1.3")
-        create_column(statement_forest_add, wundan_2, "tn", "тн", "9.1.5.1.4")
+                      "Из них получен урожай", "9.1.5.1.2", is_user_input=False)
+        create_column(statement_forest_add, wundan_2, "s/ga", "ц/га", "9.1.5.1.3", is_user_input=False)
+        create_column(statement_forest_add, wundan_2, "tn", "тн", "9.1.5.1.4", is_user_input=False)
         # create_village(statement_forest_add, wundan_2, "9.1.5.1")
 
         self.stdout.write(
