@@ -97,7 +97,7 @@ class StatementColumn(AbstractBaseModel):
         return (
             self.statement.name if self.statement else None,
             self.title,
-            self.parent_id,   
+            self.parent_id,
             self.ordering,
         )
     natural_key.dependencies = ["reports.statement"]
