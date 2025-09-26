@@ -272,7 +272,7 @@ class Command(BaseCommand):
                         is_user_input=(sub == "Reja")
                     )
 
-            # 2️⃣ Oddiy bo‘limlar (gA) → Reja, Amalda
+            # 2️⃣ Oddiy bo‘limlar (ga) → Reja, Amalda
             elif title_uz in [
                 "O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)",
                 "Himoya o‘rmonzorlarini barpo etish (ga)",
@@ -316,7 +316,7 @@ class Command(BaseCommand):
                         title_ru={"Reja": "План", "Amalda": "Факт", "%": "Процент"}[sub],
                         ordering=f"{ordering_base}.{i}.{j}",
                         status_plan=status_plan,
-                        is_user_input=(sub in ["Reja"])
+                        is_user_input=(sub == "Reja")
                     )
 
             # 5️⃣ Shu jumladan (tez o‘suvchilar)
@@ -330,6 +330,20 @@ class Command(BaseCommand):
                         title_uz=child_uz,
                         title_ru=child_ru,
                         ordering=f"{ordering_base}.{i}.{j}",
+                        is_user_input=True
+                    )
+
+            # 6️⃣ Tabiiy tiklanishga ko‘maklashish → Reja, Amalda
+            elif title_uz == "Tabiiy tiklanishga ko'maklashish va boshqa daraxt turlaridan ekish":
+                for j, sub in enumerate(["Reja", "Amalda"], start=1):
+                    status_plan = StatementColumn.PlanStatus.YILLIK if sub == "Reja" else None
+                    StatementColumn.objects.create(
+                        statement=second_statement_of_forest,
+                        parent=parent_col,
+                        title_uz=sub,
+                        title_ru={"Reja": "План", "Amalda": "Факт"}[sub],
+                        ordering=f"{ordering_base}.{i}.{j}",
+                        status_plan=status_plan,
                         is_user_input=True
                     )
 
