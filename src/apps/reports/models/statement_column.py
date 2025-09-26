@@ -1,4 +1,3 @@
-# apps/reports/models/statement_column.py
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -6,10 +5,10 @@ from apps.base.models import AbstractBaseModel
 
 
 class StatementColumnManager(models.Manager):
-    def get_by_natural_key(self, statement_name, title, parent_title, ordering):
+    def get_by_natural_key(self, statement_name, title, parent_key, ordering):
         parent = None
-        if parent_title:
-            parent = self.get(title=parent_title)
+        if parent_key:
+            parent = self.get_by_natural_key(*parent_key)
         return self.get(
             statement__name=statement_name,
             title=title,
@@ -26,7 +25,7 @@ class StatementColumn(AbstractBaseModel):
         APREL = 'aprel', _('Aprel')
         MAY = 'may', _('May')
         IYUN = 'iyun', _('Iyun')
-        IYUL = 'iyul', _('Iyul')
+        IYUL = 'iyul', _('IYul')
         AVGUST = 'avgust', _('Avgust')
         SENTABR = 'sentabr', _('Sentabr')
         OKTABR = 'oktabr', _('Oktabr')
@@ -96,11 +95,12 @@ class StatementColumn(AbstractBaseModel):
         if self.status_plan and self.is_organization:
             raise ValidationError(_("An instance cannot be both a plan and an organization at the same time."))
 
+    # ✅ Natural key
     def natural_key(self):
         return (
             self.statement.name if self.statement else None,
             self.title,
-            self.parent.title if self.parent else None,
+            self.parent.natural_key() if self.parent else None,
             self.ordering,
         )
     natural_key.dependencies = ["reports.statement"]
