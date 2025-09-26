@@ -7,6 +7,8 @@ from apps.base.views import CustomListAPIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.serializers import OrganizationListSerializer
 
+from django.db.models.functions import Lower
+
 
 @extend_schema(tags=["General"])
 class OrganizationListAPIView(CustomListAPIView):
@@ -24,9 +26,14 @@ class OrganizationListAPIView(CustomListAPIView):
         user = self.request.user
 
         if hasattr(user, 'organization') and user.organization is not None:
-            return Organization.objects.filter(id=user.organization.id).order_by("name")
+            return (
+                Organization.objects
+                .filter(id=user.organization.id)
+                .order_by("name")
+            )
         else:
-            return Organization.objects.all().order_by("name")
+            # katta-kichik harflarni farqlamasdan tartiblash
+            return Organization.objects.all().order_by(Lower("name"))
 
     def list(self, request, *args, **kwargs):
         cache_key = self.get_cache_key(request)
