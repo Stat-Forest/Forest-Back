@@ -7,6 +7,7 @@ from apps.base.views import CustomListAPIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.serializers import OrganizationListSerializer
 
+from django.db.models.functions import Collate
 
 @extend_schema(tags=["General"])
 class OrganizationListAPIView(CustomListAPIView):
@@ -26,7 +27,7 @@ class OrganizationListAPIView(CustomListAPIView):
         if hasattr(user, 'organization') and user.organization is not None:
             return Organization.objects.filter(id=user.organization.id).order_by("name")
         else:
-            return Organization.objects.all().order_by("name")
+            return Organization.objects.all().order_by(Collate("name", "uz-UZ-x-icu"))
 
     def list(self, request, *args, **kwargs):
         cache_key = self.get_cache_key(request)
