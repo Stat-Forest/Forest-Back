@@ -18,7 +18,8 @@ class CustomUserFilter(filters.FilterSet):
         choices=CustomUser.Role.choices
     )
 
-    id = filters.NumberFilter(field_name="id")
+    # 🆔 id bo‘yicha UUID filter
+    id = filters.UUIDFilter(field_name="id")
 
     class Meta:
         model = CustomUser
