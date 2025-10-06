@@ -8,20 +8,18 @@ class Command(BaseCommand):
     help = "Creates a superuser with minimal required fields (email, first_name, last_name, password)"
 
     def handle(self, *args, **options):
-        try:
-            email = input("Email: ").strip()
-            first_name = input("First name: ").strip()
-            last_name = input("Last name: ").strip()
-            password = getpass("Password: ")
+        email = "forest@gmail.com"
+        password = "1"
+        first_name = "Admin"
+        last_name = "User"
 
-            user = CustomUser.objects.create_superuser(
+        if CustomUser.objects.filter(email=email).exists():
+            self.stdout.write(self.style.ERROR(f"Superuser with email '{email}' already exists."))
+        else:
+            CustomUser.objects.create_superuser(
                 email=email,
                 password=password,
                 first_name=first_name,
-                last_name=last_name,
+                last_name=last_name
             )
-
-            self.stdout.write(self.style.SUCCESS(f"Superuser '{user.email}' created successfully."))
-
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error: {e}"))
+            self.stdout.write(self.style.SUCCESS(f"Superuser '{email}' created successfully."))
