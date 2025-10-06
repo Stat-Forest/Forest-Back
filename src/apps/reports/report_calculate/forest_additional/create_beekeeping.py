@@ -1,6 +1,7 @@
 from decimal import Decimal
 from collections import defaultdict
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.report_calculate.forest_additional.svod_chorva import calculate_svod_chorva
 
 
 def normalize(value):
@@ -43,23 +44,45 @@ def calculate_beekeeping(report: Report):
     ordering_map = group_inners_by_ordering(report)
 
     calculations: list[tuple[str, Decimal]] = []
+    # ========== Mayda shohli hayvonlar (Qo‘y, echki) ==========
 
-    # ========== Asalarichilik ==========
-    total_beekeeping = sum_from_group(ordering_map, ["5.1.6.2", "5.1.7.2"])
-    calculations.append(("5.1.8.2", total_beekeeping))
-
-    # ========== Parrandachilik ==========
-    hojalik_total = sum_from_group(ordering_map, ["4.1.8.2.1", "4.1.8.2.2", "4.1.8.2.3"])
-    xususiy_total = sum_from_group(ordering_map, ["4.1.9.2.1", "4.1.9.2.2", "4.1.9.2.3"])
-    total_parranda = hojalik_total + xususiy_total
+    mayda_1 = sum_from_group(ordering_map, ["3.1.12.1.1", "3.1.13.1.1"])
+    mayda_2 = sum_from_group(ordering_map, ["3.1.12.1.2", "3.1.13.1.2"])
+    mayda_3 = sum_from_group(ordering_map, ["3.1.13.2.1", "3.1.12.2.1"])
 
     calculations.extend([
-        ("4.1.8.1.2", hojalik_total),
-        ("4.1.9.1.2", xususiy_total),
-        ("4.1.10.1.2", total_parranda),
-        ("4.1.10.2.1", sum_from_group(ordering_map, ["4.1.8.2.1", "4.1.9.2.1"])),
-        ("4.1.10.2.2", sum_from_group(ordering_map, ["4.1.8.2.2", "4.1.9.2.2"])),
-        ("4.1.10.2.3", sum_from_group(ordering_map, ["4.1.8.2.3", "4.1.9.2.3"])),
+        ("3.1.14.1.1", mayda_1),
+        ("3.1.14.1.2", mayda_2),
+        ("3.1.14.2.1", mayda_3),
+    ])
+
+    # ========== Asalarichilik ==========
+    asalari_1 = sum_from_group(ordering_map, ["5.1.6.1", "5.1.7.1"])
+    asalari_2 = sum_from_group(ordering_map, ["5.1.6.2", "5.1.7.2"])
+
+    calculations.extend([
+        ("5.1.8.1", asalari_1),
+        ("5.1.8.2", asalari_2),
+    ])
+
+    # ========== Parrandachilik ==========
+    parranda_1 = sum_from_group(ordering_map, ["4.1.2.2.1", "4.1.2.2.2"])
+    parranda_2 = sum_from_group(ordering_map, ["4.1.3.1.1", "4.1.3.2.1"])
+    parranda_3 = sum_from_group(ordering_map, ["4.1.5.2.1", "4.1.5.2.2"])
+    parranda_4 = sum_from_group(ordering_map, ["4.1.6.2.1", "4.1.6.2.2"])
+    parranda_5 = sum_from_group(ordering_map, ["4.1.5.1.1", "4.1.6.1.1"])
+    parranda_6 = sum_from_group(ordering_map, ["4.1.5.1.2", "4.1.6.1.2"])
+    parranda_7 = sum_from_group(ordering_map, ["4.1.7.2.1", "4.1.7.2.2"])
+
+    total_4_1_7_1_2 = parranda_6 + parranda_7
+
+    calculations.extend([
+        ("4.1.2.1.1", parranda_1),
+        ("4.1.4", parranda_2),
+        ("4.1.5.1.2", parranda_3),
+        ("4.1.6.1.2", parranda_4),
+        ("4.1.7.1.1", parranda_5),
+        ("4.1.7.1.2", total_4_1_7_1_2),
     ])
 
     # ========== Baliqchilik ==========
@@ -90,3 +113,5 @@ def calculate_beekeeping(report: Report):
         )
 
     ReportItemInner.objects.bulk_create(report_item_inners)
+
+    calculate_svod_chorva(report)
