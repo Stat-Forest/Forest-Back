@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 from apps.reports.report_calculate.forest_additional.svod_chorva import calculate_svod_chorva
@@ -113,5 +113,18 @@ def calculate_beekeeping(report: Report):
         )
 
     ReportItemInner.objects.bulk_create(report_item_inners)
+
+    refetched_inners = ReportItemInner.objects.filter(
+        report_item__report=report
+    ).select_related("report_item__statement_column")
+
+    grouped = defaultdict(list)
+    for inner in refetched_inners:
+        ordering = inner.report_item.statement_column.ordering
+        try:
+            val = Decimal(str(inner.value).strip())
+        except (TypeError, ValueError, InvalidOperation):
+            val = Decimal(0)
+        grouped[ordering].append(val)
 
     calculate_svod_chorva(report)
