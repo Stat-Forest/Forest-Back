@@ -1,4 +1,4 @@
-from rest_framework import generics, filters as drf_filters
+from rest_framework import generics
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
@@ -19,8 +19,15 @@ from apps.reports.filters import CustomUserFilter
             location=OpenApiParameter.QUERY,
         ),
         OpenApiParameter(
-            name="search",
-            description="Search by `first_name` or `last_name`",
+            name="first_name",
+            description="Filter by first name (icontains search)",
+            required=False,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+        ),
+        OpenApiParameter(
+            name="last_name",
+            description="Filter by last name (icontains search)",
             required=False,
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
@@ -30,14 +37,6 @@ from apps.reports.filters import CustomUserFilter
             description="Filter by organization (UUID)",
             required=False,
             type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-        ),
-        OpenApiParameter(
-            name="organization__region",
-            description="Filter by organization region",
-            required=False,
-            type=OpenApiTypes.STR,
-            enum=[choice[0] for choice in CustomUser.Role.choices],  
             location=OpenApiParameter.QUERY,
         ),
         OpenApiParameter(
@@ -54,10 +53,7 @@ class UserListAPIView(generics.ListAPIView):
     serializer_class = UserListSerializer
     queryset = CustomUser.objects.all()
     filterset_class = CustomUserFilter
-    filter_backends = [drf_filters.SearchFilter, filters.DjangoFilterBackend]
-
-    # 🔍 search faqat first_name va last_name bo‘yicha ishlaydi
-    search_fields = ["first_name", "last_name"]
+    filter_backends = [filters.DjangoFilterBackend]
 
     def get_queryset(self):
         user = self.request.user

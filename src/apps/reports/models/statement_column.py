@@ -1,8 +1,17 @@
-# apps/reports/models/statement_column.py
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from apps.base.models import AbstractBaseModel
+
+
+class StatementColumnManager(models.Manager):
+    def get_by_natural_key(self, statement_name, title, parent_id, ordering):
+        return self.get(
+            statement__name=statement_name,
+            title=title,
+            parent_id=parent_id,
+            ordering=ordering,
+        )
 
 
 class StatementColumn(AbstractBaseModel):
@@ -52,9 +61,7 @@ class StatementColumn(AbstractBaseModel):
         max_length=100,
         verbose_name=_("Ordering")
     )
-    is_organization = models.BooleanField(
-        default=False
-    )
+    is_organization = models.BooleanField(default=False)
 
     status_plan = models.CharField(
         max_length=20,
@@ -64,6 +71,8 @@ class StatementColumn(AbstractBaseModel):
         verbose_name=_("Plan holati (oy, chorak, yil)")
     )
     is_user_input = models.BooleanField(default=True)
+
+    objects = StatementColumnManager()
 
     @property
     def return_parent(self):
@@ -83,10 +92,18 @@ class StatementColumn(AbstractBaseModel):
         if self.status_plan and self.is_organization:
             raise ValidationError(_("An instance cannot be both a plan and an organization at the same time."))
 
-
+    # ✅ Natural key (parent_id dan foydalanamiz, rekursiya yo‘q)
+    def natural_key(self):
+        return (
+            self.statement.name if self.statement else None,
+            self.title,
+            self.parent_id,
+            self.ordering,
+        )
+    natural_key.dependencies = ["reports.statement"]
 
     class Meta:
         verbose_name = _("Statement Column")
         verbose_name_plural = _("Statement Columns")
-        unique_together = ("statement", "title",'parent','ordering')
+        unique_together = ("statement", "title", "parent", "ordering")
         ordering = ["ordering"]
