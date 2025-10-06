@@ -51,15 +51,15 @@ class Command(BaseCommand):
         y_sh_m_title = create_column(
             statement_husbandry,
             y_sh_m_ilova,
-            f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda Yirik shohli mollarni rivojlantirish bo‘yicha MA’LUMOT",
+            f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda Yirik shohli mollarni rivojlantirish bo‘yicha MA’LUMOT", # last month first
             f"Информация о развитии крупного рогатого скота в лесных хозяйствах системы агентства в {current_year} году",
             "1.1"
         )
 
         create_column(statement_husbandry, y_sh_m_title, "Tashkilot nomi", "Наименование хозяйства", "1.1.1",
                       is_organization=True)
-        year_moment = create_column(statement_husbandry, y_sh_m_title, f"{date_str} yil holatiga",
-                                    f"Состояние на {date_str}", "1.1.2")
+        year_moment = create_column(statement_husbandry, y_sh_m_title, f"01.01.{current_year} yil holatiga",
+                                    f"Состояние на 01.01.{current_year}", "1.1.2")
         general_number = create_column(statement_husbandry, year_moment, "Jami bosh soni", "Общее количество голов",
                                        "1.1.2.1")
         create_column(statement_husbandry, general_number, "Amalda", "Факт", "1.1.2.1.1")
@@ -71,17 +71,15 @@ class Command(BaseCommand):
                       status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, get_buzoq, "Amalda", "Факт", "1.1.3.2")
 
-        new_column = create_column(statement_husbandry, y_sh_m_title, "Yangidan tashkil qilish, bosh",
-                                   "Создание новых, голов", "1.1.4")
-        create_column(statement_husbandry, new_column, "Reja", "План", "1.1.4.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, new_column, "Amalda", "Факт", "1.1.4.2")
+        new_column = create_column(statement_husbandry, y_sh_m_title, "Yangidan sotib olindi, bosh",
+                                   "Вновь приобретено, голов", "1.1.4")
+        create_column(statement_husbandry, new_column, "Amalda", "Факт", "1.1.4.1")
 
         meat_column = create_column(statement_husbandry, y_sh_m_title, "Go‘shtga so‘yildi", "Зарезано на мясо", "1.1.5")
         create_column(statement_husbandry, meat_column, "Bosh soni", "Количество голов", "1.1.5.1")
-        create_column(statement_husbandry, meat_column, "CN", "ЦН", "1.1.5.2")
+        create_column(statement_husbandry, meat_column, "tonna", "тонна", "1.1.5.2")
 
-        create_column(statement_husbandry, y_sh_m_title, "Sotilgan", "Продано", "1.1.6")
+        create_column(statement_husbandry, y_sh_m_title, "Sotilgan (bosh soni)", "Продано (количество голов)", "1.1.6")
         create_column(statement_husbandry, y_sh_m_title, "Talofat va nobud bo‘lgan", "Погибло и утрачено", "1.1.7")
         create_column(statement_husbandry, y_sh_m_title, "Jami chiqim, bosh", "Общий расход, голов", "1.1.8")
 
@@ -107,8 +105,8 @@ class Command(BaseCommand):
 
         create_column(statement_husbandry, yilqichilik_title, "Tashkilot nomi", "Наименование хозяйства", "2.1.1",
                       is_organization=True)
-        yil_start = create_column(statement_husbandry, yilqichilik_title, f"{date_str} yil holatiga mavjud",
-                                  f"Состояние на {date_str}", "2.1.2")
+        yil_start = create_column(statement_husbandry, yilqichilik_title, f"01.01.{current_year} yil holatiga mavjud",
+                                  f"Состояние на 01.01.{current_year}", "2.1.2")
         start_general = create_column(statement_husbandry, yil_start, "Jami bosh soni", "Общее количество голов",
                                       "2.1.2.1")
         create_column(statement_husbandry, start_general, "Amalda", "Факт", "2.1.2.1.1")
@@ -120,11 +118,9 @@ class Command(BaseCommand):
                       status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, foal, "Amalda", "Факт", "2.1.3.2")
 
-        yangi = create_column(statement_husbandry, yilqichilik_title, "Yangidan tashkil qilish", "Создание новых",
+        yangi = create_column(statement_husbandry, yilqichilik_title, "Yangidan sotib olindi", "Вновь приобретено",
                               "2.1.4")
-        create_column(statement_husbandry, yangi, "Reja", "План", "2.1.4.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, yangi, "Amalda", "Факт", "2.1.4.2")
+        create_column(statement_husbandry, yangi, "Amalda", "Факт", "2.1.4.1")
 
         gosht = create_column(statement_husbandry, yilqichilik_title, "Go‘shtga so‘yildi", "Зарезано на мясо", "2.1.5")
         create_column(statement_husbandry, gosht, "Bosh soni", "Количество голов", "2.1.5.1")
@@ -155,8 +151,8 @@ class Command(BaseCommand):
         create_column(statement_husbandry, m_sh_m_title, "Tashkilot nomi", "Наименование хозяйства", "3.1.1",
                       is_organization=True)
 
-        start_block = create_column(statement_husbandry, m_sh_m_title, f"{date_str} yil holatiga",
-                                    f"Состояние на {date_str}", "3.1.2")
+        start_block = create_column(statement_husbandry, m_sh_m_title, f"01.01.{current_year} yil holatiga",
+                                    f"Состояние на 01.01.{current_year}", "3.1.2")
         total_count_start = create_column(statement_husbandry, start_block, "Jami bosh soni", "Общее количество голов",
                                           "3.1.2.1")
         create_column(statement_husbandry, total_count_start, "Amalda", "Факт", "3.1.2.1.1")
@@ -173,9 +169,7 @@ class Command(BaseCommand):
         tashkil_block = create_column(statement_husbandry, m_sh_m_title,
                                       f"{current_year} yilda yangidan tashkil etish, dona",
                                       f"Создание новых в {current_year} году, ед.", "3.1.4")
-        create_column(statement_husbandry, tashkil_block, "Reja", "План", "3.1.4.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, tashkil_block, "Amalda", "Факт", "3.1.4.2")
+        create_column(statement_husbandry, tashkil_block, "Amalda", "Факт", "3.1.4.1")
 
         create_column(statement_husbandry, m_sh_m_title, "Go‘shtga so‘yildi bosh", "Зарезан на мясо", "3.1.5")
 
@@ -189,8 +183,8 @@ class Command(BaseCommand):
                       is_user_input=False)
 
         hojalik_block = create_column(statement_husbandry, m_sh_m_title,
-                                      f"Xo‘jaliklar tomonidan {current_year} yil holatiga",
-                                      f"По состоянию на {current_year} год со стороны хозяйств", "3.1.12")
+                                      f"Xo‘jaliklar tomonidan {date_str} yil holatiga",
+                                      f"По состоянию на {date_str} год со стороны хозяйств", "3.1.12")
         total_hojalik = create_column(statement_husbandry, hojalik_block, "Jami bosh soni", "Общее количество голов",
                                       "3.1.12.1")
         create_column(statement_husbandry, total_hojalik, "Reja", "План", "3.1.12.1.1",
@@ -201,8 +195,8 @@ class Command(BaseCommand):
         create_column(statement_husbandry, sovliq_hojalik, "Amalda", "Факт", "3.1.12.2.1")
 
         sektor_block = create_column(statement_husbandry, m_sh_m_title,
-                                     f"Xususiy sektorlarni jalb qilgan holda {current_year} yil holatiga",
-                                     f"По состоянию на {current_year} год с привлечением частного сектора", "3.1.13")
+                                     f"Xususiy sektorlarni jalb qilgan holda {date_str} yil holatiga",
+                                     f"По состоянию на {date_str} год с привлечением частного сектора", "3.1.13")
         total_sektor = create_column(statement_husbandry, sektor_block, "Jami bosh soni", "Общее количество голов",
                                      "3.1.13.1")
         create_column(statement_husbandry, total_sektor, "Reja", "План", "3.1.13.1.1",
@@ -212,15 +206,15 @@ class Command(BaseCommand):
                                       "3.1.13.2")
         create_column(statement_husbandry, sovliq_sektor, "Amalda", "Факт", "3.1.13.2.1")
 
-        jami_chorva = create_column(statement_husbandry, m_sh_m_title, f"Jami chorva {current_year} yil holatiga",
-                                    f"Общее поголовье по состоянию на {current_year} год", "3.1.14")
+        jami_chorva = create_column(statement_husbandry, m_sh_m_title, f"Jami chorva {date_str} yil holatiga",
+                                    f"Общее поголовье по состоянию на {date_str} год", "3.1.14", is_user_input=False)
         jami_total = create_column(statement_husbandry, jami_chorva, "Jami bosh soni", "Общее количество голов",
-                                   "3.1.14.1")
+                                   "3.1.14.1", is_user_input=False)
         create_column(statement_husbandry, jami_total, "Reja", "План", "3.1.14.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
+                      status_plan=StatementColumn.PlanStatus.YILLIK, is_user_input=False)
         create_column(statement_husbandry, jami_total, "Amalda", "Факт", "3.1.14.1.2", is_user_input=False)
         sovliq_total = create_column(statement_husbandry, jami_chorva, "Shundan: sovliqlar", "Из них: овцематки",
-                                     "3.1.14.2")
+                                     "3.1.14.2", is_user_input=False)
         create_column(statement_husbandry, sovliq_total, "Amalda", "Факт", "3.1.14.2.1", is_user_input=False)
 
         # ========== Parrandachilik ilovasi ==========
@@ -237,11 +231,12 @@ class Command(BaseCommand):
         create_column(statement_husbandry, parranda_title, "Tashkilot nomi", "Наименование хозяйства", "4.1.1",
                       is_organization=True)
 
-        year_parranda = create_column(statement_husbandry, parranda_title, f"{date_str} yil holatiga mavjud",
+        year_parranda = create_column(statement_husbandry, parranda_title, f"{date_str} yil holatiga mavjud", # last month
                                       f"Состояние на {date_str}", "4.1.2")
         jami_parranda = create_column(statement_husbandry, year_parranda, "Jami parranda", "Общее количество птицы",
                                       "4.1.2.1")
-        create_column(statement_husbandry, jami_parranda, "Amalda", "Факт", "4.1.2.1.1")
+        create_column(statement_husbandry, jami_parranda, "Amalda", "Факт", "4.1.2.1.1",
+                      is_user_input=False)
         shundan_parranda = create_column(statement_husbandry, year_parranda, "Shundan", "Из них", "4.1.2.2")
         create_column(statement_husbandry, shundan_parranda, "Kurka soni", "Количество индеек", "4.1.2.2.1")
         create_column(statement_husbandry, shundan_parranda, "Jami tovuq va xo‘roz soni",
@@ -249,103 +244,61 @@ class Command(BaseCommand):
         create_column(statement_husbandry, shundan_parranda, "Tuxum beradigan tovuq soni", "Количество несушек",
                       "4.1.2.2.3")
 
-        new_tashkil_column = create_column(statement_husbandry, parranda_title, "Yangi tashkil etiladi",
-                                           "Будет создано заново", "4.1.3")
+        new_tashkil_column = create_column(statement_husbandry, parranda_title, "Jami chiqim",
+                                           "Общий расход", "4.1.3")
         first_kurka = create_column(statement_husbandry, new_tashkil_column, "Kurka", "Индейка", "4.1.3.1")
-        create_column(statement_husbandry, first_kurka, "Reja", "План", "4.1.3.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, first_kurka, "Amalda", "Факт", "4.1.3.1.2")
+        create_column(statement_husbandry, first_kurka, "Amalda", "Факт", "4.1.3.1.1")
         first_chicken = create_column(statement_husbandry, new_tashkil_column, "Tovuq", "Курица", "4.1.3.2")
-        create_column(statement_husbandry, first_chicken, "Reja", "План", "4.1.3.2.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, first_chicken, "Amalda", "Факт", "4.1.3.2.2")
+        create_column(statement_husbandry, first_chicken, "Amalda", "Факт", "4.1.3.2.1")
 
-        meat_25 = create_column(statement_husbandry, parranda_title, "Go‘shtga so‘yildi (25%)",
-                                "Зарезано на мясо (25%)", "4.1.4")
-        second_kurka = create_column(statement_husbandry, meat_25, "Kurka", "Индейка", "4.1.4.1")
-        create_column(statement_husbandry, second_kurka, "Reja", "План", "4.1.4.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, second_kurka, "Amalda", "Факт", "4.1.4.1.2")
-        second_chicken = create_column(statement_husbandry, meat_25, "Tovuq", "Курица", "4.1.4.2")
-        create_column(statement_husbandry, second_chicken, "Reja", "План", "4.1.4.2.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, second_chicken, "Amalda", "Факт", "4.1.4.2.2")
-
-        gosht_kg = create_column(
-            statement_husbandry,
-            parranda_title,
-            "Go‘sht ishlab chiqarish tovuqlarda (1.1 kg), kurkalarda (2.8 kg)",
-            "Производство мяса: курица (1.1 кг), индейка (2.8 кг)",
-            "4.1.5"
-        )
-        kurka_kg = create_column(statement_husbandry, gosht_kg, "Kurka", "Индейка", "4.1.5.1")
-        create_column(statement_husbandry, kurka_kg, "Reja", "План", "4.1.5.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, kurka_kg, "Amalda", "Факт", "4.1.5.1.2")
-        tovuq_kg = create_column(statement_husbandry, gosht_kg, "Tovuq", "Курица", "4.1.5.2")
-        create_column(statement_husbandry, tovuq_kg, "Reja", "План", "4.1.5.2.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, tovuq_kg, "Amalda", "Факт", "4.1.5.2.2")
-
-        egg_block = create_column(statement_husbandry, parranda_title,
-                                  "Tuxum ishlab chiqarish (1 ta tovuq 110 ta tuxum) ming dona",
-                                  "Производство яиц (110 штук от одной курицы), тыс. шт.", "4.1.6")
-        kurka_egg = create_column(statement_husbandry, egg_block, "Kurka", "Индейка", "4.1.6.1")
-        create_column(statement_husbandry, kurka_egg, "Reja", "План", "4.1.6.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, kurka_egg, "Amalda", "Факт", "4.1.6.1.2")
-        tovuq_egg = create_column(statement_husbandry, egg_block, "Tovuq", "Курица", "4.1.6.2")
-        create_column(statement_husbandry, tovuq_egg, "Reja", "План", "4.1.6.2.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, tovuq_egg, "Amalda", "Факт", "4.1.6.2.2")
-
-        create_column(statement_husbandry, parranda_title, "Jami chiqim, bosh", "Общий расход, голов", "4.1.7")
+        create_column(statement_husbandry, parranda_title, "Jami chiqim, bosh", "Общий расход, голов",
+                      "4.1.4", is_user_input=False)
 
         hojalik_parranda = create_column(statement_husbandry, parranda_title,
                                          f"Xo‘jaliklar tomonidan tashkil etildi {date_str} yil holatiga",
-                                         f"Создано со стороны хозяйств по состоянию на {date_str}", "4.1.8")
+                                         f"Создано со стороны хозяйств по состоянию на {date_str}", "4.1.5")
         total_hojalik = create_column(statement_husbandry, hojalik_parranda, "Jami parranda", "Общее количество птицы",
-                                      "4.1.8.1")
-        create_column(statement_husbandry, total_hojalik, "Reja", "План", "4.1.8.1.1",
+                                      "4.1.5.1")
+        create_column(statement_husbandry, total_hojalik, "Reja", "План", "4.1.5.1.1",
                       status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, total_hojalik, "Amalda", "Факт", "4.1.8.1.2", is_user_input=False)
-        shundan_hojalik = create_column(statement_husbandry, hojalik_parranda, "Shundan", "Из них", "4.1.8.2")
-        create_column(statement_husbandry, shundan_hojalik, "Kurka soni", "Количество индеек", "4.1.8.2.1")
+        create_column(statement_husbandry, total_hojalik, "Amalda", "Факт", "4.1.5.1.2", is_user_input=False)
+        shundan_hojalik = create_column(statement_husbandry, hojalik_parranda, "Shundan", "Из них", "4.1.5.2")
+        create_column(statement_husbandry, shundan_hojalik, "Kurka soni", "Количество индеек", "4.1.5.2.1")
         create_column(statement_husbandry, shundan_hojalik, "Jami tovuq va xo‘roz soni",
-                      "Общее количество кур и петухов", "4.1.8.2.2")
+                      "Общее количество кур и петухов", "4.1.5.2.2")
         create_column(statement_husbandry, shundan_hojalik, "Tuxum beradigan tovuq soni", "Количество несушек",
-                      "4.1.8.2.3")
+                      "4.1.5.2.3")
 
         sektor_parranda = create_column(statement_husbandry, parranda_title,
                                         f"Xususiy sektor tomonidan tashkil etildi {date_str} yil holatiga",
-                                        f"Создано со стороны частного сектора по состоянию на {date_str}", "4.1.9")
+                                        f"Создано со стороны частного сектора по состоянию на {date_str}", "4.1.6")
         total_sektor = create_column(statement_husbandry, sektor_parranda, "Jami parranda", "Общее количество птицы",
-                                     "4.1.9.1")
-        create_column(statement_husbandry, total_sektor, "Reja", "План", "4.1.9.1.1",
+                                     "4.1.6.1")
+        create_column(statement_husbandry, total_sektor, "Reja", "План", "4.1.6.1.1",
                       status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, total_sektor, "Amalda", "Факт", "4.1.9.1.2", is_user_input=False)
-        shundan_sektor = create_column(statement_husbandry, sektor_parranda, "Shundan", "Из них", "4.1.9.2")
-        create_column(statement_husbandry, shundan_sektor, "Kurka soni", "Количество индеек", "4.1.9.2.1")
+        create_column(statement_husbandry, total_sektor, "Amalda", "Факт", "4.1.6.1.2", is_user_input=False)
+        shundan_sektor = create_column(statement_husbandry, sektor_parranda, "Shundan", "Из них", "4.1.6.2")
+        create_column(statement_husbandry, shundan_sektor, "Kurka soni", "Количество индеек", "4.1.6.2.1")
         create_column(statement_husbandry, shundan_sektor, "Jami tovuq va xo‘roz soni",
-                      "Общее количество кур и петухов", "4.1.9.2.2")
+                      "Общее количество кур и петухов", "4.1.6.2.2")
         create_column(statement_husbandry, shundan_sektor, "Tuxum beradigan tovuq soni", "Количество несушек",
-                      "4.1.9.2.3")
+                      "4.1.6.2.3")
 
         jami_parranda = create_column(statement_husbandry, parranda_title,
                                       f"Jami tashkil etilgan parranda {date_str} yil holatiga",
-                                      f"Общее количество созданной птицы по состоянию на {date_str}", "4.1.10")
+                                      f"Общее количество созданной птицы по состоянию на {date_str}", "4.1.7")
         total_jami = create_column(statement_husbandry, jami_parranda, "Jami parranda", "Общее количество птицы",
-                                   "4.1.10.1")
-        create_column(statement_husbandry, total_jami, "Reja", "План", "4.1.10.1.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, total_jami, "Amalda", "Факт", "4.1.10.1.2", is_user_input=False)
-        shundan_jami = create_column(statement_husbandry, jami_parranda, "Shundan", "Из них", "4.1.10.2")
-        create_column(statement_husbandry, shundan_jami, "Kurka soni", "Количество индеек", "4.1.10.2.1",
+                                   "4.1.7.1")
+        create_column(statement_husbandry, total_jami, "Reja", "План", "4.1.7.1.1",
+                      status_plan=StatementColumn.PlanStatus.YILLIK, is_user_input=False)
+        create_column(statement_husbandry, total_jami, "Amalda", "Факт", "4.1.7.1.2", is_user_input=False)
+        shundan_jami = create_column(statement_husbandry, jami_parranda, "Shundan", "Из них", "4.1.7.2")
+        create_column(statement_husbandry, shundan_jami, "Kurka soni", "Количество индеек", "4.1.7.2.1",
                       is_user_input=False)
         create_column(statement_husbandry, shundan_jami, "Jami tovuq va xo‘roz soni", "Общее количество кур и петухов",
-                      "4.1.10.2.2", is_user_input=False)
+                      "4.1.7.2.2", is_user_input=False)
         create_column(statement_husbandry, shundan_jami, "Tuxum beradigan tovuq soni", "Количество несушек",
-                      "4.1.10.2.3", is_user_input=False)
+                      "4.1.7.2.3", is_user_input=False)
 
         # ========== Asalarichilik ilovasi ==========
         bees_app = create_column(statement_husbandry, None, "Asalarichilik ilovasi", "Приложение: Пчеловодство", "5")
@@ -364,22 +317,11 @@ class Command(BaseCommand):
 
         asal_kg = create_column(statement_husbandry, bees_title, "Asal ishlab chiqarish, kg", "Производство меда, кг",
                                 "5.1.3")
-        create_column(statement_husbandry, asal_kg, "Reja", "План", "5.1.3.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, asal_kg, "Amalda", "Факт", "5.1.3.2")
 
         tovar_asal = create_column(statement_husbandry, bees_title, "Shundan: tovar asal ishlab chiqarish, kg",
                                    "Из них: товарный мед, кг", "5.1.4")
-        create_column(statement_husbandry, tovar_asal, "Reja", "План", "5.1.4.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
         create_column(statement_husbandry, tovar_asal, "Amalda", "Факт", "5.1.4.2")
-
-        new_bee_2025 = create_column(statement_husbandry, bees_title,
-                                     f"{current_year} yilda yangidan asalari oilasi tashkil etish",
-                                     f"Создание новых пчелиных семей в {current_year} году", "5.1.5")
-        create_column(statement_husbandry, new_bee_2025, "Reja", "План", "5.1.5.1",
-                      status_plan=StatementColumn.PlanStatus.YILLIK)
-        create_column(statement_husbandry, new_bee_2025, "Amalda", "Факт", "5.1.5.2")
 
         hoz_bee = create_column(statement_husbandry, bees_title,
                                 f"{date_str} yil holatiga xo‘jalik tomonidan asalari oilasi tashkil etish",
@@ -469,87 +411,28 @@ class Command(BaseCommand):
         )
         create_column(statement_husbandry, first_title, "Tashkilot nomi", "Наименование хозяйства",
                       "7.1.1", is_organization=True)
-        create_column(statement_husbandry, first_title, "Reja", "План", "7.1.2")
-        create_column(statement_husbandry, first_title, f"01.01.{current_year}-yil holatiga",
-                      "По состоянию на 01.01.2025", "7.1.2")
-        create_column(statement_husbandry, first_title, "01.10.2025 yil holatiga mavjud", # -> last with month
-                      "Имеется по состоянию на 01.10.2025 г.", "7.1.3")
-        create_column(statement_husbandry, first_title, "Farqi", "разница", "7.1.4")
-        create_column(statement_husbandry, first_title, "%", "%", "7.1.5")
+        create_column(statement_husbandry, first_title, "Reja", "План", "7.1.2",
+                      is_user_input=False)
+        create_column(statement_husbandry, first_title, f"01.01.{current_year}-yil holatiga", # last
+                      "По состоянию на 01.01.2025", "7.1.3", is_user_input=False)
+        create_column(statement_husbandry, first_title, f"01.{date_str} yil holatiga mavjud", # -> last with month
+                      f"Имеется по состоянию на 01.{date_str} г.", "7.1.4", is_user_input=False)
+        create_column(statement_husbandry, first_title, "Farqi", "разница", "7.1.5", is_user_input=False)
+        create_column(statement_husbandry, first_title, "%", "%", "7.1.6", is_user_input=False)
         from_this_2 = create_column(statement_husbandry, first_title, "Shundan", "из этого",
-                                    "7.1.6")
+                                    "7.1.7", is_user_input=False)
         create_column(statement_husbandry, from_this_2, "Yirik shoxli jami", "Всего крупнорогих",
-                      "7.1.6.1")
+                      "7.1.7.1", is_user_input=False)
         create_column(statement_husbandry, from_this_2, "shundan, buzoq", "отсюда, телёнок",
-                      "7.1.6.2")
-        create_column(statement_husbandry, from_this_2, "ot", "лошадь", "7.1.6.3")
+                      "7.1.7.2", is_user_input=False)
+        create_column(statement_husbandry, from_this_2, "ot", "лошадь", "7.1.7.3", is_user_input=False)
         create_column(statement_husbandry, from_this_2, "shundan, toy-qulun", "шундан, той-қулун",
-                      "7.1.6.4")
+                      "7.1.7.4", is_user_input=False)
         create_column(statement_husbandry, from_this_2, "mayda, shoxli jami",
-                      "Совокупность мелкороговых", "7.1.6.5")
-        create_column(statement_husbandry, from_this_2, "shundan qo`zi quloq",
-                      "из них ягнёнок, козлёнок", "7.1.6.6")
+                      "Совокупность мелкороговых", "7.1.7.5", is_user_input=False)
+        create_column(statement_husbandry, from_this_2, "shundan qo`zi uloq",
+                      "из них ягнёнок, козлёнок", "7.1.7.6", is_user_input=False)
 
-        # ======================  SVOD APPS AUTOMATE GENERATION REPORTS -> 2 last ===============================
-
-        second_app = create_column(statement_husbandry, None, "Svod Parranda",
-                                   "Сводная птица", "8")
-        second_title = create_column(
-            statement_husbandry,
-            second_app,
-            f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year}-yilda Parrandachilikni  rivojlantirish"
-            " to‘g‘risida ma’lumot",
-            f"Информация о развитии птицеводства в лесных хозяйствах системы Агентства в {current_year} году",
-            "8.1")
-        create_column(statement_husbandry, second_title, "Tashkilot nomi", "Наименование хозяйства",
-                      "8.1.1", is_organization=True)
-        create_column(statement_husbandry, second_title, f"{current_year} yil uchun reja",
-                      f"План на {current_year} год",
-                      "8.1.2")
-        create_column(statement_husbandry, second_title, "Bugungi kunga jami parranda soni",
-                      "Общее количество птиц на сегодняшний день", "8.1.3")
-        create_column(statement_husbandry, second_title, f"{current_year} yil xolatiga  parrandalar soni",
-                      f"Численность птиц по состоянию на {current_year} год", "8.1.4")
-        create_column(statement_husbandry, second_title, "%", "%", "8.1.5")
-        create_column(statement_husbandry, second_title, "Rejaga nisbatan farqi",
-                      "Отклонение от плана", "8.1.6")
-
-        # ======================  SVOD APPS AUTOMATE GENERATION REPORTS -> 3  last ===============================
-
-        third_app = create_column(statement_husbandry, None, "Svod Asalari", "Сводская Пчела",
-                                  "9")
-        third_title = create_column(
-            statement_husbandry,
-            third_app,
-            f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year}-yilda Asalarichilik bo‘yicha",
-            f"По пчеловодству в лесных хозяйствах системы Агентства в {current_year} году", "9.1")
-        create_column(statement_husbandry, third_title, "Tashkilot nomi", "Наименование хозяйства",
-                      "9.1", is_organization=True)
-        create_column(statement_husbandry, third_title, f"01.01.{current_year} yil holatiga asalari oilasi soni",
-                      f"Количество пчелиных семей на 01.01.{current_year} г.", "9.1.1")
-        create_column(statement_husbandry, third_title, f"{current_year}-yil asalari oilasi rejasi",
-                      f"План пчелиной семьи на {current_year} год", "9.1.2")
-        from_this_3 = create_column(statement_husbandry, third_title, "shundan", "из этого",
-                                    "9.1.3")
-        xojalik = create_column(statement_husbandry, from_this_3, "Xo'jalikda", "В хозяйстве",
-                                "9.1.3.1")
-        create_column(statement_husbandry, xojalik, "Reja", "План", "9.1.3.1.1")
-        create_column(statement_husbandry, xojalik, "Amalda", "Факт", "9.1.3.1.2")
-
-        special_sector = create_column(
-            statement_husbandry,
-            from_this_3,
-            "Xususiy sektor subyektlarida",
-            "У субъектов частного сектора", "9.1.3.2")
-        create_column(statement_husbandry, special_sector, "Reja", "План", "9.1.3.2.1")
-        create_column(statement_husbandry, special_sector, "Amalda", "Факт", "9.1.3.2.2")
-
-        general_bee = create_column(statement_husbandry, third_title, "Xususiy sektor subyektlarida",
-                                    "У субъектов частного сектора", "9.1.4")
-        create_column(statement_husbandry, general_bee, "Amalda", "Факт", "9.1.4.1")
-        create_column(statement_husbandry, third_title, "%", "%", "9.1.5")
-        create_column(statement_husbandry, third_title, "Rejaga nisbatan farqi", "Отклонение от плана",
-                      "9.1.6")
 
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Chorvachilik hisobi' Statement and Columns."))
         self.stdout.write(self.style.SUCCESS("✅ Successfully created 'Dorivor hisobi' Statement and Columns."))
