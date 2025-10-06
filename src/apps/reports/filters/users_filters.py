@@ -3,7 +3,6 @@ from django_filters import rest_framework as filters
 from apps.users.models import CustomUser
 from apps.general.models import Organization
 from apps.utils.services import RegionChoices
-from apps.reports.serializers.users import UserListSerializer
 
 
 class CustomUserFilter(filters.FilterSet):
