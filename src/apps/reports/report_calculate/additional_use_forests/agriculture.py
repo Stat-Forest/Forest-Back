@@ -2,7 +2,8 @@ from collections import defaultdict
 from decimal import Decimal
 from apps.reports.models import ReportItem, Report, ReportItemInner
 from apps.reports.report_calculate.additional_use_forests.get_general_columns import calculate_kx_svod_from_8_app
-from apps.reports.report_calculate.additional_use_forests.k_x_svod import calculate_kxsvod
+from apps.reports.report_calculate.additional_use_forests.k_x_svod import calculate_kxsvod_custom
+from apps.reports.report_calculate.additional_use_forests.total_columns import calculate_total_column
 
 
 def calculate_qishloq_xojaligi(report: Report):
@@ -28,6 +29,11 @@ def calculate_qishloq_xojaligi(report: Report):
         parent_ordering="8.1.2",  # Jami yong‘oqmevalilar
         crop_orderings=["8.1.3.1", "8.1.3.2", "8.1.3.3"]
     )
+    calculate_total_column(report, "8.1.4.1.1", [
+        "8.1.4.2.1",
+        "8.1.4.3.1",
+        "8.1.4.4.1"
+    ])
 
     # ==================== Boshoqli Don ilovasi ====================
     calculate_ilova(
@@ -87,18 +93,22 @@ def calculate_qishloq_xojaligi(report: Report):
             "7.1.3.1", "7.1.3.2", "7.1.3.3"
         ]
     )
+    calculate_total_column(report, "7.1.4.1.1", [
+        "7.1.4.2.1",
+        "7.1.4.3.1",
+        "7.1.4.4.1"
+    ])
+
     # ==================== K-X SVOD Jami Columnlani get qib ob kelish ====================
     calculate_kx_svod_from_8_app(report, columns)
 
     # ==================== K-X SVOD(9-ilova) ====================
-    calculate_kxsvod(report, columns)
+    calculate_kxsvod_custom(report, columns)
 
 def calculate_ilova(report, columns, parent_ordering: str, crop_orderings: list[str]):
     from django.db import transaction
-    from collections import defaultdict
-    from decimal import Decimal
 
-    suffix_map = {"1": "ga", "2": "s/ga", "3": "tn", "4": "tn"}
+    suffix_map = {"1": "ga", "2": "tn", "3": "tn"}
     result = defaultdict(Decimal)
 
     # 1. Jami ustunlari
