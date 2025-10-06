@@ -37,6 +37,11 @@ class Command(BaseCommand):
             )
             return column
 
+        create_statement(
+            parent=None,
+            name_uz="Axborot-tahlil, ijro intizomi",
+            name_ru="Информационно-аналитическая работа, исполнительская дисциплина"
+        )
         # === Root Statements ===
         person_statement = create_statement(
             parent=None,

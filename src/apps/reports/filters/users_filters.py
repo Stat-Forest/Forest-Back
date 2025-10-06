@@ -1,32 +1,26 @@
+# apps/reports/filters.py
 from django_filters import rest_framework as filters
-
-from apps.users.models import CustomUser
+from apps.users.models.users import CustomUser
 from apps.general.models import Organization
-from apps.utils.services import RegionChoices
 
 
 class CustomUserFilter(filters.FilterSet):
-    # Organization bo‘yicha filter (id orqali)
+    first_name = filters.CharFilter(field_name="first_name", lookup_expr="icontains")
+    last_name = filters.CharFilter(field_name="last_name", lookup_expr="icontains")
+
     organization = filters.ModelChoiceFilter(
         field_name="organization",
-        queryset=Organization.objects.all(),
-        label="Organization"
+        queryset=Organization.objects.all()
     )
 
-    # Organization region bo‘yicha filter
-    organization__region = filters.ChoiceFilter(
-        field_name="organization__region",
-        choices=RegionChoices.choices,
-        label="Organization Region"
-    )
-
-    # Role bo‘yicha filter
     role = filters.ChoiceFilter(
         field_name="role",
-        choices=CustomUser.Role.choices,
-        label="User Role"
+        choices=CustomUser.Role.choices
     )
+
+    # 🆔 id bo‘yicha UUID filter
+    id = filters.UUIDFilter(field_name="id")
 
     class Meta:
         model = CustomUser
-        fields = ["organization", "organization__region", "role"]
+        fields = ["id", "first_name", "last_name", "organization", "role"]
