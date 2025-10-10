@@ -5,11 +5,10 @@ from apps.base.models import AbstractBaseModel
 
 
 class StatementColumnManager(models.Manager):
-    def get_by_natural_key(self, statement_name, title, parent_id, ordering):
+    def get_by_natural_key(self, statement_name, title, ordering):
         return self.get(
             statement__name=statement_name,
             title=title,
-            parent_id=parent_id,
             ordering=ordering,
         )
 
@@ -97,7 +96,6 @@ class StatementColumn(AbstractBaseModel):
         return (
             self.statement.name if self.statement else None,
             self.title,
-            self.parent_id,
             self.ordering,
         )
     natural_key.dependencies = ["reports.statement"]
