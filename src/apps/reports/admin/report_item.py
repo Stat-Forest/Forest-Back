@@ -11,8 +11,8 @@ class ReportItemInnerInline(admin.TabularInline):
 
 @admin.register(ReportItem)
 class ReportItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "report", "plant", "statement_column", "short_value", "created_at")
-    list_filter = ("report", "plant", "statement_column")
+    list_display = ("id", "report", "statement_column", "short_value", "created_at")
+    list_filter = ("report", "statement_column")
     search_fields = (
         "report__id",
         "plant__name",
@@ -28,7 +28,7 @@ class ReportItemAdmin(admin.ModelAdmin):
 
 @admin.register(ReportItemInner)
 class ReportItemInnerAdmin(admin.ModelAdmin):
-    list_display = ("id", "report_item", "short_value", "created_at")
+    list_display = ("id", "report_item", "plant", "short_value", "created_at")
     list_filter = ("report_item",)
     search_fields = ("value",)
 
