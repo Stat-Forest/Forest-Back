@@ -112,6 +112,11 @@ class Report(AbstractBaseModel):
         default=False
     )
 
+    is_plant_based = models.BooleanField(
+        default=False,
+        help_text="This field for reports with creating plants"
+    )
+
     region = models.CharField(
       max_length=50,
       choices=RegionChoices.choices,
