@@ -34,11 +34,12 @@ class ReportListAPIView(CustomListAPIView):
         Prefetch(
             'report_items',
             queryset=ReportItem.objects
-            .select_related('plant', 'statement_column', 'statement_column__parent')
+            .select_related('statement_column', 'statement_column__parent')
             .prefetch_related("inners")
         )
     ).filter(
-        statement__parent__isnull=False
+        statement__parent__isnull=False,
+        is_plant_based=False,
     ).order_by('-created_at')
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
@@ -103,6 +104,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
         list_data = ReportListSerializer(
             created_reports, many=True, context=self.get_serializer_context()
         ).data
+
 
         return Response(list_data, status=201)
 

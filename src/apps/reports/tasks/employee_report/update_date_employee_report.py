@@ -289,18 +289,6 @@ def update_year_in_statement_columns():
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
 
-        # === 2017-yildan boshlab qo‘shilgan bog‘lar ===
-    uz = f"2017-{current_year} yildan qo'shilgan bog'lar"
-    ru = f"Сады, добавленные с 2017 по {current_year} год"
-    qs = StatementColumn.objects.filter(
-        title_uz__regex=r"2017-\d{4} yildan qo'shilgan bog'lar"
-    )
-    for col in qs:
-        if col.title_uz != uz:
-            col.title_uz = uz
-            col.title_ru = ru
-            col.save(update_fields=["title_uz", "title_ru"])
-
     # ===================== MEXANIZATSIYA =============================
 
     # === Neftbaza ilovasi ===
@@ -401,17 +389,8 @@ def update_year_in_statement_columns():
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
 
-# === Yirik shohli mollar ===
-    uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda Yirik shohli mollarni rivojlantirish bo‘yicha MA’LUMOT"
-    ru = f"Информация о развитии крупного рогатого скота в лесных хозяйствах системы агентства в {current_year} году"
-    qs = StatementColumn.objects.filter(
-        title_uz__regex=r"Yirik shohli mollarni rivojlantirish bo‘yicha MA’LUMOT"
-    )
-    for col in qs:
-        if col.title_uz != uz:
-            col.title_uz = uz
-            col.title_ru = ru
-            col.save(update_fields=["title_uz", "title_ru"])
+    # # last month first
+
 
     # === Yilqichilik ===
     uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda Yilqichilikni rivojlantirish bo‘yicha MA’LUMOT"
@@ -425,6 +404,18 @@ def update_year_in_statement_columns():
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
 
+    uz = f"{current_year} yilda qulun olish"
+    ru = f"Получение жеребят в {current_year} году"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"yilda qulun olish"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+
     # === Mayda shohli mollar ===
     uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda Mayda shohli mollarni rivojlantirish bo‘yicha MA’LUMOT"
     ru = f"Информация о развитии мелкого рогатого скота в лесных хозяйствах системы агентства в {current_year} году"
@@ -436,6 +427,62 @@ def update_year_in_statement_columns():
             col.title_uz = uz
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"{current_year} yilda buzoq olish"
+    ru = f"Получение телят в {current_year} году"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"yilda buzoq olish"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"{current_year} yilda yangidan tashkil etish, dona"
+    ru = f"Создание новых в {current_year} году, ед."
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"yilda yangidan tashkil etish, dona"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"Xo‘jaliklar tomonidan {current_year} yil holatiga"
+    ru = f"По состоянию на {current_year} год со стороны хозяйств"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"Xo‘jaliklar tomonidan \d{4} yil holatiga"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"Xususiy sektorlarni jalb qilgan holda {current_year} yil holatiga"
+    ru = f"По состоянию на {current_year} год с привлечением частного сектора"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"Xususiy sektorlarni jalb qilgan holda \d{4} yil holatiga"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"Jami chorva {current_year} yil holatiga"
+    ru = f"Общее поголовье по состоянию на {current_year} год"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"Jami chorva \d{4} yil holatiga"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
 
     # === Parrandachilik ===
     uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year} yilda parrandachilik bo‘yicha MA’LUMOT"
@@ -461,17 +508,6 @@ def update_year_in_statement_columns():
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
 
-    # === Yangi asalari oilasi ===
-    uz = f"{current_year} yilda yangidan asalari oilasi tashkil etish"
-    ru = f"Создание новых пчелиных семей в {current_year} году"
-    qs = StatementColumn.objects.filter(
-        title_uz__regex=r"yilda yangidan asalari oilasi tashkil etish"
-    )
-    for col in qs:
-        if col.title_uz != uz:
-            col.title_uz = uz
-            col.title_ru = ru
-            col.save(update_fields=["title_uz", "title_ru"])
 
     # === Baliqchilik ===
     uz = f"O‘rmon xo‘jaligi agentligi huzuridagi xo‘jaliklardagi {current_year} yilda baliq mahsulotlarini yetishtirilishi bo‘yicha MA’LUMOT"
@@ -481,6 +517,100 @@ def update_year_in_statement_columns():
     )
     for col in qs:
         if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    # === Svod Chorva ===
+    uz = (f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year}-yilda Chorvachilikni  rivojlantirish"
+          f" to‘g‘risida ma’lumot")
+    ru = f"Информация о развитии животноводства в лесных хозяйствах системы Агентства в {current_year} году"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"yilda Chorvachilikni  rivojlantirish"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"01.01.{current_year}-yil holatiga"
+    ru = f"По состоянию на 01.01.{current_year}"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"01\.01\.\d{4}-yil holatiga"
+    )
+    for col in qs:
+        if col.title_uz != uz or col.title_ru != ru:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    # === Svod Parranda ===
+
+    uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year}-yilda Parrandachilikni  rivojlantirish to‘g‘risida ma’lumot"
+    ru = f"Информация о развитии птицеводства в лесных хозяйствах системы Агентства в {current_year} году"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"Parrandachilikni  rivojlantirish to‘g‘risida ma’lumot"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"{current_year} yil uchun reja"
+    ru = f"План на {current_year} год"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"\d{4} yil uchun reja"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"{current_year} yil xolatiga  parrandalar soni"
+    ru = f"Численность птиц по состоянию на {current_year} год"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"\d{4} yil xolatiga  parrandalar soni"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+
+    # === Svod Asalari ===
+    uz = f"Agentlik tizimidagi o‘rmon xo‘jaliklarida {current_year}-yilda Asalarichilik bo‘yicha"
+    ru = f"По пчеловодству в лесных хозяйствах системы Агентства в {current_year} году"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"Asalarichilik bo‘yicha$"
+    )
+    for col in qs:
+        if col.title_uz != uz:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"01.01.{current_year} yil holatiga asalari oilasi soni"
+    ru = f"Количество пчелиных семей на 01.01.{current_year} г."
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"01\.01\.\d{4} yil holatiga asalari oilasi soni"
+    )
+    for col in qs:
+        if col.title_uz != uz or col.title_ru != ru:
+            col.title_uz = uz
+            col.title_ru = ru
+            col.save(update_fields=["title_uz", "title_ru"])
+
+    uz = f"{current_year}-yil asalari oilasi rejasi"
+    ru = f"План пчелиной семьи на {current_year} год"
+    qs = StatementColumn.objects.filter(
+        title_uz__regex=r"\d{4}-yil asalari oilasi rejasi"
+    )
+    for col in qs:
+        if col.title_uz != uz or col.title_ru != ru:
             col.title_uz = uz
             col.title_ru = ru
             col.save(update_fields=["title_uz", "title_ru"])
