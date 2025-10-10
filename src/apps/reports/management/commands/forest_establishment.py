@@ -388,15 +388,17 @@ class Command(BaseCommand):
             title_ru="Объем сбора семян",
             ordering="1.1.2"
         )
-        for i, title in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+        for i, title_uz in enumerate(["Reja", "Amalda", "Foiz"], start=1):
+            title_ru = {"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title_uz]
+
             StatementColumn.objects.create(
                 statement=urug_statement,
                 parent=parent,
-                title_uz=title,
-                title_ru={"Reja": "План", "Amalda": "Факт", "Foiz": "Процент"}[title],
+                title_uz=title_uz,
+                title_ru=title_ru,
                 ordering=f"1.1.2.{i}",
-                status_plan=StatementColumn.PlanStatus.YILLIK if title == "Reja" else None,
-                is_user_input=title in ("Reja") or title_ru in ("План")
+                status_plan=StatementColumn.PlanStatus.YILLIK if title_uz == "Reja" else None,
+                is_user_input=title_uz in ("Reja", "Amalda")
             )
 
 
