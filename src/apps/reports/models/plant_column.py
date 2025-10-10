@@ -12,7 +12,9 @@ class Plant(AbstractBaseModel):
     statement = models.ForeignKey(
         "reports.Statement",
         on_delete=models.CASCADE,
-        related_name="plants"
+        related_name="plants",
+        blank=True,
+        null=True
     )
 
     parent = models.ForeignKey(
