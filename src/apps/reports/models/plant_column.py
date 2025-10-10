@@ -9,6 +9,12 @@ from apps.base.models import AbstractBaseModel
 class Plant(AbstractBaseModel):
     name = models.CharField(max_length=255)
 
+    statement = models.ForeignKey(
+        "reports.Statement",
+        on_delete=models.CASCADE,
+        related_name="plants"
+    )
+
     parent = models.ForeignKey(
         'self',
         on_delete=models.PROTECT,

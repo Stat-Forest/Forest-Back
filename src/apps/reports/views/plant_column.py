@@ -14,7 +14,7 @@ class PlantFilter(django_filters.FilterSet):
 
     class Meta:
         model = Plant
-        fields = ['parent']
+        fields = ['parent', 'statement']
 
 
 @extend_schema(

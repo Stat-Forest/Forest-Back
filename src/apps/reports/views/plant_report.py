@@ -1,60 +1,35 @@
-# views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from django.utils.translation import gettext_lazy as _
 
-from apps.reports.serializers.reports import PlantReportInitSerializer
-from apps.reports.serializers.plant.plant_create import PlantBasedReportCreateSerializer
-from apps.reports.services.plant_report import get_or_create_report_and_columns
+from apps.reports.models import Report
+from apps.base.views import CustomListAPIView
+from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer
+from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 
 
-class PlantBasedReportInitAPIView(APIView):
-    statement_name = None  # default
-
-    @classmethod
-    def as_view(cls, **initkwargs):
-        view = super().as_view(**initkwargs)
-        view.cls.statement_name = initkwargs.get("statement_name")
-        return view
-
+class UniversalPlantReportCreateAPIView(APIView):
     def post(self, request):
-        serializer = PlantReportInitSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        deadline = serializer.validated_data['deadline_id']
-        organization = getattr(request.user, 'organization', None)
-
-        if not organization:
-            return Response({"detail": _("Tashkilot topilmadi.")}, status=status.HTTP_400_BAD_REQUEST)
-
-        # ⬇️ statement_name ni endi classdan olamiz
-        report, report_items = get_or_create_report_and_columns(
-            deadline, organization, self.statement_name
+        serializer = UniversalPlantReportCreateSerializer(
+            data=request.data,
+            context={"request": request}
         )
-
-        response_data = {
-            "id": str(report.id),
-            "deadline": str(deadline.id),
-            "organization": str(organization.id),
-            "organization_name": organization.name,
-            "statement": str(report.statement.id),
-            "statement_name": report.statement.name,
-            "period": report.statement.period,
-            "status": report.status,
-            "created_at": report.created_at.strftime("%d.%m.%Y %H:%M"),
-            "report_items": report_items
-        }
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
-
-
-class PlantBasedReportCreateAPIView(APIView):
-    """
-    POST: Submit values to plant-based reports (Ko‘chat, Nihol).
-    """
-    def post(self, request):
-        serializer = PlantBasedReportCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": _("Hisobotlar saqlandi.")}, status=status.HTTP_201_CREATED)
+        reports = serializer.save()
+        response_serializer = PlantReportListSerializer(
+            reports,
+            many=True,
+            context={"request": request}
+        )
+        return Response(response_serializer.data, status=201)
+
+
+class PlantListReportAPIView(CustomListAPIView):
+    serializer_class = PlantReportListSerializer
+
+    def get_queryset(self):
+        return Report.objects.filter(is_plant_based=True).select_related(
+            "organization", "statement", "deadline"
+        ).prefetch_related(
+            "report_items__statement_column__parent",
+            "report_items__inners__plant"
+        ).order_by("-created_at")

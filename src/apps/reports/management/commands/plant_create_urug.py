@@ -87,29 +87,45 @@ CATEGORY_STRUCTURE = {
 }
 
 class Command(BaseCommand):
-    help = "Create plants for 'Urug' harakati Reja' statement"
+    help = "Create plants for `Urug' harakati` statement"
 
     def handle(self, *args, **kwargs):
-        statement = Statement.objects.get(name_uz="Urug' xarakati Reja")
-        total = 0
+        self.stdout.write("🚀 Creating plants for Urug' harakati...")
 
-        for parent_uz, children in CATEGORY_STRUCTURE.items():
-            parent = Plant.objects.create(name=parent_uz, statement=statement)
-            setattr(parent, build_localized_fieldname("name", "uz"), parent_uz)
-            setattr(parent, build_localized_fieldname("name", "ru"), parent_uz)
+        try:
+            statement = Statement.objects.get(name_uz="Urug' harakati")
+        except Statement.DoesNotExist:
+            self.stderr.write("❌ Statement 'Urug' harakati' not found.")
+            return
+
+        total_created = 0
+
+        for parent_name, children in CATEGORY_STRUCTURE.items():
+            # Parent
+            parent, _ = Plant.objects.get_or_create(
+                name=parent_name,
+                parent=None,
+                defaults={"statement": statement}
+            )
+            parent.statement = statement
+            setattr(parent, build_localized_fieldname("name", "uz"), parent_name)
+            setattr(parent, build_localized_fieldname("name", "ru"), parent_name)
             parent.save()
-            self.stdout.write(f"✓ Parent created: {parent_uz}")
 
+            # Children
             for name_uz, name_ru in children:
-                plant = Plant.objects.create(
+                child, created = Plant.objects.get_or_create(
                     name=name_uz,
-                    statement=statement,
-                    parent=parent
+                    parent=parent,
+                    defaults={"statement": statement}
                 )
-                setattr(plant, build_localized_fieldname("name", "uz"), name_uz)
-                setattr(plant, build_localized_fieldname("name", "ru"), name_ru)
-                plant.save()
-                total += 1
-                self.stdout.write(f"  ✓ {name_uz} ({name_ru})")
+                child.statement = statement
+                setattr(child, build_localized_fieldname("name", "uz"), name_uz)
+                setattr(child, build_localized_fieldname("name", "ru"), name_ru)
+                child.save()
 
-        self.stdout.write(self.style.SUCCESS(f"✅ Done. Total children created: {total}"))
+                if created:
+                    total_created += 1
+                    self.stdout.write(f"  ➕ Created: {name_uz}")
+
+        self.stdout.write(self.style.SUCCESS(f"✅ Done. Total new plants created: {total_created}"))
