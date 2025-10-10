@@ -1,27 +1,26 @@
 import uuid
-
-from rest_framework import serializers, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.db import transaction
-from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
 
-from apps.base.serializers import CustomSerializer
 from apps.general.models import Organization
-from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.utils.translation import get_lang_code
+from apps.base.serializers import CustomSerializer
 from apps.reports.report_calculate import ALL_CALCULATORS
-from apps.reports.serializers.reports import ReportItemInnerSerializer, PlantReportInitSerializer
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.reports.services.individual_general_report import aggregate_individual_report
-from apps.reports.services.plant_report import get_or_create_report_and_columns
-from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class PlantBasedReportItemSerializer(CustomSerializer):
     statement_column = serializers.UUIDField()
-    inners = ReportItemInnerSerializer(many=True)
+    inners = serializers.ListField(child=serializers.DictField())
 
 
-class PlantBasedReportCreateSerializer(CustomSerializer):
+class UniversalPlantReportCreateSerializer(CustomSerializer):
+    """
+    Universal serializer for creating all plant-based reports
+    (Ko‘chat-ilovasi, Nihol-ilovasi, Urug‘ harakati, etc.)
+    """
     deadline = serializers.UUIDField()
     report_items = PlantBasedReportItemSerializer(many=True)
 
@@ -36,7 +35,7 @@ class PlantBasedReportCreateSerializer(CustomSerializer):
         report_items_buffer = []
         report_inners_buffer = []
         reports_map = {}
-        current_org_id = None
+        current_org = None
 
         with transaction.atomic():
             for item in items_data:
@@ -46,87 +45,81 @@ class PlantBasedReportCreateSerializer(CustomSerializer):
                     raise serializers.ValidationError(f"Column {col_id} not found")
 
                 inners = item.get("inners", [])
+
+                # ✅ 1. "Tashkilot nomi" column -> org_id dan tashkilotni aniqlash
                 if column.is_organization:
-                    if not inners:
-                        raise serializers.ValidationError(f"Missing inners for org column {col_id}")
-
-                    current_org_id = inners[0]["value"]
-                    org_instance = Organization.objects.get(id=current_org_id)
-                    report_key = (current_org_id, str(column.statement.id))
-
-                    report = Report.objects.filter(
-                        organization=org_instance,
-                        statement=column.statement,
-                        deadline_id=deadline_id,
-                        is_individual_general=False
-                    ).first()
-
-                    if not report:
-                        report = Report.objects.create(
-                            organization=org_instance,
-                            statement=column.statement,
-                            deadline_id=deadline_id,
-                            region=org_instance.region,
-                            status=Report.StatusChoices.SAVED
-                        )
-
-                    reports_map[report_key] = report
-                    report_item_id = uuid.uuid4()
-                    report_items_buffer.append(ReportItem(
-                        id=report_item_id,
-                        report=report,
-                        statement_column=column
-                    ))
-
-                    lang = get_lang_code(self.context)
-                    for inner in inners:
-                        val = inner["value"]
-                        title = getattr(column, f"title_{lang}", "").lower()
-                        if title in ["tashkilot nomi", "название организации"]:
-                            val = get_translated_field(org_instance, "name", lang)
-                        report_inners_buffer.append(ReportItemInner(
-                            report_item_id=report_item_id,
-                            value=val
-                        ))
+                    if not inners or not inners[0].get("value"):
+                        raise serializers.ValidationError("Tashkilot ID kiritilishi kerak.")
+                    org_id = inners[0]["value"]
+                    try:
+                        current_org = Organization.objects.get(id=org_id)
+                    except Organization.DoesNotExist:
+                        raise serializers.ValidationError(f"Tashkilot topilmadi: {org_id}")
                     continue
 
-                if not current_org_id:
-                    raise serializers.ValidationError("Organization not yet set")
+                # ✅ 2. Org aniqlanmagan bo‘lsa xato
+                if not current_org:
+                    raise serializers.ValidationError(
+                        "Tashkilot aniqlanmagan, iltimos 'Tashkilot nomi' columnni yuboring."
+                    )
 
-                org_instance = Organization.objects.get(id=current_org_id)
-                report_key = (current_org_id, str(column.statement.id))
-
+                # ✅ 3. Reportni yaratamiz yoki olamiz
+                report_key = (current_org.id, column.statement.id)
                 if report_key not in reports_map:
                     report = Report.objects.create(
-                        organization=org_instance,
+                        organization=current_org,
                         statement=column.statement,
                         deadline_id=deadline_id,
-                        region=org_instance.region,
-                        status=Report.StatusChoices.SAVED
+                        region=current_org.region,
+                        status=Report.StatusChoices.SAVED,
+                        is_plant_based=True,
                     )
                     reports_map[report_key] = report
 
                 report = reports_map[report_key]
                 report_item_id = uuid.uuid4()
-                report_items_buffer.append(ReportItem(
-                    id=report_item_id,
-                    report=report,
-                    statement_column=column
-                ))
 
+                # ✅ ReportItem
+                report_items_buffer.append(
+                    ReportItem(
+                        id=report_item_id,
+                        report=report,
+                        statement_column=column
+                    )
+                )
+
+                # ✅ Innerlar
                 for inner in inners:
-                    report_inners_buffer.append(ReportItemInner(
-                        report_item_id=report_item_id,
-                        value=inner["value"]
-                    ))
+                    report_inners_buffer.append(
+                        ReportItemInner(
+                            report_item_id=report_item_id,
+                            plant_id=inner.get("plant"),
+                            value=inner.get("value")
+                        )
+                    )
 
             ReportItem.objects.bulk_create(report_items_buffer)
             ReportItemInner.objects.bulk_create(report_inners_buffer)
 
+            # ✅ Hisob-kitob
             for report in reports_map.values():
-                statement_name = report.statement.name_uz
-                if func := ALL_CALCULATORS.get(statement_name):
+                if func := ALL_CALCULATORS.get(report.statement.name_uz):
                     func(report)
                 aggregate_individual_report(report)
 
-        return list(reports_map.values())
+        # ✅ Natija uchun instance
+        self.instance = list(reports_map.values())
+        return self.instance
+
+    # ✅ create dan keyingi response formatini sozlaymiz
+    def to_representation(self, instance_list):
+        lang = get_lang_code(self.context)
+        serialized = []
+
+        for report in instance_list:
+            serialized.append(PlantReportListSerializer(
+                report,
+                context={"request": self.context.get("request")}
+            ).data)
+
+        return serialized
