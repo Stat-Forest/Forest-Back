@@ -445,7 +445,7 @@ class Command(BaseCommand):
                     ("summasi (ming so‘m)", "2.1.5.6.2")
                 ]),
                 ("Nobud bo‘lgan nihollar (buyruq asosida)", "2.1.5.7"),
-                ("Jami chiqim", "2.1.5.7"),
+                ("Jami chiqim", "2.1.5.8"),
                 ("Shu davrga nisbatan yakuniy qoldiq", "2.1.5.9"),
             ])
         ]
