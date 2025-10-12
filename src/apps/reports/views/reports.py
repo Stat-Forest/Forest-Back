@@ -39,7 +39,6 @@ class ReportListAPIView(CustomListAPIView):
         )
     ).filter(
         statement__parent__isnull=False,
-        is_plant_based=False,
     ).order_by('-created_at')
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
