@@ -1,8 +1,13 @@
-import uuid
+import uuid, re
+
+from datetime import date
+
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import serializers
 
 from apps.general.models import Organization
+from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
 from apps.reports.report_calculate import ALL_CALCULATORS
@@ -23,6 +28,86 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
     """
     deadline = serializers.UUIDField()
     report_items = PlantBasedReportItemSerializer(many=True)
+
+    def validate(self, attrs):
+        deadline_id = attrs["deadline"]
+        report_items = attrs['report_items']
+        user = self.context['request'].user
+
+        from apps.reports.models import Deadline
+        try:
+            deadline = Deadline.objects.select_related("statement").get(id=deadline_id)
+        except Deadline.DoesNotExist:
+            raise ValidationError({"deadline": "Berilgan deadline mavjud emas."})
+
+        statement = deadline.statement
+        submit_at = deadline.submit_at
+        today = date.today()
+
+        # ✅ get_week_of_month funksiyasi
+        def get_week_of_month(day):
+            first_day = day.replace(day=1)
+            adjusted_dom = day.day + first_day.weekday()
+            return (adjusted_dom - 1) // 7 + 1
+
+        # ✅ Deadline vaqt validatsiyasi
+        if statement.period == PeriodChoices.KUNLIK:
+            report_day = date.fromisoformat(submit_at)
+            if report_day >= today:
+                raise ValidationError({'submit_at': 'Faqat o‘tgan kunlar uchun topshirish mumkin.'})
+
+        elif statement.period == PeriodChoices.HAFTALIK:
+            match = re.match(r'^(?P<year>\d{4})-(?P<month>\d{2})-HAFTALIK_(?P<week>[1-4])$', submit_at)
+            if not match:
+                raise ValidationError({'submit_at': 'Noto‘g‘ri format. YYYY-MM-HAFTALIK_x bo‘lishi kerak.'})
+
+            year = int(match.group('year'))
+            month = int(match.group('month'))
+            week = int(match.group('week'))
+
+            if year > today.year or (year == today.year and month > today.month):
+                raise ValidationError({'submit_at': 'Faqat o‘tgan haftalar uchun topshirish mumkin.'})
+            if year == today.year and month == today.month and week >= get_week_of_month(today):
+                raise ValidationError({'submit_at': 'Faqat o‘tgan haftalar uchun topshirish mumkin.'})
+
+        elif statement.period == PeriodChoices.OYLIK:
+            try:
+                year, month = map(int, submit_at.split('-'))
+            except Exception:
+                raise ValidationError({'submit_at': 'Noto‘g‘ri oylik format. YYYY-MM bo‘lishi kerak.'})
+
+            if year > today.year or (year == today.year and month >= today.month):
+                raise ValidationError({'submit_at': 'Faqat o‘tgan oylar uchun topshirish mumkin.'})
+
+        elif statement.period == PeriodChoices.CHORAKLIK:
+            match = re.match(r'^(?P<year>\d{4})-CHORAK_(?P<quarter>[1-4])$', submit_at)
+            if not match:
+                raise ValidationError({'submit_at': 'Noto‘g‘ri chorak format. YYYY-CHORAK_x bo‘lishi kerak.'})
+
+            year = int(match.group('year'))
+            quarter = int(match.group('quarter'))
+            current_quarter = (today.month - 1) // 3 + 1
+            if year > today.year or (year == today.year and quarter >= current_quarter):
+                raise ValidationError({'submit_at': 'Faqat o‘tgan choraklar uchun topshirish mumkin.'})
+
+        elif statement.period == PeriodChoices.YILLIK:
+            try:
+                year = int(submit_at)
+            except Exception:
+                raise ValidationError({'submit_at': 'Noto‘g‘ri yillik format. YYYY bo‘lishi kerak.'})
+            if year >= today.year:
+                raise ValidationError({'submit_at': 'Faqat o‘tgan yillar uchun topshirish mumkin.'})
+
+        # ✅ 5. Duplicated report borligini tekshir
+        if Report.objects.filter(
+                organization=user.organization,
+                statement=statement,
+                deadline=deadline,
+                is_report=True
+        ).exists():
+            raise ValidationError({'report': 'Bu hisobot allaqachon mavjud.'})
+
+        return attrs
 
     def create(self, validated_data):
         items_data = validated_data.pop("report_items")
