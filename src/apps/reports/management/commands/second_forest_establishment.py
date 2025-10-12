@@ -345,7 +345,7 @@ class Command(BaseCommand):
         )
 
         data_structure = [
-            ("Ko‘chatlar", "1.1.1", [], True),
+            ("Tashkilot nomi", "1.1.1", [], True),
             ("Yil boshiga qoldiq", "1.1.2", []),
             ("Kirim", "1.1.3", [
                 ("Joriy yilda yetishtirilgan qalamcha va ko‘chatlar (shkolka)", "1.1.3.1"),
@@ -359,7 +359,7 @@ class Command(BaseCommand):
                 ("Ko‘kalamzorlashtirish tadbirlari uchun", "1.1.5.3"),
                 ("Tarbiya bo`limiga o`tkalizdi", "1.1.5.4"),
                 ("Sotildi", "1.1.5.5", [
-                    ("Tashkilot nomi", "1.1.5.5.1"),
+                    ("Ko'chatlar", "1.1.5.5.1"),
                     ("shartnoma raqami (№ sanasi)", "1.1.5.5.2"),
                     ("Ko`chat soni", "1.1.5.5.3"),
                     ("summasi", "1.1.5.5.4")
@@ -379,7 +379,7 @@ class Command(BaseCommand):
                 children = rest[0] if rest else []
                 is_organization = rest[1] if len(rest) == 2 else False
                 title_ru = {
-                    "Ko‘chatlar": "Ростки",
+                    "Tashkilot nomi": "Название организации",
                     "Yil boshiga qoldiq": "Остаток на начало года",
                     "Kirim": "Приход",
                     "Joriy yilda yetishtirilgan qalamcha va ko‘chatlar (shkolka)": "Выращенные черенки и ростки в текущем году (школка)",
@@ -392,7 +392,7 @@ class Command(BaseCommand):
                     "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
                     "Tarbiya bo`limiga o`tkalizdi": "Передано в Департамент образования",
                     "Sotildi": "Продано",
-                    "Tashkilot nomi": "Название организации",
+                    "Ko'chatlar": "Ростки",
                     "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
                     "ko‘chat soni, (dona)": "Количество ростков (шт)",
                     "summasi (ming so‘m)": "Сумма (тыс. сум)",
@@ -440,7 +440,7 @@ class Command(BaseCommand):
         )
 
         data_structure = [
-            ("Nihollar", "2.1.1", [], True),
+            ("Tashkilot nomi", "2.1.1", [], True),
             ("Yil boshiga qoldiq", "2.1.2", []),
             ("Kirim", "2.1.3", [
                 ("Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)", "2.1.3.1"),
@@ -454,7 +454,7 @@ class Command(BaseCommand):
                 ("Ko‘kalamzorlashtirish tadbirlari uchun", "2.1.5.3"),
                 ("Tarbiya bo`limiga o`tkalizdi", "2.1.5.4"),
                 ("Sotildi", "2.1.5.5", [
-                    ("Tashkilot nomi", "2.1.5.5.1"),
+                    ("Nihollar", "2.1.5.5.1"),
                     ("shartnoma raqami (№ sanasi)", "2.1.5.5.2"),
                     ("nihol soni", "2.1.5.5.3"),
                     ("summasi", "2.1.5.5.4")
@@ -476,7 +476,7 @@ class Command(BaseCommand):
 
                 # Ruscha tarjimalar lug‘ati
                 title_ru = {
-                    "Nihollar": "Саженцы",
+                    "Tashkilot nomi": "Название организации ",
                     "Yil boshiga qoldiq": "Остаток на начало года",
                     "Kirim": "Приход",
                     "Joriy yilda yetishtirilgan qalamcha va nihollar (shkolka)": "Выращенные черенки и саженцы в текущем году (школка)",
@@ -489,7 +489,7 @@ class Command(BaseCommand):
                     "Ko‘kalamzorlashtirish tadbirlari uchun": "Для мероприятий по озеленению",
                     "Tarbiya bo`limiga o`tkalizdi": "Передано в Департамент образования",
                     "Sotildi": "Продано",
-                    "Tashkilot nomi": "Название организации",
+                    "Nihollar": "Саженцы",
                     "shartnoma raqami (№ sanasi)": "Номер договора (дата)",
                     "nihollari soni, (dona)": "Количество саженцев (шт)",
                     "summasi (ming so‘m)": "Сумма (тыс. сум)",
