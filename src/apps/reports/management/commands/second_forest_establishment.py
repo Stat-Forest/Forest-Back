@@ -39,14 +39,16 @@ def generate_tree_columns(statement, parent, ordering_prefix):
         )
 
 
-def generate_grouped_subtree(statement, parent, ordering_prefix, section_title_uz=None, section_title_ru=None):
+def generate_grouped_subtree(statement, parent, ordering_prefix, section_title_uz=None, section_title_ru=None,
+                             is_user_input=True):
     if section_title_uz and section_title_ru:
         parent = StatementColumn.objects.create(
             statement=statement,
             parent=parent,
             title_uz=section_title_uz,
             title_ru=section_title_ru,
-            ordering=ordering_prefix
+            ordering=ordering_prefix,
+            is_user_input=is_user_input
         )
         ordering_prefix += ".1"
 
@@ -212,7 +214,7 @@ class Command(BaseCommand):
             statement=third_statement,
             title_uz="Ko‘chat-va-Nihol-ilova",
             title_ru="Приложение Ростки-и-Саженцы",
-            ordering="3"
+            ordering="3",
         )
 
         title_column_2 = StatementColumn.objects.create(
@@ -220,7 +222,7 @@ class Command(BaseCommand):
             parent=app_column,
             title_uz="O‘rmon xo‘jaligi davlat qo‘mitasi tizimidagi o‘rmon xo‘jaliklariida niholxona va ko‘chatxonalar tashkil etish, yillik nihol va ko‘chat yetishtirish harakati to‘g‘risida umumlashtirilgan ma‘lumot",
             title_ru="Обобщенная информация о создании питомников и теплиц, а также ежегодном выращивании саженцев и ростков в лесничествах системы Государственного комитета лесного хозяйства",
-            ordering="3.1"
+            ordering="3.1",
         )
 
         StatementColumn.objects.create(
@@ -229,7 +231,7 @@ class Command(BaseCommand):
             title_uz="Tashkilot nomi",
             title_ru="Названия хозяйств",
             ordering="3.1.1",
-            is_organization=True
+            is_organization=True,
         )
 
         generate_grouped_subtree(
@@ -237,39 +239,44 @@ class Command(BaseCommand):
             title_column_2,
             "3.1.3",
             "Yil boshiga bo'lgan qoldiq",
-            "Осталось до начала года"
+            "Осталось до начала года",
+            is_user_input=False
         )
+
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.4",
             "Shu jumladan: Joriy yilda yetishtirilgan nihol, qalamcha va ko‘chatlar (shkolka)",
-            "В том числе: Саженцы, черенки и саженцы, выращенные в текущем году (школка)"
-
+            "В том числе: Саженцы, черенки и саженцы, выращенные в текущем году (школка)",
+            is_user_input=False
         )
+
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.5",
             "Sotib olindi",
-            "Куплено"
-
+            "Куплено",
+            is_user_input=False
         )
+
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.6",
             "Boshqa tashkilotlardan beg'araz olindi",
-            "Безвозмездно получено от других организаций"
-
+            "Безвозмездно получено от других организаций",
+            is_user_input=False
         )
+
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.7",
             "Jami yetishtirildi (inventarizatsiya)",
-            "Всего произведено (инвентаризация)"
-
+            "Всего произведено (инвентаризация)",
+            is_user_input=False
         )
 
         sarflanishi = StatementColumn.objects.create(
@@ -277,7 +284,8 @@ class Command(BaseCommand):
             parent=title_column_2,
             title_uz="SARFLANISHI",
             title_ru="ИЗРАСХОДОВАНИЕ",
-            ordering="3.1.8"
+            ordering="3.1.8",
+            is_user_input=False
         )
 
         categories = [
@@ -296,24 +304,27 @@ class Command(BaseCommand):
                 parent=sarflanishi,
                 title_uz=title_uz,
                 title_ru=title_ru,
-                ordering=prefix
+                ordering=prefix,
+                is_user_input=False
             )
-            generate_grouped_subtree(third_statement, parent, prefix)
+            generate_grouped_subtree(third_statement, parent, prefix, is_user_input=False)
 
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.16",
             "Jami sarflangan",
-            "Всего потрачено"
-
+            "Всего потрачено",
+            is_user_input=False
         )
+
         generate_grouped_subtree(
             third_statement,
             title_column_2,
             "3.1.17",
             "Shu davrga nisbatan yakuniy qoldiq",
-            "Итоговый остаток за тот же период"
+            "Итоговый остаток за тот же период",
+            is_user_input=False
         )
 
         # ==========================================================================  Ko‘chat
@@ -390,13 +401,21 @@ class Command(BaseCommand):
                     "Jami chiqim": "Общий расход",
                     "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
                 }.get(title_uz, title_uz)
+
+                is_input = False if title_uz in (
+                    "Jami yetishtirildi (inventarizatsiya)",
+                    "Jami chiqim",
+                    "Shu davrga nisbatan yakuniy qoldiq"
+                ) else True
+
                 col = StatementColumn.objects.create(
                     statement=third_statement,
                     parent=parent,
                     title_uz=title_uz,
                     title_ru=title_ru,
                     ordering=ordering,
-                    is_organization=is_organization
+                    is_organization=is_organization,
+                    is_user_input=is_input
                 )
                 if children:
                     create_columns(col, children)
@@ -454,6 +473,8 @@ class Command(BaseCommand):
             for title_uz, ordering, *rest in structure:
                 children = rest[0] if rest else []
                 is_organization = rest[1] if len(rest) == 2 else False
+
+                # Ruscha tarjimalar lug‘ati
                 title_ru = {
                     "Nihollar": "Саженцы",
                     "Yil boshiga qoldiq": "Остаток на начало года",
@@ -477,14 +498,24 @@ class Command(BaseCommand):
                     "Jami chiqim": "Общий расход",
                     "Shu davrga nisbatan yakuniy qoldiq": "Итоговый остаток за период"
                 }.get(title_uz, title_uz)
+
+                # ✅ Faqat 3ta maxsus ustun uchun is_user_input=False
+                is_input = False if title_uz in (
+                    "Jami yetishtirildi (inventarizatsiya)",
+                    "Jami chiqim",
+                    "Shu davrga nisbatan yakuniy qoldiq"
+                ) else True
+
                 col = StatementColumn.objects.create(
                     statement=third_statement,
                     parent=parent,
                     title_uz=title_uz,
                     title_ru=title_ru,
                     ordering=ordering,
-                    is_organization=is_organization
+                    is_organization=is_organization,
+                    is_user_input=is_input
                 )
+
                 if children:
                     create_columns(col, children)
 
