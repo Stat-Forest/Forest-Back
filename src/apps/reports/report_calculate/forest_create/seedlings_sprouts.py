@@ -1,6 +1,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
+from apps.reports.report_calculate.forest_create.create_third_svod_seedlings import calculate_third_seedlings_svod
 
 
 def normalize(value):
@@ -147,3 +148,5 @@ def calculate_seedlings(report: Report):
         ReportItemInner.objects.bulk_create(create_buffer["inners"])
     if update_buffer["inners"]:
         ReportItemInner.objects.bulk_update(update_buffer["inners"], ["value"])
+
+    calculate_third_seedlings_svod(report)
