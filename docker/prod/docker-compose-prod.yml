@@ -54,6 +54,7 @@ services:
       --agree-tos 
       --no-eff-email 
       -d forest.yutori.uz
+      -d stat-urmon.uz
 
   forest_postgres:
     image: postgres:16
