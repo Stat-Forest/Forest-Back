@@ -10,4 +10,4 @@ class OrganizationTranslationOptions(TranslationOptions):
 
 @register(Announcement)
 class AnnouncementTranslationOptions(TranslationOptions):
-    fields = ('title',)
+    fields = ('title','desc')
