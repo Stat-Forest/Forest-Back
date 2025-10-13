@@ -1,5 +1,5 @@
 from django.contrib import admin
-from apps.general.models.announcement import Announcement
+from apps.general.models.announcements import Announcement
 
 
 @admin.register(Announcement)
