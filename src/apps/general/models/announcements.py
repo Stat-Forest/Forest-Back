@@ -9,7 +9,7 @@ class Announcement(AbstractBaseModel):
     image = models.ImageField(upload_to='announcements/%y/%m/%d')
     lnk = models.URLField(max_length=200)
     ordering = models.SmallIntegerField(validators=[MinValueValidator(1)])
-    is_active=models.BooleanField()
+    is_active = models.BooleanField(default=False)
 
     from_time = models.DateTimeField()
     to_time = models.DateTimeField()
