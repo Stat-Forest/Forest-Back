@@ -8,7 +8,6 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_filter = ('from_time', 'to_time')
     search_fields = ('title', 'desc')
     ordering = ('ordering',)
-    readonly_fields = ('is_active',)
 
     def is_active(self, obj):
         from django.utils import timezone
