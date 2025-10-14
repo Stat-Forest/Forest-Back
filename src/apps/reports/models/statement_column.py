@@ -11,7 +11,7 @@ class StatementColumnManager(models.Manager):
             title=title,
             ordering=ordering,
         )
-
+    
 
 class StatementColumn(AbstractBaseModel):
     class PlanStatus(models.TextChoices):
