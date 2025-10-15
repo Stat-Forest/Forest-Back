@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
-from apps.users.models import CustomUser, PersonalInfo, Position
+from apps.users.models import CustomUser, PersonalInfo
 
 
 class PersonalInfoInline(admin.StackedInline):
@@ -88,10 +88,3 @@ class CustomUserAdmin(admin.ModelAdmin):
             except Group.DoesNotExist:
                 print(f"Group {group_name} not found!")
     inlines = [PersonalInfoInline]
-
-
-@admin.register(Position)
-class PositionAdmin(admin.ModelAdmin):
-    model = Position
-    list_display = ("name", "slug")
-    search_fields = ("name",)
