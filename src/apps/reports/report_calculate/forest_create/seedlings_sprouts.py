@@ -1,5 +1,5 @@
 from uuid import UUID
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
@@ -7,9 +7,12 @@ from apps.reports.report_calculate.forest_create.create_third_svod_seedlings imp
 
 
 def normalize(value):
-    if value is None:
+    try:
+        if value is None or value == "":
+            return Decimal("0")
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
         return Decimal("0")
-    return Decimal(str(value))
 
 
 def preload_plant_values_by_ordering(report: Report) -> dict[str, dict[UUID, Decimal]]:

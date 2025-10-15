@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 from django.utils.translation import gettext_lazy as _
 from apps.reports.models import StatementColumn
 from apps.utils.translation import get_lang_code, get_translated_field
@@ -9,10 +10,30 @@ class PlantReportListSerializer(ReportListSerializer):
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
 
-        # ✅ Oldindan olish
+        # === Tashkilot haqida ===
+        if report.is_general:
+            organization_id = "general"
+            organization_name = _("Viloyat darajasidagi Jami")
+        elif getattr(report, "is_individual_general", False):
+            organization_id = "individual"
+            organization_name = f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
+        elif report.is_republic:
+            organization_id = "republic"
+            organization_name = {
+                "uz": "Respublika Jami",
+                "ru": "Республиканский итог"
+            }.get(lang, "Respublika Jami")
+        else:
+            organization_id = str(report.organization.id) if report.organization else "unknown"
+            organization_name = (
+                get_translated_field(report.organization, "name", lang)
+                if report.organization else _("Nomaʼlum tashkilot")
+            )
+
+        # === Barcha itemlar ===
         items = list(
             report.report_items
-            .select_related("statement_column__parent", "statement_column__statement")
+            .select_related("statement_column__parent")
             .prefetch_related("inners__plant")
         )
 
@@ -23,110 +44,61 @@ class PlantReportListSerializer(ReportListSerializer):
 
         items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
-        # ✅ Organization info
-        if report.is_general:
-            organization_id = "general"
-            organization_name = _("Viloyat darajasidagi Jami")
-        elif getattr(report, "is_individual_general", False):
-            organization_id = "individual"
-            organization_name = (
-                f"{get_translated_field(report.organization, 'name', lang)} – "
-                f"{_('Tashkilot Jami')}"
-            )
-        elif report.is_republic:
-            organization_id = "republic"
-            organization_name = {
-                "uz": "Respublika Jami",
-                "ru": "Республиканский итог",
-            }.get(lang, "Respublika Jami")
-        else:
-            organization_id = str(report.organization.id) if report.organization else "unknown"
-            organization_name = (
-                get_translated_field(report.organization, "name", lang)
-                if report.organization else _("Nomaʼlum tashkilot")
-            )
-
-        # ✅ Column cache
-        statements = list({i.statement_column.statement for i in items})
-        all_columns = (
-            StatementColumn.objects.filter(statement__in=statements)
-            .select_related("parent", "statement")
-        )
+        # === columnlarni kashirovka qilamiz
+        all_columns = StatementColumn.objects.filter(statement=report.statement).select_related("parent")
         column_map = {str(col.id): col for col in all_columns}
 
-        # ✅ Guruhlash
-        grouped_by_statement = {}
+        def get_top_level_ordering(ordering: str) -> str:
+            return ordering.split(".")[0] if ordering else "0"
+
+        grouped_by_ilova = {}
         for item in items:
-            statement_id = str(item.statement_column.statement.id)
-            grouped_by_statement.setdefault(statement_id, []).append(item)
+            column = item.statement_column
+            if column is None:
+                continue
+            top_level = get_top_level_ordering(column.ordering)
+            grouped_by_ilova.setdefault(top_level, []).append(item)
 
-        # ✅ Natija
-        grouped_data = []
+        statement_columns = []
 
-        for statement_id, ilova_items in grouped_by_statement.items():
-            statement = ilova_items[0].statement_column.statement
-            ilova_name = get_translated_field(statement, "name", lang)
-            statement_columns = []
-
-            # 🟢 Tashkilot nomi uchun column
-            org_col = next(
-                (it.statement_column for it in ilova_items if it.statement_column.is_organization),
-                None
-            )
-            if not org_col:
-                # Agar innerlardan topilmasa, bazadan statement bo‘yicha olib kelamiz
-                org_col = StatementColumn.objects.filter(
-                    statement=statement,
-                    is_organization=True
-                ).first()
-
-            if org_col:
-                statement_columns.append({
-                    "statement_column_id": str(org_col.id),
-                    "statement_column_name": (
-                        f"{ilova_name} – {self.get_full_column_path(org_col, lang, column_map)}"
-                    ),
-                    "inners": [{"value": organization_name}],
-                })
-            else:
-                # Hali to‘liq setup qilinmagan bo‘lishi mumkin
-                statement_columns.append({
-                    "statement_column_id": None,
-                    "statement_column_name": f"{ilova_name} – Tashkilot nomi",
-                    "inners": [{"value": organization_name}],
-                })
-
-            # 🟢 Qolgan ustunlar (plant asosidagi)
-            for item in ilova_items:
+        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
+            for item in grouped_by_ilova[ilova_ordering]:
                 column = item.statement_column
-                if not column or column.is_organization:
+                if column is None:
                     continue
 
                 inner_values = []
                 for inner in item.inners.all():
+                    val = inner.value
+                    inner_data = {"id": str(inner.id)}
+
                     if inner.plant:
-                        inner_values.append({
-                            "id": str(inner.id),
+                        inner_data.update({
                             "plant_id": str(inner.plant.id),
                             "plant_name": get_translated_field(inner.plant, "name", lang),
-                            "value": inner.value,
+                            "value": val,
                         })
+                    elif column.is_organization:
+                        try:
+                            # UUID bo‘lsa – tashkilot nomiga almashtiramiz
+                            UUID(str(val))
+                            val = organization_name
+                        except Exception:
+                            val = _("Nomaʼlum tashkilot")
+                        inner_data["value"] = val
                     else:
-                        inner_values.append({
-                            "id": str(inner.id),
-                            "value": inner.value,
-                        })
+                        inner_data["value"] = val
+
+                    inner_values.append(inner_data)
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
                     "statement_column_name": self.get_full_column_path(column, lang, column_map),
-                    "inners": inner_values,
+                    "inners": inner_values
                 })
 
-            grouped_data.append({
-                "organization_id": organization_id,
-                "organization_name": organization_name,
-                "statement_columns": statement_columns,
-            })
-
-        return grouped_data
+        return [{
+            "organization_id": organization_id,
+            "organization_name": organization_name,
+            "statement_columns": statement_columns
+        }]
