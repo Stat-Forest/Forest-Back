@@ -33,7 +33,7 @@ class Deadline(AbstractBaseModel):
         return f'{self.statement.name} : {self.submit_at}'
 
     class Meta:
-        verbose_name = _("Deadline")
-        verbose_name_plural = _("Deadlines")
+        verbose_name = "Muddat"
+        verbose_name_plural = "Muddatlar"
 
 

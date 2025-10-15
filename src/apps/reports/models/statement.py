@@ -43,5 +43,9 @@ class Statement(AbstractBaseModel):
     def natural_key(self):
         return (self.name,)
 
+    class Meta:
+        verbose_name = "Hisobot formasi"
+        verbose_name_plural = "Hisobot formalarini"
+
     def __str__(self):
         return getattr(self, "name_uz", self.name)
