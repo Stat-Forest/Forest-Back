@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.general.models import Announcement
+from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class AnnouncementListSerializer(serializers.ModelSerializer):
