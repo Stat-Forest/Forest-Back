@@ -199,6 +199,9 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
     )
 
+    class Meta:
+        verbose_name = "Foydalanuvchi"
+        verbose_name_plural = "Foydalanuvchilar"
     
     def save(self, *args, **kwargs):
         if self.is_superuser:
