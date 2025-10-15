@@ -144,8 +144,8 @@ class Report(AbstractBaseModel):
         aggregate_general_report(statement=self.statement, deadline=self.deadline)
 
     class Meta:
-        verbose_name = _("Report")
-        verbose_name_plural = _("Reports")
+        verbose_name = "Hisobot"
+        verbose_name_plural = "Hisobotlar"
         ordering = ['-created_at']
         constraints = [
             UniqueConstraint(
