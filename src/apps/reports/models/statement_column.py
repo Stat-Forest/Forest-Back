@@ -101,7 +101,8 @@ class StatementColumn(AbstractBaseModel):
     natural_key.dependencies = ["reports.statement"]
 
     class Meta:
-        verbose_name = _("Statement Column")
-        verbose_name_plural = _("Statement Columns")
+        verbose_name = "Hisobot forma ustuni"
+        verbose_name_plural = "Hisobot forma ustunlari"
         unique_together = ("statement", "title", "parent", "ordering")
         ordering = ["ordering"]
+
