@@ -4,6 +4,7 @@ from collections import defaultdict
 from apps.reports.mapping_columns import THIRD_ORDERING_MAP
 from apps.reports.models import ReportItemInner, StatementColumn, ReportItem, Plant
 
+
 def normalize_decimal(value):
     try:
         return Decimal(str(value).strip())
@@ -107,94 +108,3 @@ def calculate_third_seedlings_svod(report):
 
     if inners_to_create:
         ReportItemInner.objects.bulk_create(inners_to_create)
-
-
-
-# def calculate_third_seedlings_svod(report):
-#     """
-#     3-ilova SVOD (Ko‘chat va Nihol umumlashgan) — har bir plant_id bo‘yicha hisoblaydi.
-#     """
-#     from decimal import Decimal
-#     from collections import defaultdict
-#     from apps.reports.mapping_columns import THIRD_ORDERING_MAP
-#
-#     # === Avvalgi plant-based qiymatlarni yig‘amiz ===
-#     inners = ReportItemInner.objects.filter(
-#         report_item__report=report,
-#         plant_id__isnull=False
-#     ).select_related("report_item__statement_column")
-#
-#     grouped = defaultdict(lambda: defaultdict(Decimal))  # ordering → plant_id → Decimal
-#     for inner in inners:
-#         ordering = inner.report_item.statement_column.ordering
-#         value = normalize_decimal(inner.value)
-#         grouped[ordering][inner.plant_id] += value
-#
-#     # === Recursive hisoblash (plant_id asosida)
-#     cache = {}
-#
-#     def resolve(ordering):
-#         if ordering in cache:
-#             return cache[ordering]
-#         if ordering not in THIRD_ORDERING_MAP:
-#             return grouped.get(ordering, {})
-#
-#         result = defaultdict(Decimal)
-#         for src in THIRD_ORDERING_MAP[ordering]:
-#             is_negative = src.startswith("-")
-#             src_ordering = src[1:] if is_negative else src
-#             values = resolve(src_ordering)
-#             for pid, v in values.items():
-#                 result[pid] += -v if is_negative else v
-#
-#         cache[ordering] = result
-#         return result
-#
-#     # === Mavjud ustunlar va ReportItem lar
-#     columns = {
-#         col.ordering: col
-#         for col in StatementColumn.objects.filter(statement=report.statement)
-#     }
-#
-#     existing_items = {
-#         i.statement_column_id: i
-#         for i in ReportItem.objects.filter(report=report)
-#     }
-#
-#     # === Eskilarni o‘chirish
-#     ReportItemInner.objects.filter(
-#         report_item__report=report,
-#         report_item__statement_column__ordering__in=THIRD_ORDERING_MAP.keys()
-#     ).delete()
-#
-#     # === Hisoblangan qiymatlarni ReportItem + ReportItemInner ga yozish
-#     new_items = []
-#     update_items = []
-#     new_inners = []
-#
-#     for ordering, plant_totals in [(o, resolve(o)) for o in THIRD_ORDERING_MAP]:
-#         column = columns.get(ordering)
-#         if not column:
-#             continue
-#
-#         item = existing_items.get(column.id)
-#         if not item:
-#             item = ReportItem(
-#                 report=report,
-#                 statement_column=column,
-#                 value="",  # ⚠️ plant-based bo‘lgani uchun umumiy value yo‘q
-#             )
-#             item.save()
-#         else:
-#             item.value = ""
-#             item.save()
-#
-#         for plant_id, value in plant_totals.items():
-#             new_inners.append(ReportItemInner(
-#                 report_item=item,
-#                 plant_id=plant_id,
-#                 value=str(round(value, 2))
-#             ))
-#
-#     if new_inners:
-#         ReportItemInner.objects.bulk_create(new_inners)
