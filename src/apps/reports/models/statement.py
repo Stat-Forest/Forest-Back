@@ -45,7 +45,7 @@ class Statement(AbstractBaseModel):
 
     class Meta:
         verbose_name = "Hisobot formasi"
-        verbose_name_plural = "Hisobot formalarini"
+        verbose_name_plural = "Hisobot formalari"
 
     def __str__(self):
         return getattr(self, "name_uz", self.name)
