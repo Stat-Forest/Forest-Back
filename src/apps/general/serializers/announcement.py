@@ -9,14 +9,22 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = '__all__'
+        fields = [
+            "id",
+            "title",
+            "desc",
+            "image",
+            "lnk",
+            "ordering",
+            "created_at",
+        ]
 
     def get_title(self, obj):
-        lang = self.context.get('lang', 'uz')
-        translated = get_translated_field(obj, 'title', lang)
+        lang = self.context.get("lang", "uz")
+        translated = get_translated_field(obj, "title", lang)
         return translated or obj.title
 
     def get_desc(self, obj):
-        lang = self.context.get('lang', 'uz')
-        translated = get_translated_field(obj, 'desc', lang)
+        lang = self.context.get("lang", "uz")
+        translated = get_translated_field(obj, "desc", lang)
         return translated or obj.desc
