@@ -1,17 +1,21 @@
 from django.contrib import admin
-from apps.general.models.announcements import Announcement
+from django.utils import timezone
+from apps.general.models import Announcement
 
 
 @admin.register(Announcement)
 class AnnouncementAdmin(admin.ModelAdmin):
-    list_display = ('title_uz','title_ru','from_time', 'to_time', 'ordering', 'is_active')
+    list_display = ('title_uz', 'title_ru', 'from_time', 'to_time', 'ordering', 'is_active_now')
     list_filter = ('from_time', 'to_time')
-    search_fields = ('title', 'desc')
+    search_fields = ('title_uz', 'title_ru', 'desc_uz', 'desc_ru')
     ordering = ('ordering',)
 
-    def is_active(self, obj):
-        from django.utils import timezone
+    def is_active_now(self, obj):
+        """
+        Hozirgi vaqtda e'lon faol yoki yo'qligini aniqlaydi.
+        """
         now = timezone.now()
         return obj.from_time <= now <= obj.to_time
-    is_active.boolean = True
-    is_active.short_description = "Active Now?"
+
+    is_active_now.boolean = True
+    is_active_now.short_description = "Faolmi?"
