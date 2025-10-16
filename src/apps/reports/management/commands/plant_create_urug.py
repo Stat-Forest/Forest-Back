@@ -93,7 +93,7 @@ class Command(BaseCommand):
         self.stdout.write("🚀 Creating plants for Urug' harakati...")
 
         try:
-            statement = Statement.objects.get(name_uz="Urug' harakati")
+            statement = Statement.objects.get(name_uz="Urug' xarakati Reja")
         except Statement.DoesNotExist:
             self.stderr.write("❌ Statement 'Urug' harakati' not found.")
             return
