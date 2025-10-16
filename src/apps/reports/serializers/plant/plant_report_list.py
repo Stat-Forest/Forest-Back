@@ -72,20 +72,24 @@ class PlantReportListSerializer(ReportListSerializer):
                     val = inner.value
                     inner_data = {"id": str(inner.id)}
 
+                    # ✅ 1. Plant-based
                     if inner.plant:
                         inner_data.update({
                             "plant_id": str(inner.plant.id),
                             "plant_name": get_translated_field(inner.plant, "name", lang),
                             "value": val,
                         })
+
+                    # ✅ 2. Organization column – if UUID -> convert to name
                     elif column.is_organization:
                         try:
-                            # UUID bo‘lsa – tashkilot nomiga almashtiramiz
                             UUID(str(val))
                             val = organization_name
                         except Exception:
                             val = _("Nomaʼlum tashkilot")
                         inner_data["value"] = val
+
+                    # ✅ 3. Simple value
                     else:
                         inner_data["value"] = val
 
