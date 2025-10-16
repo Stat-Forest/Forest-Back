@@ -18,7 +18,7 @@ from drf_spectacular.types import OpenApiTypes
         ),
     ],
 )
-class NotificationListCreateAPIView(generics.ListCreateAPIView):
+class NotificationListCreateAPIView(generics.ListAPIView):
     serializer_class = NotificationListSerializer
 
     def get_queryset(self):
