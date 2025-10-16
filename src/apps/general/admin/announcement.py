@@ -4,7 +4,7 @@ from apps.general.models.announcements import Announcement
 
 @admin.register(Announcement)
 class AnnouncementAdmin(admin.ModelAdmin):
-    list_display = ('title', 'from_time', 'to_time', 'ordering', 'is_active')
+    list_display = ('title_uz','title_ru','from_time', 'to_time', 'ordering', 'is_active')
     list_filter = ('from_time', 'to_time')
     search_fields = ('title', 'desc')
     ordering = ('ordering',)
