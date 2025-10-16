@@ -1,6 +1,6 @@
 import uuid, re
-
 from datetime import date
+from uuid import UUID
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -100,10 +100,10 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
 
         # ✅ 5. Duplicated report borligini tekshir
         if Report.objects.filter(
-                organization=user.organization,
-                statement=statement,
-                deadline=deadline,
-                is_report=True
+            organization=user.organization,
+            statement=statement,
+            deadline=deadline,
+            is_report=True
         ).exists():
             raise ValidationError({'report': 'Bu hisobot allaqachon mavjud.'})
 
@@ -135,11 +135,53 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                 if column.is_organization:
                     if not inners or not inners[0].get("value"):
                         raise serializers.ValidationError("Tashkilot ID kiritilishi kerak.")
+
                     org_id = inners[0]["value"]
+
+                    # UUID formatini tekshirish
+                    try:
+                        UUID(str(org_id))
+                    except Exception:
+                        raise serializers.ValidationError(f"Noto‘g‘ri tashkilot ID formati: {org_id}")
+
+                    # Tashkilotni olish
                     try:
                         current_org = Organization.objects.get(id=org_id)
                     except Organization.DoesNotExist:
                         raise serializers.ValidationError(f"Tashkilot topilmadi: {org_id}")
+
+                    # ✅ Report yaratamiz
+                    report_key = (current_org.id, column.statement.id)
+                    if report_key not in reports_map:
+                        report = Report.objects.create(
+                            organization=current_org,
+                            statement=column.statement,
+                            deadline_id=deadline_id,
+                            region=current_org.region,
+                            status=Report.StatusChoices.SAVED,
+                            is_plant_based=True,
+                        )
+                        reports_map[report_key] = report
+
+                    report = reports_map[report_key]
+                    report_item_id = uuid.uuid4()
+
+                    # ✅ Tashkilot column uchun ham ReportItem saqlanadi
+                    report_items_buffer.append(
+                        ReportItem(
+                            id=report_item_id,
+                            report=report,
+                            statement_column=column
+                        )
+                    )
+
+                    # ✅ va ichiga organization_id (UUID) saqlaymiz
+                    report_inners_buffer.append(
+                        ReportItemInner(
+                            report_item_id=report_item_id,
+                            value=str(org_id)
+                        )
+                    )
                     continue
 
                 # ✅ 2. Org aniqlanmagan bo‘lsa xato
@@ -164,7 +206,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                 report = reports_map[report_key]
                 report_item_id = uuid.uuid4()
 
-                # ✅ ReportItem
+                # ✅ Oddiy ReportItem
                 report_items_buffer.append(
                     ReportItem(
                         id=report_item_id,
@@ -173,7 +215,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                     )
                 )
 
-                # ✅ Innerlar
+                # ✅ Plant innerlar
                 for inner in inners:
                     report_inners_buffer.append(
                         ReportItemInner(
@@ -183,6 +225,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                         )
                     )
 
+            # Bulk create
             ReportItem.objects.bulk_create(report_items_buffer)
             ReportItemInner.objects.bulk_create(report_inners_buffer)
 
@@ -196,15 +239,12 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         self.instance = list(reports_map.values())
         return self.instance
 
-    # ✅ create dan keyingi response formatini sozlaymiz
     def to_representation(self, instance_list):
         lang = get_lang_code(self.context)
         serialized = []
-
         for report in instance_list:
             serialized.append(PlantReportListSerializer(
                 report,
                 context={"request": self.context.get("request")}
             ).data)
-
         return serialized
