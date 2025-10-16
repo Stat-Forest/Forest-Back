@@ -1,5 +1,6 @@
 from apps.general.models import Organization
 from apps.general.models import Announcement
+from apps.general.models import Notification
 
 from modeltranslation.translator import register, TranslationOptions
 
@@ -11,3 +12,8 @@ class OrganizationTranslationOptions(TranslationOptions):
 @register(Announcement)
 class AnnouncementTranslationOptions(TranslationOptions):
     fields = ('title','desc')
+
+
+@register(Notification)
+class NotificationTranslationOptions(TranslationOptions):
+    fields = ('text',)
