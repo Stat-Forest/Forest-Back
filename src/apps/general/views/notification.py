@@ -23,7 +23,7 @@ class NotificationListCreateAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         today = now().date()
-        return Notification.objects.filter(date=today)
+        return Notification.objects.filter(date__gte=today)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
