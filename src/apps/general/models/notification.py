@@ -3,7 +3,7 @@ from apps.base.models import AbstractBaseModel
 
 class Notification(AbstractBaseModel):
     date = models.DateField()
-    text = models.TextField(max_length=500)
+    text = models.TextField(max_length=1000)
 
     class Meta:
         verbose_name = "Bildirishnoma"
