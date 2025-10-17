@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from apps.reports.models import Report
-from apps.base.views import CustomListAPIView
+from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 
@@ -33,3 +33,12 @@ class PlantListReportAPIView(CustomListAPIView):
             "report_items__statement_column__parent",
             "report_items__inners__plant"
         ).order_by("-created_at")
+
+
+class PlantDetailReportAPIView(CustomRetrieveAPIView):
+    queryset = Report.objects.filter(is_plant_based=True).select_related(
+        "organization", "statement", "deadline"
+    ).prefetch_related("report_items__statement_column__parent",
+        "report_items__inners__plant")
+
+    serializer_class = PlantReportListSerializer
