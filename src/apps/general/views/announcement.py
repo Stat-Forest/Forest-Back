@@ -25,7 +25,7 @@ class AnnouncementListAPIView(generics.ListAPIView):
     def get_queryset(self):
         now = timezone.now()
         return Announcement.objects.filter(
-            from_time__lte=now, to_time__gte=now
+            from_time__lte=now, to_time__gte=now,is_active=True
         ).order_by('ordering')
 
     def get_serializer_context(self):
