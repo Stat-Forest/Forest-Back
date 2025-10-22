@@ -7,6 +7,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.general.models import Organization
+from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
@@ -231,8 +232,12 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
 
             # ✅ Hisob-kitob
             for report in reports_map.values():
+                statement = report.statement
                 if func := ALL_CALCULATORS.get(report.statement.name_uz):
                     func(report)
+                elif statement.calculate_expression:
+                    calculate_by_expressions(report)
+
                 aggregate_individual_report(report)
 
         # ✅ Natija uchun instance
