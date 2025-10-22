@@ -11,6 +11,7 @@ from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services import aggregate_individual_report
+from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code, get_translated_field
 
@@ -265,10 +266,14 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             # === HISOBLASH VA JAMI REPORTLAR ===
             if reports_map:
                 for report in reports_map.values():
+                    statement = report.statement
                     statement_name = report.statement.name_uz
                     calculate_func = ALL_CALCULATORS.get(statement_name)
+
                     if calculate_func:
                         calculate_func(report)
+                    elif statement.calculate_expression:
+                        calculate_by_expressions(report)
 
                     aggregate_individual_report(report)
 
