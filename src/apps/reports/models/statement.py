@@ -31,6 +31,20 @@ class Statement(AbstractBaseModel):
         null=True,
     )
 
+    calculate_expression = models.TextField(
+        blank=True,
+        null=True,
+        help_text=(
+            "Bittali formulalarga"
+            "column('1.1.5') / column('1.1.4') * 100 = column('1.1.6')"
+            "Bir nechta formulalar uchun har birini alohida qatorga yozing.<br>"
+            "Masalan:<br>"
+            "column('1.1.5') / column('1.1.4') * 100 = column('1.1.6')<br>"
+            "column('1.2.5') / column('1.2.4') * 100 = column('1.2.6')<br>"
+            "column('1.3.5') / column('1.3.4') * 100 = column('1.3.6')"
+        )
+    )
+
     objects = StatementManager()
 
     def save(self, *args, **kwargs):
