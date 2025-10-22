@@ -23,6 +23,8 @@ class StatementAdminForm(forms.ModelForm):
 
 class StatementAdmin(admin.ModelAdmin):
     form = StatementAdminForm
-    list_display = ('name', 'period', 'parent')
+    list_display = ('name_uz', 'name_ru', 'period', 'parent')
+    list_filter = ("name_uz", "name_ru")
+    search_fields = ("name_uz", "name_ru", "period", "parent")
 
 admin.site.register(Statement, StatementAdmin)
