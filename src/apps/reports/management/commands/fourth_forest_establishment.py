@@ -17,7 +17,7 @@ class Command(BaseCommand):
         statement = Statement.objects.create(
             parent=parent_statement,
             name_uz="Ko'chatxona va Niholxona Jami",
-            name_ru="Детский сад и ясли, всего",
+            name_ru="Питомник и Саженец Всего",
             period=PeriodChoices.OYLIK
         )
 
