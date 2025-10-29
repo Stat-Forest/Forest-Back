@@ -27,4 +27,8 @@ class StatementAdmin(admin.ModelAdmin):
     list_filter = ("name_uz", "name_ru")
     search_fields = ("name_uz", "name_ru", "period", "parent")
 
+    def get_queryset(self, request):
+        query_set = super().get_queryset(request)
+        return query_set.select_related("parent")
+
 admin.site.register(Statement, StatementAdmin)

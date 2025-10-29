@@ -30,6 +30,10 @@ class ReportAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_queryset(self, request):
+        query_set = super().get_queryset(request)
+        return query_set.select_related("statement", "organization", "deadline", "republic")
+
     def has_add_permission(self, request):
         return False
 
