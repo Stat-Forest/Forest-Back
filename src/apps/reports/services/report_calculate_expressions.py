@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 from apps.reports.models import ReportItem, ReportItemInner, StatementColumn
 from apps.utils.translation import get_translated_field, get_lang_code
+from collections import defaultdict
 
 
 def calculate_by_expressions(report):
@@ -8,10 +9,8 @@ def calculate_by_expressions(report):
     if not expr_text:
         return
 
-    # 🧠 Tilni aniqlaymiz (uz / ru)
-    lang = get_lang_code("uz")  # yoki self.context bo‘lsa undan oling
+    lang = get_lang_code("uz")
 
-    # ✅ Bulk select
     report_items = (
         report.report_items
         .select_related("statement_column")
@@ -23,77 +22,107 @@ def calculate_by_expressions(report):
         col.ordering: col for col in StatementColumn.objects.filter(statement=report.statement)
     }
 
-    def column(ordering: str) -> Decimal:
-        item = report_item_map.get(ordering)
-        if not item:
-            return Decimal("0")
-        inners = list(item.inners.all())
-        if not inners:
+    # Avvaldan barcha inners ni cache qilib olamiz
+    report_inners_cache: dict[str, list[ReportItemInner]] = {}
+    for ordering, item in report_item_map.items():
+        report_inners_cache[ordering] = list(item.inners.all())
+
+    def get_inners(ordering):
+        return report_inners_cache.get(ordering, [])
+
+    def column(ordering: str, idx: int) -> Decimal:
+        inners = get_inners(ordering)
+        if idx >= len(inners):
             return Decimal("0")
         try:
-            return Decimal(inners[0].value or "0")
+            return Decimal(inners[idx].value or "0")
         except Exception:
             return Decimal("0")
 
-    def assign(ordering: str, value: Decimal):
-        try:
-            statement_col = statement_column_map.get(ordering)
-            if not statement_col:
-                print(f"⚠️ Column not found: ordering={ordering}")
-                return
+    # Asosiy assign
+    def assign(ordering: str, values: list[Decimal]):
+        statement_col = statement_column_map.get(ordering)
+        if not statement_col:
+            print(f"⚠ Column not found: {ordering}")
+            return
 
-            # ✅ Tashkilot nomini chiqarish (ID emas, tarjima bilan)
-            is_org_column = statement_col.is_organization
-            title_uz = (getattr(statement_col, "title_uz", "") or "").strip().lower()
-            title_ru = (getattr(statement_col, "title_ru", "") or "").strip().lower()
+        item = report_item_map.get(ordering)
+        if not item:
+            item, _ = ReportItem.objects.get_or_create(
+                report=report,
+                statement_column=statement_col
+            )
+            report_item_map[ordering] = item
+            report_inners_cache[ordering] = []
+        inners = report_inners_cache[ordering]
+        existing_len = len(inners)
 
-            is_title_org_name = title_uz in ["tashkilot nomi"] or title_ru in ["наименование организации", "название организации"]
-
-            if is_org_column and is_title_org_name:
-                value = get_translated_field(report.organization, "name", lang)
-            else:
-                value = value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                value = str(value)
-
-            item = report_item_map.get(ordering)
-            if not item:
-                item, _ = ReportItem.objects.get_or_create(
-                    report=report,
-                    statement_column=statement_col
-                )
-                report_item_map[ordering] = item
-
-            inners = list(item.inners.all())
+        is_org_col = statement_col.is_organization
+        title_uz = (statement_col.title_uz or "").lower().strip()
+        if is_org_col and "tashkilot" in title_uz:
             if inners:
-                inners[0].value = value
-                inners[0].save(update_fields=["value"])
+                inners[0].value = get_translated_field(report.organization, "name", lang)
+                ReportItemInner.objects.bulk_update([inners[0]], ["value"])
+            return
+
+        to_update = []
+        to_create = []
+
+        for i, val in enumerate(values):
+            val = val.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            val = str(val)
+
+            if i < existing_len:
+                inners[i].value = val
+                to_update.append(inners[i])
             else:
-                ReportItemInner.objects.create(report_item=item, value=value)
+                new_inner = ReportItemInner(report_item=item, value=val)
+                to_create.append(new_inner)
 
-        except Exception as e:
-            print(f"❌ Assign error for ordering={ordering}: {e}")
+        if to_update:
+            ReportItemInner.objects.bulk_update(to_update, ["value"])
+        if to_create:
+            ReportItemInner.objects.bulk_create(to_create)
 
-    # ✅ Formulalarni bajarish
+        # Cache yangilaymiz
+        report_inners_cache[ordering] = inners[:len(values)] + to_create
+
+    # === Formula bajarish ===
     for line in expr_text.splitlines():
         line = line.strip()
-        if not line or "=" not in line:
+        if "=" not in line:
             continue
-        try:
-            expression, target = line.split("=")
-            eval_globals = {
-                "__builtins__": {},
-                "column": column,
-                "Decimal": Decimal,
-                "round": round,
-            }
-            result = eval(expression.strip(), eval_globals)
-            target_ordering = (
-                target.strip()
-                .replace("column(", "")
-                .replace(")", "")
-                .replace("'", "")
-                .replace('"', "")
-            )
-            assign(target_ordering, result)
-        except Exception as e:
-            print(f"❌ Expression error in line: {line} — {e}")
+
+        expression, target = line.split("=")
+        expression = expression.strip()
+        target = target.strip()
+
+        parts = expression.split("column(")
+        source_orderings = []
+        for p in parts[1:]:
+            o = p.split(")")[0].replace('"', '').replace("'", "").strip()
+            source_orderings.append(o)
+
+        max_len = max(len(get_inners(o)) for o in source_orderings)
+
+        results = []
+        for i in range(max_len):
+            try:
+                res = eval(
+                    expression,
+                    {"__builtins__": {}, "Decimal": Decimal},
+                    {"column": lambda ordering: column(ordering, i)}
+                )
+            except Exception:
+                res = Decimal("0")
+            results.append(res)
+
+        target_ordering = (
+            target.replace("column(", "")
+                  .replace(")", "")
+                  .replace('"', "")
+                  .replace("'", "")
+                  .strip()
+        )
+
+        assign(target_ordering, results)
