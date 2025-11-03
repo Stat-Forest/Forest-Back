@@ -21,8 +21,8 @@ class BackupAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def run_backup(self, request):
-        # Backup script path
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../docker/prod/backup.sh"))
+        # To‘g‘ri joylashgan backup.sh yo‘li
+        script_path = "/app/docker/prod/backup.sh"
 
         # Run the shell script
         result = subprocess.run(["bash", script_path], capture_output=True, text=True)
@@ -32,7 +32,7 @@ class BackupAdmin(admin.ModelAdmin):
         else:
             messages.error(request, f"❌ Backup failed:\n{result.stderr}")
 
-        # To‘g‘ri admin sahifasiga qaytarish
+        # Admin sahifasiga qaytish
         changelist_url = reverse("admin:general_backup_changelist")
         return HttpResponseRedirect(changelist_url)
 
