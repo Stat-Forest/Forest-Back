@@ -1,11 +1,10 @@
 from django.contrib import admin, messages
-from django.urls import path
-from django.http import HttpResponse
-from django.utils import timezone
+from django.urls import path, reverse
+from django.http import HttpResponseRedirect
 import subprocess
 import os
-
 from apps.general.models.back_up import Backup
+
 
 class BackupAdmin(admin.ModelAdmin):
     change_list_template = "admin/backup_changelist.html"
@@ -13,7 +12,11 @@ class BackupAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path("run-backup/", self.admin_site.admin_view(self.run_backup), name="run-backup"),
+            path(
+                "run-backup/",
+                self.admin_site.admin_view(self.run_backup),
+                name="run-backup",
+            ),
         ]
         return custom_urls + urls
 
@@ -29,6 +32,9 @@ class BackupAdmin(admin.ModelAdmin):
         else:
             messages.error(request, f"❌ Backup failed:\n{result.stderr}")
 
-        return HttpResponse('<script>window.location.href="/admin/backup/";</script>')
+        # To‘g‘ri admin sahifasiga qaytarish
+        changelist_url = reverse("admin:general_backup_changelist")
+        return HttpResponseRedirect(changelist_url)
+
 
 admin.site.register(Backup, BackupAdmin)
