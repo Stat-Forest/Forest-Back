@@ -26,3 +26,7 @@ RUN pip install --upgrade pip && \
 
 # Copy project source
 COPY src /app
+
+# Copy backup script
+COPY docker/prod/backup.sh /app/docker/prod/backup.sh
+RUN chmod +x /app/docker/prod/backup.sh
