@@ -6,13 +6,16 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including PostgreSQL client)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     gcc \
     netcat-openbsd \
     curl \
+    zip \
+    gnupg \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy entrypoint
@@ -26,4 +29,3 @@ RUN pip install --upgrade pip && \
 
 # Copy project source
 COPY src /app
-
