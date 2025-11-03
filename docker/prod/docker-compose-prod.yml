@@ -12,6 +12,7 @@ services:
       - ../../staticfiles:/app/staticfiles
       - ../../media:/app/media
       - ../../src:/app
+      - backups_data:/backups
 
     ports:
       - "8000:8000"
@@ -110,6 +111,8 @@ volumes:
   redis_data:
   certbot-etc:
   certbot-var:
+  backups_data:
+
 
 networks:
   forest_network:
