@@ -13,6 +13,7 @@ services:
       - ../../media:/app/media
       - ../../src:/app
       - ../../docker/prod/backup.sh:/app/docker/prod/backup.sh
+      - ../../.env:/app/.env
       - backups_data:/backups
 
     ports:
