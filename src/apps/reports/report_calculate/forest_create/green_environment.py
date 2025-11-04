@@ -18,16 +18,19 @@ def calculate_green_environment(report: Report):
         item.statement_column.ordering: item for item in report_items
     }
 
-    # 3. Inner qiymatlarni olish (N+1 so‘rov YO‘Q!)
+    # 3. Har bir ordering uchun value ni olish (faqat birinchi inner qiymati olinadi)
     value_map = {}
     for ordering, item in items_map.items():
-        # inners.all() => bu prefetch bo‘lib kelyapti, yangi so‘rov emas
         inners = list(item.inners.all())
         if inners:
             value_map[ordering] = safe_decimal(inners[0].value)
 
-    # 4. Oldindan kerakli column'larni olish
-    all_orderings = ["1.1.3.3", "1.1.4.3", "1.1.2.2", "1.1.2.3"]
+    # 4. Kerakli column'lar
+    all_orderings = [
+        "1.1.3.1", "1.1.3.2", "1.1.3.3",
+        "1.1.4.1", "1.1.4.2", "1.1.4.3",
+        "1.1.2.1", "1.1.2.2", "1.1.2.3"
+    ]
     columns_map = {
         col.ordering: col
         for col in StatementColumn.objects.filter(
@@ -36,56 +39,54 @@ def calculate_green_environment(report: Report):
         )
     }
 
-    # 5. Hisoblashlar
+    # 5. Hisoblash
     def safe_div(x, y):
-        if y in (None, 0):
-            return Decimal(0)
+        if not y or y == 0:
+            return Decimal("0.00")
         return (Decimal(x) / Decimal(y)).quantize(Decimal("1.00"))
 
-    amalda_bahor = value_map.get("1.1.3.2", Decimal(0))
     reja_bahor = value_map.get("1.1.3.1", Decimal(0))
-    amalda_kuz = value_map.get("1.1.4.2", Decimal(0))
+    amalda_bahor = value_map.get("1.1.3.2", Decimal(0))
     reja_kuz = value_map.get("1.1.4.1", Decimal(0))
-    reja_jami = value_map.get("1.1.2.1", Decimal(0))
+    amalda_kuz = value_map.get("1.1.4.2", Decimal(0))
+
+    reja_jami = reja_bahor + reja_kuz
+    amalda_jami = amalda_bahor + amalda_kuz
 
     results = {
         "1.1.3.3": safe_div(amalda_bahor, reja_bahor) * 100,
         "1.1.4.3": safe_div(amalda_kuz, reja_kuz) * 100,
-        "1.1.2.2": amalda_bahor + amalda_kuz,
-        "1.1.2.3": safe_div(amalda_bahor + amalda_kuz, reja_jami) * 100,
+        "1.1.2.1": reja_jami,
+        "1.1.2.2": amalda_jami,
+        "1.1.2.3": safe_div(amalda_jami, reja_jami) * 100,
     }
 
-    # 6. Eski inners'larni bulk delete
+    # 6. Eski inners'larni o‘chirish (faqat update bo‘ladiganlarini)
     to_delete_ids = []
     for ordering, item in items_map.items():
         if ordering in results:
             inners = list(item.inners.all())
             if inners:
                 to_delete_ids.append(inners[0].id)
-
     if to_delete_ids:
         ReportItemInner.objects.filter(id__in=to_delete_ids).delete()
 
-    # 7. Yangi ReportItem'lar bulk_create qilish
+    # 7. Yangi ReportItem'larni yaratish (agar kerak bo‘lsa)
     to_create_items = []
     for ordering in results:
-        if ordering not in items_map:
-            column = columns_map.get(ordering)
-            if column:
-                to_create_items.append(
-                    ReportItem(report=report, statement_column=column)
-                )
+        if ordering not in items_map and ordering in columns_map:
+            to_create_items.append(
+                ReportItem(report=report, statement_column=columns_map[ordering])
+            )
 
     created_items = ReportItem.objects.bulk_create(to_create_items)
 
-    # 8. items_map'ga yangi itemlarni qo‘shish
     for item in created_items:
         items_map[item.statement_column.ordering] = item
 
-    # 9. Yangi innerlarni bulk_create qilish
+    # 8. Yangi inner'larni yaratish
     new_inners = [
         ReportItemInner(report_item=items_map[o], value=v)
-        for o, v in results.items()
-        if o in items_map
+        for o, v in results.items() if o in items_map
     ]
     ReportItemInner.objects.bulk_create(new_inners)
