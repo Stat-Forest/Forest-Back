@@ -4,69 +4,69 @@ import csv
 import io
 from docx import Document
 from reportlab.pdfgen import canvas
+from datetime import datetime
 
 from apps.general.models.land_document import LandDocument
 
 
 @admin.register(LandDocument)
 class LandDocumentAdmin(admin.ModelAdmin):
-    list_display = ("name", "document_type", "organization", "date", "created_at")
-    list_filter = ("document_type", "organization", "date")
+    list_display = ("name", "organization", "date", "created_at")
     search_fields = ("name", "organization__name")
+    list_filter = ("organization", "date")
     date_hierarchy = "date"
-    actions = ["export_as_excel", "export_as_word", "export_as_pdf"]
+    actions = ["export_files_as_excel", "export_files_as_word", "export_files_as_pdf"]
 
-    # ✅ Helper function: filter only uploaded files
+    # ✅ Custom date filter (YYYY/MM/DD)
+    def get_search_results(self, request, queryset, search_term):
+        """
+        Allows searching by YYYY/MM/DD formatted date
+        """
+        try:
+            if "/" in search_term:
+                # convert "2025/11/05" → date object
+                date_obj = datetime.strptime(search_term, "%Y/%m/%d").date()
+                queryset |= self.model.objects.filter(date=date_obj)
+        except ValueError:
+            pass
+        return super().get_search_results(request, queryset, search_term)
+
+    # ✅ Helper function: only docs with files
     def _get_queryset_with_files(self, queryset):
-        """Return only documents that have an uploaded file."""
+        """Return only documents that have uploaded files."""
         return queryset.exclude(file="").exclude(file__isnull=True)
 
-    # ✅ Excel Export (CSV)
-    def export_as_excel(self, request, queryset):
+    # ✅ Export to Excel (CSV) — only file paths
+    def export_files_as_excel(self, request, queryset):
         queryset = self._get_queryset_with_files(queryset)
         if not queryset.exists():
-            self.message_user(request, "No documents with attached files found!", level=messages.WARNING)
+            self.message_user(request, "No uploaded files found for export!", level=messages.WARNING)
             return
 
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="land_documents.csv"'
+        response['Content-Disposition'] = 'attachment; filename="land_document_files.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Name", "Date", "Type", "Organization", "Comment", "File URL"])
+        writer.writerow(["File URL"])
 
         for obj in queryset:
-            file_url = obj.file.url if obj.file else ""
-            writer.writerow([
-                obj.name,
-                obj.date,
-                obj.get_document_type_display(),
-                obj.organization.name,
-                obj.comment or "",
-                file_url
-            ])
+            writer.writerow([obj.file.url if obj.file else ""])
         return response
 
-    export_as_excel.short_description = "📊 Export (only with files) to Excel (CSV)"
+    export_files_as_excel.short_description = "📊 Export only files (CSV)"
 
-    # ✅ Word Export
-    def export_as_word(self, request, queryset):
+    # ✅ Export to Word
+    def export_files_as_word(self, request, queryset):
         queryset = self._get_queryset_with_files(queryset)
         if not queryset.exists():
-            self.message_user(request, "No documents with attached files found!", level=messages.WARNING)
+            self.message_user(request, "No uploaded files found for export!", level=messages.WARNING)
             return
 
         document = Document()
-        document.add_heading('Land Documents (With Files)', 0)
+        document.add_heading('LandDocument Files Export', 0)
 
         for obj in queryset:
-            document.add_paragraph(f"Name: {obj.name}")
-            document.add_paragraph(f"Date: {obj.date}")
-            document.add_paragraph(f"Type: {obj.get_document_type_display()}")
-            document.add_paragraph(f"Organization: {obj.organization.name}")
-            if obj.comment:
-                document.add_paragraph(f"Comment: {obj.comment}")
             if obj.file:
-                document.add_paragraph(f"File URL: {obj.file.url}")
-            document.add_paragraph("-" * 50)
+                document.add_paragraph(obj.file.url)
 
         buffer = io.BytesIO()
         document.save(buffer)
@@ -76,45 +76,37 @@ class LandDocumentAdmin(admin.ModelAdmin):
             buffer.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
-        response['Content-Disposition'] = 'attachment; filename="land_documents_with_files.docx"'
+        response['Content-Disposition'] = 'attachment; filename="land_document_files.docx"'
         return response
 
-    export_as_word.short_description = "📝 Export (only with files) to Word"
+    export_files_as_word.short_description = "📝 Export only files (Word)"
 
-    # ✅ PDF Export
-    def export_as_pdf(self, request, queryset):
+    # ✅ Export to PDF
+    def export_files_as_pdf(self, request, queryset):
         queryset = self._get_queryset_with_files(queryset)
         if not queryset.exists():
-            self.message_user(request, "No documents with attached files found!", level=messages.WARNING)
+            self.message_user(request, "No uploaded files found for export!", level=messages.WARNING)
             return
 
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="land_documents_with_files.pdf"'
+        response['Content-Disposition'] = 'attachment; filename="land_document_files.pdf"'
         pdf = canvas.Canvas(response)
 
         y = 800
         pdf.setFont("Helvetica", 12)
-        pdf.drawString(200, y + 20, "Land Documents (With Files)")
+        pdf.drawString(200, y + 20, "LandDocument Files Export")
         y -= 40
 
         for obj in queryset:
-            lines = [
-                f"Name: {obj.name}",
-                f"Date: {obj.date}",
-                f"Type: {obj.get_document_type_display()}",
-                f"Organization: {obj.organization.name}",
-                f"Comment: {obj.comment or ''}",
-                f"File URL: {obj.file.url if obj.file else ''}",
-                "-" * 80,
-            ]
-            for line in lines:
-                pdf.drawString(50, y, line)
+            if obj.file:
+                pdf.drawString(50, y, obj.file.url)
                 y -= 20
                 if y < 50:
                     pdf.showPage()
                     pdf.setFont("Helvetica", 12)
                     y = 800
+
         pdf.save()
         return response
 
-    export_as_pdf.short_description = "📄 Export (only with files) to PDF"
+    export_files_as_pdf.short_description = "📄 Export only files (PDF)"
