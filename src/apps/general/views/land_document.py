@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, filters
 from apps.general.models.land_document import LandDocument
-from apps.general.api.serializers.land_document import LandDocumentSerializer
+from apps.general.serializers.land_document import LandDocumentSerializer
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
