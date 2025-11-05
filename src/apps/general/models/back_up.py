@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 class Backup(models.Model):
-    file = models.FileField(upload_to="backups/")
+    file = models.FileField(upload_to="backups/", null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
