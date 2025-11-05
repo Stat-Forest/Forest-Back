@@ -7,10 +7,21 @@ from apps.general.models.organization import Organization
 
 class LandDocument(models.Model):
     class DocumentType(models.TextChoices):
-        OWNERSHIP = 'ownership', _('Ownership Document')
-        RENT = 'rent', _('Rent Agreement')
-        CERTIFICATE = 'certificate', _('Certificate')
-        OTHER = 'other', _('Other')
+        FARMON = 'farmon', _('Farmon')
+        QAROR = 'qaror', _('Qaror')
+        BUYRUQ = 'buyruq', _('Buyruq')
+        NIZOM = 'nizom', _('Nizom')
+        YORIQNOMA = 'yoriqnoma', _('Yo‘riqnoma')
+        REGLAMENT = 'reglament', _('Reglament')
+        ARIZA = 'ariza', _('Ariza')
+        MALUMOTNOMA = 'malumotnoma', _('Ma’lumotnoma')
+        XIZMAT_XATI = 'xizmat_xati', _('Xizmat xati')
+        DALOLATNOMA = 'dalolatnoma', _('Dalolatnoma')
+        BAYONNOMA = 'bayonnoma', _('Bayonnoma')
+        ISHONCHNOMA = 'ishonchnoma', _('Ishonchnoma')
+        TUSHUNTIRISH_XATI = 'tushuntirish_xati', _('Tushuntirish xati')
+        TAVSIFNOMA = 'tavsifnoma', _('Tavsifnoma')
+        OTHER = 'other', _('Boshqa')
 
     name = models.CharField(_("Document Name"), max_length=255)
     date = models.DateField(_("Document Date"))
@@ -35,8 +46,8 @@ class LandDocument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = _("Land Document")
-        verbose_name_plural = _("Land Documents")
+        verbose_name = _("Yer hujjati")
+        verbose_name_plural = _("Yer hujjatlari")
         ordering = ['-date', 'name']
 
     def __str__(self):
@@ -45,11 +56,6 @@ class LandDocument(models.Model):
     # ✅ Validation
     def clean(self):
         super().clean()
-
-        if self.date > timezone.now().date():
-            raise ValidationError({
-                "date": _("The date cannot be in the future.")
-            })
 
         if not self.name.strip():
             raise ValidationError({
