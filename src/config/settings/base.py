@@ -79,6 +79,27 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 
 # ===============================
+# 🧩 TEMPLATES
+# ===============================
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],  # agar `templates/` papkangiz bo‘lsa
+        "APP_DIRS": True,  # ✅ Juda muhim — admin, jazzmin, debug_toolbar uchun
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",  # ✅ jazzmin uchun zarur
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "config.wsgi.application"
+
+# ===============================
 # 🎨 JAZZMIN SETTINGS
 # ===============================
 JAZZMIN_SETTINGS = {
@@ -106,20 +127,20 @@ JAZZMIN_SETTINGS = {
         "sum": "fas fa-layer-group",
         "report_statistics": "fas fa-chart-bar",
         "e_imzo": "fas fa-signature",
-        "logs": "fas fa-history", 
+        "logs": "fas fa-history",  # 🕓 Loglar uchun ikonka
     },
     "hide_models": [
-        "auth.Group",
+        "auth.Group",  # 👈 "Groups" admin paneldan yashiriladi
     ],
 }
 
 # ===============================
-#  DATABASES & AUTH
+# 🧱 DATABASES & AUTH
 # ===============================
 AUTH_USER_MODEL = "users.CustomUser"
 
 # ===============================
-#  STATIC & MEDIA
+# 🗂️ STATIC & MEDIA
 # ===============================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -127,14 +148,14 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ===============================
-#  TIMEZONE & DEFAULTS
+# ⏰ TIMEZONE & DEFAULTS
 # ===============================
 TIME_ZONE = "Asia/Tashkent"
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ===============================
-# REST FRAMEWORK & SPECTACULAR
+# 🔐 REST FRAMEWORK & SPECTACULAR
 # ===============================
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Forest API',
@@ -145,13 +166,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 # ===============================
-#  INTERNAL IPs
+# 🧩 INTERNAL IPs
 # ===============================
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
 INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]
 
 # ===============================
-#  REDIS (if used)
+# 🔥 REDIS (if used)
 # ===============================
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
