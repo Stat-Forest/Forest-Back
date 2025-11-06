@@ -1,9 +1,10 @@
 from django.contrib import admin
 from apps.reports.models import Report
+from apps.logs.mixins import AdminHistoryMixin
 
 
 @admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
+class ReportAdmin(AdminHistoryMixin, admin.ModelAdmin):
     list_display = (
         'organization',
         'statement',
