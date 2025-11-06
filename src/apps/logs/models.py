@@ -25,6 +25,7 @@ class HistoryActionJournal(models.Model):
         ordering = ['-created_at']
         verbose_name = "Foydalanuvchi amallari tarixi"
         verbose_name_plural = "  Foydalanuvchi amallari tarixi"
+        app_label = 'zzz_logs'
 
     def __str__(self):
         return f"{self.user} {self.action} {self.model_name} ({self.object_repr})"
