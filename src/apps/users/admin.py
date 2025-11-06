@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from apps.users.models import CustomUser, PersonalInfo
+from apps.logs.mixins import AdminHistoryMixin
 
 
 class PersonalInfoInline(admin.StackedInline):
@@ -14,7 +15,7 @@ class PersonalInfoInline(admin.StackedInline):
 
     # bolim_admin da organizations bo`midi
 @admin.register(CustomUser)
-class CustomUserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(AdminHistoryMixin,admin.ModelAdmin):
     model = CustomUser
     list_display = (
         "id", "email", "organization", "statement", "first_name", "last_name", "role", "gender", "is_active"
