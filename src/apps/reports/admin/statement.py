@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib import admin
-from apps.reports.models import Statement
 from django.utils.translation import gettext_lazy as _
+
+from apps.reports.models import Statement
+from apps.logs.mixins import AdminHistoryMixin  # ✅ qo‘shildi
 
 
 class StatementAdminForm(forms.ModelForm):
@@ -21,7 +23,8 @@ class StatementAdminForm(forms.ModelForm):
         return cleaned_data
 
 
-class StatementAdmin(admin.ModelAdmin):
+@admin.register(Statement)
+class StatementAdmin(AdminHistoryMixin, admin.ModelAdmin):
     form = StatementAdminForm
     list_display = ('name_uz', 'name_ru', 'period', 'parent')
     list_filter = ("name_uz", "name_ru")
@@ -30,5 +33,3 @@ class StatementAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         query_set = super().get_queryset(request)
         return query_set.select_related("parent")
-
-admin.site.register(Statement, StatementAdmin)
