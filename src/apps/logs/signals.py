@@ -29,8 +29,9 @@ def _create_log(user, action, model_name, instance=None, message=None):
         action=action,
         model_name=model_name,
         object_id=getattr(instance, 'id', None),
-        message=message or "",
+        change_message=message or "",
     )
+
 
 # --- Post Save (yaratish yoki yangilash) ---
 @receiver(post_save)
