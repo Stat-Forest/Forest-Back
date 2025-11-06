@@ -7,10 +7,10 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 
 from apps.general.models.land_document import LandDocument
-
+from apps.logs.mixins import AdminHistoryMixin
 
 @admin.register(LandDocument)
-class LandDocumentAdmin(admin.ModelAdmin):
+class LandDocumentAdmin(AdminHistoryMixin,admin.ModelAdmin):
     list_display = ("name", "organization", "date", "created_at")
     search_fields = ("name", "organization__name")
     list_filter = ("organization", "date")
