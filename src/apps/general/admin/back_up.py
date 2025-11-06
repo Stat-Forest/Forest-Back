@@ -7,10 +7,10 @@ import zipfile
 import datetime
 from django.conf import settings
 from apps.general.models.back_up import Backup
-
+from apps.logs.mixins import AdminHistoryMixin
 
 @admin.register(Backup)
-class BackupAdmin(admin.ModelAdmin):
+class BackupAdmin(AdminHistoryMixin,admin.ModelAdmin):
     change_list_template = "admin/backup_changelist.html"
     list_display = ("file_link", "created_at")
     list_filter = ("created_at",)
