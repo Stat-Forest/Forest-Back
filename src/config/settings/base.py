@@ -53,6 +53,7 @@ INSTALLED_APPS += [
     'apps.sum.apps.SumConfig',
     'apps.report_statistics.apps.ReportStatisticsConfig',
     'apps.e_imzo.apps.EImzoConfig',
+    'apps.logs.apps.LogsConfig',
 
 ]
 MIDDLEWARE = [
