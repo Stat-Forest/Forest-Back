@@ -1,10 +1,13 @@
 import os
+import socket
 from pathlib import Path
 from dotenv import load_dotenv
-import socket
 
 load_dotenv()
 
+# ===============================
+# 📁 BASE CONFIG
+# ===============================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
@@ -32,14 +35,9 @@ CSRF_TRUSTED_ORIGINS = [
 # 📦 INSTALLED_APPS
 # ===============================
 INSTALLED_APPS = [
+    # 3rd party
     "modeltranslation",
     "jazzmin",
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_yasg",
@@ -47,7 +45,16 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "debug_toolbar",
-    # --- Custom apps ---
+
+    # Django defaults
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    # Custom apps
     "apps.authentications.apps.AuthenticationsConfig",
     "apps.base.apps.BaseConfig",
     "apps.users.apps.UsersConfig",
@@ -66,7 +73,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.locale.LocaleMiddleware",  # ✅ Til qo‘llab-quvvatlash uchun
     "django.middleware.common.CommonMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -148,19 +155,30 @@ AUTH_USER_MODEL = "users.CustomUser"
 # ===============================
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # ===============================
-# ⏰ TIMEZONE & DEFAULTS
+# 🌐 LANGUAGE & TIMEZONE
 # ===============================
-# ❗ O'zbek tili Django'da to'liq mavjud emas,
-# shuning uchun 'uz' qo'yilsa ruscha chiqadi.
-# Inglizchaga o‘tqazish kerak:
-LANGUAGE_CODE = "en"
-
+LANGUAGE_CODE = "uz"  # ✅ O'zbek tili asosiy qilib belgilandi
 TIME_ZONE = "Asia/Tashkent"
+USE_I18N = True
+USE_L10N = True
 USE_TZ = True
+
+# Qo‘llab-quvvatlanadigan tillar
+LANGUAGES = [
+    ("uz", "O'zbekcha"),
+    ("ru", "Русский"),
+    ("en", "English"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",  # ✅ Tarjima fayllari shu papkada bo‘ladi
+]
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ===============================
