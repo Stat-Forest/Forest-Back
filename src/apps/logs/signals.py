@@ -29,6 +29,7 @@ def _create_log(user, action, model_name, instance=None, message=None):
         action=action,
         model_name=model_name,
         object_id=getattr(instance, 'id', None),
+        object_repr=getattr(instance, '__str__', lambda: f"ID={getattr(instance, 'id', '---')}")(),
         change_message=message or "",
     )
 
