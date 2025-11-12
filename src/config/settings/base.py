@@ -13,9 +13,9 @@ DEBUG = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 ALLOWED_HOSTS = [
-    'forest.yutori.uz', 'www.forest.yutori.uz',
-    '93.188.84.164', 'localhost', '127.0.0.1',
-    'stat-urmon.uz', 'www.stat-urmon.uz'
+    "forest.yutori.uz", "www.forest.yutori.uz",
+    "93.188.84.164", "localhost", "127.0.0.1",
+    "stat-urmon.uz", "www.stat-urmon.uz",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -104,7 +104,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ===============================
 JAZZMIN_SETTINGS = {
     "site_title": "Forest Admin",
-    "site_header": "Admin Panel",  # ✅ “Админпанель” o‘rniga chiqadi
+    "site_header": "Admin Panel",
     "site_brand": "Forest",
     "welcome_sign": "Stat-Urmon boshqaruv tizimi",
     "copyright": "© 2025 Stat-Urmon",
@@ -132,9 +132,7 @@ JAZZMIN_SETTINGS = {
         "logs": "fas fa-history",
     },
 
-    "hide_models": [
-        "auth.Group",
-    ],
+    "hide_models": ["auth.Group"],
 
     # ✅ Til tanlash menyusini yashirish
     "language_chooser": False,
@@ -148,15 +146,19 @@ AUTH_USER_MODEL = "users.CustomUser"
 # ===============================
 # 🗂️ STATIC & MEDIA
 # ===============================
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # ===============================
 # ⏰ TIMEZONE & DEFAULTS
 # ===============================
-LANGUAGE_CODE = 'uz'  # ✅ Tilni o‘zbekcha (Admin Panel chiqishi uchun)
+# ❗ O'zbek tili Django'da to'liq mavjud emas,
+# shuning uchun 'uz' qo'yilsa ruscha chiqadi.
+# Inglizchaga o‘tqazish kerak:
+LANGUAGE_CODE = "en"
+
 TIME_ZONE = "Asia/Tashkent"
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -165,11 +167,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # 🔐 REST FRAMEWORK & SPECTACULAR
 # ===============================
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Forest API',
-    'DESCRIPTION': 'API documentation for the Forest application',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'COMPONENT_SPLIT_REQUEST': True,
+    "TITLE": "Forest API",
+    "DESCRIPTION": "API documentation for the Forest application",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 # ===============================
@@ -181,6 +183,6 @@ INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]
 # ===============================
 # 🔥 REDIS (if used)
 # ===============================
-REDIS_HOST = 'localhost'
+REDIS_HOST = "localhost"
 REDIS_PORT = 6379
 REDIS_DB = 0
