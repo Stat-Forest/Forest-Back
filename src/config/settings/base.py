@@ -84,12 +84,12 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # agar `templates/` papkangiz bo‘lsa
-        "APP_DIRS": True,  # ✅ Juda muhim — admin, jazzmin, debug_toolbar uchun
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
-                "django.template.context_processors.request",  # ✅ jazzmin uchun zarur
+                "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -104,11 +104,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ===============================
 JAZZMIN_SETTINGS = {
     "site_title": "Forest Admin",
-    "site_header": "Stat-Urmon",
+    "site_header": "Admin Panel",  # ✅ “Админпанель” o‘rniga chiqadi
     "site_brand": "Forest",
     "welcome_sign": "Stat-Urmon boshqaruv tizimi",
     "copyright": "© 2025 Stat-Urmon",
     "site_logo": None,
+
     "order_with_respect_to": [
         "auth",
         "users",
@@ -117,8 +118,9 @@ JAZZMIN_SETTINGS = {
         "sum",
         "report_statistics",
         "e_imzo",
-        "logs",  # ✅ “Foydalanuvchi amallari tarixi” eng oxirida chiqadi
+        "logs",
     ],
+
     "icons": {
         "auth": "fas fa-user-shield",
         "users": "fas fa-users",
@@ -127,11 +129,15 @@ JAZZMIN_SETTINGS = {
         "sum": "fas fa-layer-group",
         "report_statistics": "fas fa-chart-bar",
         "e_imzo": "fas fa-signature",
-        "logs": "fas fa-history",  # 🕓 Loglar uchun ikonka
+        "logs": "fas fa-history",
     },
+
     "hide_models": [
-        "auth.Group",  # 👈 "Groups" admin paneldan yashiriladi
+        "auth.Group",
     ],
+
+    # ✅ Til tanlash menyusini yashirish
+    "language_chooser": False,
 }
 
 # ===============================
@@ -150,6 +156,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ===============================
 # ⏰ TIMEZONE & DEFAULTS
 # ===============================
+LANGUAGE_CODE = 'uz'  # ✅ Tilni o‘zbekcha (Admin Panel chiqishi uchun)
 TIME_ZONE = "Asia/Tashkent"
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
