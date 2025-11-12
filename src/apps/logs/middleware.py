@@ -3,14 +3,16 @@ import threading
 _thread_locals = threading.local()
 
 def get_current_user():
-    return getattr(_thread_locals, 'user', None)
+    """ThreadLocal orqali joriy foydalanuvchini qaytaradi"""
+    return getattr(_thread_locals, "user", None)
+
 
 class CurrentUserMiddleware:
-    """Har bir request uchun foydalanuvchini global contextda saqlaydi."""
+    """Har bir request uchun foydalanuvchini global contextda saqlaydi"""
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        _thread_locals.user = getattr(request, 'user', None)
+        _thread_locals.user = getattr(request, "user", None)
         response = self.get_response(request)
         return response
