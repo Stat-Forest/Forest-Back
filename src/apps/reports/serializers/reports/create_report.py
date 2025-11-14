@@ -13,6 +13,7 @@ from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemI
 from apps.reports.services import aggregate_individual_report
 from apps.reports.services.ensure_plans import ensure_plans_exist, get_year_from_submit_at
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
+from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code, get_translated_field
 
@@ -62,6 +63,12 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "Bu tashkilot uchun bu hisobot turi va deadline bo‘yicha allaqachon report mavjud."
                 )
+
+        ensure_plans_exist_simple(
+            organization=organization,
+            statement=statement
+        )
+
         # try:
         #     year = get_year_from_submit_at(deadline.submit_at)
         # except ValueError as e:
@@ -76,6 +83,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('Sizga bu deadline uchun ruxsat berilmagan.'))
+
         print("🧪 deadline:", deadline)
         print("🧪 deadline.submit_at:", deadline.submit_at)
 
