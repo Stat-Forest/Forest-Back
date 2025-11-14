@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
 from apps.reports.filters.report_region import ReportFilter
@@ -18,7 +19,19 @@ from apps.base.views import (
 )
 
 
-@extend_schema(tags=["Reports"])
+@extend_schema(
+    tags=["Reports"],
+    parameters=[
+        OpenApiParameter(
+            name="lang",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Tilni belgilang: uz yoki ru",
+            required=False,
+            enum=["uz", "ru"]
+        )
+    ]
+)
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
     # permission_classes = (CanListReport,)
