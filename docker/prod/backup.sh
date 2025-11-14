@@ -19,10 +19,14 @@ DB_HOST=$(grep -E '^DB_HOST=' "$ENV_FILE" | cut -d '=' -f2)
 DB_PORT=$(grep -E '^DB_PORT=' "$ENV_FILE" | cut -d '=' -f2)
 
 DATE=$(date +'%Y-%m-%d_%H-%M')
-BACKUP_DIR=/backups
-PROJECT_NAME="forest_project"
+YEAR=$(date +'%Y')
+MONTH=$(date +'%m')
+DAY=$(date +'%d')
 
-GPG_PASSWORD="***REMOVED***"
+PROJECT_NAME="forest_project"
+BACKUP_ROOT=/backups
+BACKUP_DIR="$BACKUP_ROOT/$YEAR/$MONTH/$DAY"
+
 RETENTION_DAYS=1095
 
 mkdir -p "$BACKUP_DIR"
@@ -47,14 +51,10 @@ zip -r "$BACKUP_DIR/media_$DATE.zip" "$PROJECT_ROOT/src/media" >/dev/null 2>&1 |
 cd "$BACKUP_DIR"
 zip -r "${PROJECT_NAME}_backup_$DATE.zip" "db_$DATE.sql" "media_$DATE.zip" >/dev/null
 
-# 4️⃣ Encrypt with GPG
-echo "Encrypting..."
-echo "$GPG_PASSWORD" | gpg --batch --yes --passphrase-fd 0 -c "${PROJECT_NAME}_backup_$DATE.zip"
+# 4️⃣ Cleanup temp files (leave only final zip)
+rm -f "db_$DATE.sql" "media_$DATE.zip"
 
-# 5️⃣ Cleanup temp files
-rm -f "db_$DATE.sql" "media_$DATE.zip" "${PROJECT_NAME}_backup_$DATE.zip"
+# 5️⃣ Delete old backups
+find "$BACKUP_ROOT" -type f -name "*.zip" -mtime +$RETENTION_DAYS -exec rm {} \;
 
-# 6️⃣ Delete old backups
-find "$BACKUP_DIR" -type f -name "*.gpg" -mtime +$RETENTION_DAYS -exec rm {} \;
-
-echo "✅ Backup completed successfully: ${PROJECT_NAME}_backup_$DATE.zip.gpg"
+echo "✅ Backup completed successfully: ${BACKUP_DIR}/${PROJECT_NAME}_backup_$DATE.zip"

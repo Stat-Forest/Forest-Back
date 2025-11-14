@@ -14,7 +14,7 @@ services:
       - ../../src:/app
       - ../../docker/prod/backup.sh:/app/docker/prod/backup.sh
       - ../../.env:/app/.env
-      - backups_data:/backups
+      - ../../backups:/backups
 
     ports:
       - "8000:8000"

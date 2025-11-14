@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.utils import timezone
 from apps.general.models import Announcement
+from apps.logs.mixins import AdminHistoryMixin
 
 
 @admin.register(Announcement)
-class AnnouncementAdmin(admin.ModelAdmin):
+class AnnouncementAdmin(AdminHistoryMixin,admin.ModelAdmin):
     list_display = ('title_uz', 'title_ru', 'desc_uz', 'desc_ru', 'from_time', 'to_time', 'ordering', 'is_active_now')
     list_filter = ('from_time', 'to_time')
     search_fields = ('title_uz', 'title_ru', 'desc_uz', 'desc_ru')
