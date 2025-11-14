@@ -62,16 +62,16 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "Bu tashkilot uchun bu hisobot turi va deadline bo‘yicha allaqachon report mavjud."
                 )
-        try:
-            year = get_year_from_submit_at(deadline.submit_at)
-        except ValueError as e:
-            raise CustomExceptionError(code=400, detail=str(e))
-
-        ensure_plans_exist(
-            organization=organization,
-            statement=statement,
-            year=year
-        )
+        # try:
+        #     year = get_year_from_submit_at(deadline.submit_at)
+        # except ValueError as e:
+        #     raise CustomExceptionError(code=400, detail=str(e))
+        #
+        # ensure_plans_exist(
+        #     organization=organization,
+        #     statement=statement,
+        #     year=year
+        # )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():
