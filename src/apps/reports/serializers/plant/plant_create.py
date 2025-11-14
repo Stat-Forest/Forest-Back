@@ -48,16 +48,16 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         submit_at = deadline.submit_at
         today = date.today()
 
-        try:
-            year = get_year_from_submit_at(deadline.submit_at)
-        except ValueError as e:
-            raise CustomExceptionError(code=400, detail=str(e))
-
-        ensure_plans_exist(
-            organization=organization,
-            statement=statement,
-            year=year
-        )
+        # try:
+        #     year = get_year_from_submit_at(deadline.submit_at)
+        # except ValueError as e:
+        #     raise CustomExceptionError(code=400, detail=str(e))
+        #
+        # ensure_plans_exist(
+        #     organization=organization,
+        #     statement=statement,
+        #     year=year
+        # )
 
         # ✅ get_week_of_month funksiyasi
         def get_week_of_month(day):
