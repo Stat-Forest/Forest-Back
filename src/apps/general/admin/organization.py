@@ -3,10 +3,11 @@ from modeltranslation.admin import TranslationAdmin
 from django.utils.translation import gettext_lazy as _
 
 from apps.general.models import Organization
+from apps.logs.mixins import AdminHistoryMixin
 
 
 @admin.register(Organization)
-class OrganizationAdmin(TranslationAdmin):
+class OrganizationAdmin(AdminHistoryMixin,TranslationAdmin):
     list_display = ('name','name_uz','name_ru','region')
     list_filter = list_display
     search_fields = list_display

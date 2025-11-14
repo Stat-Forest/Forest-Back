@@ -3,7 +3,8 @@ from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from apps.users.models import CustomUser, PersonalInfo
-
+from apps.logs.mixins import AdminHistoryMixin
+from django.contrib.auth.models import Group
 
 class PersonalInfoInline(admin.StackedInline):
     model = PersonalInfo
@@ -14,7 +15,7 @@ class PersonalInfoInline(admin.StackedInline):
 
     # bolim_admin da organizations bo`midi
 @admin.register(CustomUser)
-class CustomUserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(AdminHistoryMixin,admin.ModelAdmin):
     model = CustomUser
     list_display = (
         "id", "email", "organization", "statement", "first_name", "last_name", "role", "gender", "is_active"
@@ -88,3 +89,5 @@ class CustomUserAdmin(admin.ModelAdmin):
             except Group.DoesNotExist:
                 print(f"Group {group_name} not found!")
     inlines = [PersonalInfoInline]
+
+admin.site.unregister(Group)
