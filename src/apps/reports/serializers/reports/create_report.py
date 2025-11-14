@@ -11,6 +11,7 @@ from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services import aggregate_individual_report
+from apps.reports.services.ensure_plans import ensure_plans_exist, get_year_from_submit_at
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code, get_translated_field
@@ -29,6 +30,7 @@ class ReportItemSerializer(serializers.ModelSerializer):
         model = ReportItem
         fields = ["statement_column", "inners"]
 
+
 # 12 ta viloyat, 1ta shahar, qoraqol respublikasi. boshqa tashkilotlar.
 class ReportCreateSerializer(serializers.ModelSerializer):
     report_items = serializers.ListField(write_only=True)
@@ -43,10 +45,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         deadline = attrs["deadline"]
         statement = deadline.statement
-        is_individual_general = attrs.get("is_individual_general", False)
         report_items = attrs['report_items']
         user = self.context['request'].user
         organization = user.organization
+        is_individual_general = attrs.get("is_individual_general", False)
 
         # 1. Duplicated reportni tekshir
         if not is_individual_general:
@@ -60,10 +62,22 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "Bu tashkilot uchun bu hisobot turi va deadline bo‘yicha allaqachon report mavjud."
                 )
+        try:
+            year = get_year_from_submit_at(deadline.submit_at)
+        except ValueError as e:
+            raise CustomExceptionError(code=400, detail=str(e))
+
+        ensure_plans_exist(
+            organization=organization,
+            statement=statement,
+            year=year
+        )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():
             raise CustomExceptionError(400, _('Sizga bu deadline uchun ruxsat berilmagan.'))
+        print("🧪 deadline:", deadline)
+        print("🧪 deadline.submit_at:", deadline.submit_at)
 
         # 3. StatementColumn'lar tekshiriladi
         column_ids = [item['statement_column'] for item in report_items]
