@@ -10,6 +10,7 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.general.models import Organization
 from apps.reports.services import get_year_from_submit_at, ensure_plans_exist
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
+from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
@@ -47,6 +48,11 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         statement = deadline.statement
         submit_at = deadline.submit_at
         today = date.today()
+
+        ensure_plans_exist_simple(
+            statement=statement,
+            organization=organization
+        )
 
         # try:
         #     year = get_year_from_submit_at(deadline.submit_at)

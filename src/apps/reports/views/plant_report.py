@@ -1,3 +1,5 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -7,6 +9,7 @@ from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 
 
+@extend_schema(tags=["Plant-Reports"])
 class UniversalPlantReportCreateAPIView(APIView):
     def post(self, request):
         serializer = UniversalPlantReportCreateSerializer(
@@ -23,6 +26,19 @@ class UniversalPlantReportCreateAPIView(APIView):
         return Response(response_serializer.data, status=201)
 
 
+@extend_schema(
+    tags=["Plant-Reports"],
+    parameters=[
+        OpenApiParameter(
+            name="lang",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Tilni belgilang: uz yoki ru",
+            required=False,
+            enum=["uz", "ru"]
+        )
+    ]
+)
 class PlantListReportAPIView(CustomListAPIView):
     serializer_class = PlantReportListSerializer
 
@@ -42,6 +58,8 @@ class PlantListReportAPIView(CustomListAPIView):
         context["plant_map"] = {str(p.id): p.name for p in plant_qs}
         return context
 
+
+@extend_schema(tags=["Plant-Reports"])
 class PlantDetailReportAPIView(CustomRetrieveAPIView):
     queryset = Report.objects.filter(is_plant_based=True).select_related(
         "organization", "statement", "deadline"
