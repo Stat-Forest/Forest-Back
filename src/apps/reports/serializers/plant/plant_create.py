@@ -6,7 +6,9 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import serializers
 
+from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.general.models import Organization
+from apps.reports.services import get_year_from_submit_at, ensure_plans_exist
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
@@ -34,6 +36,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         deadline_id = attrs["deadline"]
         report_items = attrs['report_items']
         user = self.context['request'].user
+        organization = user.organization
 
         from apps.reports.models import Deadline
         try:
@@ -44,6 +47,17 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         statement = deadline.statement
         submit_at = deadline.submit_at
         today = date.today()
+
+        try:
+            year = get_year_from_submit_at(deadline.submit_at)
+        except ValueError as e:
+            raise CustomExceptionError(code=400, detail=str(e))
+
+        ensure_plans_exist(
+            organization=organization,
+            statement=statement,
+            year=year
+        )
 
         # ✅ get_week_of_month funksiyasi
         def get_week_of_month(day):
