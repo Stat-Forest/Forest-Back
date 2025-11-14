@@ -73,14 +73,14 @@ class StatementColumn(AbstractBaseModel):
 
     objects = StatementColumnManager()
 
-    @property
-    def return_parent(self):
-        if self.parent is None:
-            return self.title
-        return f"{self.parent.return_parent} - {self.title}"
+    # @property
+    # def return_parent(self):
+    #     if self.parent is None:
+    #         return self.title
+    #     return f"{self.parent.return_parent} - {self.title}"
 
     def __str__(self):
-        return self.return_parent
+        return self.title
 
     @property
     def is_leaf(self):
