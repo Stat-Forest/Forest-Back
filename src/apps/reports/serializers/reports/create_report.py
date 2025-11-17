@@ -3,19 +3,19 @@ from datetime import date
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from apps.base.exceptions.exception_files import CustomExceptionError
-from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.general.models import Organization
-from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
-from apps.reports.services import aggregate_individual_report
-from apps.reports.services.ensure_plans import ensure_plans_exist, get_year_from_submit_at
-from apps.reports.services.report_calculate_expressions import calculate_by_expressions
-from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.utils.services import PeriodChoices
+from apps.reports.report_calculate import ALL_CALCULATORS
+from apps.reports.services import aggregate_individual_report
+from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.utils.translation import get_lang_code, get_translated_field
+from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
+from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
+from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 
 
 class ReportItemInnerSerializer(serializers.ModelSerializer):
@@ -68,17 +68,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             organization=organization,
             statement=statement
         )
-
-        # try:
-        #     year = get_year_from_submit_at(deadline.submit_at)
-        # except ValueError as e:
-        #     raise CustomExceptionError(code=400, detail=str(e))
-        #
-        # ensure_plans_exist(
-        #     organization=organization,
-        #     statement=statement,
-        #     year=year
-        # )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():
