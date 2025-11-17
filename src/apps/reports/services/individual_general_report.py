@@ -17,7 +17,6 @@ def aggregate_individual_report(source_report):
 
     all_items = source_report.report_items.prefetch_related("inners")
 
-    # 🛠 Har doim region va republic ni aniq ajratib olamiz
     region = source_report.organization.region if source_report.organization else source_report.region
     republic = source_report.organization.republic if source_report.organization else source_report.republic
 
@@ -48,16 +47,19 @@ def aggregate_individual_report(source_report):
         )
         new_items.append(report_item)
 
-        numeric_values = [Decimal(v) for v in values if is_number(v)]
+        # Faqat raqamli qiymatlar
+        numeric_values = [Decimal(str(v)) for v in values if is_number(v)]
+
         if numeric_values:
             total = sum(numeric_values)
-            new_inners.append(
-                ReportItemInner(report_item=report_item, value=str(total))
-            )
+            value = str(total)
         else:
-            new_inners.append(
-                ReportItemInner(report_item=report_item, value=values[0])
-            )
+            # ❗️ mana shu yer muhim
+            value = "0"
+
+        new_inners.append(
+            ReportItemInner(report_item=report_item, value=value)
+        )
 
     ReportItem.objects.bulk_create(new_items)
     ReportItemInner.objects.bulk_create(new_inners)

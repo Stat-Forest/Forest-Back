@@ -6,7 +6,7 @@ from django.db import transaction
 from apps.base.serializers import CustomModelSerializer
 from apps.reports.calculate_orderings.calculated_columns import CALCULATED_COLUMNS
 from apps.reports.report_calculate import ALL_CALCULATORS
-from apps.reports.services import aggregate_individual_report, aggregate_general_report, aggregate_national_report
+from apps.reports.services import aggregate_individual_report
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 

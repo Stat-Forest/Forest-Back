@@ -45,6 +45,16 @@ class ReportListSerializer(serializers.ModelSerializer):
             return get_translated_field(obj.sent_by_org, "name", lang)
         return None
 
+    def get_period(self, obj):
+        PERIOD_TRANSLATIONS = {
+            "monthly": {"uz": "Oylik", "ru": "Ежемесячный"},
+            "quarterly": {"uz": "Choraklik (3 oy)", "ru": "Квартальный"},
+            "yearly": {"uz": "Yillik", "ru": "Годовой"},
+        }
+        lang = get_lang_code(self.context)
+        period_key = obj.statement.period
+        return PERIOD_TRANSLATIONS.get(period_key, {}).get(lang, period_key)
+
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
 

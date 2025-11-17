@@ -37,6 +37,8 @@ def normalize(value):
 
 def aggregate_national_report(statement, deadline, region):
     from apps.reports.models import Report, ReportItem, ReportItemInner
+    from collections import defaultdict
+    from apps.utils.services.is_that_number import safe_decimal
 
     general_reports = Report.objects.filter(
         statement=statement,
@@ -59,21 +61,16 @@ def aggregate_national_report(statement, deadline, region):
 
     print(">>> [REPUBLIC] Umumiy Jami report:", national_report.id)
 
-    # Tozalash
     ReportItem.objects.filter(report=national_report).delete()
 
-    # Regional jami reportlardagi barcha itemlar
     all_items = ReportItem.objects.filter(report__in=general_reports).prefetch_related("inners")
 
-    # Guruhlash – faqat unique bo‘lishi uchun dict orqali
     grouped = defaultdict(list)
     for item in all_items:
         col_id = item.statement_column_id
         for inner in item.inners.all():
-            value = inner.value
-            grouped[col_id].append(value)
+            grouped[col_id].append(inner.value)
 
-    # 1. ReportItem yaratish
     new_items = {}
     for column_id in grouped.keys():
         report_item = ReportItem.objects.create(
@@ -82,20 +79,16 @@ def aggregate_national_report(statement, deadline, region):
         )
         new_items[column_id] = report_item
 
-    # 2. ReportItemInner yaratish
     new_inners = []
     for column_id, values in grouped.items():
         report_item = new_items[column_id]
-        first_value = values[0] if values else None
 
-        if is_number(first_value):
-            total = sum(normalize(v) for v in values if is_number(v))
-            new_inners.append(ReportItemInner(report_item=report_item, value=str(total)))
-        else:
-            # 🔥 faqat 1 dona yozish uchun SET ishlatamiz
-            unique_values = list(dict.fromkeys(values))  # preserves order
-            for val in unique_values:
-                new_inners.append(ReportItemInner(report_item=report_item, value=val))
+        total = sum(safe_decimal(v) for v in values)
+        new_inners.append(ReportItemInner(report_item=report_item, value=str(total)))
+
+    ReportItemInner.objects.bulk_create(new_inners)
+    print(f">>> [REPUBLIC] {len(new_items)} ta item, {len(new_inners)} ta inner yozildi")
+    return national_report
 
     ReportItemInner.objects.bulk_create(new_inners)
     print(f">>> [REPUBLIC] {len(new_items)} ta item, {len(new_inners)} ta inner yozildi")
@@ -105,7 +98,7 @@ def aggregate_national_report(statement, deadline, region):
 def aggregate_general_report(statement, deadline, region):
     from apps.reports.models import Report, ReportItem, ReportItemInner
     from collections import defaultdict
-    from decimal import Decimal
+    from apps.utils.services.is_that_number import safe_decimal
 
     reports = Report.objects.filter(
         statement=statement,
@@ -126,14 +119,12 @@ def aggregate_general_report(statement, deadline, region):
     target_republic = republics.pop() if len(republics) == 1 else None
 
     if not target_region:
-        # fallback: olish uchun birinchi reportdan
         target_region = reports.first().region
 
     all_items = ReportItem.objects.filter(
         report__in=reports
     ).select_related("statement_column").prefetch_related("inners")
 
-    # ⚠️ Muammoni oldini olish: avval aniq mavjud reportni topamiz
     general_report = Report.objects.filter(
         organization=None,
         statement=statement,
@@ -154,7 +145,6 @@ def aggregate_general_report(statement, deadline, region):
             republic=target_republic
         )
     else:
-        # Agar mavjud bo‘lsa, faqat republic yangilanadi
         changed = False
         if general_report.republic != target_republic:
             general_report.republic = target_republic
@@ -162,10 +152,8 @@ def aggregate_general_report(statement, deadline, region):
         if changed:
             general_report.save(update_fields=["republic"])
 
-    # Eski itemlarni tozalaymiz
     ReportItem.objects.filter(report=general_report).delete()
 
-    # Ustunlar bo‘yicha yig‘ish
     column_total_map = defaultdict(Decimal)
     touched_column_ids = set()
 
@@ -173,8 +161,7 @@ def aggregate_general_report(statement, deadline, region):
         col_id = item.statement_column_id
         touched_column_ids.add(col_id)
         for inner in item.inners.all():
-            if is_number(inner.value):
-                column_total_map[col_id] += Decimal(inner.value)
+            column_total_map[col_id] += safe_decimal(inner.value)
 
     new_items = []
     new_inners = []
