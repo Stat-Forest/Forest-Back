@@ -21,7 +21,7 @@ class CustomUserAdmin(AdminHistoryMixin,admin.ModelAdmin):
         "id", "email", "organization", "statement", "first_name", "last_name", "role", "gender", "is_active"
     )
     list_filter = (
-        "role", "gender", "is_active", "is_disabled", "nationality", "is_superuser"
+        "role", "organization", "statement"
     )
     search_fields = (
         "email", "first_name", "last_name", "phone_number", "passport_number", "jshshr", "user_number"
