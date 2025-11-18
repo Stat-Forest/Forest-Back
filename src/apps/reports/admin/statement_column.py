@@ -32,9 +32,9 @@ class StatementColumnAdminForm(forms.ModelForm):
 @admin.register(StatementColumn)
 class StatementColumnAdmin(AdminHistoryMixin,admin.ModelAdmin):
     form = StatementColumnAdminForm
-    list_display = ('statement', 'title', 'ordering', 'parent', 'created_at')
+    list_display = ('statement', 'title_uz', 'title_ru', 'ordering', 'parent', 'created_at')
     search_fields = ('title', 'statement__name_uz', 'statement__name_ru')
-    list_filter = ('statement',)
+    list_filter = ('statement', 'title_uz', 'title_ru')
     ordering = ('ordering',)
     raw_id_fields = ('statement', 'parent')
 
