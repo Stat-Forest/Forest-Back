@@ -64,10 +64,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                     "Bu tashkilot uchun bu hisobot turi va deadline bo‘yicha allaqachon report mavjud."
                 )
 
-        ensure_plans_exist_simple(
-            organization=organization,
-            statement=statement
-        )
+        # ensure_plans_exist_simple(
+        #     organization=organization,
+        #     statement=statement
+        # )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():
