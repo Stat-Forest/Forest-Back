@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+from django.core.cache import cache
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -18,18 +20,34 @@ class LoginSerializer(CustomSerializer):
         password = attrs.get("password")
 
         if not email or not password:
-            raise CustomExceptionError(code=400, detail="Email or password was required")
+            raise CustomExceptionError(code=400, detail=_("Email or password was required"))
+
+        block_key = f"login_block_{email}"
+        if cache.get(block_key):
+            raise CustomExceptionError(code=429, detail=_(
+                "Juda koʻp urinishlar, 40 soniyadan keyin qayta urinib ko'ring.")
+        )
+
+        attempt_key = f"login_attempts_{email}"
+        attempts = cache.get(attempt_key, 0)
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise CustomExceptionError(code=404, detail="User not found.")
+            cache.set(attempt_key, attempts + 1, timeout=60)
+            self._check_attempts_limit(email, attempts + 1)
+            raise CustomExceptionError(code=404, detail=_("User not found."))
 
         if not user.check_password(password):
-            raise CustomExceptionError(code=404, detail="Email or password was mistake.")
+            cache.set(attempt_key, attempts + 1, timeout=60)
+            self._check_attempts_limit(email, attempts + 1)
+            raise CustomExceptionError(code=404, detail=_("Email or password was mistake."))
 
         if not user.is_active:
-            raise CustomExceptionError(code=403, detail="This user is not active.")
+            raise CustomExceptionError(code=403, detail=_("This user is not active."))
+
+        cache.delete(attempt_key)
+        cache.delete(block_key)
 
         refresh = RefreshToken.for_user(user)
 
@@ -40,3 +58,9 @@ class LoginSerializer(CustomSerializer):
             "email": user.email,
             "role": getattr(user, "role", "admin")
         }
+
+    def _check_attempts_limit(self, email, attempts):
+        if attempts >= 3:
+            block_key = f"login_block_{email}"
+            cache.set(block_key, True, timeout=40)  # ⛔ 40 soniyaga blok
+            raise CustomExceptionError(code=429, detail="3 marta xato. Iltimos, 40 soniyadan so‘ng urinib ko‘ring.")
