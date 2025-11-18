@@ -33,8 +33,8 @@ class Plant(AbstractBaseModel):
         return self.name
 
     class Meta:
-        verbose_name = "O'simlik va O'simlik turi"
-        verbose_name_plural = "O'simlik va O'simlik turlari"
+        verbose_name = "O'simlik turi va nomi"
+        verbose_name_plural = "O'simlik turi va nomlari"
 
 
 class ColumnPlant(AbstractBaseModel):
