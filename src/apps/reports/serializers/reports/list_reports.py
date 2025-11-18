@@ -7,7 +7,7 @@ from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class ReportListSerializer(serializers.ModelSerializer):
-    period = serializers.CharField(source='statement.period')
+    period = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
     report_items = serializers.SerializerMethodField()
     statement_name = serializers.SerializerMethodField()
@@ -46,14 +46,19 @@ class ReportListSerializer(serializers.ModelSerializer):
         return None
 
     def get_period(self, obj):
-        PERIOD_TRANSLATIONS = {
-            "monthly": {"uz": "Oylik", "ru": "Ежемесячный"},
-            "quarterly": {"uz": "Choraklik (3 oy)", "ru": "Квартальный"},
-            "yearly": {"uz": "Yillik", "ru": "Годовой"},
+        lang = self.context.get("lang", "uz")
+        period = obj.statement.period
+
+        # Ixtiyoriy — tarjima qilish
+        period_map = {
+            "monthly": {"uz": "Oylik", "ru": "Ежемесячно"},
+            "quarterly": {"uz": "Har chorakda", "ru": "Ежеквартально"},
+            "yearly": {"uz": "Yillik", "ru": "Ежегодно"},
+            "weekly": {"uz": "Haftalik", "ru": "Еженедельно"},
+            "daily": {"uz": "Kunlik", "ru": "Ежедневно"},
         }
-        lang = get_lang_code(self.context)
-        period_key = obj.statement.period
-        return PERIOD_TRANSLATIONS.get(period_key, {}).get(lang, period_key)
+
+        return period_map.get(period, {}).get(lang, period)
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
