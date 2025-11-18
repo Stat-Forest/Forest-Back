@@ -48,10 +48,10 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         submit_at = deadline.submit_at
         today = date.today()
 
-        ensure_plans_exist_simple(
-            statement=statement,
-            organization=organization
-        )
+        # ensure_plans_exist_simple(
+        #     statement=statement,
+        #     organization=organization
+        # )
 
 
         # ✅ get_week_of_month funksiyasi
