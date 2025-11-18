@@ -1,5 +1,18 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+
 from apps.reports.models import Report, ReportItem, ReportItemInner
+
+
+def normalize_decimal(value) -> Decimal:
+    """
+    Xatoliklar chiqmasligi uchun xavfsiz Decimal convertor.
+    """
+    try:
+        if value is None or value == "":
+            return Decimal(0)
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal(0)
 
 
 def create_calculated_items(report: Report, column, value: Decimal):
@@ -55,7 +68,7 @@ def calculate_forest_statement(report: Report):
     for item in report_items:
         ordering = item.statement_column.ordering
         existing_items[ordering] = item
-        total = sum(Decimal(str(inner.value or 0)) for inner in item.inners.all())
+        total = sum(normalize_decimal(inner.value) for inner in item.inners.all())
         column_value_map[ordering] = total
 
     def get_sum(orderings):
