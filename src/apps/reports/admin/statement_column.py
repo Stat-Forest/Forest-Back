@@ -29,15 +29,42 @@ class StatementColumnAdminForm(forms.ModelForm):
         return cleaned_data
 
 
+class OrderingFilter(admin.SimpleListFilter):
+    title = 'Ordering'
+    parameter_name = 'ordering'
+
+    def lookups(self, request, model_admin):
+        orderings = StatementColumn.objects.order_by('ordering').values_list('ordering', flat=True).distinct()
+        return [(ordering, ordering) for ordering in orderings if ordering]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(ordering=self.value())
+        return queryset
+
+
 @admin.register(StatementColumn)
-class StatementColumnAdmin(AdminHistoryMixin,admin.ModelAdmin):
+class StatementColumnAdmin(AdminHistoryMixin, admin.ModelAdmin):
     form = StatementColumnAdminForm
-    list_display = ('statement', 'title_uz', 'title_ru', 'ordering', 'parent', 'created_at')
-    search_fields = ('title', 'statement__name_uz', 'statement__name_ru', 'ordering')
-    list_filter = ('statement', 'title_uz', 'title_ru')
+    list_display = ('statement', 'title_uz', 'title_ru', 'ordering', 'parent', 'has_ordering', 'created_at')
+    list_display_links = ("statement", "title_uz", "title_ru")
+    search_fields = (
+        'title_uz',
+        'title_ru',
+        'statement__name_uz',
+        'statement__name_ru',
+        'ordering',
+    )
+    list_filter = ('statement', OrderingFilter)
     ordering = ('ordering',)
     raw_id_fields = ('statement', 'parent')
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         return queryset.select_related('statement', 'parent')
+
+    def has_ordering(self, obj):
+        return obj.ordering
+
+    has_ordering.admin_order_field = 'ordering'
+    has_ordering.short_description = "Ordering"
