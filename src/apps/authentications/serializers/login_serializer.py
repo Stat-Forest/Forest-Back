@@ -20,7 +20,7 @@ class LoginSerializer(CustomSerializer):
         password = attrs.get("password")
 
         if not email or not password:
-            raise CustomExceptionError(code=400, detail=_("Email or password was required"))
+            raise CustomExceptionError(code=400, detail=_("Email yokida parol majburiy"))
 
         block_key = f"login_block_{email}"
         if cache.get(block_key):
@@ -36,12 +36,12 @@ class LoginSerializer(CustomSerializer):
         except User.DoesNotExist:
             cache.set(attempt_key, attempts + 1, timeout=60)
             self._check_attempts_limit(email, attempts + 1)
-            raise CustomExceptionError(code=404, detail=_("User not found."))
+            raise CustomExceptionError(code=404, detail=_("Foydalanuvchi topilmadi."))
 
         if not user.check_password(password):
             cache.set(attempt_key, attempts + 1, timeout=60)
             self._check_attempts_limit(email, attempts + 1)
-            raise CustomExceptionError(code=404, detail=_("Email or password was mistake."))
+            raise CustomExceptionError(code=404, detail=_("Email yokida parol xato kiritilgan."))
 
         if not user.is_active:
             raise CustomExceptionError(code=403, detail=_("This user is not active."))
