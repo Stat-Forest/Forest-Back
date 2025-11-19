@@ -157,7 +157,7 @@ class ReportUpdateAPIView(CustomRetrieveUpdateAPIView):
     ).distinct().order_by('-created_at')
     serializer_class = ReportUpdateSerializer
     lookup_field = 'id'
-    permission_classes = (CanUpdateReport,)
+    # permission_classes = (CanUpdateReport,)
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
