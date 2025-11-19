@@ -67,6 +67,9 @@ class ReportListAPIView(CustomListAPIView):
         user = self.request.user
         base_qs = self.queryset
 
+        if not user.is_authenticated:
+            return Report.objects.none()
+
         if user.is_superuser:
             return base_qs.filter(
                 is_general=False,
