@@ -4,7 +4,7 @@ from apps.general.models.land_document import LandDocument
 class LandDocumentSerializer(serializers.ModelSerializer):
     document_type_display = serializers.CharField(source='get_document_type_display', read_only=True)
     file_url = serializers.SerializerMethodField()
-    organization_name = serializers.SerializerMethodField()
+    organization_name_uz = serializers.SerializerMethodField()
 
     class Meta:
         model = LandDocument
@@ -15,13 +15,13 @@ class LandDocumentSerializer(serializers.ModelSerializer):
             "document_type",
             "document_type_display",
             "organization",
-            "organization_name",
+            "organization_name_uz",
             "comment",
             "file",
             "file_url",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "document_type_display", "file_url", "organization_name"]
+        read_only_fields = ["id", "created_at", "document_type_display", "file_url", "organization_name_uz"]
 
     def get_file_url(self, obj):
         request = self.context.get('request')
@@ -29,8 +29,8 @@ class LandDocumentSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.file.url) if request else obj.file.url
         return None
 
-    def get_organization_name(self, obj):
-        return obj.organization.name if obj.organization else None
+    def get_organization_name_uz(self, obj):
+        return getattr(obj.organization, "name_uz", None) if obj.organization else None
 
     def validate_date(self, value):
         from django.utils import timezone
