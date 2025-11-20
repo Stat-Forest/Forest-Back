@@ -8,7 +8,7 @@ from django.utils import timezone
 from .middleware import get_current_user
 from apps.logs.models import HistoryActionJournal
 
-# ✅ Log yozilishi kerak bo‘lgan modellarning ro‘yxati
+# Log yozilishi kerak bo‘lgan modellarning ro‘yxati
 ALLOWED_MODELS = [
     "Backup",
     "Announcement",
