@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.utils.translation import gettext_lazy as _
 from .models import HistoryActionJournal
 
 
@@ -10,7 +9,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         'action',
         'model_name',
         'user',
-        ('created_at', admin.DateFieldListFilter),  # ✅ vaqt bo‘yicha filter
+        ('created_at', admin.DateFieldListFilter),
     )
     search_fields = ('object_repr', 'model_name', 'change_message')
     readonly_fields = (
@@ -24,13 +23,13 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
     )
 
     def has_add_permission(self, request):
-        return False  # qo‘shish (add) taqiqlanadi
+        return False
 
     def has_change_permission(self, request, obj=None):
-        return False  # o‘zgartirish (edit) taqiqlanadi
+        return False
 
     def has_delete_permission(self, request, obj=None):
-        return False  # o‘chirish (delete) taqiqlanadi
+        return False
 
     def has_view_permission(self, request, obj=None):
-        return True  # faqat ko‘rish (view) ruxsat
+        return True
