@@ -91,6 +91,13 @@ class ReportFilter(django_filters.FilterSet):
 
         self.filters['statement'].label_from_instance = lambda obj: get_translated_field(obj, 'name', lang)
 
+        name_field = f"organization__name_{lang}"
+        self.filters['organization_name'] = django_filters.CharFilter(
+            field_name=name_field,
+            lookup_expr="icontains",
+            label="Tashkilot nomi"
+        )
+
         if 'statement_column' in self.filters:
             self.filters['statement_column'].label_from_instance = lambda obj: get_translated_field(obj, 'title', lang)
 
