@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from apps.reports.filters.report_region import ReportFilter
 from apps.reports.models import Report, Plant, ReportItem
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
+from apps.reports.permissions.check_delete_report import CanDeleteReport
 from apps.reports.permissions.check_list_report import CanListReport
 from apps.reports.serializers.reports import (
     ReportListSerializer,
@@ -128,7 +129,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
 class ReportDeleteAPIView(CustomDestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
-    permission_classes = (CanUpdateReport,)
+    permission_classes = (CanDeleteReport,)
     lookup_field = 'id'
 
 
