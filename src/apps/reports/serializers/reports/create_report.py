@@ -110,8 +110,16 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             if year == today.year and month == today.month and week >= get_week_of_month(today):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past weeks.')})
 
+
+
         elif statement.period == PeriodChoices.OYLIK:
-            year, month = map(int, submit_at.split('-'))
+            parts = submit_at.split('-')
+            if len(parts) != 2 or not parts[1].isdigit():
+                raise CustomExceptionError(400, {'submit_at': _('Invalid monthly format. Must be YYYY-MM')})
+            try:
+                year, month = map(int, parts)
+            except ValueError:
+                raise CustomExceptionError(400, {'submit_at': _('Invalid monthly numbers.')})
             if year > today.year or (year == today.year and month >= today.month):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past months.')})
 
@@ -214,7 +222,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         lang = get_lang_code(self.context)
                         column_title = getattr(column, f"title_{lang}", "")
 
-                        if column_title.lower() in ["tashkilot nomi", "название организации"]:
+                        if column_title.lower() in ["tashkilot nomi", "название организации",
+                                                    "наименование организации"]:
                             if report.is_individual_general or report.is_general:
                                 inner_value = get_translated_field(report.organization, "name", lang)
                                 suffix = " – Tashkilot Jami" if report.is_individual_general else " – Viloyat Jami"
