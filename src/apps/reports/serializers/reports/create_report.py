@@ -154,6 +154,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        user = self.context["request"].user
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
 
@@ -203,7 +204,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             statement=column.statement,
                             deadline=deadline,
                             region=org_instance.region,
-                            status=Report.StatusChoices.SAVED
+                            status=Report.StatusChoices.SAVED,
+                            created_by=user
                         )
 
                     reports_map[report_key] = report
