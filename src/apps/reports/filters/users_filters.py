@@ -46,22 +46,20 @@ class CustomUserFilter(filters.FilterSet):
         now = timezone.now()
         online_limit = now - timedelta(minutes=5)
 
-        # 1️⃣ ONLINE → oxirgi 5 daqiqa ichida faollik bo‘lganlar
+        # 1️⃣ ONLINE user — hozir aktiv
         if value == "online_user":
             return queryset.filter(
                 last_activity__isnull=False,
-                last_activity__gte=online_limit,
+                last_activity__gte=online_limit
             )
 
-        # 2️⃣ LOGIN_USER → login qilgan, lekin hozir online bo‘lmagan
+        # 2️⃣ LOGIN_USER — 1 marta bo‘lsa ham login qilgan userlar
         if value == "login_user":
             return queryset.filter(
-                last_login__isnull=False,              # login qilgan
-            ).filter(
-                last_activity__lt=online_limit         # online emas
+                last_login__isnull=False
             )
 
-        # 3️⃣ NEVER_LOGIN → last_login null
+        # 3️⃣ NEVER_LOGIN_USER — last_login NULL bo‘lganlar
         if value == "never_login_user":
             return queryset.filter(
                 last_login__isnull=True
