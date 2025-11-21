@@ -198,6 +198,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         null=True,
         help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
     )
+    last_activity = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Foydalanuvchi"
