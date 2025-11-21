@@ -59,7 +59,7 @@ def _raise_missing_plan_error(missing_columns):
     cols_str = ", ".join(f"{c.ordering} – {getattr(c, 'title_uz', c.title)}" for c in missing_columns)
     msg = _(
         "Bu hisobot uchun reja kiritilmagan. "
-        "Quyidagi ustunlar bo‘yicha reja (plan) mavjud emas yoki 0 ga teng: %(cols)s. "
+        "Quyidagi ustunlar bo‘yicha reja (plan) mavjud emas yoki 0 ga teng."
         "Iltimos, bo‘lim administratori avval reja kiritgandan so‘ng hisobot yarating."
     ) % {"cols": cols_str}
     raise serializers.ValidationError({"non_field_errors": [msg]})
