@@ -1,4 +1,5 @@
 import django_filters
+
 from django.db.models import Q
 from django.db.models.functions import Substr
 
@@ -6,9 +7,6 @@ from apps.general.models import Republic
 from apps.reports.models import Report, StatementColumn, Statement, Deadline
 from apps.utils.services import PeriodChoices, RegionChoices
 from apps.utils.translation import get_translated_field
-
-
-#organization_region -> ChoicesFilter, statement_period -> CharFilter, organization_name -> CharFilter, year -> NumberFilter, method=filter_by_year
 
 
 class StatementColumnFilter(django_filters.FilterSet):
@@ -26,7 +24,6 @@ class StatementColumnFilter(django_filters.FilterSet):
             lang = self.request.GET.get("lang", "uz").lower()
 
         self.filters['statement'].label_from_instance = lambda obj: get_translated_field(obj, 'name', lang)
-
 
 
 class ReportFilter(django_filters.FilterSet):
@@ -56,7 +53,6 @@ class ReportFilter(django_filters.FilterSet):
     organization_name = django_filters.CharFilter(
         field_name="organization__name",
         lookup_expr="icontains",
-        label="tashkilot nomi"
     )
 
     year = django_filters.NumberFilter(
