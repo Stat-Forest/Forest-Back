@@ -23,8 +23,15 @@ class CustomUserFilter(filters.FilterSet):
     # UUID filter
     id = filters.UUIDFilter(field_name="id")
 
-    # 🔥 yangi filter
-    status = filters.CharFilter(method="filter_status")
+    # 🔥 Yangi status filter (online/login/never_login)
+    status_user = filters.ChoiceFilter(
+        method="filter_status",
+        choices=[
+            ("online_user", "Online user"),
+            ("login_user", "Login bo‘lgan user"),
+            ("never_login_user", "Hech qachon login qilmagan"),
+        ]
+    )
 
     class Meta:
         model = CustomUser
@@ -34,7 +41,7 @@ class CustomUserFilter(filters.FilterSet):
             "last_name",
             "organization",
             "role",
-            "status",   # <-- qo‘shildi
+            "status_user",
         ]
 
     def filter_status(self, queryset, name, value):
