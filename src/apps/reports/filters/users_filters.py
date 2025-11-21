@@ -20,10 +20,8 @@ class CustomUserFilter(filters.FilterSet):
         choices=CustomUser.Role.choices
     )
 
-    # UUID filter
     id = filters.UUIDFilter(field_name="id")
 
-    # 🔥 Yangi status filter (online/login/never_login)
     status_user = filters.ChoiceFilter(
         method="filter_status",
         choices=[
@@ -45,21 +43,28 @@ class CustomUserFilter(filters.FilterSet):
         ]
 
     def filter_status(self, queryset, name, value):
-        value = value.lower()
-
         now = timezone.now()
         online_limit = now - timedelta(minutes=5)
 
+        # 1️⃣ ONLINE → oxirgi 5 daqiqa ichida faollik bo‘lganlar
         if value == "online_user":
-            return queryset.filter(last_activity__gte=online_limit)
-
-        if value == "login_user":
             return queryset.filter(
-                last_login__isnull=False,
-                last_activity__lt=online_limit
+                last_activity__isnull=False,
+                last_activity__gte=online_limit,
             )
 
+        # 2️⃣ LOGIN_USER → login qilgan, lekin hozir online bo‘lmagan
+        if value == "login_user":
+            return queryset.filter(
+                last_login__isnull=False,              # login qilgan
+            ).filter(
+                last_activity__lt=online_limit         # online emas
+            )
+
+        # 3️⃣ NEVER_LOGIN → last_login null
         if value == "never_login_user":
-            return queryset.filter(last_login__isnull=True)
+            return queryset.filter(
+                last_login__isnull=True
+            )
 
         return queryset
