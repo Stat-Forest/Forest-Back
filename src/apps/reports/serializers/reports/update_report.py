@@ -50,6 +50,12 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         items_data = validated_data.pop("report_items")
 
+        if instance.status == Report.StatusChoices.CANCELLED:
+            instance.status = Report.StatusChoices.SAVED
+            instance.cancel_reason = None
+            instance.cancelled_at = None
+            instance.save(update_fields=["status", "cancel_reason", "cancelled_at"])
+
         deadline = validated_data.get("deadline", instance.deadline)
         column_ids = [item["statement_column"] for item in items_data]
 
