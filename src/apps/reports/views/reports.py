@@ -58,11 +58,11 @@ class ReportListAPIView(CustomListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
 
-    filterset_fields = [
-        'status', 'organization__name', 'organization',
-        'statement__name', 'statement', 'statement__period',
-        'organization__region', 'deadline__submit_at'
-    ]
+    # filterset_fields = [
+    #     'status', 'organization__name', 'organization',
+    #     'statement__name', 'statement', 'statement__period',
+    #     'organization__region', 'deadline__submit_at'
+    # ]
 
     def get_queryset(self):
         user = self.request.user
