@@ -11,6 +11,9 @@ from apps.reports.serializers.plan import PlanColumnSerializer
 # Swagger (drf-spectacular) imports
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
+
 
 # Status constants
 from apps.utils.services.variables import (
@@ -60,25 +63,18 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
     filterset_fields = ["statement"]
 
     def filter_queryset(self, queryset):
-        """
-        Apply custom filtering and prioritize statuses.
-        """
         queryset = super().filter_queryset(queryset)
         user = self.request.user
 
-        # Base filter: only columns with parent and valid status
         base_filter = Q(parent__isnull=False) & Q(status_plan__isnull=False)
 
-        # If user has statement, restrict by its parent
         if hasattr(user, "statement") and user.statement:
             base_filter &= Q(statement__parent=user.statement)
 
         queryset = queryset.filter(base_filter)
 
-        # Get existing statuses in queryset
         existing_statuses = set(queryset.values_list("status_plan", flat=True))
 
-        # Apply priority order
         if existing_statuses.intersection(MONTHLY_STATUSES):
             queryset = queryset.filter(status_plan__in=MONTHLY_STATUSES)
         elif existing_statuses.intersection(QUARTERLY_STATUSES):
@@ -88,13 +84,24 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         elif existing_statuses.intersection(YEARLY_TOTAL_STATUSES):
             queryset = queryset.filter(status_plan__in=YEARLY_TOTAL_STATUSES)
 
-        # Extract last number from "ordering" field for numeric sorting
+        # Build parent full title for alphabetical sorting
+        queryset = queryset.annotate(
+            parent_full_title=Concat(
+                'parent__parent__parent__parent__parent__title_uz', Value(' - '),
+                'parent__parent__parent__parent__title_uz', Value(' - '),
+                'parent__parent__parent__title_uz', Value(' - '),
+                'parent__parent__title_uz', Value(' - '),
+                'parent__title_uz',
+                output_field=CharField()
+            )
+        )
+
         return queryset.annotate(
             last_num=Cast(
                 SplitPart("ordering", Value("."), Value(-1)),
                 IntegerField(),
             )
-        ).order_by("last_num")
+        ).order_by("parent_full_title", "last_num")
 
     def get_queryset(self):
         """
