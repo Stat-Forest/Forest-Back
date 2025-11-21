@@ -46,9 +46,13 @@ def ensure_plans_exist_simple(*, organization, statement):
         raise _raise_missing_plan_error(plan_columns)
 
     # 4️⃣ Foydali PlanItem bormi?
-    usable_items = [item for item in plan_items if not _is_empty_plan_value(item.plan_value)]
-    if not usable_items:
-        print("❌ All PlanItems are empty or 0.")
+    # usable_items = [item for item in plan_items if not _is_empty_plan_value(item.plan_value)]
+    plan_items = PlanItem.objects.filter(
+        plan__in=plans,
+        column__in=plan_columns
+    ).select_related("column")
+    if not plan_items.exists():
+        print("❌ No PlanItems at all.")
         raise _raise_missing_plan_error(plan_columns)
 
     print("✅ [DONE] At least one usable plan item exists.")
