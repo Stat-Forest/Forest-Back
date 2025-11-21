@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===============================
-# 📁 BASE CONFIG
+# BASE CONFIG
 # ===============================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -63,11 +63,11 @@ INSTALLED_APPS = [
     "apps.sum.apps.SumConfig",
     "apps.report_statistics.apps.ReportStatisticsConfig",
     "apps.e_imzo.apps.EImzoConfig",
-    "apps.logs.apps.LogsConfig",  # ✅ Eng oxirida
+    "apps.logs.apps.LogsConfig",
 ]
 
 # ===============================
-# ⚙️ MIDDLEWARE
+# ⚙ MIDDLEWARE
 # ===============================
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
