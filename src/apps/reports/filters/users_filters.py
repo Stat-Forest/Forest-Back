@@ -1,5 +1,7 @@
-# apps/reports/filters.py
 from django_filters import rest_framework as filters
+from django.utils import timezone
+from datetime import timedelta
+
 from apps.users.models.users import CustomUser
 from apps.general.models import Organization
 
@@ -18,9 +20,49 @@ class CustomUserFilter(filters.FilterSet):
         choices=CustomUser.Role.choices
     )
 
-    # 🆔 id bo‘yicha UUID filter
     id = filters.UUIDFilter(field_name="id")
+
+    status_user = filters.ChoiceFilter(
+        method="filter_status",
+        choices=[
+            ("online_user", "Online user"),
+            ("login_user", "Login bo‘lgan user"),
+            ("never_login_user", "Hech qachon login qilmagan"),
+        ]
+    )
 
     class Meta:
         model = CustomUser
-        fields = ["id", "first_name", "last_name", "organization", "role"]
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "organization",
+            "role",
+            "status_user",
+        ]
+
+    def filter_status(self, queryset, name, value):
+        now = timezone.now()
+        online_limit = now - timedelta(minutes=5)
+
+        # 1️⃣ ONLINE user — hozir aktiv
+        if value == "online_user":
+            return queryset.filter(
+                last_activity__isnull=False,
+                last_activity__gte=online_limit
+            )
+
+        # 2️⃣ LOGIN_USER — 1 marta bo‘lsa ham login qilgan userlar
+        if value == "login_user":
+            return queryset.filter(
+                last_login__isnull=False
+            )
+
+        # 3️⃣ NEVER_LOGIN_USER — last_login NULL bo‘lganlar
+        if value == "never_login_user":
+            return queryset.filter(
+                last_login__isnull=True
+            )
+
+        return queryset
