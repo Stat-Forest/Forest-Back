@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from apps.reports.models import Report, Plant
-from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
-from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer
+from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
+from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 
 
@@ -57,6 +57,12 @@ class PlantListReportAPIView(CustomListAPIView):
         plant_qs = Plant.objects.only("id", "name")
         context["plant_map"] = {str(p.id): p.name for p in plant_qs}
         return context
+
+
+@extend_schema(tags=["Plant-Reports"])
+class PlantUpdateReportAPIView(CustomUpdateAPIView):
+    serializer_class = PlantReportUpdateSerializer
+    queryset = Report.objects.filter(is_plant_based=True, is_report=True)
 
 
 @extend_schema(tags=["Plant-Reports"])
