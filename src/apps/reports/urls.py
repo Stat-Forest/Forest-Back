@@ -27,7 +27,7 @@ from apps.reports.views.dashboard import (
     DashboardStatListView,
 )
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
-    PlantDetailReportAPIView
+    PlantDetailReportAPIView, PlantUpdateReportAPIView
 
 from apps.reports.views.statement import (
     StatementListAPIView,
@@ -106,7 +106,8 @@ urlpatterns = [
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
     path("column-plants/", ColumnPlantListAPIView.as_view(), name="column-plant-lists"),
 
-    path("plant/create/", UniversalPlantReportCreateAPIView.as_view(), name="plant-create-kochat-nihol"),
+    path("plant/create/", UniversalPlantReportCreateAPIView.as_view(), name="plant-create"),
+    path("report-plant/<uuid:pk>/update", PlantUpdateReportAPIView.as_view(), name="plant-update"),
     path("report-plant/", PlantListReportAPIView.as_view(), name="plant-by-app"),
     path("report-plant/<uuid:pk>/", PlantDetailReportAPIView.as_view(), name="plant-by-app"),
 ]
