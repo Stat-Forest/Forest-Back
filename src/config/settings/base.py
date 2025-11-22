@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===============================
-# 📁 BASE CONFIG
+# BASE CONFIG
 # ===============================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -63,25 +63,30 @@ INSTALLED_APPS = [
     "apps.sum.apps.SumConfig",
     "apps.report_statistics.apps.ReportStatisticsConfig",
     "apps.e_imzo.apps.EImzoConfig",
-    "apps.logs.apps.LogsConfig",  # ✅ Eng oxirida
+    "apps.logs.apps.LogsConfig",
 ]
 
 # ===============================
-# ⚙️ MIDDLEWARE
+# ⚙ MIDDLEWARE
 # ===============================
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",  # ✅ Til qo‘llab-quvvatlash uchun
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+
+    "apps.users.middleware.ActiveUserMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.logs.middleware.CurrentUserMiddleware",
 ]
+
 
 ROOT_URLCONF = "config.urls"
 
