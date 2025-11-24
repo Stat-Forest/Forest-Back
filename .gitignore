@@ -98,3 +98,5 @@ src/apps/*/migrations/0*
 
 docker/prod/certbot/etc/
 docker/prod/certbot/var/
+
+src/celerybeat-schedule
