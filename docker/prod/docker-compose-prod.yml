@@ -7,7 +7,11 @@ services:
     env_file:
       - ../../.env
     entrypoint: ["/entrypoint.sh"]
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --access-logfile /var/log/forest-back/gunicorn-access.log
+      --error-logfile /var/log/forest-back/gunicorn-error.log
     volumes:
       - ../../staticfiles:/app/staticfiles
       - ../../media:/app/media
@@ -15,7 +19,7 @@ services:
       - ../../docker/prod/backup.sh:/app/docker/prod/backup.sh
       - ../../.env:/app/.env
       - ../../backups:/backups
-
+      - /var/log/forest-back:/var/log/forest-back
     ports:
       - "8000:8000"
     depends_on:
