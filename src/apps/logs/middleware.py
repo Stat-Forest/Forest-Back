@@ -19,7 +19,6 @@ class CurrentUserMiddleware:
 
 
 def get_history_user(request):
-    user = getattr(request, "user", None)
-    if user and user.is_authenticated:
-        return user
+    if request.path.startswith("/admin/") or request.path.startswith("/api/v1/authentications/login/"):
+        return getattr(request, "user", None)
     return None
