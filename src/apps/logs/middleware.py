@@ -19,7 +19,7 @@ class CurrentUserMiddleware:
 
 
 def get_history_user(request):
-    """
-    Faqat /admin/ dan kelgan so‘rovlar uchun user yoziladi.
-    """
-    return get_current_user()
+    user = getattr(request, "user", None)
+    if user and user.is_authenticated:
+        return user
+    return None
