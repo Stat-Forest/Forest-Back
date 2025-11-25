@@ -28,3 +28,9 @@ LOGGING = {
         },
     },
 }
+
+
+SIMPLE_HISTORY_HISTORY_CHANGE_REASON_USE_TEXT_FIELD = True
+SIMPLE_HISTORY_REVERT_DISABLED = True
+
+SIMPLE_HISTORY_USER_GETTER = 'apps.logs.middleware.get_history_user'
