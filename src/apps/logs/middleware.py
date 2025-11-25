@@ -16,3 +16,10 @@ class CurrentUserMiddleware:
         _thread_locals.user = getattr(request, "user", None)
         response = self.get_response(request)
         return response
+
+
+def get_history_user(request):
+    """
+    Faqat /admin/ dan kelgan so‘rovlar uchun user yoziladi.
+    """
+    return get_current_user()
