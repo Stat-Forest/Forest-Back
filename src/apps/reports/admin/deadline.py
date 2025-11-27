@@ -9,6 +9,7 @@ from django.utils.html import format_html
 from apps.general.models import Organization
 from apps.reports.models import Deadline
 from apps.logs.mixins import AdminHistoryMixin
+from django.utils.safestring import mark_safe
 
 
 def validate_deadline_at(value):
@@ -165,7 +166,28 @@ class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
     search_fields = ("statement__name", "submit_at", "deadline_at")
 
     def organizations_display(self, obj):
-        return ", ".join(obj.organizations.all().order_by("name").values_list("name", flat=True))
+        orgs = obj.organizations.all().order_by("name")
+
+        html_list = "<ul style='margin:0; padding-left:16px;'>"
+        for org in orgs:
+            html_list += f"<li>{org.name}</li>"
+        html_list += "</ul>"
+
+        # scroll beramiz
+        return mark_safe(
+            f"""
+            <div style="
+                max-height: 150px;
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                padding: 4px 8px;
+                background: #fafafa;
+                border-radius: 4px;
+            ">
+                {html_list}
+            </div>
+            """
+        )
 
     organizations_display.short_description = _("Organizations")
 
