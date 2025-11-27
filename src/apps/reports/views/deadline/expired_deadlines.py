@@ -1,14 +1,28 @@
 from datetime import date
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
 
 from apps.reports.models import Deadline
 from apps.reports.serializers.deadline.expired_deadlines import DeadlineExpiredSerializer
 
 
+class DeadlineExpiredFilter(FilterSet):
+    statement = filters.NumberFilter(field_name="statement_id")
+    submit_at = filters.CharFilter(field_name="submit_at", lookup_expr="exact")
+    deadline_at = filters.DateFilter(field_name="deadline_at", lookup_expr="exact")
+    organizations = filters.NumberFilter(field_name="organizations__id")
+
+    class Meta:
+        model = Deadline
+        fields = ["statement", "submit_at", "deadline_at", "organizations"]
+
+
 @extend_schema(tags=["Deadlines"])
 class DeadlineExpiredListAPIView(generics.ListAPIView):
     serializer_class = DeadlineExpiredSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = DeadlineExpiredFilter
 
     def get_queryset(self):
         today = date.today()
