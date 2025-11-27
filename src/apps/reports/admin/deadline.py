@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.utils.translation import gettext_lazy as _
+from django.utils.html import format_html
 
 from apps.general.models import Organization
 from apps.reports.models import Deadline
@@ -14,19 +15,20 @@ def validate_deadline_at(value):
     """
     DD/MM/YYYY format validatsiyasi
     """
-    try:
-        datetime.strptime(value, "%d/%m/%Y")
-    except ValueError:
-        raise forms.ValidationError(_("Deadline date must be in DD/MM/YYYY format"))
+    if isinstance(value, str):
+        try:
+            datetime.strptime(value, "%d/%m/%Y")
+        except ValueError:
+            raise forms.ValidationError(_("Deadline date must be in DD/MM/YYYY format"))
 
 
 class DeadlineAdminForm(forms.ModelForm):
     organizations = forms.ModelMultipleChoiceField(
-        queryset=Organization.objects.all(),
+        queryset=Organization.objects.all().order_by('name'),  # alphabetik tartib
         required=True,
         widget=FilteredSelectMultiple(
             verbose_name=_("Organizations"),
-            is_stacked=False
+            is_stacked=False  # horizontal scroll
         )
     )
 
@@ -35,8 +37,7 @@ class DeadlineAdminForm(forms.ModelForm):
         fields = '__all__'
 
     def clean_organizations(self):
-        data = self.cleaned_data['organizations']
-        return data
+        return self.cleaned_data['organizations']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -93,6 +94,35 @@ class DeadlineAdminForm(forms.ModelForm):
         return cleaned_data
 
 
+# ------------------ Custom Deadline Date Filter ------------------
+class DeadlineDateFilter(admin.SimpleListFilter):
+    title = _('Deadline date')
+    parameter_name = 'deadline_at'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('today', _('Today')),
+            ('past_7', _('Last 7 days')),
+            ('this_month', _('This month')),
+            ('this_year', _('This year')),
+        )
+
+    def queryset(self, request, queryset):
+        today = datetime.today().date()
+
+        if self.value() == 'today':
+            return queryset.filter(deadline_at=today)
+        elif self.value() == 'past_7':
+            from datetime import timedelta
+            start = today - timedelta(days=7)
+            return queryset.filter(deadline_at__gte=start, deadline_at__lt=today)
+        elif self.value() == 'this_month':
+            return queryset.filter(deadline_at__year=today.year, deadline_at__month=today.month)
+        elif self.value() == 'this_year':
+            return queryset.filter(deadline_at__year=today.year)
+        return queryset
+
+
 # --------------------------------------------------------------------------------------------
 
 
@@ -104,16 +134,22 @@ class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
         'statement',
         'statement__period',
         'submit_at',
-        'deadline_at',
+        'deadline_at_display',
         'organizations_display'
     )
 
-    list_filter = ('statement', 'submit_at', 'deadline_at')
+    list_filter = ('statement', 'submit_at', DeadlineDateFilter)  # custom filter qo'shildi
     search_fields = ('statement__name', 'submit_at', 'deadline_at')
 
     def organizations_display(self, obj):
         return ", ".join(
-            [organization.name for organization in obj.organizations.all()]
+            [organization.name for organization in obj.organizations.all().order_by('name')]
         )
 
     organizations_display.short_description = _("Organizations")
+
+    def deadline_at_display(self, obj):
+        if obj.deadline_at:
+            return obj.deadline_at.strftime("%d/%m/%Y")
+        return "-"
+    deadline_at_display.short_description = _("Deadline date")
