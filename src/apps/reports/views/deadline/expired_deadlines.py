@@ -3,7 +3,7 @@ from rest_framework import generics
 from drf_spectacular.utils import extend_schema
 
 from apps.reports.models import Deadline
-from apps.reports.serializers.expired_deadlines import DeadlineExpiredSerializer
+from apps.reports.serializers.deadline.expired_deadlines import DeadlineExpiredSerializer
 
 
 @extend_schema(tags=["Deadlines"])
