@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 from apps.reports.models import Report, ReportItem, ReportItemInner
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def safe_decimal(val):
@@ -53,6 +54,8 @@ def calculate_make_pencil(report: Report):
 
     # Foiz = (Amalda / Reja) * 100
     total_foiz = (total_amalda / total_reja * 100) if total_reja else Decimal(0)
+
+    total_foiz = round_decimal(total_foiz, 2)
 
     # Yozib qo‘yamiz
     def save_to_report(ordering: str, value: Decimal):
