@@ -9,10 +9,18 @@ from apps.reports.models import Deadline
 from apps.logs.mixins import AdminHistoryMixin
 
 
+def validate_deadline_at(value):
+    """
+    DD/MM/YYYY format validatsiyasi
+    """
+    try:
+        datetime.strptime(value, "%d/%m/%Y")
+    except ValueError:
+        raise forms.ValidationError(_("Deadline date must be in DD/MM/YYYY format"))
+
+
 class DeadlineAdminForm(forms.ModelForm):
-    organizations = forms.MultipleChoiceField(
-        required=True,
-    )
+    organizations = forms.MultipleChoiceField(required=True)
 
     class Meta:
         model = Deadline
@@ -23,6 +31,7 @@ class DeadlineAdminForm(forms.ModelForm):
 
         qs = Organization.objects.all()
         choices = [("ALL", "All organizations")] + [(org.id, org.name) for org in qs]
+
         self.fields['organizations'].choices = choices
 
     def clean_organizations(self):
@@ -30,27 +39,39 @@ class DeadlineAdminForm(forms.ModelForm):
 
         if "ALL" in data:
             return Organization.objects.all()
-        else:
-            return Organization.objects.filter(id__in=data)
+
+        return Organization.objects.filter(id__in=data)
 
     def clean(self):
         cleaned_data = super().clean()
+
         organizations = cleaned_data.get('organizations')
         statement = cleaned_data.get('statement')
         submission_at = cleaned_data.get('submit_at')
+        deadline_at = cleaned_data.get('deadline_at')
         period = statement.period if statement else None
 
+        # --- deadline_at validatsiyasi ---
+        if deadline_at:
+            validate_deadline_at(deadline_at)
+
+        # ALL tanlangan bo‘lsa
         if organizations and "ALL" in [org.name for org in organizations]:
             cleaned_data['organizations'] = Organization.objects.all()
 
+        # Duplicate check
         if organizations and statement and submission_at:
-            existing_deadlines = Deadline.objects.filter(statement=statement, submit_at=submission_at)
+            existing_deadlines = Deadline.objects.filter(
+                statement=statement,
+                submit_at=submission_at
+            )
             for deadline in existing_deadlines:
                 if set(deadline.organizations.all()) == set(organizations):
                     raise forms.ValidationError(
                         _("A deadline already exists for this combination of organizations, statement, and submit_at.")
                     )
 
+        # submit_at format validation
         if period == 'daily':
             try:
                 datetime.strptime(submission_at, '%Y-%m-%d')
@@ -80,13 +101,26 @@ class DeadlineAdminForm(forms.ModelForm):
         return cleaned_data
 
 
+# --------------------------------------------------------------------------------------------
+
+
 @admin.register(Deadline)
 class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
     form = DeadlineAdminForm
-    list_display = ('statement','statement__period', 'submit_at', 'organizations_display')
-    search_fields = ('statement__name', 'submit_at')
+
+    list_display = (
+        'statement',
+        'statement__period',
+        'submit_at',
+        'deadline_at',
+        'organizations_display'
+    )
+
+    search_fields = ('statement__name', 'submit_at', 'deadline_at')
 
     def organizations_display(self, obj):
-        return ", ".join([organization.name for organization in obj.organizations.all()])
+        return ", ".join(
+            [organization.name for organization in obj.organizations.all()]
+        )
 
     organizations_display.short_description = _("Organizations")
