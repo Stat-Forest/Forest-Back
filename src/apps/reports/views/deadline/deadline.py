@@ -11,7 +11,7 @@ class DeadlineListAPIView(generics.ListAPIView):
     serializer_class = DeadlineSerializer
     queryset = Deadline.objects.all()
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["statement", "statement__period"]
+    filterset_fields = ["statement", "statement__period", "deadline_at"]
 
     def get_queryset(self):
         user = self.request.user
