@@ -2,6 +2,7 @@ from datetime import datetime
 import re
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.utils.translation import gettext_lazy as _
 
 from apps.general.models import Organization
@@ -20,27 +21,22 @@ def validate_deadline_at(value):
 
 
 class DeadlineAdminForm(forms.ModelForm):
-    organizations = forms.MultipleChoiceField(required=True)
+    organizations = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.all(),
+        required=True,
+        widget=FilteredSelectMultiple(
+            verbose_name=_("Organizations"),
+            is_stacked=False
+        )
+    )
 
     class Meta:
         model = Deadline
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        qs = Organization.objects.all()
-        choices = [("ALL", "All organizations")] + [(org.id, org.name) for org in qs]
-
-        self.fields['organizations'].choices = choices
-
     def clean_organizations(self):
         data = self.cleaned_data['organizations']
-
-        if "ALL" in data:
-            return Organization.objects.all()
-
-        return Organization.objects.filter(id__in=data)
+        return data
 
     def clean(self):
         cleaned_data = super().clean()
@@ -54,10 +50,6 @@ class DeadlineAdminForm(forms.ModelForm):
         # --- deadline_at validatsiyasi ---
         if deadline_at:
             validate_deadline_at(deadline_at)
-
-        # ALL tanlangan bo‘lsa
-        if organizations and "ALL" in [org.name for org in organizations]:
-            cleaned_data['organizations'] = Organization.objects.all()
 
         # Duplicate check
         if organizations and statement and submission_at:
@@ -116,6 +108,7 @@ class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
         'organizations_display'
     )
 
+    list_filter = ('statement', 'submit_at', 'deadline_at')
     search_fields = ('statement__name', 'submit_at', 'deadline_at')
 
     def organizations_display(self, obj):
