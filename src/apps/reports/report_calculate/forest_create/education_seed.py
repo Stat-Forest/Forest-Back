@@ -1,6 +1,7 @@
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner
 from apps.reports.report_calculate.forest_create.heavy_neighborhood import normalize
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_education_seed(report: Report):
@@ -14,7 +15,7 @@ def calculate_education_seed(report: Report):
         "1.1.3.2.2",  # Manzara
         "1.1.3.2.3",  # Mevali
         "1.1.3.1.1",  # Reja
-        "1.1.3.3",  # Foiz
+        "1.1.3.3",    # Foiz
     ]
 
     # === Step 1: Barcha ustunlar va mapping ===
@@ -58,17 +59,24 @@ def calculate_education_seed(report: Report):
         inner = item_inners_map.get(ordering)
         return normalize(inner.value) if inner else Decimal(0)
 
+    # === Qiymatlar ===
     manzara = get_value("1.1.3.2.2")
     mevali = get_value("1.1.3.2.3")
     reja = get_value("1.1.3.1.1")
 
     jami = manzara + mevali
-    foiz = (jami / reja * 100) if reja else None
 
+    # Hamma narsada normalize → Decimal bo‘lishi kerak
+    if reja > 0:
+        foiz = round_decimal((jami / reja) * 100, 2)
+    else:
+        foiz = Decimal(0)
+
+    # === Items ===
     item_jami = get_or_create_item("1.1.3.2.1")
     item_foiz = get_or_create_item("1.1.3.3")
 
-    # === Step 5: Eski inners tozalash (faqat kerakligilar) ===
+    # === Step 5: Eski inners tozalash ===
     ReportItemInner.objects.filter(
         report_item__in=[item_jami, item_foiz]
     ).delete()

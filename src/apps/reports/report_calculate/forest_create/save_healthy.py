@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from apps.reports.report_calculate.forest_create.heavy_neighborhood import normalize
 from apps.reports.models import Report, ReportItem, ReportItemInner
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_save_healthy(report: Report):
@@ -66,6 +67,8 @@ def calculate_save_healthy(report: Report):
 
     jami = manzara + mevali
     foiz = (jami / reja * 100) if reja else None
+    if foiz is not None:
+        foiz = round_decimal(foiz, 2)
 
     item_jami = get_or_create_item("1.1.3.2.1")
     item_foiz = get_or_create_item("1.1.3.3")

@@ -1,5 +1,6 @@
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def normalize(value):
@@ -48,7 +49,8 @@ def calculate_heavy_neighborhood(report: Report):
     foiz_value = (
         (amalga_oshgan_value / yetkazilishi_value * 100)
         if yetkazilishi_value > 0 else Decimal(0)
-    ).quantize(Decimal("1.00"))
+    )
+    foiz_value = round_decimal(foiz_value, 2)
 
     # === Create or Update 1.1.6 ===
     if foiz_item:
