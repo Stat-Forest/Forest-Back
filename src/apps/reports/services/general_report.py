@@ -1,7 +1,5 @@
-from collections import defaultdict
 from decimal import Decimal
 
-from apps.utils.services.is_that_number import is_number
 
 
 def get_or_create_general_report(statement, deadline, region=None):
@@ -39,7 +37,9 @@ def aggregate_national_report(statement, deadline, region):
     from apps.reports.models import Report, ReportItem, ReportItemInner
     from collections import defaultdict
     from apps.utils.services.is_that_number import safe_decimal
+    from apps.reports.report_calculate import ALL_CALCULATORS
 
+    # === 1. Barcha regional Jami (is_general=True) reportlarni olish ===
     general_reports = Report.objects.filter(
         statement=statement,
         deadline=deadline,
@@ -51,6 +51,7 @@ def aggregate_national_report(statement, deadline, region):
         print(">>> [REPUBLIC] Hech qanday regional Jami yo‘q")
         return None
 
+    # === 2. Respublika Jami reportini olish yoki yaratish ===
     national_report, _ = Report.objects.get_or_create(
         statement=statement,
         deadline=deadline,
@@ -61,44 +62,61 @@ def aggregate_national_report(statement, deadline, region):
 
     print(">>> [REPUBLIC] Umumiy Jami report:", national_report.id)
 
+    # === 3. Eski itemlarni tozalash ===
     ReportItem.objects.filter(report=national_report).delete()
 
-    all_items = ReportItem.objects.filter(report__in=general_reports).prefetch_related("inners")
+    # === 4. Barcha regional itemlarni olish ===
+    all_items = (
+        ReportItem.objects
+        .filter(report__in=general_reports)
+        .select_related("statement_column")
+        .prefetch_related("inners")
+    )
 
+    # === 5. Column_id -> values[] qilib guruhlash ===
     grouped = defaultdict(list)
     for item in all_items:
         col_id = item.statement_column_id
         for inner in item.inners.all():
             grouped[col_id].append(inner.value)
 
+    # === 6. Yangi ReportItem lar yaratish ===
     new_items = {}
     for column_id in grouped.keys():
-        report_item = ReportItem.objects.create(
+        new_items[column_id] = ReportItem.objects.create(
             report=national_report,
             statement_column_id=column_id
         )
-        new_items[column_id] = report_item
 
+    # === 7. Yangi innerlarni yaratish ===
     new_inners = []
     for column_id, values in grouped.items():
-        report_item = new_items[column_id]
-
         total = sum(safe_decimal(v) for v in values)
-        new_inners.append(ReportItemInner(report_item=report_item, value=str(total)))
+        new_inners.append(
+            ReportItemInner(
+                report_item=new_items[column_id],
+                value=str(total)
+            )
+        )
 
     ReportItemInner.objects.bulk_create(new_inners)
-    print(f">>> [REPUBLIC] {len(new_items)} ta item, {len(new_inners)} ta inner yozildi")
-    return national_report
 
-    ReportItemInner.objects.bulk_create(new_inners)
     print(f">>> [REPUBLIC] {len(new_items)} ta item, {len(new_inners)} ta inner yozildi")
+
+    # === 8. FOIZ / umumiy hisob-kitobni qayta ishga tushirish ===
+    calculate_fn = ALL_CALCULATORS.get(statement.name_uz)
+    if calculate_fn:
+        calculate_fn(national_report)
+
     return national_report
 
 
 def aggregate_general_report(statement, deadline, region):
-    from apps.reports.models import Report, ReportItem, ReportItemInner
     from collections import defaultdict
+    from decimal import Decimal
+    from apps.reports.report_calculate import ALL_CALCULATORS
     from apps.utils.services.is_that_number import safe_decimal
+    from apps.reports.models import Report, ReportItem, ReportItemInner
 
     reports = Report.objects.filter(
         statement=statement,
@@ -106,53 +124,47 @@ def aggregate_general_report(statement, deadline, region):
         is_general=False,
         is_individual_general=True,
         is_report=False,
-        region=region
     ).select_related("organization__republic")
 
     if not reports.exists():
         return None
 
-    regions = {r.region for r in reports if r.region}
-    republics = {r.republic for r in reports if r.republic}
+    # Region bo‘yicha to‘g‘rilash — faqat shu regiondagilar
+    regional_reports = [r for r in reports if r.region == region]
+    if not regional_reports:
+        return None
 
-    target_region = regions.pop() if len(regions) == 1 else region
+    # Target region va republic
+    target_region = region
+    republics = {r.republic for r in regional_reports if r.republic}
     target_republic = republics.pop() if len(republics) == 1 else None
 
-    if not target_region:
-        target_region = reports.first().region
-
-    all_items = ReportItem.objects.filter(
-        report__in=reports
-    ).select_related("statement_column").prefetch_related("inners")
-
-    general_report = Report.objects.filter(
+    general_report, created = Report.objects.get_or_create(
         organization=None,
         statement=statement,
         deadline=deadline,
         is_general=True,
-        region=target_region
-    ).first()
+        region=target_region,
+        defaults={
+            "status": Report.StatusChoices.SAVED,
+            "is_report": False,
+            "republic": target_republic
+        }
+    )
 
-    if general_report is None:
-        general_report = Report.objects.create(
-            organization=None,
-            statement=statement,
-            deadline=deadline,
-            is_general=True,
-            status=Report.StatusChoices.SAVED,
-            is_report=False,
-            region=target_region,
-            republic=target_republic
-        )
-    else:
-        changed = False
-        if general_report.republic != target_republic:
-            general_report.republic = target_republic
-            changed = True
-        if changed:
-            general_report.save(update_fields=["republic"])
+    if not created and general_report.republic != target_republic:
+        general_report.republic = target_republic
+        general_report.save(update_fields=["republic"])
 
+    general_report.refresh_from_db()
+
+    # Eski ReportItem’larni tozalash
     ReportItem.objects.filter(report=general_report).delete()
+
+    # Jami hisoblash
+    all_items = ReportItem.objects.filter(
+        report__in=regional_reports
+    ).select_related("statement_column").prefetch_related("inners")
 
     column_total_map = defaultdict(Decimal)
     touched_column_ids = set()
@@ -163,20 +175,31 @@ def aggregate_general_report(statement, deadline, region):
         for inner in item.inners.all():
             column_total_map[col_id] += safe_decimal(inner.value)
 
-    new_items = []
-    new_inners = []
-
-    for col_id in touched_column_ids:
-        item = ReportItem(report=general_report, statement_column_id=col_id)
-        new_items.append(item)
-
+    # Yangi ReportItem lar
+    new_items = [
+        ReportItem(report=general_report, statement_column_id=col_id)
+        for col_id in touched_column_ids
+    ]
     ReportItem.objects.bulk_create(new_items)
 
-    for item in new_items:
-        col_id = item.statement_column_id
-        total = column_total_map.get(col_id, Decimal(0))
-        new_inners.append(ReportItemInner(report_item=item, value=str(total)))
+    created_items = ReportItem.objects.filter(
+        report=general_report,
+        statement_column_id__in=touched_column_ids
+    )
 
-    ReportItemInner.objects.bulk_create(new_inners)
+    # Innerlarni yaratish
+    all_inners = [
+        ReportItemInner(
+            report_item=item,
+            value=str(column_total_map.get(item.statement_column_id, Decimal(0)))
+        )
+        for item in created_items
+    ]
+    ReportItemInner.objects.bulk_create(all_inners)
+
+    # Hisoblash funksiyasi
+    calculate_fn = ALL_CALCULATORS.get(statement.name_uz)
+    if calculate_fn:
+        calculate_fn(general_report)
 
     return general_report

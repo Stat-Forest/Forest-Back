@@ -120,3 +120,31 @@ def handle_delete_report(sender, instance: Report, **kwargs):
         region=RegionChoices.REPUBLIC,
     )
 
+
+@receiver(post_save, sender=Report)
+def trigger_aggregate_general_report(sender, instance, created, **kwargs):
+    if instance.status == Report.StatusChoices.ACCEPTED and instance.is_report and not instance.is_general:
+        aggregate_general_report(
+            statement=instance.statement,
+            deadline=instance.deadline,
+            region=instance.region
+        )
+
+
+@receiver(post_save, sender=Report)
+def trigger_aggregate_national_report(sender, instance, created, **kwargs):
+    """
+    Har safar regional Jami (is_general=True) report ACCEPTED bo‘lsa → Respublika Jami yangilansin
+    """
+
+    if (
+        instance.status == Report.StatusChoices.ACCEPTED and
+        instance.is_general is True and
+        instance.is_republic is False and
+        instance.is_report is False
+    ):
+        aggregate_national_report(
+            statement=instance.statement,
+            deadline=instance.deadline,
+            region=instance.region,
+        )

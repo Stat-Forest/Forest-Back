@@ -1,6 +1,7 @@
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner
 from apps.reports.report_calculate.forest_create.seedlings_sprouts import normalize
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def sum_values(item):
@@ -73,5 +74,5 @@ def calculate_catch_seed(report: Report):
         foiz_item.inners.all().delete()
         ReportItemInner.objects.create(
             report_item=foiz_item,
-            value=foiz_value.quantize(Decimal("1.00"))  # 2 decimals
+            value=round_decimal(foiz_value)
         )
