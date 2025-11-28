@@ -3,5 +3,7 @@ from apps.reports.report_calculate.finance_accounting.income import calculate_in
 
 calculators = {
     "Jamg'arma": calculate_jamgarma,
-    "Daromad": calculate_income_summary
+    "Фонд": calculate_jamgarma,
+    "Daromad": calculate_income_summary,
+    "Доход": calculate_income_summary
 }

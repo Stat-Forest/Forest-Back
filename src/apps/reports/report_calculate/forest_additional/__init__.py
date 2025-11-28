@@ -6,7 +6,11 @@ from apps.reports.report_calculate.forest_additional.create_beekeeping import ca
 
 calculators = {
     "Mexanizatsiya hisobi": calculate_additional,
+    "Счет механизации": calculate_additional,
     "Pichan o`rish": calculate_haymaking,
+    "Сенокошение": calculate_haymaking,
     "Yaylov hisoboti": calculate_pasture,
-    "Chorvachilik": calculate_beekeeping
+    "Пастбище": calculate_pasture,
+    "Chorvachilik": calculate_beekeeping,
+    "Животноводство": calculate_beekeeping
 }
