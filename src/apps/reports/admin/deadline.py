@@ -29,7 +29,7 @@ class DeadlineAdminForm(forms.ModelForm):
             verbose_name=_("Organizations"),
             is_stacked=False,
             attrs={
-                "style": "height: 350px; width: 350px;"  # scroll + chiroyli ko‘rinish
+                "style": "height: 350px; width: 350px;"
             }
         )
     )
@@ -37,12 +37,12 @@ class DeadlineAdminForm(forms.ModelForm):
     class Media:
         css = {
             "all": (
-                "admin/css/widgets.css",   # SelectFilter uchun kerak
+                "admin/css/widgets.css",
             )
         }
         js = (
             "admin/js/core.js",
-            "admin/js/SelectFilter2.js",   # asosiy JS (bunsiz ishlamaydi)
+            "admin/js/SelectFilter2.js",
         )
 
     class Meta:
@@ -71,6 +71,11 @@ class DeadlineAdminForm(forms.ModelForm):
                 statement=statement,
                 submit_at=submission_at
             )
+
+            # === UPDATE out of itself ===
+            if self.instance and self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+
             for d in existing:
                 if set(d.organizations.all()) == set(organizations):
                     raise forms.ValidationError(

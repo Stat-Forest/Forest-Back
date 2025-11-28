@@ -1,7 +1,9 @@
 from django.db import models
+from django.db.models import Q, UniqueConstraint
 from django.utils.translation import gettext_lazy as _
 
 from apps.base.models import AbstractBaseModel
+
 
 
 class Deadline(AbstractBaseModel):
@@ -41,3 +43,36 @@ class Deadline(AbstractBaseModel):
     class Meta:
         verbose_name = "Muddat"
         verbose_name_plural = "Muddatlar"
+
+        constraints = [
+            # Daily
+            UniqueConstraint(
+                fields=['statement', 'submit_at'],
+                condition=Q(statement__period='daily'),
+                name='unique_statement_submit_at_daily'
+            ),
+            # Weekly
+            UniqueConstraint(
+                fields=['statement', 'submit_at'],
+                condition=Q(statement__period='weekly'),
+                name='unique_statement_submit_at_weekly'
+            ),
+            # Monthly
+            UniqueConstraint(
+                fields=['statement', 'submit_at'],
+                condition=Q(statement__period='monthly'),
+                name='unique_statement_submit_at_monthly'
+            ),
+            # Quarterly
+            UniqueConstraint(
+                fields=['statement', 'submit_at'],
+                condition=Q(statement__period='quarterly'),
+                name='unique_statement_submit_at_quarterly'
+            ),
+            # Yearly
+            UniqueConstraint(
+                fields=['statement', 'submit_at'],
+                condition=Q(statement__period='yearly'),
+                name='unique_statement_submit_at_yearly'
+            ),
+        ]
