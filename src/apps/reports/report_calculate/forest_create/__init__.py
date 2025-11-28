@@ -17,18 +17,32 @@ from apps.reports.report_calculate.forest_create.terassa_statement import calcul
 
 calculators = {
     "Yopiq ildiz yirik hajmli": calculate_large_volume,
+    "Закрытый корень крупногабаритный": calculate_large_volume,
     # "O'rmon barpo qilish bo'limi": calculate_forest_statement,
     "Urug' harakati": calculate_seed_movement,
+    "Движение семян": calculate_seed_movement,
     "Urug' xarakati Reja": calculate_seed_movement_plan,
+    "План движения семян": calculate_seed_movement_plan,
     "Qalamcha tayyorlash": calculate_make_pencil,
+    "Подготовка черенков": calculate_make_pencil,
     "Sotish uchun yaroqli ko‘chatlar": calculate_sale_seedlings,
+    "Ростки и саженцы, пригодные для продажи": calculate_sale_seedlings,
     "Ko‘chat va Nihol": calculate_seedlings,
+    "Ростки и саженцы": calculate_seedlings,
     "Tut Ko'chat va Tut Nihol": calculate_catch_seed,
+    "Саженец и саженец тутового дерева": calculate_catch_seed,
     "Ko'chatxona va Niholxona Jami": calculate_seed_plants,
+    "Питомник и Саженец Всего": calculate_seed_plants,
     "Og'ir mahalla": calculate_heavy_neighborhood,
+    "трудный район": calculate_heavy_neighborhood,
     "Sog'liqni saqlash": calculate_save_healthy,
+    "Здравоохранение": calculate_save_healthy,
     "Talim muassasalariga yetkazib berilgan ko'chatlar": calculate_education_seed,
+    "Рассада доставлена ​​в учебные заведения": calculate_education_seed,
     "Yashil makonga Ko'chat yetkazib berish": calculate_green_environment,
+    "Доставка саженцев на зеленую зону": calculate_green_environment,
     "Terassa": calculate_terrassa_statement,
-    "Golofit": calculate_golofit_statement
+    "Терраса": calculate_terrassa_statement,
+    "Golofit": calculate_golofit_statement,
+    "Голофит": calculate_golofit_statement
 }
