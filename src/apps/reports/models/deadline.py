@@ -31,7 +31,7 @@ class Deadline(AbstractBaseModel):
 
     deadline_at = models.DateField(
         verbose_name=_("Deadline date"),
-        help_text=_("Final deadline day (format: DD/MM/YYYY)"),
+        help_text=_("deadline_at togri kiritish formati (format: DD/MM/YYYY)"),
         blank=True,
         null=True,
     )
