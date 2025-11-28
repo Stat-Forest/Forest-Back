@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import Q, UniqueConstraint
 from django.utils.translation import gettext_lazy as _
 
 from apps.base.models import AbstractBaseModel
@@ -44,4 +43,3 @@ class Deadline(AbstractBaseModel):
         verbose_name = "Muddat"
         verbose_name_plural = "Muddatlar"
 
-        
