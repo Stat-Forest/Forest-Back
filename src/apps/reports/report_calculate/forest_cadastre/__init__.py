@@ -3,5 +3,7 @@ from apps.reports.report_calculate.forest_cadastre.land_acquisition import calcu
 
 calculators = {
     "Yer o‘zlashtirish": calculate_land,
-    "Ijaraga berilgan yerlar hisobi": calculate_leased_land
+    "Освоение земель": calculate_land,
+    "Ijaraga berilgan yerlar hisobi": calculate_leased_land,
+    "Учет арендованных земель": calculate_leased_land
 }
