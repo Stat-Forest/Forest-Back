@@ -13,18 +13,30 @@ class ReportListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     sent_by_full_name = serializers.SerializerMethodField()
     sent_by_org_name = serializers.SerializerMethodField()
+    submit_at = serializers.SerializerMethodField()   # ⭐ YANGI FIELD
 
     class Meta:
         model = Report
         fields = (
             'id', 'organization', 'organization_name',
             'statement', 'statement_name',
-            'deadline', 'period', 'status',
+            'deadline', 'submit_at',   # ⭐ BU YERGA QO‘SHILGAN
+            'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
             'report_items',
             'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
         )
+
+    # ---------------------
+    # SIMPLE FIELDS
+    # ---------------------
+
+    def get_submit_at(self, obj):
+        """Deadline modelidagi submit_at qaytariladi."""
+        if obj.deadline:
+            return obj.deadline.submit_at
+        return None
 
     def get_organization_name(self, obj):
         lang = get_lang_code(self.context)
@@ -45,11 +57,14 @@ class ReportListSerializer(serializers.ModelSerializer):
             return get_translated_field(obj.sent_by_org, "name", lang)
         return None
 
+    # ---------------------
+    # PERIOD
+    # ---------------------
+
     def get_period(self, obj):
         lang = self.context.get("lang", "uz")
         period = obj.statement.period
 
-        # Ixtiyoriy — tarjima qilish
         period_map = {
             "monthly": {"uz": "Oylik", "ru": "Ежемесячно"},
             "quarterly": {"uz": "Har chorakda", "ru": "Ежеквартально"},
@@ -59,6 +74,10 @@ class ReportListSerializer(serializers.ModelSerializer):
         }
 
         return period_map.get(period, {}).get(lang, period)
+
+    # ---------------------
+    # REPORT ITEMS
+    # ---------------------
 
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
@@ -80,6 +99,7 @@ class ReportListSerializer(serializers.ModelSerializer):
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
 
+        # ORGANIZATION TYPES
         if report.is_general:
             organization_id = "general"
             organization_name = _("Viloyat darajasidagi Jami")
@@ -96,7 +116,6 @@ class ReportListSerializer(serializers.ModelSerializer):
             organization_id = str(report.organization.id) if report.organization else "unknown"
             organization_name = get_translated_field(report.organization, "name", lang) if report.organization else _("Nomaʼlum tashkilot")
 
-        # 🧠 Cache all statement columns for fast path generation
         all_columns = StatementColumn.objects.filter(statement=report.statement).select_related("parent")
         column_map = {str(col.id): col for col in all_columns}
 
@@ -159,6 +178,10 @@ class ReportListSerializer(serializers.ModelSerializer):
         ))
 
         return data
+
+    # ---------------------
+    # COLUMN PATH
+    # ---------------------
 
     def get_full_column_path(self, column: StatementColumn, lang: str, column_map: dict) -> str:
         path = []
