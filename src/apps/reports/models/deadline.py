@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.base.models import AbstractBaseModel
 
 
+
 class Deadline(AbstractBaseModel):
     organizations = models.ManyToManyField(
         "general.Organization",
@@ -30,7 +31,7 @@ class Deadline(AbstractBaseModel):
 
     deadline_at = models.DateField(
         verbose_name=_("Deadline date"),
-        help_text=_("Final deadline day (format: DD/MM/YYYY)"),
+        help_text=_("deadline_at togri kiritish formati (format: DD/MM/YYYY)"),
         blank=True,
         null=True,
     )
@@ -41,3 +42,4 @@ class Deadline(AbstractBaseModel):
     class Meta:
         verbose_name = "Muddat"
         verbose_name_plural = "Muddatlar"
+
