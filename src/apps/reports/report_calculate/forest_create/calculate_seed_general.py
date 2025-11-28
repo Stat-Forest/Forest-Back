@@ -1,5 +1,7 @@
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
+
 
 def calculate_seed_plants(report: Report):
     """
@@ -25,7 +27,6 @@ def calculate_seed_plants(report: Report):
         col = ordering_map.get(ordering)
         if not col:
             return Decimal(0)
-        item = item_map.get(col.id)
         inner = inner_map.get(col.id)
         try:
             return Decimal(inner.value or 0)
@@ -56,17 +57,17 @@ def calculate_seed_plants(report: Report):
     reja_1 = get_decimal("1.1.3.1.1")
     amalda_1 = get_decimal("1.1.3.1.2")
     foiz_1 = (amalda_1 / reja_1 * 100) if reja_1 else Decimal(0)
-    write_value("1.1.3.1.3", foiz_1.quantize(Decimal('0.01')))
+    write_value("1.1.3.1.3", round_decimal(foiz_1))
 
     # 1.1.3.2.3 = 1.1.3.2.2 / 1.1.3.2.1
     reja_2 = get_decimal("1.1.3.2.1")
     amalda_2 = get_decimal("1.1.3.2.2")
     foiz_2 = (amalda_2 / reja_2 * 100) if reja_2 else Decimal(0)
-    write_value("1.1.3.2.3", foiz_2.quantize(Decimal('0.01')))
+    write_value("1.1.3.2.3", round_decimal(foiz_2))
 
     # 1.1.2.3 = 1.1.2.2 / 1.1.2.1
     reja_jami = get_decimal("1.1.2.1")
     foiz_jami = (amalda_jami / reja_jami * 100) if reja_jami else Decimal(0)
-    write_value("1.1.2.3", foiz_jami.quantize(Decimal('0.01')))
+    write_value("1.1.2.3", round_decimal(foiz_jami))
 
     return

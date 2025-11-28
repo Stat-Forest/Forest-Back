@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def normalize(value):
@@ -59,7 +60,7 @@ def calculate_seed_movement_plan(report: Report):
         reja_val = reja_map.get(pid, Decimal("0"))
         amalda_val = amalda_map.get(pid, Decimal("0"))
         foiz = (amalda_val / reja_val * 100) if reja_val else Decimal("0")
-        foiz_map[pid] = foiz
+        foiz_map[pid] = round_decimal(foiz)
 
     # === Foiz ustunini aniqlaymiz
     foiz_col = StatementColumn.objects.filter(

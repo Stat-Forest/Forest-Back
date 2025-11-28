@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_terrassa_statement(report: Report):
@@ -7,9 +8,7 @@ def calculate_terrassa_statement(report: Report):
     Hisoblash formulasi:
     1.1.5 = (1.1.4 / 1.1.3) * 100
     Ya'ni: % = (Amalda / Reja) * 100
-    Optimallashtirilgan: minimal SQL so‘rovlar bilan.
     """
-
     # ==== 1. Columnlarni bitta query bilan olish ====
     columns = (
         StatementColumn.objects
@@ -22,9 +21,9 @@ def calculate_terrassa_statement(report: Report):
     col_foiz = column_map.get("1.1.5")
 
     if not col_reja or not col_amalda or not col_foiz:
-        return  # kerakli ustunlar bo‘lmasa chiqamiz
+        return  # ustunlar bo‘lmasa chiqib ketamiz
 
-    # ==== 2. ReportItem + Inners ni bitta queryda olib kelamiz ====
+    # ==== 2. ReportItem + Inners ni bitta queryda yuklash ====
     report_items = (
         ReportItem.objects
         .filter(report=report, statement_column__in=[col_reja, col_amalda, col_foiz])
@@ -47,15 +46,15 @@ def calculate_terrassa_statement(report: Report):
         except (InvalidOperation, ValueError, TypeError):
             return Decimal(0)
 
-    # ==== 4. Qiymatlarni hisoblash ====
+    # ==== 4. Hisoblash ====
     reja = get_value(col_reja)
     amalda = get_value(col_amalda)
 
     foiz = Decimal(0)
     if reja > 0:
-        foiz = (amalda / reja * 100).quantize(Decimal("1.00"))
+        foiz = round_decimal((amalda / reja) * 100, 2)
 
-    # ==== 5. Qiymatni saqlash ====
+    # ==== 5. Saqlash ====
     def save_value(col: StatementColumn, value: Decimal):
         item = item_map.get(str(col.id))
         if not item:
@@ -63,9 +62,12 @@ def calculate_terrassa_statement(report: Report):
 
         inner = item.inners.first()
         if inner:
-            inner.value = value
-            inner.save()
+            inner.value = str(value)
+            inner.save(update_fields=["value"])
         else:
-            ReportItemInner.objects.create(report_item=item, value=value)
+            ReportItemInner.objects.create(
+                report_item=item,
+                value=str(value)
+            )
 
     save_value(col_foiz, foiz)

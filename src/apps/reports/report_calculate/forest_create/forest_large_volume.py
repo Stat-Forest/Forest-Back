@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from apps.reports.models import Report, ReportItem, ReportItemInner
 from apps.reports.services.general_report import normalize
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_large_volume(report: Report):
@@ -37,6 +38,7 @@ def calculate_large_volume(report: Report):
 
     # === % ===
     percent = (total_amalda / reja_value * 100) if reja_value else Decimal(0)
+    percent = round_decimal(percent)
 
     # === Saqlash ===
     updates = []
