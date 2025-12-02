@@ -37,7 +37,7 @@ class ExtraReportFilter(django_filters.FilterSet):
     time_status = django_filters.ChoiceFilter(
         method='filter_time_status',
         label="Vaqt holati",
-        choices=[('', 'All')] + list(Report.TimeStatusChoices.choices)
+        choices=[('', 'All')] + list(Report.TimeStatus.choices)
     )
 
 
