@@ -13,18 +13,18 @@ class ReportListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     sent_by_full_name = serializers.SerializerMethodField()
     sent_by_org_name = serializers.SerializerMethodField()
-    submit_at = serializers.SerializerMethodField()   # ⭐ YANGI FIELD
+    submit_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
         fields = (
             'id', 'organization', 'organization_name',
             'statement', 'statement_name',
-            'deadline', 'submit_at',   # ⭐ BU YERGA QO‘SHILGAN
+            'deadline', 'submit_at',
             'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items',
+            'report_items','time_status',
             'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
         )
 
