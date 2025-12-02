@@ -7,6 +7,7 @@ from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class ReportListSerializer(serializers.ModelSerializer):
+    time_status = serializers.SerializerMethodField()
     period = serializers.SerializerMethodField()
     organization_name = serializers.SerializerMethodField()
     report_items = serializers.SerializerMethodField()
@@ -24,13 +25,14 @@ class ReportListSerializer(serializers.ModelSerializer):
             'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items','time_status',
+            'report_items', 'time_status',
             'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
         )
 
-    # ---------------------
-    # SIMPLE FIELDS
-    # ---------------------
+    def get_time_status(self, obj):
+        if obj.time_status:
+            return obj.get_time_status_display()
+        return None
 
     def get_submit_at(self, obj):
         """Deadline modelidagi submit_at qaytariladi."""
