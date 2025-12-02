@@ -34,6 +34,13 @@ class ExtraReportFilter(django_filters.FilterSet):
         label="Muddat"
     )
 
+    time_status = django_filters.ChoiceFilter(
+        method='filter_time_status',
+        label="Vaqt holati",
+        choices=[('', 'All')] + list(Report.TimeStatusChoices.choices)
+    )
+
+
     def filter_statement_period(self, queryset, name, value):
         if value:
             return queryset.filter(statement__period=value)
@@ -57,6 +64,11 @@ class ExtraReportFilter(django_filters.FilterSet):
     def filter_deadline(self, queryset, name, value):
         if value:
             return queryset.filter(deadline=value)
+        return queryset
+
+    def filter_time_status(self, queryset, name, value):
+        if value:
+            return queryset.filter(time_status=value)
         return queryset
 
 
