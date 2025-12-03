@@ -7,10 +7,10 @@ from apps.reports.models import Report, Plant
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
-
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 @extend_schema(tags=["Plant-Reports"])
-class UniversalPlantReportCreateAPIView(APIView):
+class UniversalPlantReportCreateAPIView(DRFHistoryMixin,APIView):
     def post(self, request):
         serializer = UniversalPlantReportCreateSerializer(
             data=request.data,
@@ -60,7 +60,7 @@ class PlantListReportAPIView(CustomListAPIView):
 
 
 @extend_schema(tags=["Plant-Reports"])
-class PlantUpdateReportAPIView(CustomUpdateAPIView):
+class PlantUpdateReportAPIView(DRFHistoryMixin,CustomUpdateAPIView):
     serializer_class = PlantReportUpdateSerializer
     queryset = Report.objects.filter(is_plant_based=True, is_report=True)
 

@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from apps.reports.models import Report
 from apps.reports.serializers.reports import ReportAggregateSelectSerializer
 from apps.utils.translation import get_lang_code, get_translated_field
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 def is_number(val):
@@ -84,7 +85,7 @@ def generate_combined_report(report_ids, lang="uz"):
     return response
 
 
-class ReportAggregateSelectedAPIView(APIView):
+class ReportAggregateSelectedAPIView(DRFHistoryMixin,APIView):
     def post(self, request):
         serializer = ReportAggregateSelectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
