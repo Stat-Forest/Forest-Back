@@ -7,10 +7,11 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
 from apps.reports.serializers.status_reports import ReportAcceptSerializer
 from apps.reports.permissions import CanAcceptReport
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportAcceptAPIView(UpdateAPIView):
+class ReportAcceptAPIView(DRFHistoryMixin,UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
     permission_classes = [CanAcceptReport]

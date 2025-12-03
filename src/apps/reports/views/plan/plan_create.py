@@ -14,13 +14,13 @@ from apps.reports.serializers.plan import PlanSerializer, PlanListSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.permissions import CanCreatePlan
 from apps.utils.translation import get_lang_code, get_translated_field
-
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 # -----------------------------------------------------------------------------
 # Plan Create API
 # -----------------------------------------------------------------------------
 @extend_schema(tags=["Plan"])
-class PlanCreateView(generics.CreateAPIView):
+class PlanCreateView(DRFHistoryMixin,generics.CreateAPIView):
     """
     Create a new Plan.
     """
@@ -101,7 +101,7 @@ class PlanListAPIView(generics.ListAPIView):
 # Plan Delete API
 # -----------------------------------------------------------------------------
 @extend_schema(tags=["Plan"])
-class PlanDeleteAPIView(generics.DestroyAPIView):
+class PlanDeleteAPIView(DRFHistoryMixin,generics.DestroyAPIView):
     """
     Delete a Plan by ID.
     Raises a custom exception if deletion fails.
