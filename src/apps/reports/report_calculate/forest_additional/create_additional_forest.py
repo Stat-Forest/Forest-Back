@@ -2,7 +2,7 @@ from decimal import Decimal
 from collections import defaultdict
 
 from apps.reports.models import Report, ReportItemInner, ReportItem
-from apps.reports.services.general_report import normalize
+from apps.reports.services.normalize_utils import normalize
 from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
