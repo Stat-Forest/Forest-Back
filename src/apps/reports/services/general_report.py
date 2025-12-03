@@ -1,27 +1,151 @@
 from decimal import Decimal
 
+from apps.reports.models import Deadline
 
 
 def get_or_create_general_report(statement, deadline, region=None):
+    """
+    Regional (viloyat) jami reportini deadline-dan mustaqil tarzda bitta qilib yuritadi.
+    - Unikal kalit: (statement, region, is_general=True, organization=NULL)
+    - Ichkarida so‘nggi (latest) Deadline tanlanadi va report shu deadline bilan bog‘lanadi.
+    - Agar bir nechta nusxa bo‘lsa, eng yangisi qoladi, qolganlari o‘chiriladi.
+    """
     from apps.reports.models import Report
 
-    general_report, _ = Report.objects.get_or_create(
-        organization=None,
-        statement=statement,
-        deadline=deadline,
-        defaults={
-            "status": Report.StatusChoices.SAVED,
-            "is_general": True
-        }
+    # 1) Mazkur region uchun so'nggi deadline-ni aniqlash
+    latest_deadline = (
+        Deadline.objects.filter(statement=statement, organizations__region=region)
+        .order_by('-created_at')
+        .first()
     )
+    # Fallback: agar region bo'yicha deadline topilmasa, statement bo'yicha eng so'nggi deadline-ni olamiz
+    if not latest_deadline:
+        latest_deadline = (
+            Deadline.objects.filter(statement=statement)
+            .order_by('-created_at')
+            .first()
+        )
 
+    # Agar deadline topilmasa ham obyekt mavjud bo'lishi kerak, ammo deadline-ni None
+    # qilish o‘rniga, mavjud bo‘lsa saqlaymiz. Aggregation funktsiyalari o‘zlari
+    # latest_deadline bilan ishlaydi.
+
+    # 2) Mavjud jami report(lar)ni deadline-dan qat'i nazar qidiramiz
+    qs = Report.objects.filter(
+        organization__isnull=True,
+        statement=statement,
+        is_general=True,
+        region=region,
+    ).order_by('-created_at')
+
+    general_report = qs.first()
+
+    # 3) Dublikatlar bo‘lsa, barchasini birga yig‘amiz va bitta qoldiramiz
+    if qs.count() > 1:
+        keep_id = general_report.id
+        qs.exclude(id=keep_id).delete()
+
+    # 4) Agar yo‘q bo‘lsa – yaratamiz
+    if not general_report:
+        general_report = Report.objects.create(
+            organization=None,
+            statement=statement,
+            deadline=latest_deadline,
+            is_general=True,
+            region=region,
+            status=Report.StatusChoices.SAVED,
+            is_report=False,
+        )
+    else:
+        # 5) Mavjud bo‘lsa – deadline-ni eng songgisiga yangilaymiz
+        if latest_deadline and general_report.deadline_id != getattr(latest_deadline, 'id', None):
+            general_report.deadline = latest_deadline
+            general_report.save(update_fields=['deadline'])
+
+    # 6) sent_by_role ni konsistent saqlaymiz
     if region:
-        # General reportga hududiy belgini saqlash (optional)
-        general_report.sent_by_role = f"region:{region}"
-        general_report.save(update_fields=["sent_by_role"])
+        if general_report.sent_by_role != f"region:{region}":
+            general_report.sent_by_role = f"region:{region}"
+            general_report.save(update_fields=["sent_by_role"])
+
+    # 7) Flaglarni kafolatlaymiz
+    updates = {}
+    if general_report.is_report:
+        updates['is_report'] = False
+    if general_report.status != Report.StatusChoices.SAVED:
+        updates['status'] = Report.StatusChoices.SAVED
+    if updates:
+        for k, v in updates.items():
+            setattr(general_report, k, v)
+        general_report.save(update_fields=list(updates.keys()))
 
     return general_report
 
+
+def get_or_create_national_report(statement, deadline, region=None):
+    """
+    Respublika jami reportini deadline-dan mustaqil tarzda bitta qilib yuritadi.
+    - Unikal kalit: (statement, is_republic=True) [region odatda RegionChoices.REPUBLIC]
+    - Ichkarida so‘nggi (latest) Deadline tanlanadi va report shu deadline bilan bog‘lanadi.
+    - Agar bir nechta nusxa bo‘lsa, eng yangisi qoladi, qolganlari o‘chiriladi.
+    """
+    from apps.reports.models import Report
+
+    # 1) So'nggi deadline-ni aniqlash (respublika umumiy, statement bo‘yicha)
+    latest_deadline = (
+        Deadline.objects.filter(statement=statement)
+        .order_by('-created_at')
+        .first()
+    )
+
+    # 2) Mavjud respublika jami report(lar)ni deadline-dan qat'i nazar qidiramiz
+    qs = Report.objects.filter(
+        statement=statement,
+        is_republic=True,
+    ).order_by('-created_at')
+
+    national_report = qs.first()
+
+    # 3) Dublikatlar bo‘lsa – bitta qoldiramiz
+    if qs.count() > 1:
+        keep_id = national_report.id
+        qs.exclude(id=keep_id).delete()
+
+    # 4) Agar yo‘q bo‘lsa – yaratamiz
+    if not national_report:
+        national_report = Report.objects.create(
+            statement=statement,
+            deadline=latest_deadline,
+            is_republic=True,
+            region=region,
+            status=Report.StatusChoices.SAVED,
+            is_report=False,
+        )
+    else:
+        # 5) Mavjud bo‘lsa – deadline-ni eng songgisiga yangilaymiz
+        if latest_deadline and national_report.deadline_id != getattr(latest_deadline, 'id', None):
+            national_report.deadline = latest_deadline
+            national_report.save(update_fields=['deadline'])
+
+    # 6) sent_by_role ni konsistent saqlaymiz
+    if region:
+        desired = f"national:{region}"
+        if national_report.sent_by_role != desired:
+            national_report.sent_by_role = desired
+            national_report.save(update_fields=["sent_by_role"])
+
+    # 7) Flaglarni kafolatlaymiz
+    updates = {}
+    if national_report.is_report:
+        updates['is_report'] = False
+    if national_report.status != Report.StatusChoices.SAVED:
+        updates['status'] = Report.StatusChoices.SAVED
+    if updates:
+        for k, v in updates.items():
+            setattr(national_report, k, v)
+        national_report.save(update_fields=list(updates.keys()))
+
+    return national_report
 
 
 def normalize(value):
@@ -34,38 +158,40 @@ def normalize(value):
 
 
 def aggregate_national_report(statement, deadline, region):
-    from apps.reports.models import Report, ReportItem, ReportItemInner
     from collections import defaultdict
     from apps.utils.services.is_that_number import safe_decimal
-    from apps.reports.report_calculate import ALL_CALCULATORS
+    from apps.reports.models import Report, ReportItem, ReportItemInner
 
-    # === 1. Barcha regional Jami (is_general=True) reportlarni olish ===
+    # 1️⃣ Oxirgi deadline-ni topamiz (faqat parent report uchun, yig'ish deadline-dan mustaqil)
+    latest_deadline = Deadline.objects.filter(
+        statement=statement
+    ).order_by('-created_at').first()
+
+    if not latest_deadline:
+        print("❌ [REPUBLIC] Deadline topilmadi")
+        return None
+
+    deadline = latest_deadline
+
+    # 1️⃣ Regional umumiy (is_general=True) reportlarni olamiz — deadline cheklovisiz
     general_reports = Report.objects.filter(
         statement=statement,
-        deadline=deadline,
         is_general=True,
         status=Report.StatusChoices.SAVED
     )
-
     if not general_reports.exists():
-        print(">>> [REPUBLIC] Hech qanday regional Jami yo‘q")
+        print("❌ [REPUBLIC] Hech qanday viloyat Jami topilmadi")
         return None
 
-    # === 2. Respublika Jami reportini olish yoki yaratish ===
-    national_report, _ = Report.objects.get_or_create(
-        statement=statement,
-        deadline=deadline,
-        is_republic=True,
-        region=region,
-        defaults={"status": Report.StatusChoices.SAVED, "is_report": False}
-    )
+    # 2️⃣ Respublika Jami reportini olamiz yoki yaratamiz
+    national_report = get_or_create_national_report(statement, deadline, region)
 
-    print(">>> [REPUBLIC] Umumiy Jami report:", national_report.id)
+    print(f"✅ [REPUBLIC] Report ID: {national_report.id}")
 
-    # === 3. Eski itemlarni tozalash ===
+    # 3️⃣ Eski item va innerlarni tozalaymiz
     ReportItem.objects.filter(report=national_report).delete()
 
-    # === 4. Barcha regional itemlarni olish ===
+    # 4️⃣ Barcha viloyat jami item va innerlarni olamiz
     all_items = (
         ReportItem.objects
         .filter(report__in=general_reports)
@@ -73,99 +199,79 @@ def aggregate_national_report(statement, deadline, region):
         .prefetch_related("inners")
     )
 
-    # === 5. Column_id -> values[] qilib guruhlash ===
-    grouped = defaultdict(list)
+    # 5️⃣ column_id -> value list bo‘yicha yagona qiymatlarni hisoblaymiz
+    grouped_values = defaultdict(list)
     for item in all_items:
-        col_id = item.statement_column_id
         for inner in item.inners.all():
-            grouped[col_id].append(inner.value)
+            grouped_values[item.statement_column_id].append(inner.value)
 
-    # === 6. Yangi ReportItem lar yaratish ===
-    new_items = {}
-    for column_id in grouped.keys():
-        new_items[column_id] = ReportItem.objects.create(
+    # 6️⃣ Yangi ReportItem larni yaratamiz (faqat yagona column_id lar bilan)
+    new_inners = []
+
+    for column_id, values in grouped_values.items():
+        item = ReportItem.objects.create(
             report=national_report,
             statement_column_id=column_id
         )
-
-    # === 7. Yangi innerlarni yaratish ===
-    new_inners = []
-    for column_id, values in grouped.items():
         total = sum(safe_decimal(v) for v in values)
-        new_inners.append(
-            ReportItemInner(
-                report_item=new_items[column_id],
-                value=str(total)
-            )
-        )
+        new_inners.append(ReportItemInner(report_item=item, value=str(total)))
 
     ReportItemInner.objects.bulk_create(new_inners)
 
-    print(f">>> [REPUBLIC] {len(new_items)} ta item, {len(new_inners)} ta inner yozildi")
-
-    # === 8. FOIZ / umumiy hisob-kitobni qayta ishga tushirish ===
-    calculate_fn = ALL_CALCULATORS.get(statement.name_uz)
-    if calculate_fn:
-        calculate_fn(national_report)
+    print(f"📊 {len(new_inners)} ta inner yozildi.")
 
     return national_report
 
 
 def aggregate_general_report(statement, deadline, region):
-    from collections import defaultdict
     from decimal import Decimal
-    from apps.reports.report_calculate import ALL_CALCULATORS
     from apps.utils.services.is_that_number import safe_decimal
     from apps.reports.models import Report, ReportItem, ReportItemInner
 
-    reports = Report.objects.filter(
+    latest_deadline = Deadline.objects.filter(
         statement=statement,
-        deadline=deadline,
-        is_general=False,
-        is_individual_general=True,
-        is_report=False,
-    ).select_related("organization__republic")
+        organizations__region=region
+    ).order_by('-created_at').first()
 
-    if not reports.exists():
+    if not latest_deadline:
+        print("❌ [GENERAL] Deadline topilmadi")
         return None
 
-    # Region bo‘yicha to‘g‘rilash — faqat shu regiondagilar
-    regional_reports = [r for r in reports if r.region == region]
-    if not regional_reports:
+    deadline = latest_deadline
+
+    # 🔁 1. Avval viloyat Jami (general) report obyektini olamiz
+    general_report = get_or_create_general_report(statement, deadline, region)
+    if not general_report:
         return None
 
-    # Target region va republic
-    target_region = region
-    republics = {r.republic for r in regional_reports if r.republic}
-    target_republic = republics.pop() if len(republics) == 1 else None
-
-    general_report, created = Report.objects.get_or_create(
-        organization=None,
-        statement=statement,
-        deadline=deadline,
-        is_general=True,
-        region=target_region,
-        defaults={
-            "status": Report.StatusChoices.SAVED,
-            "is_report": False,
-            "republic": target_republic
-        }
-    )
-
-    if not created and general_report.republic != target_republic:
-        general_report.republic = target_republic
-        general_report.save(update_fields=["republic"])
-
-    general_report.refresh_from_db()
-
-    # Eski ReportItem’larni tozalash
+    # 🔄 2. Avvalgi ma’lumotlarni tozalaymiz
     ReportItem.objects.filter(report=general_report).delete()
 
-    # Jami hisoblash
+    # 🔎 3. Manba: ACCEPTED individual reportlar (bevosita asosiy manba)
+    regional_reports = (
+        Report.objects.filter(
+            statement=statement,
+            is_general=False,
+            is_republic=False,
+            is_report=True,
+            status=Report.StatusChoices.ACCEPTED,
+            region=region,
+        ).select_related("organization__republic")
+    )
+
+    # Parent general reportning deadline'i serializerdagi filterga mos kelishi uchun
+    # bolalar orasidagi eng so'nggi deadline bilan sinxronlaymiz.
+    if regional_reports.exists():
+        latest_child = regional_reports.order_by('-deadline__created_at').first()
+        if latest_child and general_report.deadline_id != getattr(latest_child.deadline, 'id', None):
+            general_report.deadline = latest_child.deadline
+            general_report.save(update_fields=['deadline'])
+
     all_items = ReportItem.objects.filter(
         report__in=regional_reports
     ).select_related("statement_column").prefetch_related("inners")
 
+    from collections import defaultdict
     column_total_map = defaultdict(Decimal)
     touched_column_ids = set()
 
@@ -175,7 +281,7 @@ def aggregate_general_report(statement, deadline, region):
         for inner in item.inners.all():
             column_total_map[col_id] += safe_decimal(inner.value)
 
-    # Yangi ReportItem lar
+    # 🧾 4. Yangi ReportItem va ReportItemInner yaratish
     new_items = [
         ReportItem(report=general_report, statement_column_id=col_id)
         for col_id in touched_column_ids
@@ -187,7 +293,6 @@ def aggregate_general_report(statement, deadline, region):
         statement_column_id__in=touched_column_ids
     )
 
-    # Innerlarni yaratish
     all_inners = [
         ReportItemInner(
             report_item=item,
@@ -196,10 +301,5 @@ def aggregate_general_report(statement, deadline, region):
         for item in created_items
     ]
     ReportItemInner.objects.bulk_create(all_inners)
-
-    # Hisoblash funksiyasi
-    calculate_fn = ALL_CALCULATORS.get(statement.name_uz)
-    if calculate_fn:
-        calculate_fn(general_report)
 
     return general_report
