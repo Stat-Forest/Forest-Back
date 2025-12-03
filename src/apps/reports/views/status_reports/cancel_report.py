@@ -7,10 +7,11 @@ from apps.reports.permissions import CanCancelReport
 from apps.reports.models import Report
 from apps.reports.serializers.status_reports import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportCancelAPIView(UpdateAPIView):
+class ReportCancelAPIView(DRFHistoryMixin,UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCancelSerializer
     permission_classes = [CanCancelReport]
