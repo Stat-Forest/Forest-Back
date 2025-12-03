@@ -7,6 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.base.serializers import CustomSerializer
+from apps.logs.models import HistoryActionJournal
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -50,6 +52,14 @@ class LoginSerializer(CustomSerializer):
         cache.delete(block_key)
 
         refresh = RefreshToken.for_user(user)
+        HistoryActionJournal.objects.create(
+            user=user,
+            action="login",
+            model_name="User",
+            change_message="API orqali tizimga kirildi.",
+            object_repr=f'Foydalanuvchi: {user.first_name} {user.last_name} - Role: {user.role} ',
+            created_at=timezone.now()
+        )
 
         return {
             "refresh": str(refresh),

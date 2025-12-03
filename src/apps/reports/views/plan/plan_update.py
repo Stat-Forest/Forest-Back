@@ -7,7 +7,6 @@ from drf_spectacular.utils import extend_schema
 from apps.reports.models import Plan
 from apps.reports.serializers.plan import PlanSerializer
 
-
 # -----------------------------------------------------------------------------
 # Plan Update API
 # -----------------------------------------------------------------------------

@@ -17,6 +17,11 @@ class Report(AbstractBaseModel):
         CANCELLED = 'cancelled', _('Cancelled')
         ACCEPTED = 'accepted', _('Accepted')
 
+    class TimeStatus(models.TextChoices):
+        ON_TIME = 'on_time', _('Bajarilgan')
+        LATE = 'late', _('Kechiktirilgan')
+
+
     republic = models.ForeignKey(
       "general.Republic",
       on_delete=models.PROTECT,
@@ -124,6 +129,12 @@ class Report(AbstractBaseModel):
       blank=True,
       db_index=True,
       help_text="Viloyatni to‘g‘ridan-to‘g‘ri bog‘lash uchun"
+    )
+    time_status = models.CharField(
+        max_length=20,
+        choices=TimeStatus.choices,
+        blank=True,
+        null=True
     )
 
     # def __str__(self):
