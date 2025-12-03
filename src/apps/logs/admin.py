@@ -4,7 +4,7 @@ from .models import HistoryActionJournal
 
 @admin.register(HistoryActionJournal)
 class HistoryActionJournalAdmin(admin.ModelAdmin):
-    list_display = ('user', 'action', 'model_name', 'object_repr', 'created_at')
+    list_display = ('user', 'action', 'model_name', 'object_repr','change_message', 'created_at')
     list_filter = (
         'action',
         'model_name',
