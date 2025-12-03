@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
-from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+
 from apps.reports.services.get_two_numbers_in_percent import round_decimal
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 
 def calculate_terrassa_statement(report: Report):
@@ -52,7 +53,7 @@ def calculate_terrassa_statement(report: Report):
 
     foiz = Decimal(0)
     if reja > 0:
-        foiz = round_decimal((amalda / reja) * 100, 2)
+        foiz = round_decimal((amalda / reja) * 100, places=1)  # 1 o‘rinli yaxlitlash
 
     # ==== 5. Saqlash ====
     def save_value(col: StatementColumn, value: Decimal):

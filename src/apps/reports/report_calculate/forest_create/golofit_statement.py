@@ -52,7 +52,7 @@ def calculate_golofit_statement(report: Report):
     amalda = get_value(col_amalda)
 
     if reja > 0:
-        foiz = round_decimal((amalda / reja) * 100, 2)
+        foiz = round_decimal((amalda / reja) * 100, 1)  # 👈 Faqat 1 kasr belgisi
     else:
         foiz = Decimal(0)
 
@@ -71,4 +71,5 @@ def calculate_golofit_statement(report: Report):
                 report_item=item,
                 value=str(value)
             )
+
     save_value(col_foiz, foiz)

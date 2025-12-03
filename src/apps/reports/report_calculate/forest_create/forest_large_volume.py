@@ -38,14 +38,14 @@ def calculate_large_volume(report: Report):
 
     # === % ===
     percent = (total_amalda / reja_value * 100) if reja_value else Decimal(0)
-    percent = round_decimal(percent)
+    percent = round_decimal(percent, places=1)  # 💡 Aynan bu yerda 1 kasr sonigacha yaxlitlanadi
 
     # === Saqlash ===
     updates = []
 
     for ordering, value in [
-        ("1.1.2.2", total_amalda),       # Amalda
-        ("1.1.2.3", round(percent, 2)),  # Foiz
+        ("1.1.2.2", total_amalda),     # Amalda
+        ("1.1.2.3", percent),          # Foiz (yaxlitlangan)
     ]:
         column = next((c for c in columns if c.ordering == ordering), None)
         if column:

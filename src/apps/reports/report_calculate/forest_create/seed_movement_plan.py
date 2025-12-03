@@ -26,17 +26,20 @@ def calculate_seed_movement_plan(report: Report):
         "FOIZ": "1.1.2.3",
     }
 
-    # === ReportItem'lar oldindan yuklanadi
+    # 🔍 Oldindan barcha ReportItem va ularning innerslarini yuklab olamiz
     report_items = (
         ReportItem.objects
         .filter(report=report)
         .select_related("statement_column")
         .prefetch_related("inners")
     )
-    report_item_map = {item.statement_column.ordering: item for item in report_items}
+    report_item_map = {
+        item.statement_column.ordering: item
+        for item in report_items
+    }
 
-    # === plant_id → value mapping
-    def get_plant_totals(ordering: str) -> dict[UUID, Decimal]:
+    # 🔢 Har bir ordering uchun plant_id → value mapping
+    def get_plant_value_map(ordering: str) -> dict[UUID, Decimal]:
         item = report_item_map.get(ordering)
         if not item:
             return {}
@@ -46,31 +49,29 @@ def calculate_seed_movement_plan(report: Report):
                 totals[inner.plant_id] += normalize(inner.value)
         return totals
 
-    reja_map = get_plant_totals(ordering_map["REJA"])
-    amalda_map = get_plant_totals(ordering_map["AMALDA"])
+    reja_map = get_plant_value_map(ordering_map["REJA"])
+    amalda_map = get_plant_value_map(ordering_map["AMALDA"])
 
-    # ✅ REJA tartibida ketma-ketlikni saqlaymiz
-    plant_order = list(reja_map.keys())
-    if not plant_order:
-        plant_order = list(amalda_map.keys())  # fallback
+    # 🔁 Ketma-ketlikni saqlaymiz: agar reja bo‘lmasa fallback = amalda
+    plant_order = list(reja_map.keys()) or list(amalda_map.keys())
 
-    # === Foiz = Amalda / Reja * 100
+    # 📈 Foiz = (amalda / reja) * 100
     foiz_map = defaultdict(Decimal)
-    for pid in set(reja_map) | set(amalda_map):
+    for pid in set(reja_map.keys()) | set(amalda_map.keys()):
         reja_val = reja_map.get(pid, Decimal("0"))
         amalda_val = amalda_map.get(pid, Decimal("0"))
         foiz = (amalda_val / reja_val * 100) if reja_val else Decimal("0")
         foiz_map[pid] = round_decimal(foiz)
 
-    # === Foiz ustunini aniqlaymiz
+    # 🧩 Foiz ustunini topamiz
     foiz_col = StatementColumn.objects.filter(
         statement=report.statement,
         ordering=ordering_map["FOIZ"]
     ).first()
     if not foiz_col:
-        return  # chiqib ketamiz agar column yo‘q bo‘lsa
+        return  # Ustun mavjud emas → chiqamiz
 
-    # === Foiz uchun ReportItem
+    # 📝 Foiz uchun ReportItem (yo‘q bo‘lsa yaratamiz)
     foiz_item = report_item_map.get(ordering_map["FOIZ"])
     if not foiz_item:
         foiz_item = ReportItem.objects.create(
@@ -79,27 +80,25 @@ def calculate_seed_movement_plan(report: Report):
         )
         report_item_map[ordering_map["FOIZ"]] = foiz_item
 
-    # === Eski qiymatlarni cache qilamiz
-    old_foiz_values = {
+    # 🧠 Eski qiymatlar cache
+    old_values = {
         inner.plant_id: normalize(inner.value)
         for inner in foiz_item.inners.all()
         if inner.plant_id
     }
-
-    # ✅ ID-lar kerak bo‘ladi → plant_id → inner.id
-    inner_id_map = {
+    id_map = {
         inner.plant_id: inner.id
         for inner in foiz_item.inners.all()
         if inner.plant_id
     }
 
-    # === Bufferlar
+    # 📦 Yaratish va yangilash bufferlari
     create_buffer = []
     update_buffer = []
 
     for plant_id in plant_order:
         new_val = foiz_map.get(plant_id, Decimal("0"))
-        old_val = old_foiz_values.get(plant_id)
+        old_val = old_values.get(plant_id)
 
         if old_val is None:
             create_buffer.append(ReportItemInner(
@@ -109,14 +108,15 @@ def calculate_seed_movement_plan(report: Report):
             ))
         elif old_val != new_val:
             update_buffer.append(ReportItemInner(
-                id=inner_id_map[plant_id],
+                id=id_map[plant_id],
                 report_item=foiz_item,
                 plant_id=plant_id,
                 value=str(new_val)
             ))
 
-    # === Saqlash
+    # 💾 Saqlaymiz
     if create_buffer:
         ReportItemInner.objects.bulk_create(create_buffer)
+
     if update_buffer:
         ReportItemInner.objects.bulk_update(update_buffer, ["value"])
