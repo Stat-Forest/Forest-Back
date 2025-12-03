@@ -6,13 +6,12 @@ from drf_spectacular.utils import extend_schema
 # Local imports
 from apps.reports.models import Plan
 from apps.reports.serializers.plan import PlanSerializer
-from apps.logs.drf_mixins import DRFHistoryMixin
 
 # -----------------------------------------------------------------------------
 # Plan Update API
 # -----------------------------------------------------------------------------
 @extend_schema(tags=["Plan"])
-class PlanUpdateView(DRFHistoryMixin,generics.UpdateAPIView):
+class PlanUpdateView(generics.UpdateAPIView):
     """
     Update an existing Plan object.
 
