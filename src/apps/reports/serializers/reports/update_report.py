@@ -149,10 +149,16 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
 
 class ReportDetailSerializer(CustomModelSerializer):
     report_items = serializers.SerializerMethodField()
+    submit_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
-        fields = ["id", "deadline", "report_items"]
+        fields = ["id", "deadline", "submit_at", "report_items"]
+
+    def get_submit_at(self, obj):
+        if obj.deadline and obj.deadline.submit_at:
+            return obj.deadline.submit_at
+        return None
 
     def get_report_items(self, obj):
         items = obj.report_items.filter(statement_column__is_user_input=True)
