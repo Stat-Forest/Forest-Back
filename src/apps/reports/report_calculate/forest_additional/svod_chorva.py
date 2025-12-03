@@ -1,6 +1,9 @@
-from decimal import Decimal, InvalidOperation
 from collections import defaultdict
+
+from decimal import Decimal, InvalidOperation
+
 from apps.reports.mapping_columns import SECOND_ORDERING_MAP
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_svod_chorva(report, grouped=None):
@@ -43,7 +46,7 @@ def calculate_svod_chorva(report, grouped=None):
     val_7_1_4 = totals.get("7.1.4", Decimal(0))  # Mavjud
 
     farqi = val_7_1_2 - val_7_1_4
-    foiz = (val_7_1_4 / val_7_1_2 * 100) if val_7_1_2 else Decimal(0)
+    foiz = round_decimal((val_7_1_4 / val_7_1_2 * 100), 1) if val_7_1_2 else Decimal(0)
 
     for ordering, value in [("7.1.5", farqi), ("7.1.6", foiz)]:
         try:
@@ -53,7 +56,7 @@ def calculate_svod_chorva(report, grouped=None):
         item, _ = ReportItem.objects.get_or_create(report=report, statement_column=col)
         ReportItemInner.objects.update_or_create(
             report_item=item,
-            defaults={"value": str(round(value, 2))}
+            defaults={"value": str(round_decimal(value, 1))}
         )
         grouped[ordering].append(value)
 

@@ -3,12 +3,12 @@ from collections import defaultdict
 
 from apps.reports.models import Report, ReportItemInner, ReportItem
 from apps.reports.services.general_report import normalize
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_additional(report: Report):
     """
     Hisobot: Metallolom ilovasi (ordering: 7.1)
-    Optimallashtirilgan: duplicate SELECT larni kamaytirish uchun oldindan kiritilgan qiymatlar cache qilinadi.
     """
     statement = report.statement
     columns = statement.columns.filter(ordering__startswith="7.1.")
@@ -38,7 +38,6 @@ def calculate_additional(report: Report):
 
     yillik_reja = Decimal(0)
     yillik_amalda = Decimal(0)
-
     items_to_create = []
 
     for i in range(1, 5):
@@ -54,27 +53,29 @@ def calculate_additional(report: Report):
         reja_value = get_first_value(reja_col)
         amalda_value = get_sum(amalda_col)
 
-        yillik_reja += normalize(reja_value)
-        yillik_amalda += normalize(amalda_value)
+        reja_value_d = normalize(reja_value)
+        amalda_value_d = normalize(amalda_value)
+
+        yillik_reja += reja_value_d
+        yillik_amalda += amalda_value_d
 
         percent = Decimal(0)
-        if normalize(reja_value) > 0:
-            percent = normalize(amalda_value) / normalize(reja_value) * 100
+        if reja_value_d > 0:
+            percent = round_decimal((amalda_value_d / reja_value_d) * 100)
 
         items_to_create.append((foiz_col, percent))
 
     # Yillik ustunlar
-    yillik_amalda_col = column_map.get("7.1.3", None)
-    yillik_percent_col = column_map.get("7.1.4", None)
+    yillik_amalda_col = column_map.get("7.1.3")
+    yillik_percent_col = column_map.get("7.1.4")
 
     if yillik_amalda_col:
-        items_to_create.append((yillik_amalda_col, yillik_amalda))
+        items_to_create.append((yillik_amalda_col, round_decimal(yillik_amalda)))
 
-    if yillik_percent_col and normalize(yillik_reja) > 0:
-        yillik_foiz = yillik_amalda / yillik_reja * 100
+    if yillik_percent_col and yillik_reja > 0:
+        yillik_foiz = round_decimal((yillik_amalda / yillik_reja) * 100)
         items_to_create.append((yillik_percent_col, yillik_foiz))
 
-    # Hamma itemlarni bir marta bulk_create bilan saqlaymiz
     create_calculated_items_bulk(report, items_to_create)
 
 

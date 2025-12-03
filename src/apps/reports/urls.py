@@ -7,6 +7,7 @@ from apps.reports.views import (
 
 )
 from apps.reports.views.column_plant import ColumnPlantListAPIView
+from apps.reports.views.exports.export_excel import ReportExcelExportAPIView
 from apps.reports.views.list_reports import IndividualGeneralReport, IndividualGeneralReportDetail, \
     RegionalGeneralReport, RegionalGeneralReportDetail, RepublicGeneralReport, RepublicGeneralReportDetail
 
@@ -113,4 +114,7 @@ urlpatterns = [
     path("report-plant/<uuid:pk>/update", PlantUpdateReportAPIView.as_view(), name="plant-update"),
     path("report-plant/", PlantListReportAPIView.as_view(), name="plant-by-app"),
     path("report-plant/<uuid:pk>/", PlantDetailReportAPIView.as_view(), name="plant-by-app"),
+
+    # ====================  EXPORT URL =================
+    path("export-excel/", ReportExcelExportAPIView.as_view(), name="export-excel"),
 ]
