@@ -1,6 +1,6 @@
 from decimal import Decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
-from apps.reports.services.general_report import normalize
+from apps.reports.services.normalize_utils import normalize
 
 
 def calculate_sale_seedlings(report: Report):
