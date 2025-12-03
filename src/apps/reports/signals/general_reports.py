@@ -1,11 +1,11 @@
-from django.db.models.signals import post_save, post_delete, pre_delete
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from apps.reports.models import Report
-from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services import (
     aggregate_general_report,
     aggregate_national_report,
 )
+from apps.reports.services.individual_general_report import aggregate_individual_report
 from apps.utils.services import RegionChoices
 
 
@@ -15,26 +15,47 @@ def handle_accepted_report(sender, instance: Report, created, **kwargs):
 
     if instance.status != Report.StatusChoices.ACCEPTED:
         return
-
     if not instance.is_report:
         return
 
-    # ✅ Region Jami (individual bo‘lmaganlar uchun)
-    if instance.region:
-        print(">>> Viloyat Jami chaqirilyapti")
+    # 🎯 Individual reports only (not general/republic)
+    if not instance.is_general and not instance.is_republic:
+        # Avvalo individual umumlashtirishni yangilaymiz
+        print(">>> [Individual] Individual Jami (org-level) yangilanmoqda")
+        aggregate_individual_report(instance)
+
+        print(">>> [Individual] Viloyat Jami chaqirilyapti")
         aggregate_general_report(
             statement=instance.statement,
             deadline=instance.deadline,
             region=instance.region
         )
 
-
-        print(">>> Respublika Jami chaqirilyapti")
+        print(">>> [Individual] Respublika Jami chaqirilyapti")
         aggregate_national_report(
             statement=instance.statement,
             deadline=instance.deadline,
             region=RegionChoices.REPUBLIC
         )
+        return
+
+    # 🎯 If regional (viloyat) jami
+    if instance.region and instance.is_general:
+        print(">>> [General] Viloyat Jami chaqirilyapti")
+        aggregate_general_report(
+            statement=instance.statement,
+            deadline=instance.deadline,
+            region=instance.region
+        )
+
+        print(">>> [General] Respublika Jami chaqirilyapti")
+        aggregate_national_report(
+            statement=instance.statement,
+            deadline=instance.deadline,
+            region=RegionChoices.REPUBLIC
+        )
+        return
+
 
 
 @receiver(pre_delete, sender=Report)
@@ -89,6 +110,14 @@ def handle_delete_report(sender, instance: Report, **kwargs):
             ).delete()
             print("🗑️ Viloyat Jami o‘chirildi")
 
+        # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
+        if viloyat_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():
+            aggregate_general_report(
+                statement=instance.statement,
+                deadline=instance.deadline,
+                region=instance.region,
+            )
+
     # ========================
     # ✅ Respublika Jami check
     # ========================
@@ -106,45 +135,10 @@ def handle_delete_report(sender, instance: Report, **kwargs):
         ).delete()
         print("🗑️ Respublika Jami o‘chirildi")
 
-    # =====================
-    # ✅ Reaggregation
-    # =====================
-    aggregate_general_report(
-        statement=instance.statement,
-        deadline=instance.deadline,
-        region=instance.region,
-    )
-    aggregate_national_report(
-        statement=instance.statement,
-        deadline=instance.deadline,
-        region=RegionChoices.REPUBLIC,
-    )
-
-
-@receiver(post_save, sender=Report)
-def trigger_aggregate_general_report(sender, instance, created, **kwargs):
-    if instance.status == Report.StatusChoices.ACCEPTED and instance.is_report and not instance.is_general:
-        aggregate_general_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=instance.region
-        )
-
-
-@receiver(post_save, sender=Report)
-def trigger_aggregate_national_report(sender, instance, created, **kwargs):
-    """
-    Har safar regional Jami (is_general=True) report ACCEPTED bo‘lsa → Respublika Jami yangilansin
-    """
-
-    if (
-        instance.status == Report.StatusChoices.ACCEPTED and
-        instance.is_general is True and
-        instance.is_republic is False and
-        instance.is_report is False
-    ):
+    # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
+    if resp_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():
         aggregate_national_report(
             statement=instance.statement,
             deadline=instance.deadline,
-            region=instance.region,
+            region=RegionChoices.REPUBLIC,
         )
