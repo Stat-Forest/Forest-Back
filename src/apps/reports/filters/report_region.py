@@ -72,6 +72,11 @@ class ReportFilter(django_filters.FilterSet):
         queryset=Statement.objects.filter(parent__isnull=False),
         label="Hisobot turi"
     )
+    time_status = django_filters.ChoiceFilter(
+        field_name="time_status",
+        choices=Report.TimeStatus.choices,
+        label="Vaqt holati"
+    )
 
     class Meta:
         model = Report
@@ -81,7 +86,8 @@ class ReportFilter(django_filters.FilterSet):
             "organization_name",
             "year",
             "statement",
-            "submit_at"
+            "submit_at",
+            "time_status",
         ]
 
     def __init__(self, *args, **kwargs):
