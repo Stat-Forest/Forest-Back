@@ -1,6 +1,7 @@
 from decimal import Decimal
-from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+
 from apps.reports.services.get_two_numbers_in_percent import round_decimal
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 
 def normalize(value):
@@ -50,7 +51,9 @@ def calculate_heavy_neighborhood(report: Report):
         (amalga_oshgan_value / yetkazilishi_value * 100)
         if yetkazilishi_value > 0 else Decimal(0)
     )
-    foiz_value = round_decimal(foiz_value, 2)
+
+    # ❗❗❗ SHU YERGA 1 KASR QILIB YOZILDI
+    foiz_value = round_decimal(foiz_value, 1)
 
     # === Create or Update 1.1.6 ===
     if foiz_item:
@@ -67,5 +70,5 @@ def calculate_heavy_neighborhood(report: Report):
 
     ReportItemInner.objects.create(
         report_item=foiz_item,
-        value=foiz_value
+        value=str(foiz_value)  # stringga o‘girdik
     )

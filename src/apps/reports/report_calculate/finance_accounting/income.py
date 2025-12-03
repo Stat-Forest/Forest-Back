@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_income_summary(report: Report):
@@ -24,7 +25,12 @@ def calculate_income_summary(report: Report):
     created_inners = []
 
     def create_calculated_items(column: StatementColumn, value: Decimal):
-        rounded = str(round(value, 2))
+        is_percent = (
+                             column.ordering and column.ordering.endswith(".3")
+                     ) or column.ordering in {"2.1.11.2", "3.1.4"}  # foiz ustunlar
+
+        rounded = str(round_decimal(value, places=1 if is_percent else 2))
+
         item = report_item_map.get(column.id)
 
         if item:
