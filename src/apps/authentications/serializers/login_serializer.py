@@ -57,7 +57,7 @@ class LoginSerializer(CustomSerializer):
             action="login",
             model_name="User",
             change_message="API orqali tizimga kirildi.",
-            object_repr=f'Foydalanuvchi: {user.first_name} {user.last_name} Tashkiloti:{user.organization.name} role: {user.role} ',
+            object_repr=f'Foydalanuvchi: {user.first_name} {user.last_name} - Role: {user.role} ',
             created_at=timezone.now()
         )
 
