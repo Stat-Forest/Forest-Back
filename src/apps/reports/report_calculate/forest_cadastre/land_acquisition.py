@@ -1,5 +1,6 @@
 from decimal import Decimal
 from apps.reports.models import ReportItem, Report, ReportItemInner
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def calculate_land(report: Report):
@@ -8,12 +9,11 @@ def calculate_land(report: Report):
     """
     # 1-ilova ==================================
     # Barcha kerakli ustunlar oldindan olinadi
-    columns = report.statement.columns.select_related("parent").all()
 
-    O_REJA = "1.1.2"       # Reja
-    O_AMALDA = "1.1.3"     # Amalda
-    O_FOIZ = "1.1.5"       # Foiz
-    O_CHORAKS = [          # Choraklar
+    O_REJA = "1.1.2"  # Reja
+    O_AMALDA = "1.1.3"  # Amalda
+    O_FOIZ = "1.1.5"  # Foiz
+    O_CHORAKS = [  # Choraklar
         "1.1.4.1", "1.1.4.2", "1.1.4.3", "1.1.4.4"
     ]
 
@@ -26,6 +26,9 @@ def calculate_land(report: Report):
     reja_val = get_decimal_value(report_items_map.get(O_REJA))
     chorak_sum = sum(get_decimal_value(report_items_map.get(o)) for o in O_CHORAKS)
     foiz_val = (chorak_sum / reja_val * 100) if reja_val > 0 else Decimal(0)
+
+    # ✅ Foizni yaxlitlab olamiz: 1 xonali aniqlikda
+    foiz_val = round_decimal(foiz_val, places=1)
 
     # Natijalarni saqlash
     save_value(report, report_items_map, O_AMALDA, chorak_sum)

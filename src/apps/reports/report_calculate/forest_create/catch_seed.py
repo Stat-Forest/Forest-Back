@@ -1,7 +1,8 @@
 from decimal import Decimal
-from apps.reports.models import Report, ReportItem, ReportItemInner
-from apps.reports.report_calculate.forest_create.seedlings_sprouts import normalize
+
 from apps.reports.services.get_two_numbers_in_percent import round_decimal
+from apps.reports.report_calculate.forest_create.seedlings_sprouts import normalize
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 
 def sum_values(item):
@@ -34,8 +35,6 @@ def calculate_catch_seed(report: Report):
     items_by_ordering = {item.statement_column.ordering: item for item in existing_items}
 
     # Yetishmayotgan columnlar uchun ReportItem larni yaratish
-    from apps.reports.models import StatementColumn
-
     columns = StatementColumn.objects.filter(
         statement=report.statement,
         ordering__in=relevant_orderings
@@ -74,5 +73,5 @@ def calculate_catch_seed(report: Report):
         foiz_item.inners.all().delete()
         ReportItemInner.objects.create(
             report_item=foiz_item,
-            value=round_decimal(foiz_value)
+            value=round_decimal(foiz_value, places=1)  # 1 o‘ringa qarab yaxlitlanadi
         )

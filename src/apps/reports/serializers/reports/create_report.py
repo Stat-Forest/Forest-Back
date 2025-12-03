@@ -163,7 +163,6 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             str(c.id): c
             for c in StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
         }
-
         reports_map = {}
         current_org_id = None
 

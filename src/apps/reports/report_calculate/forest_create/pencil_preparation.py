@@ -15,7 +15,7 @@ def calculate_make_pencil(report: Report):
     """
     4-ilova: Qalamchalar tayyorlash bo‘limi hisoboti
     1.1.2.2 = 1.1.3.1 + ... + 1.1.3.10
-    1.1.2.3 = (1.1.2.2 / 1.1.2.1) * 100
+    1.1.2.3 = (1.1.2.2 / 1.1.2.1) * 100  ← faqat .1 formatda bo‘ladi
     """
 
     ordering_reja = "1.1.2.1"
@@ -25,12 +25,10 @@ def calculate_make_pencil(report: Report):
 
     all_orderings = [ordering_reja, ordering_amalda, ordering_foiz] + tree_orderings
 
-    # Barcha kerakli StatementColumn lar
     columns = {
         col.ordering: col for col in report.statement.columns.filter(ordering__in=all_orderings)
     }
 
-    # Barcha mavjud ReportItem lar va ularning innerlari
     report_items = (
         ReportItem.objects
         .filter(report=report, statement_column__ordering__in=all_orderings)
@@ -39,25 +37,18 @@ def calculate_make_pencil(report: Report):
     )
     item_map = {item.statement_column.ordering: item for item in report_items}
 
-    # Qiymatlarni olish uchun yordamchi
     def get_value(ordering: str) -> Decimal:
         item = item_map.get(ordering)
         if not item:
             return Decimal(0)
         return sum(safe_decimal(inner.value) for inner in item.inners.all())
 
-    # Amalda = daraxt turlarining jami
     total_amalda = sum(get_value(ordering) for ordering in tree_orderings)
-
-    # Reja
     total_reja = get_value(ordering_reja)
 
-    # Foiz = (Amalda / Reja) * 100
     total_foiz = (total_amalda / total_reja * 100) if total_reja else Decimal(0)
+    total_foiz = round_decimal(total_foiz, places=1)  # faqat .1 formatda bo‘ladi
 
-    total_foiz = round_decimal(total_foiz, 2)
-
-    # Yozib qo‘yamiz
     def save_to_report(ordering: str, value: Decimal):
         column = columns.get(ordering)
         if not column:

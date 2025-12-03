@@ -38,7 +38,7 @@ calculators = {
     "Sog'liqni saqlash": calculate_save_healthy,
     "Здравоохранение": calculate_save_healthy,
     "Talim muassasalariga yetkazib berilgan ko'chatlar": calculate_education_seed,
-    "Рассада доставлена ​​в учебные заведения": calculate_education_seed,
+    "Рассада доставлена учебные заведения": calculate_education_seed,
     "Yashil makonga Ko'chat yetkazib berish": calculate_green_environment,
     "Доставка саженцев на зеленую зону": calculate_green_environment,
     "Terassa": calculate_terrassa_statement,

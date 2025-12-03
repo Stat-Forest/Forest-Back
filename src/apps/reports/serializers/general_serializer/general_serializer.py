@@ -100,15 +100,15 @@ class RegionalGeneralReportSerializer(serializers.ModelSerializer):
             return []
 
         lang = get_lang_code(self.context)
+        # Deadline cheklovisiz: barcha ACCEPTED individual reportlarni chiqaramiz
         children = Report.objects.filter(
             statement=report.statement,
-            deadline=report.deadline,
             is_general=False,
             is_individual_general=False,
             is_report=True,
             region=report.region,
             status=Report.StatusChoices.ACCEPTED
-        ).select_related(
+        ).order_by('-created_at').select_related(
             "organization", "statement", "sent_by", "sent_by_org"
         ).prefetch_related(
             "report_items__statement_column",
