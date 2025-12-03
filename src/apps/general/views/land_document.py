@@ -4,10 +4,11 @@ from apps.general.serializers.land_document import LandDocumentSerializer
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Land document"])
-class LandDocumentListCreateView(generics.ListCreateAPIView):
+class LandDocumentListCreateView(DRFHistoryMixin,generics.ListCreateAPIView):
     """
     GET -> list all LandDocuments
     POST -> create a new LandDocument
@@ -25,5 +26,3 @@ class LandDocumentListCreateView(generics.ListCreateAPIView):
 
     ordering_fields = ["date", "created_at"]
 
-    def perform_create(self, serializer):
-        serializer.save()

@@ -18,6 +18,7 @@ from apps.base.views import (
     CustomListAPIView,
     CustomCreateAPIView, CustomRetrieveAPIView, CustomUpdateAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
+from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(
@@ -106,7 +107,7 @@ class ReportListAPIView(CustomListAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportCreateAPIView(CustomCreateAPIView):
+class ReportCreateAPIView(DRFHistoryMixin,CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
     permission_classes = (CanCreateReport,)
@@ -126,7 +127,7 @@ class ReportCreateAPIView(CustomCreateAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportDeleteAPIView(CustomDestroyAPIView):
+class ReportDeleteAPIView(DRFHistoryMixin,CustomDestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
     permission_classes = (CanDeleteReport,)
@@ -149,7 +150,7 @@ class ReportRetrieveAPIView(CustomRetrieveAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportUpdateAPIView(CustomRetrieveUpdateAPIView):
+class ReportUpdateAPIView(DRFHistoryMixin,CustomRetrieveUpdateAPIView):
     queryset = Report.objects.select_related(
         'statement',
         'deadline__statement',
