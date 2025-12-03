@@ -19,6 +19,7 @@ ALLOWED_MODELS = [
     "CustomUser",
     "Deadline",
     "Statement",
+    "Plan",
     # "StatementColumn",
 ]
 
