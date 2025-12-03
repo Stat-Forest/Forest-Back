@@ -1,6 +1,9 @@
 from decimal import Decimal
 
 from apps.reports.models import Deadline
+from apps.reports.services.report_calculate_expressions import calculate_by_expressions
+from apps.reports.services.get_calculation_for_generals import calculate_general_report
+from apps.reports.services.normalize_utils import normalize
 
 
 def get_or_create_general_report(statement, deadline, region=None):
@@ -148,13 +151,7 @@ def get_or_create_national_report(statement, deadline, region=None):
     return national_report
 
 
-def normalize(value):
-    if value is None:
-        return Decimal(0)
-    try:
-        return Decimal(str(value))
-    except (ValueError, TypeError):
-        return Decimal(0)
+ 
 
 
 def aggregate_national_report(statement, deadline, region):
@@ -217,6 +214,17 @@ def aggregate_national_report(statement, deadline, region):
         new_inners.append(ReportItemInner(report_item=item, value=str(total)))
 
     ReportItemInner.objects.bulk_create(new_inners)
+
+    # 🔁 Yig'indi yozilgach, avval ALL_CALCULATORS bilan, bo'lmasa expression bilan qayta hisoblaymiz
+    try:
+        calculate_general_report(national_report)
+    except Exception as e:
+        print(f"⚠ National calculate_general_report error: {e}")
+    try:
+        if getattr(national_report.statement, 'calculate_expression', None):
+            calculate_by_expressions(national_report)
+    except Exception as e:
+        print(f"⚠ National calculate_by_expressions error: {e}")
 
     print(f"📊 {len(new_inners)} ta inner yozildi.")
 
@@ -301,5 +309,16 @@ def aggregate_general_report(statement, deadline, region):
         for item in created_items
     ]
     ReportItemInner.objects.bulk_create(all_inners)
+
+    # 🔁 Yig'indi yozilgach, avval ALL_CALCULATORS bilan, bo'lmasa expression bilan qayta hisoblaymiz
+    try:
+        calculate_general_report(general_report)
+    except Exception as e:
+        print(f"⚠ General calculate_general_report error: {e}")
+    try:
+        if getattr(general_report.statement, 'calculate_expression', None):
+            calculate_by_expressions(general_report)
+    except Exception as e:
+        print(f"⚠ General calculate_by_expressions error: {e}")
 
     return general_report
