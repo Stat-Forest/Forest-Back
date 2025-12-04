@@ -14,7 +14,7 @@ from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
-from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn, Plant
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.reports.services.individual_general_report import aggregate_individual_report
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
@@ -120,6 +120,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         return attrs
 
     def create(self, validated_data):
+        user = self.context["request"].user
         items_data = validated_data.pop("report_items")
         deadline_id = validated_data.get("deadline")
 
@@ -131,6 +132,27 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         report_inners_buffer = []
         reports_map = {}
         current_org = None
+
+        # ✅ Plant ID larni oldindan tekshirib olamiz (FK xatosi bo'lmasligi uchun)
+        plant_ids = set()
+        for item in items_data:
+            for inner in item.get("inners", []):
+                pid = inner.get("plant")
+                if pid:
+                    try:
+                        plant_ids.add(UUID(str(pid)))
+                    except Exception:
+                        raise serializers.ValidationError({
+                            "plant": f"Noto'g'ri plant ID formati: {pid}"
+                        })
+
+        if plant_ids:
+            existing = set(Plant.objects.filter(id__in=list(plant_ids)).values_list("id", flat=True))
+            missing = [str(pid) for pid in plant_ids if pid not in existing]
+            if missing:
+                raise serializers.ValidationError({
+                    "plant": f"Quyidagi plant ID(lar) topilmadi: {', '.join(missing)}"
+                })
 
         with transaction.atomic():
             for item in items_data:
