@@ -43,7 +43,7 @@ class PlanItem(AbstractBaseModel):
 
     plan_value = models.DecimalField(
         max_digits=30,
-        decimal_places=1,
+        decimal_places=2,
         default=Decimal("0.0")
     )
 
