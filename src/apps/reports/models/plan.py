@@ -39,7 +39,11 @@ class PlanItem(AbstractBaseModel):
         on_delete=models.CASCADE,
         related_name='plans',
     )
-    plan_value = models.PositiveIntegerField(default=0)
+    plan_value = models.DecimalField(
+        max_digits=5,  
+        decimal_places=1,
+        default=0
+    )
 
     class Meta:
         ordering = ('column',)
