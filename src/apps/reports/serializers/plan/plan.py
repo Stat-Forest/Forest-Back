@@ -6,6 +6,8 @@ from rest_framework import serializers
 from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
+from apps.logs.models import HistoryActionJournal
+
 
 # === Konstantalar ===
 MONTHS_BY_QUARTER = {
@@ -191,8 +193,15 @@ class PlanSerializer(serializers.ModelSerializer):
             organization=organization, statement=statement, year=year
         )
 
-        plan._history_user = user
-        plan.save()
+        # log create
+        HistoryActionJournal.objects.create(
+            user=user,
+            action='add',
+            model_name='Plan',
+            object_id=plan.id,
+            object_repr=str(plan),
+            change_message="Plan created" ,
+        )
 
         self._save_plan_items(plan, statement, items)
         return plan
@@ -213,8 +222,6 @@ class PlanSerializer(serializers.ModelSerializer):
 
         instance.year = validated_data.get("year", instance.year)
 
-        instance._history_user = user
-        instance.save()
 
         items = validated_data.get("plan_items", [])
         self._save_plan_items(instance, instance.statement, items)
