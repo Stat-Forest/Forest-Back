@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from apps.reports.models import Report, Plant
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer
+from apps.reports.serializers.plant.plant_report_delete import PlantReportDeleteSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 
@@ -81,3 +82,12 @@ class PlantDetailReportAPIView(CustomRetrieveAPIView):
         plant_qs = Plant.objects.only("id", "name")
         context["plant_map"] = {str(p.id): p.name for p in plant_qs}
         return context
+
+
+@extend_schema(tags=["Plant-Reports"])
+class PlantReportDeleteAPIView(APIView):
+    def delete(self, request):
+        serializer = PlantReportDeleteSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        result = serializer.delete()
+        return Response(result, status=200)

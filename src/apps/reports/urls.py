@@ -29,7 +29,7 @@ from apps.reports.views.dashboard import (
     DashboardStatListView,
 )
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
-    PlantDetailReportAPIView, PlantUpdateReportAPIView
+    PlantDetailReportAPIView, PlantUpdateReportAPIView, PlantReportDeleteAPIView
 
 from apps.reports.views.statement import (
     StatementListAPIView,
@@ -114,6 +114,7 @@ urlpatterns = [
     path("report-plant/<uuid:pk>/update", PlantUpdateReportAPIView.as_view(), name="plant-update"),
     path("report-plant/", PlantListReportAPIView.as_view(), name="plant-by-app"),
     path("report-plant/<uuid:pk>/", PlantDetailReportAPIView.as_view(), name="plant-by-app"),
+    path("report-plant/<uuid:pk>/delete", PlantReportDeleteAPIView.as_view(), name="plant-delete"),
 
     # ====================  EXPORT URL =================
     # path("export-excel/", ReportExcelExportAPIView.as_view(), name="export-excel"),
