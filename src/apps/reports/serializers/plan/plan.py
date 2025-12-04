@@ -6,7 +6,6 @@ from rest_framework import serializers
 from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
-from apps.logs.models import HistoryActionJournal
 
 
 # === Konstantalar ===
@@ -193,16 +192,6 @@ class PlanSerializer(serializers.ModelSerializer):
             organization=organization, statement=statement, year=year
         )
 
-        # log create
-        HistoryActionJournal.objects.create(
-            user=user,
-            action='add',
-            model_name='Plan',
-            object_id=plan.id,
-            object_repr=str(plan),
-            change_message="Plan created" ,
-        )
-
         self._save_plan_items(plan, statement, items)
         return plan
 
@@ -211,7 +200,6 @@ class PlanSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         request = self.context.get("request")
-        user = getattr(request, "user", None)
 
         validated_data.pop("statement", None)
 
