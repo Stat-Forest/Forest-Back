@@ -20,6 +20,9 @@ def calculate_seed_movement_plan(report: Report):
     Urug‘ xarakati (plant-based) uchun:
     Reja (1.1.2.1), Amalda (1.1.2.2) → Foiz (1.1.2.3)
     """
+    print("🔍 calculate_seed_movement_plan STARTED")
+    print(f"📄 Report ID: {report.id} | Statement: {report.statement}")
+
     ordering_map = {
         "REJA": "1.1.2.1",
         "AMALDA": "1.1.2.2",
@@ -33,27 +36,30 @@ def calculate_seed_movement_plan(report: Report):
         .select_related("statement_column")
         .prefetch_related("inners")
     )
+    print(f"🔎 Fetched ReportItems: {len(report_items)}")
+
     report_item_map = {
         item.statement_column.ordering: item
         for item in report_items
     }
 
-    # 🔢 Har bir ordering uchun plant_id → value mapping
     def get_plant_value_map(ordering: str) -> dict[UUID, Decimal]:
         item = report_item_map.get(ordering)
         if not item:
+            print(f"⚠️ ReportItem not found for ordering {ordering}")
             return {}
         totals = defaultdict(Decimal)
         for inner in item.inners.all():
             if inner.plant_id:
                 totals[inner.plant_id] += normalize(inner.value)
+        print(f"✅ Plant values for ordering {ordering}: {dict(totals)}")
         return totals
 
     reja_map = get_plant_value_map(ordering_map["REJA"])
     amalda_map = get_plant_value_map(ordering_map["AMALDA"])
 
-    # 🔁 Ketma-ketlikni saqlaymiz: agar reja bo‘lmasa fallback = amalda
     plant_order = list(reja_map.keys()) or list(amalda_map.keys())
+    print(f"🧬 plant_order: {plant_order}")
 
     # 📈 Foiz = (amalda / reja) * 100
     foiz_map = defaultdict(Decimal)
@@ -62,16 +68,17 @@ def calculate_seed_movement_plan(report: Report):
         amalda_val = amalda_map.get(pid, Decimal("0"))
         foiz = (amalda_val / reja_val * 100) if reja_val else Decimal("0")
         foiz_map[pid] = round_decimal(foiz)
+    print(f"📊 Calculated FOIZ map: {foiz_map}")
 
-    # 🧩 Foiz ustunini topamiz
     foiz_col = StatementColumn.objects.filter(
         statement=report.statement,
         ordering=ordering_map["FOIZ"]
     ).first()
-    if not foiz_col:
-        return  # Ustun mavjud emas → chiqamiz
 
-    # 📝 Foiz uchun ReportItem (yo‘q bo‘lsa yaratamiz)
+    if not foiz_col:
+        print("❌ FOIZ column not found → exiting early.")
+        return
+
     foiz_item = report_item_map.get(ordering_map["FOIZ"])
     if not foiz_item:
         foiz_item = ReportItem.objects.create(
@@ -79,8 +86,8 @@ def calculate_seed_movement_plan(report: Report):
             statement_column=foiz_col
         )
         report_item_map[ordering_map["FOIZ"]] = foiz_item
+        print("🆕 Created new ReportItem for FOIZ")
 
-    # 🧠 Eski qiymatlar cache
     old_values = {
         inner.plant_id: normalize(inner.value)
         for inner in foiz_item.inners.all()
@@ -92,7 +99,6 @@ def calculate_seed_movement_plan(report: Report):
         if inner.plant_id
     }
 
-    # 📦 Yaratish va yangilash bufferlari
     create_buffer = []
     update_buffer = []
 
@@ -106,6 +112,7 @@ def calculate_seed_movement_plan(report: Report):
                 plant_id=plant_id,
                 value=str(new_val)
             ))
+            print(f"➕ Create: {plant_id} = {new_val}")
         elif old_val != new_val:
             update_buffer.append(ReportItemInner(
                 id=id_map[plant_id],
@@ -113,10 +120,16 @@ def calculate_seed_movement_plan(report: Report):
                 plant_id=plant_id,
                 value=str(new_val)
             ))
+            print(f"🔁 Update: {plant_id} | Old: {old_val} → New: {new_val}")
+        else:
+            print(f"⏩ Skip: {plant_id} | Value unchanged.")
 
-    # 💾 Saqlaymiz
     if create_buffer:
         ReportItemInner.objects.bulk_create(create_buffer)
+        print(f"💾 bulk_create done → {len(create_buffer)} items")
 
     if update_buffer:
         ReportItemInner.objects.bulk_update(update_buffer, ["value"])
+        print(f"💾 bulk_update done → {len(update_buffer)} items")
+
+    print("✅ calculate_seed_movement_plan FINISHED")
