@@ -6,6 +6,8 @@ from rest_framework import serializers
 from apps.general.models import Organization
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
+from apps.logs.models import HistoryActionJournal
+
 
 # === Konstantalar ===
 MONTHS_BY_QUARTER = {
@@ -69,14 +71,14 @@ class PlanSerializer(serializers.ModelSerializer):
         fields = ["id", "organization", "organization_id","statement","statement_id", "year", "plan_items"]
         read_only_fields = ["statement",'statement_id']
 
-    def validate_year(self, value):
-        from django.utils import timezone
-        current_year = timezone.now().year
-        if value < 2024 or value > current_year:
-            raise CustomExceptionError(
-                400, {"year": _("Year must be between 2024 and current year.")}
-            )
-        return value
+    # def validate_year(self, value):
+    #     from django.utils import timezone
+    #     current_year = timezone.now().year
+    #     if value < 2024 or value > current_year:
+    #         raise CustomExceptionError(
+    #             400, {"year": _("Year must be between 2024 and current year.")}
+    #         )
+    #     return value
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get("statement"):
@@ -183,9 +185,21 @@ class PlanSerializer(serializers.ModelSerializer):
         year = validated_data["year"]
         items = validated_data["plan_items"]
 
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
         plan, _ = Plan.objects.get_or_create(
             organization=organization, statement=statement, year=year
         )
+
+        HistoryActionJournal.objects.create(
+            user=user,
+            action='add' ,
+            model_name='Plan',
+            object_repr=str(plan),
+            change_message="Reja yaratildi",
+        )
+
         self._save_plan_items(plan, statement, items)
         return plan
 
@@ -196,7 +210,7 @@ class PlanSerializer(serializers.ModelSerializer):
             instance.organization = Organization.objects.get(
                 id=validated_data["organization"]
             )
-        instance.year = validated_data.get("year", instance.year)
+        # instance.year = validated_data.get("year", instance.year)
         instance.save()
 
         items = validated_data.get("plan_items", [])
