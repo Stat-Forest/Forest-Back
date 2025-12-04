@@ -207,6 +207,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             created_by=user
                         )
 
+                        #added log report create
+                        report._history_user = user
+                        report.save()
+
                     reports_map[report_key] = report
 
                     report_item_id = uuid.uuid4()
