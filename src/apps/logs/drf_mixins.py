@@ -6,7 +6,6 @@ class DRFHistoryMixin:
     def perform_create(self, serializer):
         obj = serializer.save()
         obj._history_user = self.request.user
-        # update_fields=[] => DBga update qilmaydi, faqat instance ga qo‘shadi
         obj.save(update_fields=[])
         return obj
 
