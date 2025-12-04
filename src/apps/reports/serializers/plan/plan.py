@@ -8,7 +8,6 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Plan, PlanItem, Statement, StatementColumn
 from apps.logs.models import HistoryActionJournal
 
-
 # === Konstantalar ===
 MONTHS_BY_QUARTER = {
     StatementColumn.PlanStatus.CHORAK_1: [
@@ -194,10 +193,10 @@ class PlanSerializer(serializers.ModelSerializer):
 
         HistoryActionJournal.objects.create(
             user=user,
-            action='add' ,
+            action='add' if _ else 'change',
             model_name='Plan',
             object_repr=str(plan),
-            change_message="Reja yaratildi",
+            change_message="Plan created" if _ else "Plan updated",
         )
 
         self._save_plan_items(plan, statement, items)
