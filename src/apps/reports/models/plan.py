@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 
@@ -39,7 +40,12 @@ class PlanItem(AbstractBaseModel):
         on_delete=models.CASCADE,
         related_name='plans',
     )
-    plan_value = models.PositiveIntegerField(default=0)
+
+    plan_value = models.DecimalField(
+        max_digits=30,
+        decimal_places=2,
+        default=Decimal("0.0")
+    )
 
     class Meta:
         ordering = ('column',)

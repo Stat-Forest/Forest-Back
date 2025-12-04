@@ -16,6 +16,8 @@ from apps.utils.translation import get_lang_code, get_translated_field
 from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
+from apps.logs.models import HistoryActionJournal
+
 
 
 class ReportItemInnerSerializer(serializers.ModelSerializer):
@@ -205,6 +207,15 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             region=org_instance.region,
                             status=Report.StatusChoices.SAVED,
                             created_by=user
+                        )
+
+                        HistoryActionJournal.objects.create(
+                            user=user,
+                            action='add',
+                            model_name='Report',
+                            object_id=report.id,
+                            object_repr=str(report),
+                            change_message="Hisobat yaraladi",
                         )
 
                     reports_map[report_key] = report
