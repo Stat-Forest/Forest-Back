@@ -3,7 +3,6 @@ from django.core.validators import MinValueValidator
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.base.models import AbstractBaseModel
-from decimal import Decimal
 
 
 class Plan(AbstractBaseModel):
@@ -40,11 +39,7 @@ class PlanItem(AbstractBaseModel):
         on_delete=models.CASCADE,
         related_name='plans',
     )
-    plan_value = models.DecimalField(
-        max_digits=30,
-        decimal_places=1,
-        default=Decimal("0.0")
-    )
+    plan_value = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ('column',)
