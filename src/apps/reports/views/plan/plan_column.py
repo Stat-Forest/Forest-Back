@@ -51,12 +51,6 @@ class SplitPart(Func):
 class PlanStatementColumnListAPIView(CustomListAPIView):
     """
     API endpoint for listing StatementColumns related to Plan.
-
-    Features:
-    - Applies base filters (must have parent and status).
-    - Restricts by user's statement if available.
-    - Prioritizes statuses (monthly → quarterly → yearly → yearly total).
-    - Orders results numerically by extracting last part of "ordering".
     """
     pagination_class = None
     serializer_class = PlanColumnSerializer
@@ -73,14 +67,33 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
 
         queryset = queryset.filter(base_filter)
 
+        # Extract existing statuses
         existing_statuses = set(queryset.values_list("status_plan", flat=True))
 
+        # ------------------------------
+        # NEW LOGIC:
+        # If YILLIK_1 or YILLIK_2 exists → YILLIK_3 MUST NOT APPEAR
+        # ------------------------------
+        y1 = "yillik_1"
+        y2 = "yillik_2"
+        y3 = "yillik_3"
+
+        if y1 in existing_statuses or y2 in existing_statuses:
+            filtered_yearly = [y1, y2]
+        else:
+            filtered_yearly = YEARLY_STATUSES
+        # ------------------------------
+
+        # PRIORITY HANDLING
         if existing_statuses.intersection(MONTHLY_STATUSES):
             queryset = queryset.filter(status_plan__in=MONTHLY_STATUSES)
+
         elif existing_statuses.intersection(QUARTERLY_STATUSES):
             queryset = queryset.filter(status_plan__in=QUARTERLY_STATUSES)
+
         elif existing_statuses.intersection(YEARLY_STATUSES):
-            queryset = queryset.filter(status_plan__in=YEARLY_STATUSES)
+            queryset = queryset.filter(status_plan__in=filtered_yearly)
+
         elif existing_statuses.intersection(YEARLY_TOTAL_STATUSES):
             queryset = queryset.filter(status_plan__in=YEARLY_TOTAL_STATUSES)
 
