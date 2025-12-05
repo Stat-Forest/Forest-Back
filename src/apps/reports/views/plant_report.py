@@ -10,8 +10,9 @@ from apps.reports.serializers.plant.plant_report_delete import PlantReportDelete
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 
+
 @extend_schema(tags=["Plant-Reports"])
-class UniversalPlantReportCreateAPIView(DRFHistoryMixin,APIView):
+class UniversalPlantReportCreateAPIView(DRFHistoryMixin, APIView):
     def post(self, request):
         serializer = UniversalPlantReportCreateSerializer(
             data=request.data,
@@ -61,7 +62,7 @@ class PlantListReportAPIView(CustomListAPIView):
 
 
 @extend_schema(tags=["Plant-Reports"])
-class PlantUpdateReportAPIView(DRFHistoryMixin,CustomUpdateAPIView):
+class PlantUpdateReportAPIView(DRFHistoryMixin, CustomUpdateAPIView):
     serializer_class = PlantReportUpdateSerializer
     queryset = Report.objects.filter(is_plant_based=True, is_report=True)
 
@@ -71,7 +72,7 @@ class PlantDetailReportAPIView(CustomRetrieveAPIView):
     queryset = Report.objects.filter(is_plant_based=True).select_related(
         "organization", "statement", "deadline"
     ).prefetch_related("report_items__statement_column__parent",
-        "report_items__inners__plant")
+                       "report_items__inners__plant")
 
     serializer_class = PlantReportListSerializer
 
@@ -86,8 +87,11 @@ class PlantDetailReportAPIView(CustomRetrieveAPIView):
 
 @extend_schema(tags=["Plant-Reports"])
 class PlantReportDeleteAPIView(APIView):
-    def delete(self, request):
-        serializer = PlantReportDeleteSerializer(data=request.data, context={"request": request})
+    def delete(self, request, pk):
+        serializer = PlantReportDeleteSerializer(
+            data={"report_id": pk},
+            context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         result = serializer.delete()
         return Response(result, status=200)
