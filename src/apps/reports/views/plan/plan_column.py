@@ -70,19 +70,20 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
         # Extract existing statuses
         existing_statuses = set(queryset.values_list("status_plan", flat=True))
 
-        # ------------------------------
-        # NEW LOGIC:
-        # If YILLIK_1 or YILLIK_2 exists → YILLIK_3 MUST NOT APPEAR
-        # ------------------------------
-        y1 = "yillik_1"
-        y2 = "yillik_2"
-        y3 = "yillik_3"
+        # ---------------------------------------------------------
+        # YILLIK_1, YILLIK_2 → YILLIK_3 ni CHIQARMASLIK (faqat 3 tasi uchun)
+        # LEKIN oddiy YILLIK (status_plan="yillik") chiqishi shart!
+        # ---------------------------------------------------------
+        Y1 = "yillik_1"
+        Y2 = "yillik_2"
+        Y3 = "yillik_3"
 
-        if y1 in existing_statuses or y2 in existing_statuses:
-            filtered_yearly = [y1, y2]
+        # Agar yig'indiyilliklar bor bo'lsa → faqat y1, y2 chiqsin, y3 chiqmasin
+        if Y1 in existing_statuses or Y2 in existing_statuses:
+            filtered_yearly_statuses = {Y1, Y2, "yillik"}  # oddiy YILLIK qoldiriladi!
         else:
-            filtered_yearly = YEARLY_STATUSES
-        # ------------------------------
+            filtered_yearly_statuses = YEARLY_STATUSES
+        # ---------------------------------------------------------
 
         # PRIORITY HANDLING
         if existing_statuses.intersection(MONTHLY_STATUSES):
@@ -92,12 +93,12 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
             queryset = queryset.filter(status_plan__in=QUARTERLY_STATUSES)
 
         elif existing_statuses.intersection(YEARLY_STATUSES):
-            queryset = queryset.filter(status_plan__in=filtered_yearly)
+            queryset = queryset.filter(status_plan__in=filtered_yearly_statuses)
 
         elif existing_statuses.intersection(YEARLY_TOTAL_STATUSES):
             queryset = queryset.filter(status_plan__in=YEARLY_TOTAL_STATUSES)
 
-        # Build parent full title for alphabetical sorting
+        # Build parent full title
         queryset = queryset.annotate(
             parent_full_title=Concat(
                 'parent__parent__parent__parent__parent__title_uz', Value(' - '),
