@@ -62,7 +62,18 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
 
         # ✅ Deadline vaqt validatsiyasi
         if statement.period == PeriodChoices.KUNLIK:
-            report_day = date.fromisoformat(submit_at)
+            try:
+                parts = submit_at.split("-")
+                year = int(parts[0])
+                month = int(parts[1])
+                day = int(parts[2])
+                report_day = date(year, month, day)
+            except Exception:
+                raise ValidationError({"submit_at": "Noto‘g‘ri sana formati. YYYY-MM-DD bo‘lishi kerak."})
+
+            if report_day >= today:
+                raise ValidationError({'submit_at': 'Faqat o‘tgan kunlar uchun topshirish mumkin.'})
+
             if report_day >= today:
                 raise ValidationError({'submit_at': 'Faqat o‘tgan kunlar uchun topshirish mumkin.'})
 
@@ -192,6 +203,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                             region=current_org.region,
                             status=Report.StatusChoices.SAVED,
                             is_plant_based=True,
+                            created_by=user
                         )
                         reports_map[report_key] = report
 
@@ -232,6 +244,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                         region=current_org.region,
                         status=Report.StatusChoices.SAVED,
                         is_plant_based=True,
+                        created_by=user
                     )
                     reports_map[report_key] = report
 
