@@ -203,6 +203,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                             region=current_org.region,
                             status=Report.StatusChoices.SAVED,
                             is_plant_based=True,
+                            created_by=user
                         )
                         reports_map[report_key] = report
 
@@ -243,6 +244,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                         region=current_org.region,
                         status=Report.StatusChoices.SAVED,
                         is_plant_based=True,
+                        created_by=user
                     )
                     reports_map[report_key] = report
 
