@@ -170,6 +170,23 @@ class PlanSerializer(serializers.ModelSerializer):
                 defaults={"plan_value": total_y3}
             )
 
+            # ============================================================
+            # NEW: YILLIK_TOTAL = Y1 + Y2 (DO NOT ADD Y3)
+            # ============================================================
+            yearly_total_col = StatementColumn.objects.filter(
+                statement=statement,
+                status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+            ).first()
+
+            if yearly_total_col:
+                yil_total_value = yil_values["y1"] + yil_values["y2"]  # Y3 qo‘shilmaydi
+
+                PlanItem.objects.update_or_create(
+                    plan=plan,
+                    column=yearly_total_col,
+                    defaults={"plan_value": yil_total_value}
+                )
+
         # ============================================================
         # OLD MONTHLY → QUARTER → YEARLY logic stays same
         # ============================================================
