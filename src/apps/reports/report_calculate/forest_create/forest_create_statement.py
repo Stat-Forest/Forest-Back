@@ -1,12 +1,10 @@
 from decimal import Decimal, InvalidOperation
 
 from apps.reports.models import Report, ReportItem, ReportItemInner
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
 def normalize_decimal(value) -> Decimal:
-    """
-    Xatoliklar chiqmasligi uchun xavfsiz Decimal convertor.
-    """
     try:
         if value is None or value == "":
             return Decimal(0)
@@ -15,74 +13,67 @@ def normalize_decimal(value) -> Decimal:
         return Decimal(0)
 
 
-def create_calculated_items(report: Report, column, value: Decimal):
-    item, _ = ReportItem.objects.get_or_create(
-        report=report,
-        statement_column=column
-    )
-    ReportItemInner.objects.update_or_create(
-        report_item=item,
-        defaults={"value": str(value)}
-    )
-
-
 def calculate_forest_statement(report: Report):
-    ordering_map = {
+    ordering = {
         "JAMI_REJA": "1.1.2.1",
         "JAMI_AMALDA": "1.1.2.2",
         "JAMI_FOIZ": "1.1.2.3",
 
-        "JAMI_YONGOQ_AMALDA": "1.1.7",
-        "YONGOQ_AMALDA_LIST": ["1.1.8.1", "1.1.8.2", "1.1.8.3"],
+        "ODDIY_1_AMALDA": "1.1.3.2",
+        "ODDIY_2_AMALDA": "1.1.4.2",
 
-        "JAMI_TEZ_OSUVCHILAR_REJA": "1.1.9.1",
-        "JAMI_TEZ_OSUVCHILAR_AMALDA": "1.1.9.2",
-        "JAMI_TEZ_OSUVCHILAR_FOIZ": "1.1.9.3",
-        "TEZ_OSUVCHILAR_AMALDA_LIST": [
-            "1.1.10.1", "1.1.10.2", "1.1.10.3", "1.1.10.4",
-            "1.1.10.5", "1.1.10.6", "1.1.10.7"
+        "ODDIY_1_SRC": ["1.1.5.2", "1.1.6.2"],
+
+        "YONGOQ_JAMI": "1.1.7",
+        "YONGOQ_SRC": ["1.1.8.1", "1.1.8.2", "1.1.8.3"],
+
+        "TEZ_OSUV_JAMI_AMALDA": "1.1.9.2",
+        "TEZ_OSUV_JAMI_REJA": "1.1.9.1",
+        "TEZ_OSUV_JAMI_FOIZ": "1.1.9.3",
+        "TEZ_OSUV_SRC": [
+            "1.1.10.1", "1.1.10.2", "1.1.10.3",
+            "1.1.10.4", "1.1.10.5", "1.1.10.6", "1.1.10.7"
         ],
 
-        "TABIIY_TIKLANISH_AMALDA": "1.1.11",
-        "TABIIY_TIKLANISH_AMALDA_2": "1.1.11.2",
-
-        "ODDIY_BO_LIMLAR_AMALDA_LIST": [
-            "1.1.3.2", "1.1.4.2", "1.1.5.2", "1.1.6.2"
-        ]
+        "TABIIY_TIKLANISH": "1.1.11.2",
     }
 
+    # --- load columns ---
     columns_by_ordering = {
         col.ordering: col for col in report.statement.columns.all()
     }
 
+    # --- load existing values ---
     report_items = (
         ReportItem.objects.filter(report=report)
         .select_related("statement_column")
         .prefetch_related("inners")
     )
 
-    column_value_map = {}
     existing_items = {}
+    column_value_map = {}
+
     for item in report_items:
-        ordering = item.statement_column.ordering
-        existing_items[ordering] = item
+        ord_ = item.statement_column.ordering
+        existing_items[ord_] = item
         total = sum(normalize_decimal(inner.value) for inner in item.inners.all())
-        column_value_map[ordering] = total
+        column_value_map[ord_] = total
 
     def get_sum(orderings):
         if isinstance(orderings, str):
             orderings = [orderings]
         return sum(column_value_map.get(o, Decimal(0)) for o in orderings)
 
-    def save_value(ordering: str, value: Decimal):
-        column = columns_by_ordering.get(ordering)
+    def save_value(ord_, value: Decimal):
+        column = columns_by_ordering.get(ord_)
         if not column:
             return
-        item = existing_items.get(ordering)
+        item = existing_items.get(ord_)
+
         if item:
             inner = item.inners.first()
             if inner:
-                if Decimal(str(inner.value or 0)) != value:
+                if Decimal(inner.value or 0) != value:
                     inner.value = str(value)
                     inner.save(update_fields=["value"])
             else:
@@ -90,36 +81,49 @@ def calculate_forest_statement(report: Report):
         else:
             new_item = ReportItem.objects.create(report=report, statement_column=column)
             ReportItemInner.objects.create(report_item=new_item, value=str(value))
-            existing_items[ordering] = new_item
+            existing_items[ord_] = new_item
 
-    def calc_foiz(reja_ord, amalda_val, foiz_ord):
-        reja_val = column_value_map.get(reja_ord, Decimal(0))
-        foiz = (amalda_val / reja_val * 100) if reja_val else Decimal(0)
-        save_value(foiz_ord, foiz)
+    # ------------------------------------------
+    # 1) 1.1.3.2 = 1.1.5.2 + 1.1.6.2
+    # ------------------------------------------
+    oddiy_1 = get_sum(ordering["ODDIY_1_SRC"])
+    save_value(ordering["ODDIY_1_AMALDA"], oddiy_1)
 
-    # 1️⃣ YONGOQ
-    yongoq_amalda = get_sum(ordering_map["YONGOQ_AMALDA_LIST"])
-    save_value(ordering_map["JAMI_YONGOQ_AMALDA"], yongoq_amalda)
+    # ------------------------------------------
+    # 2) 1.1.7 = 1.1.8.1 + 1.1.8.2 + 1.1.8.3
+    # ------------------------------------------
+    yongoq = get_sum(ordering["YONGOQ_SRC"])
+    save_value(ordering["YONGOQ_JAMI"], yongoq)
 
-    # 2️⃣ TEZ O'SUVCHILAR
-    tez_osuvchilar_amalda = get_sum(ordering_map["TEZ_OSUVCHILAR_AMALDA_LIST"])
-    save_value(ordering_map["JAMI_TEZ_OSUVCHILAR_AMALDA"], tez_osuvchilar_amalda)
+    # ------------------------------------------
+    # 3) 1.1.9.2 = sum(1.1.10.x)
+    # ------------------------------------------
+    tez_osuv = get_sum(ordering["TEZ_OSUV_SRC"])
+    save_value(ordering["TEZ_OSUV_JAMI_AMALDA"], tez_osuv)
 
-    # 3️⃣ ODDIY BO'LIMLAR
-    oddiy_amalda = get_sum(ordering_map["ODDIY_BO_LIMLAR_AMALDA_LIST"])
+    # 1.1.9.3 foiz = 1.1.9.2 / 1.1.9.1 * 100
+    reja_tez = column_value_map.get(ordering["TEZ_OSUV_JAMI_REJA"], Decimal(0))
+    foiz_tez = (tez_osuv / reja_tez * 100) if reja_tez else Decimal(0)
+    foiz_tez = round_decimal(foiz_tez, 1)  # <-- YANGI
+    save_value(ordering["TEZ_OSUV_JAMI_FOIZ"], foiz_tez)
 
-    # 4️⃣ TABIIY TIKLANISH (1.1.11.2)
-    tabiiy_tiklanish_amalda = column_value_map.get(ordering_map["TABIIY_TIKLANISH_AMALDA_2"], Decimal(0))
-
-    # 5️⃣ JAMI AMALDA: 1.1.2.2 = oddiy + yongoq + tez_osuvchi + tabiiy_tiklanish
+    # ------------------------------------------
+    # 4) 1.1.2.2 = 1.1.3.2 + 1.1.4.2 + 1.1.7 + 1.1.9.2 + 1.1.11.2
+    # ------------------------------------------
     jami_amalda = (
-        oddiy_amalda +
-        yongoq_amalda +
-        tez_osuvchilar_amalda +
-        tabiiy_tiklanish_amalda
+        oddiy_1 +
+        column_value_map.get(ordering["ODDIY_2_AMALDA"], Decimal(0)) +
+        yongoq +
+        tez_osuv +
+        column_value_map.get(ordering["TABIIY_TIKLANISH"], Decimal(0))
     )
-    save_value(ordering_map["JAMI_AMALDA"], jami_amalda)
+    save_value(ordering["JAMI_AMALDA"], jami_amalda)
 
-    # 6️⃣ Foizlar
-    calc_foiz(ordering_map["JAMI_REJA"], jami_amalda, ordering_map["JAMI_FOIZ"])
-    calc_foiz(ordering_map["JAMI_TEZ_OSUVCHILAR_REJA"], tez_osuvchilar_amalda, ordering_map["JAMI_TEZ_OSUVCHILAR_FOIZ"])
+    # ------------------------------------------
+    # 5) 1.1.2.3 = 1.1.2.2 / 1.1.2.1 * 100
+    # ------------------------------------------
+    jami_reja = column_value_map.get(ordering["JAMI_REJA"], Decimal(0))
+    jami_foiz = (jami_amalda / jami_reja * 100) if jami_reja else Decimal(0)
+    jami_foiz = round_decimal(jami_foiz, 1)  # <-- YANGI
+    save_value(ordering["JAMI_FOIZ"], jami_foiz)
+
