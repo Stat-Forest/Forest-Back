@@ -11,4 +11,4 @@ class Notification(AbstractBaseModel):
         ordering = ["-date"]
 
     def __str__(self):
-        return self.text[:50]  
+        return self.text[:50]
