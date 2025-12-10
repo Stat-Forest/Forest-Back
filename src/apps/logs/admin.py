@@ -36,7 +36,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
     def user_organization(self, obj):
         """Userning organizationini chiqaradi"""
         if obj.user and obj.user.organization:
-            return obj.user.organization.name
+            return obj.user.organization.name_uz
         return "-"
 
     user_organization.short_description = "Organization"
