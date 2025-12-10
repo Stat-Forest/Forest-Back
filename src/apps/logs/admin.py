@@ -17,7 +17,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         'created_at',
     )
 
-    actions = ["export_as_excel"]  # <-- Excel export action
+    actions = ["export_as_excel", "export_all_as_excel"]
 
     def user_organization(self, obj):
         if obj.user and obj.user.organization:
@@ -25,10 +25,10 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         return "-"
     user_organization.short_description = "Organization"
 
-    # ============================
-    #   📌 EXCEL EXPORT FUNCTION
-    # ============================
-    def export_as_excel(self, request, queryset):
+    # -----------------------------------------
+    #   📌 COMMON FUNCTION — Excel creator
+    # -----------------------------------------
+    def _create_excel_response(self, rows):
         wb = Workbook()
         ws = wb.active
         ws.title = "History Export"
@@ -46,8 +46,8 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         ws.append(columns)
 
         # Rows
-        for obj in queryset:
-            row = [
+        for obj in rows:
+            ws.append([
                 obj.user.email if obj.user else "-",
                 obj.user.organization.name_uz if (obj.user and obj.user.organization) else "-",
                 obj.action,
@@ -55,19 +55,33 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
                 obj.object_repr,
                 obj.change_message,
                 obj.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            ]
-            ws.append(row)
+            ])
 
-        # Response
+        # Prepare response
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response['Content-Disposition'] = 'attachment; filename=history_export.xlsx'
+        response["Content-Disposition"] = "attachment; filename=history_export.xlsx"
         wb.save(response)
 
         return response
 
+    # -----------------------------------------
+    #   📌 ACTION 1: Export selected rows
+    # -----------------------------------------
+    def export_as_excel(self, request, queryset):
+        return self._create_excel_response(queryset)
+
     export_as_excel.short_description = "Export selected to Excel"
+
+    # -----------------------------------------
+    #   📌 ACTION 2: Export ALL rows
+    # -----------------------------------------
+    def export_all_as_excel(self, request, queryset):
+        all_rows = HistoryActionJournal.objects.all()
+        return self._create_excel_response(all_rows)
+
+    export_all_as_excel.short_description = "Export ALL logs to Excel"
 
     # ---- permissions ----
     def has_add_permission(self, request):
