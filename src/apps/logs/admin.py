@@ -48,7 +48,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         # Rows
         for obj in queryset:
             row = [
-                obj.user.username if obj.user else "-",
+                obj.user.full_name if obj.user else "-",
                 obj.user.organization.name_uz if (obj.user and obj.user.organization) else "-",
                 obj.action,
                 obj.model_name,
