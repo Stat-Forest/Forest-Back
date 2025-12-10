@@ -1,3 +1,5 @@
+from django.urls import path
+from django.shortcuts import redirect
 from django.contrib import admin
 from openpyxl import Workbook
 from django.http import HttpResponse
@@ -17,7 +19,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         'created_at',
     )
 
-    actions = ["export_as_excel", "export_all_as_excel"]
+    actions = ["export_as_excel"]
 
     def user_organization(self, obj):
         if obj.user and obj.user.organization:
@@ -25,15 +27,12 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         return "-"
     user_organization.short_description = "Organization"
 
-    # -----------------------------------------
-    #   📌 COMMON FUNCTION — Excel creator
-    # -----------------------------------------
-    def _create_excel_response(self, rows):
+    # -------- EXCEL CREATOR GENERAL FUNCTION ----------
+    def _create_excel_response(self, rows, filename="history_export.xlsx"):
         wb = Workbook()
         ws = wb.active
         ws.title = "History Export"
 
-        # Header
         columns = [
             "User",
             "Organization",
@@ -45,7 +44,6 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         ]
         ws.append(columns)
 
-        # Rows
         for obj in rows:
             ws.append([
                 obj.user.email if obj.user else "-",
@@ -57,41 +55,36 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
                 obj.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             ])
 
-        # Prepare response
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response["Content-Disposition"] = "attachment; filename=history_export.xlsx"
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         wb.save(response)
-
         return response
 
-    # -----------------------------------------
-    #   📌 ACTION 1: Export selected rows
-    # -----------------------------------------
+    # -------- ACTION: Export SELECTED ----------
     def export_as_excel(self, request, queryset):
         return self._create_excel_response(queryset)
-
     export_as_excel.short_description = "Export selected to Excel"
 
-    # -----------------------------------------
-    #   📌 ACTION 2: Export ALL rows
-    # -----------------------------------------
-    def export_all_as_excel(self, request, queryset):
-        all_rows = HistoryActionJournal.objects.all()
-        return self._create_excel_response(all_rows)
+    # -------- CUSTOM URL for Export ALL ----------
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "export-all/",
+                self.admin_site.admin_view(self.export_all_logs),
+                name="history_export_all",
+            ),
+        ]
+        return custom_urls + urls
 
-    export_all_as_excel.short_description = "Export ALL logs to Excel"
+    def export_all_logs(self, request):
+        rows = HistoryActionJournal.objects.all()
+        return self._create_excel_response(rows, filename="all_history_logs.xlsx")
 
-    # ---- permissions ----
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_view_permission(self, request, obj=None):
-        return True
+    # -------- BUTTON IN ADMIN LIST PAGE ----------
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["export_all_url"] = "export-all/"
+        return super().changelist_view(request, extra_context=extra_context)

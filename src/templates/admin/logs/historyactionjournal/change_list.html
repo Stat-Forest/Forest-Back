@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+    <div style="margin-right: 15px;">
+        <a class="button" href="{{ export_all_url }}">Export ALL logs</a>
+    </div>
+    {{ block.super }}
+{% endblock %}
