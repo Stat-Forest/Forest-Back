@@ -87,9 +87,8 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         extra_context["export_all_url"] = "export-all/"
-        return super().changelist_view(request, extra_context=extra_context)4
+        return super().changelist_view(request, extra_context=extra_context)
 
-        
     # ---- permissions ----
     def has_add_permission(self, request):
         return False
@@ -102,3 +101,5 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return True
+
+
