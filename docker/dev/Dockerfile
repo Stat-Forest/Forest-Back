@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     gettext \
     && rm -rf /var/lib/apt/lists/*
 
+# LOG folder required by Django
+RUN mkdir -p /var/log/forest-back/
+
 COPY docker/dev/wait-for-it.sh /wait-for-it.sh
 COPY docker/dev/entrypoint.sh /entrypoint.sh
 RUN chmod +x /wait-for-it.sh /entrypoint.sh

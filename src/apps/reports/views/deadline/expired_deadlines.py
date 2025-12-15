@@ -1,10 +1,13 @@
 from datetime import date
 from rest_framework import generics
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
 
-from apps.reports.models import Deadline
-from apps.reports.serializers.deadline.expired_deadlines import DeadlineExpiredSerializer
+from apps.reports.models import Deadline, Report
+from apps.reports.serializers.deadline.expired_deadlines import (
+    DeadlineExpiredSerializer
+)
 
 
 class DeadlineExpiredFilter(FilterSet):
@@ -25,11 +28,38 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
     filterset_class = DeadlineExpiredFilter
 
     def get_queryset(self):
-        today = date.today()
-        return Deadline.objects.filter(
-            deadline_at__lt=today
-        ).select_related(
-            "statement", "statement__parent"
-        ).prefetch_related(
-            "organizations"
-        ).order_by("deadline_at")
+        # ❗ FAQAT queryset
+        return (
+            Deadline.objects
+            .filter(deadline_at__lt=date.today())
+            .select_related("statement", "statement__parent")
+            .prefetch_related("organizations")
+            .order_by("deadline_at")
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        valid_deadlines = []
+
+        for deadline in queryset:
+            valid_organizations = []
+
+            for org in deadline.organizations.all():
+                report_exists = Report.objects.filter(
+                    organization=org,
+                    deadline=deadline
+                ).exists()
+
+                if not report_exists:
+                    valid_organizations.append(org)
+
+            if valid_organizations:
+                deadline._filtered_organizations = valid_organizations
+                valid_deadlines.append(deadline)
+
+        serializer = self.get_serializer(
+            valid_deadlines,
+            many=True
+        )
+        return Response(serializer.data)

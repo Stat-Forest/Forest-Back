@@ -93,14 +93,21 @@ class PlanSerializer(serializers.ModelSerializer):
     def _save_plan_items(self, plan, statement, items):
         monthly_values = defaultdict(float)
         quarterly_values = defaultdict(float)
-        yearly_values = defaultdict(float)
+        yearly_values = defaultdict(float)  # key: column.id -> value
         yearly_columns = []
         yearly_total_col = None
 
-        # 1️⃣ Foydalanuvchi yuborgan plan itemlarni saqlash
+        # NEW — For YILLIK_1,2,3 logic
+        yil_values = {
+            "y1": 0.0,
+            "y2": 0.0,
+            "y3_col": None,  # optional: column reference for YILLIK_3 if provided in items
+        }
+
+        # 1) Save incoming items and collect values
         for item in items:
             column = StatementColumn.objects.get(id=item["column"])
-            value = item["plan_value"]
+            value = float(item["plan_value"]) if item["plan_value"] is not None else 0.0
 
             if column.statement_id != statement.id:
                 raise CustomExceptionError(
@@ -111,22 +118,65 @@ class PlanSerializer(serializers.ModelSerializer):
                     }
                 )
 
+            # create/update the PlanItem for the incoming one
             PlanItem.objects.update_or_create(
                 plan=plan, column=column, defaults={"plan_value": value}
             )
 
-            # Oylik, chorak yoki yillik ajratib olish
-            if column.status_plan in sum(MONTHS_BY_QUARTER.values(), []):
-                monthly_values[column.status_plan] = value
-            elif column.status_plan in QUARTERS:
-                quarterly_values[column.status_plan] = value
-            elif column.status_plan == StatementColumn.PlanStatus.YILLIK:
+            # collect by status
+            status = column.status_plan
+
+            # MONTHLY
+            if status in sum(MONTHS_BY_QUARTER.values(), []):
+                monthly_values[status] = value
+
+            # QUARTER
+            elif status in QUARTERS:
+                quarterly_values[status] = value
+
+            # OLD YEARLY (status = 'yillik')
+            elif status == StatementColumn.PlanStatus.YILLIK:
                 yearly_values[column.id] = value
                 yearly_columns.append(column)
-            elif column.status_plan == StatementColumn.PlanStatus.YILLIK_TOTAL:
+
+            # OLD YEARLY_TOTAL
+            elif status == StatementColumn.PlanStatus.YILLIK_TOTAL:
                 yearly_total_col = column
 
-        # 2️⃣ Oylik yuborilgan bo‘lsa → choraklar va yilliklar
+            # NEW YILLIK_1, YILLIK_2, YILLIK_3
+            elif status == StatementColumn.PlanStatus.YILLIK_1:
+                yil_values["y1"] = value
+            elif status == StatementColumn.PlanStatus.YILLIK_2:
+                yil_values["y2"] = value
+            elif status == StatementColumn.PlanStatus.YILLIK_3:
+                yil_values["y3_col"] = column
+
+        # If YILLIK_3 column not provided in items, try to find it on statement (we still may need to create PlanItem)
+        if yil_values["y3_col"] is None:
+            yil_values["y3_col"] = StatementColumn.objects.filter(
+                statement=statement,
+                status_plan=StatementColumn.PlanStatus.YILLIK_3
+            ).first()
+
+        # Ensure we have reference to YILLIK_TOTAL column (if not provided in items)
+        if yearly_total_col is None:
+            yearly_total_col = StatementColumn.objects.filter(
+                statement=statement,
+                status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
+            ).first()
+
+        # 2) If we have Y1 or Y2 values and Y3 column exists -> create/update YILLIK_3 PlanItem
+        #    (Y3 is always sum of Y1 + Y2 regardless of other yearly values)
+        if yil_values["y3_col"] and (yil_values["y1"] != 0.0 or yil_values["y2"] != 0.0):
+            total_y3 = yil_values["y1"] + yil_values["y2"]
+            PlanItem.objects.update_or_create(
+                plan=plan,
+                column=yil_values["y3_col"],
+                defaults={"plan_value": total_y3}
+            )
+
+        # 3) OLD aggregation logic: MONTHLY -> QUARTER -> YEARLY (unchanged)
+        # MONTHLY -> QUARTER
         if monthly_values:
             for q_status, months in MONTHS_BY_QUARTER.items():
                 total = sum(monthly_values[m] for m in months if m in monthly_values)
@@ -140,7 +190,7 @@ class PlanSerializer(serializers.ModelSerializer):
                         )
                         quarterly_values[q_status] = total
 
-            # Choraklardan yillik
+            # QUARTER -> YEARLY
             if quarterly_values:
                 total_yearly = sum(quarterly_values.values())
                 for col in StatementColumn.objects.filter(
@@ -151,9 +201,7 @@ class PlanSerializer(serializers.ModelSerializer):
                     )
                     yearly_values[col.id] = total_yearly
 
-            # ❌ YILLIK_TOTAL yaratilmadi
-
-        # 3️⃣ Chorak yuborilgan bo‘lsa → yillik
+        # QUARTER -> YEARLY (only quarter sent)
         elif quarterly_values:
             total_yearly = sum(quarterly_values.values())
             for col in StatementColumn.objects.filter(
@@ -164,18 +212,18 @@ class PlanSerializer(serializers.ModelSerializer):
                 )
                 yearly_values[col.id] = total_yearly
 
-            # ❌ YILLIK_TOTAL yaratilmadi
+        # 4) NOW compute YILLIK_TOTAL
+        # yearly_values currently contains values for columns with status_plan == 'yillik'
+        # We must add Y1 + Y2 to this sum, but NOT include Y3.
+        total_from_yearly_cols = sum(yearly_values.values()) if yearly_values else 0.0
+        total_for_yearly_total = total_from_yearly_cols + yil_values["y1"] + yil_values["y2"]
 
-        # 4️⃣ Faqat yillik yuborilgan bo‘lsa → yillik_total
-        elif yearly_values:
-            total_value = sum(yearly_values.values())
-            yearly_total_col = StatementColumn.objects.filter(
-                statement=statement, status_plan=StatementColumn.PlanStatus.YILLIK_TOTAL
-            ).first()
-            if yearly_total_col:
-                PlanItem.objects.update_or_create(
-                    plan=plan, column=yearly_total_col, defaults={"plan_value": total_value}
-                )
+        if yearly_total_col:
+            PlanItem.objects.update_or_create(
+                plan=plan,
+                column=yearly_total_col,
+                defaults={"plan_value": total_for_yearly_total}
+            )
 
     @transaction.atomic
     def create(self, validated_data):

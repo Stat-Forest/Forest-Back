@@ -51,12 +51,6 @@ class SplitPart(Func):
 class PlanStatementColumnListAPIView(CustomListAPIView):
     """
     API endpoint for listing StatementColumns related to Plan.
-
-    Features:
-    - Applies base filters (must have parent and status).
-    - Restricts by user's statement if available.
-    - Prioritizes statuses (monthly → quarterly → yearly → yearly total).
-    - Orders results numerically by extracting last part of "ordering".
     """
     pagination_class = None
     serializer_class = PlanColumnSerializer
@@ -73,18 +67,38 @@ class PlanStatementColumnListAPIView(CustomListAPIView):
 
         queryset = queryset.filter(base_filter)
 
+        # Extract existing statuses
         existing_statuses = set(queryset.values_list("status_plan", flat=True))
 
+        # ---------------------------------------------------------
+        # YILLIK_1, YILLIK_2 → YILLIK_3 ni CHIQARMASLIK (faqat 3 tasi uchun)
+        # LEKIN oddiy YILLIK (status_plan="yillik") chiqishi shart!
+        # ---------------------------------------------------------
+        Y1 = "yillik_1"
+        Y2 = "yillik_2"
+        Y3 = "yillik_3"
+
+        # Agar yig'indiyilliklar bor bo'lsa → faqat y1, y2 chiqsin, y3 chiqmasin
+        if Y1 in existing_statuses or Y2 in existing_statuses:
+            filtered_yearly_statuses = {Y1, Y2, "yillik"}  # oddiy YILLIK qoldiriladi!
+        else:
+            filtered_yearly_statuses = YEARLY_STATUSES
+        # ---------------------------------------------------------
+
+        # PRIORITY HANDLING
         if existing_statuses.intersection(MONTHLY_STATUSES):
             queryset = queryset.filter(status_plan__in=MONTHLY_STATUSES)
+
         elif existing_statuses.intersection(QUARTERLY_STATUSES):
             queryset = queryset.filter(status_plan__in=QUARTERLY_STATUSES)
+
         elif existing_statuses.intersection(YEARLY_STATUSES):
-            queryset = queryset.filter(status_plan__in=YEARLY_STATUSES)
+            queryset = queryset.filter(status_plan__in=filtered_yearly_statuses)
+
         elif existing_statuses.intersection(YEARLY_TOTAL_STATUSES):
             queryset = queryset.filter(status_plan__in=YEARLY_TOTAL_STATUSES)
 
-        # Build parent full title for alphabetical sorting
+        # Build parent full title
         queryset = queryset.annotate(
             parent_full_title=Concat(
                 'parent__parent__parent__parent__parent__title_uz', Value(' - '),
