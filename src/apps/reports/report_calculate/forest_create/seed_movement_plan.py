@@ -1,4 +1,3 @@
-from uuid import UUID
 from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 
@@ -8,7 +7,7 @@ from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 def normalize(value):
     try:
-        if value is None or value == "":
+        if value in (None, ""):
             return Decimal("0")
         return Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
@@ -17,11 +16,15 @@ def normalize(value):
 
 def calculate_seed_movement_plan(report: Report):
     """
-    Urug‘ xarakati (plant-based) uchun:
-    Reja (1.1.2.1), Amalda (1.1.2.2) → Foiz (1.1.2.3)
+    Urug‘ xarakati Reja uchun FOIZ hisoblash.
+
+    - Oddiy tashkilotda REJA va FOIZ = 0 (faqat ko‘rinishda)
+    - Tashkilot JAMI (is_individual_general=True) uchun:
+        - FOIZ = (AMALDA / REJA) * 100
     """
-    print("🔍 calculate_seed_movement_plan STARTED")
-    print(f"📄 Report ID: {report.id} | Statement: {report.statement}")
+
+    if report.statement.name_uz.strip() != "Urug' xarakati Reja":
+        return
 
     ordering_map = {
         "REJA": "1.1.2.1",
@@ -29,54 +32,71 @@ def calculate_seed_movement_plan(report: Report):
         "FOIZ": "1.1.2.3",
     }
 
-    # 🔍 Oldindan barcha ReportItem va ularning innerslarini yuklab olamiz
+    # 1️⃣ ReportItemlarni olish
     report_items = (
         ReportItem.objects
         .filter(report=report)
         .select_related("statement_column")
         .prefetch_related("inners")
     )
-    print(f"🔎 Fetched ReportItems: {len(report_items)}")
-
     report_item_map = {
         item.statement_column.ordering: item
         for item in report_items
     }
 
-    def get_plant_value_map(ordering: str) -> dict[UUID, Decimal]:
-        item = report_item_map.get(ordering)
-        if not item:
-            print(f"⚠️ ReportItem not found for ordering {ordering}")
-            return {}
-        totals = defaultdict(Decimal)
-        for inner in item.inners.all():
+    # 2️⃣ UMUMIY REJA (plant=None)
+    umumiy_reja = Decimal("0")
+    reja_item = report_item_map.get(ordering_map["REJA"])
+
+    if reja_item:
+        umumiy_inner = reja_item.inners.filter(plant__isnull=True).first()
+        if umumiy_inner:
+            umumiy_reja = normalize(umumiy_inner.value)
+
+            # 🛑 Oddiy tashkilotlarda REJA butunlay ko'rinmasin (plant=None ham, plantli ham 0 bo'lsin)
+            if not report.is_individual_general:
+                updates = []
+                # plant=None qiymatini 0 qilish
+                if umumiy_inner.value != "0":
+                    umumiy_inner.value = "0"
+                    updates.append(umumiy_inner)
+                # plant bor barcha innerlarni 0 qilish
+                for inner in reja_item.inners.exclude(id=umumiy_inner.id):
+                    if inner.value != "0":
+                        inner.value = "0"
+                        updates.append(inner)
+                if updates:
+                    ReportItemInner.objects.bulk_update(updates, ["value"])
+
+    # 3️⃣ AMALDA (plant bo‘yicha yoki organization-level)
+    amalda_map = defaultdict(Decimal)
+    amalda_item = report_item_map.get(ordering_map["AMALDA"])
+    org_level_amalda = None
+    if amalda_item:
+        for inner in amalda_item.inners.all():
             if inner.plant_id:
-                totals[inner.plant_id] += normalize(inner.value)
-        print(f"✅ Plant values for ordering {ordering}: {dict(totals)}")
-        return totals
+                amalda_map[inner.plant_id] += normalize(inner.value)
+            else:
+                # plant=None bo'lgan AMALDA (tashkilot darajasida)
+                org_level_amalda = normalize(inner.value)
 
-    reja_map = get_plant_value_map(ordering_map["REJA"])
-    amalda_map = get_plant_value_map(ordering_map["AMALDA"])
+    # 4️⃣ FOIZ = 0 → agar oddiy report
+    if not report.is_individual_general:
+        foiz_item = report_item_map.get(ordering_map["FOIZ"])
+        if foiz_item:
+            for inner in foiz_item.inners.all():
+                if inner.value != "0":
+                    inner.value = "0"
+                    inner.save(update_fields=["value"])
+        return  # FOIZ hisoblanmasin
 
-    plant_order = list(reja_map.keys()) or list(amalda_map.keys())
-    print(f"🧬 plant_order: {plant_order}")
-
-    # 📈 Foiz = (amalda / reja) * 100
-    foiz_map = defaultdict(Decimal)
-    for pid in set(reja_map.keys()) | set(amalda_map.keys()):
-        reja_val = reja_map.get(pid, Decimal("0"))
-        amalda_val = amalda_map.get(pid, Decimal("0"))
-        foiz = (amalda_val / reja_val * 100) if reja_val else Decimal("0")
-        foiz_map[pid] = round_decimal(foiz)
-    print(f"📊 Calculated FOIZ map: {foiz_map}")
-
+    # 5️⃣ FOIZ ustuni (mustahkamlash)
     foiz_col = StatementColumn.objects.filter(
         statement=report.statement,
         ordering=ordering_map["FOIZ"]
     ).first()
 
     if not foiz_col:
-        print("❌ FOIZ column not found → exiting early.")
         return
 
     foiz_item = report_item_map.get(ordering_map["FOIZ"])
@@ -85,51 +105,27 @@ def calculate_seed_movement_plan(report: Report):
             report=report,
             statement_column=foiz_col
         )
-        report_item_map[ordering_map["FOIZ"]] = foiz_item
-        print("🆕 Created new ReportItem for FOIZ")
 
-    old_values = {
-        inner.plant_id: normalize(inner.value)
-        for inner in foiz_item.inners.all()
-        if inner.plant_id
-    }
-    id_map = {
-        inner.plant_id: inner.id
-        for inner in foiz_item.inners.all()
-        if inner.plant_id
-    }
+    # 6️⃣ FOIZni faqat tashkilot darajasida (plant=None) hisoblash
+    #    AMALDA umumiy yig'indisi olinadi
+    # Agar organization-level AMALDA mavjud bo'lsa, undan foydalanamiz,
+    # aks holda plant-level yig'indisini ishlatamiz
+    total_amalda = org_level_amalda if org_level_amalda is not None else sum(amalda_map.values(), Decimal("0"))
+    foiz_val = (total_amalda / umumiy_reja * 100) if umumiy_reja else Decimal("0")
+    foiz_val = round_decimal(foiz_val)
 
-    create_buffer = []
-    update_buffer = []
+    # Avvalo plantli eski foiz innerslarni olib tashlaymiz
+    foiz_item.inners.filter(plant__isnull=False).delete()
 
-    for plant_id in plant_order:
-        new_val = foiz_map.get(plant_id, Decimal("0"))
-        old_val = old_values.get(plant_id)
+    org_inner = foiz_item.inners.filter(plant__isnull=True).first()
+    if not org_inner:
+        ReportItemInner.objects.create(
+            report_item=foiz_item,
+            value=str(foiz_val)
+        )
+    else:
+        if normalize(org_inner.value) != foiz_val:
+            org_inner.value = str(foiz_val)
+            org_inner.save(update_fields=["value"])
 
-        if old_val is None:
-            create_buffer.append(ReportItemInner(
-                report_item=foiz_item,
-                plant_id=plant_id,
-                value=str(new_val)
-            ))
-            print(f"➕ Create: {plant_id} = {new_val}")
-        elif old_val != new_val:
-            update_buffer.append(ReportItemInner(
-                id=id_map[plant_id],
-                report_item=foiz_item,
-                plant_id=plant_id,
-                value=str(new_val)
-            ))
-            print(f"🔁 Update: {plant_id} | Old: {old_val} → New: {new_val}")
-        else:
-            print(f"⏩ Skip: {plant_id} | Value unchanged.")
-
-    if create_buffer:
-        ReportItemInner.objects.bulk_create(create_buffer)
-        print(f"💾 bulk_create done → {len(create_buffer)} items")
-
-    if update_buffer:
-        ReportItemInner.objects.bulk_update(update_buffer, ["value"])
-        print(f"💾 bulk_update done → {len(update_buffer)} items")
-
-    print("✅ calculate_seed_movement_plan FINISHED")
+    print("✅ FOIZ hisoblandi (organization-level)")
