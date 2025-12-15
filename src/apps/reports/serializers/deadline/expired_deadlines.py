@@ -38,9 +38,22 @@ class StatementExpiredSerializer(serializers.ModelSerializer):
 
 
 class DeadlineExpiredSerializer(serializers.ModelSerializer):
-    organizations = OrganizationExpiredSerializer(many=True, read_only=True)
+    organizations = serializers.SerializerMethodField()
     statement = StatementExpiredSerializer(read_only=True)
 
     class Meta:
         model = Deadline
         fields = ("id", "submit_at", "deadline_at", "statement", "organizations")
+
+    def get_organizations(self, obj):
+        organizations = getattr(
+            obj,
+            "_filtered_organizations",
+            obj.organizations.all()
+        )
+        return OrganizationExpiredSerializer(
+            organizations,
+            many=True,
+            context=self.context
+        ).data
+
