@@ -1,5 +1,6 @@
 from datetime import date
 from rest_framework import generics
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
 
@@ -27,35 +28,38 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
     filterset_class = DeadlineExpiredFilter
 
     def get_queryset(self):
-        today = date.today()
-
-        deadlines = (
+        # ❗ FAQAT queryset
+        return (
             Deadline.objects
-            .filter(deadline_at__lt=today)
+            .filter(deadline_at__lt=date.today())
             .select_related("statement", "statement__parent")
             .prefetch_related("organizations")
             .order_by("deadline_at")
         )
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
         valid_deadlines = []
 
-        for deadline in deadlines:
+        for deadline in queryset:
             valid_organizations = []
 
             for org in deadline.organizations.all():
-                # FAQAT organization + deadline orqali tekshiramiz
                 report_exists = Report.objects.filter(
                     organization=org,
                     deadline=deadline
                 ).exists()
 
-                # Agar report YO‘Q bo‘lsa → expired
                 if not report_exists:
                     valid_organizations.append(org)
 
-            # Agar kamida 1 ta organization qolsa → deadline qaytadi
-            if valid_organizations :
+            if valid_organizations:
                 deadline._filtered_organizations = valid_organizations
                 valid_deadlines.append(deadline)
 
-        return valid_deadlines
+        serializer = self.get_serializer(
+            valid_deadlines,
+            many=True
+        )
+        return Response(serializer.data)
