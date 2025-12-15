@@ -33,6 +33,11 @@ class StatementColumn(AbstractBaseModel):
         CHORAK_3 = 'chorak_3', _('3-chorak')
         CHORAK_4 = 'chorak_4', _('4-chorak')
 
+        # CHANGED O'rmon barpo Plan
+        YILLIK_1 = 'yillik_1', _('Yillik_1')
+        YILLIK_2 = 'yillik_2', _('Yillik_2')
+        YILLIK_3 = 'yillik_3', _('Yillik_3')
+
         YILLIK = 'yillik', _('Yillik')
         YILLIK_TOTAL = 'yillik_total', _('Yillik Total')
 

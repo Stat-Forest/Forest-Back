@@ -140,7 +140,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
         elif statement.period == PeriodChoices.YILLIK:
             year = int(submit_at)
-            if year >= today.year:
+            if year > today.year:
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past years.')})
 
         # 5. Report allaqachon mavjudmi?
