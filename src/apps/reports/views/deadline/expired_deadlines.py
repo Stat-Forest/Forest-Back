@@ -28,7 +28,6 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
     filterset_class = DeadlineExpiredFilter
 
     def get_queryset(self):
-        # ❗ FAQAT queryset
         return (
             Deadline.objects
             .filter(deadline_at__lt=date.today())
