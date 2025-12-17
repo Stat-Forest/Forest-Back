@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from apps.general.models import Organization
+from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.utils.services import PeriodChoices
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services import aggregate_individual_report
@@ -284,10 +285,12 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                     )
                 )
                 for inner in inners_data:
+                    raw_value = inner["value"]
+                    normalized_value = normalize_decimal_input_dote(raw_value)
                     report_inners_buffer.append(
                         ReportItemInner(
                             report_item_id=report_item_id,
-                            value=inner["value"]
+                            value=normalized_value
                         )
                     )
 
