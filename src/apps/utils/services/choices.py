@@ -2,19 +2,19 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 class RegionChoices(models.TextChoices):
-    TASHKENT = 'tashkent', _('Tashkent')
+    TASHKENT = 'tashkent', _('Toshkent')
     NAMANGAN = 'namangan', _('Namangan')
     ANDIJON = 'andijon', _('Andijon')
-    FARGONA = 'fargona', _('Fergana')
-    BUXORO = 'buxoro', _('Bukhara')
-    SAMARQAND = 'samarqand', _('Samarkand')
-    NAVOIY = 'navoiy', _('Navoi')
-    QASHQADARYO = 'qashqadaryo', _('Qashqadarya')
+    FARGONA = 'fargona', _('Farg\'ona')
+    BUXORO = 'buxoro', _('Buxoro')
+    SAMARQAND = 'samarqand', _('Samarqand')
+    NAVOIY = 'navoiy', _('Navoiy')
+    QASHQADARYO = 'qashqadaryo', _('Qashqadaryo')
     SURXONDARYO = 'surxondaryo', _('Surxondaryo')
-    XORAZM = 'xorazm', _('Khorezm')
+    XORAZM = 'xorazm', _('Xorazm')
     SIRDARYO = 'sirdaryo', _('Sirdaryo')
-    JIZZAX = 'jizzax', _('Jizzakh')
-    QORAQALPAQSTAN = 'qoraqalpog‘iston', _('Karakalpakstan')
+    JIZZAX = 'jizzax', _('Jizzax')
+    QORAQALPAQSTAN = 'qoraqalpog‘iston', _('Qoraqalpog\'iston')
 
     REPUBLIC = 'republic', _('Respublika tashkilotlari')
 
