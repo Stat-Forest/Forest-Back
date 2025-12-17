@@ -93,7 +93,7 @@ PLANTS_STRUCTURE = {
         ("qizil do‘lona", "қизил дўлана"),
         ("tut", "тут"),
         ("chappa tut", "чаппа тут"),
-        ("jiyda (lox)", "жийда (лох)"),
+        ("jiyda", "жийда"),
         ("non jiyda", "нон жийда"),
         ("chilonjiyda (unabi)", "чилонжийда (унаби)"),
         ("palma", "Палма"),
@@ -149,7 +149,7 @@ class Command(BaseCommand):
         self.stdout.write("🚀 Creating Plants for Ko‘chat va Nihol...")
 
         try:
-            statement = Statement.objects.get(name_uz="Ko‘chat va Nihol")
+            statement = Statement.objects.get(name_uz="Ko'chatxona va Niholxona Jami")
         except Statement.DoesNotExist:
             self.stderr.write("❌ Statement 'Ko‘chat va Nihol' not found.")
             return
