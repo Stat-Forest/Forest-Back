@@ -67,17 +67,9 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ["id", "organization", "organization_id","statement","statement_id", "year", "plan_items"]
+        fields = ["id", "organization", "organization_id","statement","statement_id", "year", "plan_items","season"]
         read_only_fields = ["statement",'statement_id']
 
-    # def validate_year(self, value):
-    #     from django.utils import timezone
-    #     current_year = timezone.now().year
-    #     if value < 2024 or value > current_year:
-    #         raise CustomExceptionError(
-    #             400, {"year": _("Year must be between 2024 and current year.")}
-    #         )
-    #     return value
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get("statement"):
@@ -93,7 +85,7 @@ class PlanSerializer(serializers.ModelSerializer):
     def _save_plan_items(self, plan, statement, items):
         monthly_values = defaultdict(float)
         quarterly_values = defaultdict(float)
-        yearly_values = defaultdict(float)  # key: column.id -> value
+        yearly_values = defaultdict(float)
         yearly_columns = []
         yearly_total_col = None
 
@@ -101,7 +93,7 @@ class PlanSerializer(serializers.ModelSerializer):
         yil_values = {
             "y1": 0.0,
             "y2": 0.0,
-            "y3_col": None,  # optional: column reference for YILLIK_3 if provided in items
+            "y3_col": None,
         }
 
         # 1) Save incoming items and collect values
@@ -230,13 +222,14 @@ class PlanSerializer(serializers.ModelSerializer):
         organization = Organization.objects.get(id=validated_data["organization"])
         statement = Statement.objects.get(id=validated_data["statement"])
         year = validated_data["year"]
+        season = validated_data["season"]
         items = validated_data["plan_items"]
 
         request = self.context.get("request")
         user = getattr(request, "user", None)
 
         plan, _ = Plan.objects.get_or_create(
-            organization=organization, statement=statement, year=year
+            organization=organization, statement=statement, year=year,season=season
         )
 
         HistoryActionJournal.objects.create(
@@ -298,7 +291,7 @@ class PlanListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ("id", "year", "created_at", "updated_at", "organization", "statement", "plan_items")
+        fields = ("id", "year","season", "created_at", "updated_at", "organization", "statement", "plan_items")
 
     def get_organization(self, obj):
         lang = self.context.get("lang", "uz")
