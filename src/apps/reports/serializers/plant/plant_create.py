@@ -9,6 +9,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.general.models import Organization
+from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
@@ -262,11 +263,13 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
 
                 # ✅ Plant innerlar
                 for inner in inners:
+                    raw_value = inner.get("value")
+                    normalize_value = normalize_decimal_input_dote(raw_value)
                     report_inners_buffer.append(
                         ReportItemInner(
                             report_item_id=report_item_id,
                             plant_id=inner.get("plant"),
-                            value=inner.get("value")
+                            value=normalize_value
                         )
                     )
 
