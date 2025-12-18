@@ -1,9 +1,10 @@
 from django.db import models
 from django.conf import settings
 from django.db.models import Q
-from django.db.models.constraints import UniqueConstraint
+from django.db.models import TextChoices
 from django.utils.timezone import  timezone
 from django.utils.translation import gettext_lazy as _
+from django.db.models.constraints import UniqueConstraint
 
 from apps.users.models import CustomUser
 from apps.utils.services import RegionChoices
@@ -20,6 +21,10 @@ class Report(AbstractBaseModel):
     class TimeStatus(models.TextChoices):
         ON_TIME = 'on_time', _('Bajarilgan')
         LATE = 'late', _('Kechiktirilgan')
+
+    class ReportSeasonChoices(TextChoices):
+        SPRING = 'spring', 'Bahorgi'
+        AUTUMN = 'autumn', 'Kuzgi'
 
 
     republic = models.ForeignKey(
@@ -136,7 +141,12 @@ class Report(AbstractBaseModel):
         blank=True,
         null=True
     )
-
+    report_season = models.CharField(
+        max_length=10,
+        choices=ReportSeasonChoices.choices,
+        blank=True,
+        null=True
+    )
     # def __str__(self):
     #     return f"{self.organization.name} "
 
@@ -160,7 +170,7 @@ class Report(AbstractBaseModel):
         ordering = ['-created_at']
         constraints = [
             UniqueConstraint(
-                fields=["organization", "statement", "deadline"],
+                fields=["organization", "statement", "deadline","report_season"],
                 condition=Q(is_individual_general=False),
                 name="unique_org_statement_deadline_only_for_non_individual_general"
             )
