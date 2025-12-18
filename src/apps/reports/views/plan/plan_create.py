@@ -68,7 +68,7 @@ class PlanListAPIView(generics.ListAPIView):
         .prefetch_related("plan_items__column")
     )
     serializer_class = PlanListSerializer
-    filterset_fields = ["statement", "organization", "year"]
+    filterset_fields = ["statement", "organization", "year","season"]
 
     def get_queryset(self):
         """

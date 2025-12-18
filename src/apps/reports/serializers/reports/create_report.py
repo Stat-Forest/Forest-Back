@@ -42,8 +42,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = [
-            "id", "deadline",
-            "report_items"
+            "id", "deadline","report_season","report_items"
         ]
 
     def validate(self, attrs):
@@ -53,6 +52,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         organization = user.organization
         is_individual_general = attrs.get("is_individual_general", False)
+        report_season = attrs.get("report_season")
 
         # 1. Duplicated reportni tekshir
         if not is_individual_general:
@@ -60,6 +60,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 organization=organization,
                 statement=statement,
                 deadline=deadline,
+                report_season=report_season,
                 is_individual_general=False
             ).exists()
             if exists:
@@ -149,6 +150,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 organization=user.organization,
                 statement=statement,
                 deadline=deadline,
+                report_season=report_season,
                 is_individual_general=False,
                 is_report=True
         ).exists():
@@ -160,6 +162,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
+        report_season = validated_data["report_season"]
 
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
@@ -197,6 +200,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         organization=org_instance,
                         statement=column.statement,
                         deadline=deadline,
+                        report_season=report_season,
                         is_individual_general=False
                     ).first()
 
@@ -205,6 +209,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             organization=org_instance,
                             statement=column.statement,
                             deadline=deadline,
+                            report_season=report_season,
                             region=org_instance.region,
                             status=Report.StatusChoices.SAVED,
                             created_by=user
@@ -216,7 +221,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             model_name='Report',
                             object_id=report.id,
                             object_repr=str(report),
-                            change_message="Hisobat yaraladi",
+                            change_message="Hisobot yaraldi",
                         )
 
                     reports_map[report_key] = report
@@ -267,6 +272,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         organization=org_instance,
                         statement=child_statement,
                         deadline=deadline,
+                        report_season=report_season,
                         defaults={
                             "status": Report.StatusChoices.SAVED,
                             "region": org_instance.region
