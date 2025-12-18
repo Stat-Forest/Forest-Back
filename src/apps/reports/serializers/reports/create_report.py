@@ -221,7 +221,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             model_name='Report',
                             object_id=report.id,
                             object_repr=str(report),
-                            change_message="Hisobat yaraladi",
+                            change_message="Hisobot yaraldi",
                         )
 
                     reports_map[report_key] = report
