@@ -237,7 +237,7 @@ class PlanSerializer(serializers.ModelSerializer):
             action='add' if _ else 'change',
             model_name='Plan',
             object_repr=str(plan),
-            change_message="Plan created" if _ else "Plan updated",
+            change_message="Reja yaratildi" if _ else "Reja o'zagartirildi",
         )
 
         self._save_plan_items(plan, statement, items)
