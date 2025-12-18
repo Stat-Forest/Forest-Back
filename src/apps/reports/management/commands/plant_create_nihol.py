@@ -149,7 +149,7 @@ class Command(BaseCommand):
         self.stdout.write("🚀 Creating Plants for Ko‘chat va Nihol...")
 
         try:
-            statement = Statement.objects.get(name_uz="Ko'chatxona va Niholxona Jami")
+            statement = Statement.objects.get(name_uz="Ko‘chat va Nihol")
         except Statement.DoesNotExist:
             self.stderr.write("❌ Statement 'Ko‘chat va Nihol' not found.")
             return
