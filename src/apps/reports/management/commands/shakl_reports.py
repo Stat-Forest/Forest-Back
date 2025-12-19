@@ -24,7 +24,6 @@ class Command(BaseCommand):
         forest_statement = Statement.objects.get(
             name_uz="O'rmon barpo qilish",
             name_ru="Создание леса",
-            period=PeriodChoices.YILLIK
         )
 
         # ====================================== SHAKL -8
