@@ -39,7 +39,7 @@ class CorrectedStatementColumnTreeSerializer(serializers.ModelSerializer):
 
         # 🔹 MAXSUS LOGIKA
         if (
-            obj.is_organization
+            obj.is_organization is True
             and obj.statement
             and obj.statement.name in SPECIAL_STATEMENT_NAMES
         ):
