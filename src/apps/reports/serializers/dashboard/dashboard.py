@@ -8,3 +8,6 @@ class DashboardStatSerializer(serializers.Serializer):
     responsible_users = serializers.IntegerField()
     deadlines = serializers.IntegerField()
     plans = serializers.IntegerField()
+    on_time_reports = serializers.IntegerField()
+    late_reports = serializers.IntegerField()
+    expired_deadlines = serializers.IntegerField()
