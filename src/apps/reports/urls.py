@@ -33,7 +33,8 @@ from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPla
 
 from apps.reports.views.statement import (
     StatementListAPIView,
-    StatementColumnTreeAPIView
+    StatementColumnTreeAPIView,
+    CorrectedStatementColumnTreeAPIView
 )
 
 from apps.reports.views.users import (
@@ -66,6 +67,7 @@ urlpatterns = [
     # ====================  STATEMENT COLUMN URL    ====================
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
     path('statement-columns/', StatementColumnTreeAPIView.as_view(), name='statement-columns-list'),
+    path('statement-columns-corrected-org-name/', CorrectedStatementColumnTreeAPIView.as_view(), name='statement-columns-corrected-org-name-list'),
 
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
