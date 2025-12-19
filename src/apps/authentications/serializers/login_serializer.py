@@ -72,5 +72,5 @@ class LoginSerializer(CustomSerializer):
     def _check_attempts_limit(self, email, attempts):
         if attempts >= 3:
             block_key = f"login_block_{email}"
-            cache.set(block_key, True, timeout=40)  # ⛔ 40 soniyaga blok
+            cache.set(block_key, True, timeout=40)
             raise CustomExceptionError(code=429, detail="3 marta xato. Iltimos, 40 soniyadan so‘ng urinib ko‘ring.")
