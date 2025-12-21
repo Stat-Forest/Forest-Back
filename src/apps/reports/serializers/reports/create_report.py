@@ -56,14 +56,19 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
         # 1. Duplicated reportni tekshir
         if not is_individual_general:
-            exists = Report.objects.filter(
+            qs = Report.objects.filter(
                 organization=organization,
                 statement=statement,
                 deadline=deadline,
-                report_season=report_season,
                 is_individual_general=False
-            ).exists()
-            if exists:
+            )
+
+            if report_season is None:
+                qs = qs.filter(report_season__isnull=True)
+            else:
+                qs = qs.filter(report_season=report_season)
+
+            if qs.exists():
                 raise ValidationError(
                     "Bu tashkilot uchun bu hisobot turi va davr bo‘yicha hisobot mavjud."
                 )
@@ -146,14 +151,20 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past years.')})
 
         # 5. Report allaqachon mavjudmi?
-        if Report.objects.filter(
-                organization=user.organization,
-                statement=statement,
-                deadline=deadline,
-                report_season=report_season,
-                is_individual_general=False,
-                is_report=True
-        ).exists():
+        qs = Report.objects.filter(
+            organization=user.organization,
+            statement=statement,
+            deadline=deadline,
+            is_individual_general=False,
+            is_report=True
+        )
+
+        if report_season is None:
+            qs = qs.filter(report_season__isnull=True)
+        else:
+            qs = qs.filter(report_season=report_season)
+
+        if qs.exists():
             raise CustomExceptionError(400, {'report': _('This report already exists.')})
 
         return attrs
@@ -162,7 +173,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
-        report_season = validated_data["report_season"]
+        report_season = validated_data.get("report_season")
 
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
@@ -196,13 +207,19 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                     report_key = (current_org_id, str(column.statement.id))
 
-                    report = Report.objects.filter(
+                    qs = Report.objects.filter(
                         organization=org_instance,
                         statement=column.statement,
                         deadline=deadline,
-                        report_season=report_season,
                         is_individual_general=False
-                    ).first()
+                    )
+
+                    if report_season is None:
+                        qs = qs.filter(report_season__isnull=True)
+                    else:
+                        qs = qs.filter(report_season=report_season)
+
+                    report = qs.first()
 
                     if not report:
                         report = Report.objects.create(
@@ -268,18 +285,32 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                 if report_key not in reports_map:
                     org_instance = Organization.objects.get(id=current_org_id)
-                    report, _ = Report.objects.get_or_create(
+                    qs = Report.objects.filter(
                         organization=org_instance,
                         statement=child_statement,
                         deadline=deadline,
-                        report_season=report_season,
-                        defaults={
-                            "status": Report.StatusChoices.SAVED,
-                            "region": org_instance.region
-                        }
+                        is_individual_general=False
                     )
-                    reports_map[report_key] = report
 
+                    if report_season is None:
+                        qs = qs.filter(report_season__isnull=True)
+                    else:
+                        qs = qs.filter(report_season=report_season)
+
+                    report = qs.first()
+
+                    if not report:
+                        report = Report.objects.create(
+                            organization=org_instance,
+                            statement=child_statement,
+                            deadline=deadline,
+                            report_season=report_season,
+                            status=Report.StatusChoices.SAVED,
+                            region=org_instance.region
+                        )
+
+                    reports_map[report_key] = report
+                    
                 report = reports_map[report_key]
 
                 report_item_id = uuid.uuid4()
