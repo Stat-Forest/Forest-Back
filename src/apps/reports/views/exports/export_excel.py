@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils.encoding import smart_str
 from django.http import FileResponse, Http404
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from apps.reports.models import Report
 from apps.logs.models import HistoryActionJournal
@@ -176,7 +176,12 @@ class ReportExcelExportAPIView(APIView):
         )
 
 
-@extend_schema(tags=["Export-Excel"])
+@extend_schema(
+    tags=["Export-Excel"],
+    parameters=[
+        OpenApiParameter(name="filename", required=True, type=str, location=OpenApiParameter.QUERY, description="Yaratilgan fayl nomi"),
+    ],
+)
 class ReportExcelDownloadAPIView(APIView):
     def get(self, request, *args, **kwargs):
         filename = request.query_params.get("filename")
