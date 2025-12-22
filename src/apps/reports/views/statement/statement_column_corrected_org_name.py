@@ -5,7 +5,7 @@ from rest_framework import generics
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
-from apps.reports.serializers.statement import CorrectedStatementColumnTreeSerializer
+from apps.reports.serializers.statement.statement_column_corrected_org_name import CorrectedStatementColumnTreeSerializer
 import django_filters
 from apps.reports.models import Statement, StatementColumn
 from apps.utils.translation import get_lang_code, get_translated_field
