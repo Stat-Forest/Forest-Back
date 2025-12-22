@@ -3,68 +3,42 @@ from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional, Set
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from django.conf import settings
 
 
+def apply_border_to_range(ws, min_row, max_row, min_col, max_col, border):
+    for r in range(min_row, max_row + 1):
+        for c in range(min_col, max_col + 1):
+            ws.cell(row=r, column=c).border = border
+
+
 def _ordering_key(ordering: str) -> tuple:
-    """
-    '1.2.10' -> (1,2,10)
-    '2.A.1' -> (2,'A',1)
-    """
-    parts = []
-    for p in (ordering or "").strip().split("."):
-        if p.isdigit():
-            parts.append(int(p))
-        else:
-            parts.append(p)
-    return tuple(parts)
+    return tuple(int(p) if p.isdigit() else p for p in (ordering or "").split("."))
 
 
 def _pick_best_value(inners: list) -> str:
-    """
-    inners = [{"value": "5"}, {"value": "6"}] bo‘lishi mumkin.
-    - Agar 1 ta bo‘lsa: o‘sha
-    - Agar numeric ko‘p bo‘lsa: sum
-    - Aks holda: birinchi non-empty value
-    """
     if not inners:
         return ""
 
-    values = []
-    for it in inners:
-        v = it.get("value")
-        if v is None:
-            v = ""
-        values.append(str(v).strip())
+    values = [str((it.get("value") or "")).strip() for it in inners]
 
     if len(values) == 1:
         return values[0]
 
-    # numeric sum attempt
-    def to_float(s: str):
+    def to_float(s):
         try:
-            s2 = s.replace(" ", "").replace(",", ".")
-            if s2 == "":
-                return None
-            return float(s2)
+            return float(s.replace(" ", "").replace(",", "."))
         except Exception:
             return None
 
     nums = [to_float(v) for v in values]
     if all(n is not None for n in nums):
-        sm = sum(nums)  # type: ignore[arg-type]
-        # 5.0 bo‘lsa 5 qilib chiqaramiz
-        if abs(sm - int(sm)) < 1e-9:
-            return str(int(sm))
-        return str(sm)
+        total = sum(nums)
+        return str(int(total)) if total.is_integer() else str(total)
 
-    # fallback: first non-empty
-    for v in values:
-        if v != "":
-            return v
-    return ""
+    return next((v for v in values if v), "")
 
 
 def export_universal_report_to_excel_v2(
@@ -74,309 +48,239 @@ def export_universal_report_to_excel_v2(
     lang: str = "uz",
     statement_id: Optional[str] = None,
 ) -> Tuple[str, str]:
-    """
-    ReportListSerializer.data dan kelgan list bo‘yicha Excel export.
+    from apps.reports.models import StatementColumn
 
-    ✅ Header: StatementColumn parent/children bo‘yicha, MERGE bilan
-    ✅ Header tree: faqat serializerda ishtirok etgan columnlar + ancestorlar
-    ✅ is_organization columnlar headerga kiritilmaydi
-    ✅ Row: har bir report = 1 qator (organization_name)
-    """
-
-    from apps.reports.models import StatementColumn  # local import
-
-    # -----------------------
-    # 0) Output path
-    # -----------------------
-    now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{filename_prefix}_{now_str}.xlsx"
+    now = datetime.now()
+    filename = f"{filename_prefix}_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
     export_dir = getattr(settings, "EXPORT_ROOT", os.path.join(settings.BASE_DIR, "exports"))
     os.makedirs(export_dir, exist_ok=True)
     file_path = os.path.join(export_dir, filename)
 
-    # -----------------------
-    # 1) Collect needed column ids from serializer
-    # -----------------------
-    needed_ids: Set[str] = set()
-    for report in reports:
-        for container in (report.get("report_items") or []):
-            for col in (container.get("statement_columns") or []):
-                cid = col.get("statement_column_id")
-                if cid:
-                    needed_ids.add(str(cid))
-
-    if not needed_ids:
-        # hech bo‘lmasa header uchun statement_id kerak
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Reports"
-        ws.append(["№", "Tashkilot nomi"])
-        wb.save(file_path)
-        return file_path, filename
-
-    # statement_id topilmasa infer
-    if not statement_id:
-        any_id = next(iter(needed_ids))
-        stmt = (
-            StatementColumn.objects.filter(id=any_id)
-            .values_list("statement_id", flat=True)
-            .first()
-        )
-        statement_id = str(stmt) if stmt else None
-
-    if not statement_id:
-        raise ValueError("statement_id aniqlanmadi (StatementColumn.statement_id topilmadi).")
-
-    # -----------------------
-    # 2) Load all statement columns as instances (safe for missing fields)
-    # -----------------------
-    all_cols = list(
-        StatementColumn.objects.filter(statement_id=statement_id)
-        .select_related("parent")
-        .only("id", "parent_id", "ordering", "title_uz", "title_ru")  # minimal
-    )
-
-    # Build id -> col
-    id_map: Dict[str, Any] = {str(c.id): c for c in all_cols}
-
-    # Helper: check is_organization, is_user_input safely
-    def is_org(c) -> bool:
-        return bool(getattr(c, "is_organization", False))
-
-    # Export ids = needed_ids minus is_organization ones (agar serializerda kelib qolsa ham)
-    export_ids: Set[str] = set()
-    for cid in needed_ids:
-        c = id_map.get(cid)
-        if not c:
-            continue
-        if is_org(c):
-            continue
-        export_ids.add(cid)
-
-    if not export_ids:
-        # agar hammasi is_organization bo‘lib qolgan bo‘lsa, fallback: needed_ids
-        export_ids = set(needed_ids)
-
-    # -----------------------
-    # 3) Include ancestors to build correct header tree
-    # -----------------------
-    included_ids: Set[str] = set(export_ids)
-
-    for cid in list(export_ids):
-        cur = id_map.get(cid)
-        while cur and getattr(cur, "parent_id", None):
-            pid = str(cur.parent_id)
-            if pid not in id_map:
-                break
-            included_ids.add(pid)
-            cur = id_map.get(pid)
-
-    # Build children map only for included_ids, exclude is_organization children too
-    children: Dict[Optional[str], List[Any]] = {}
-    for cid in included_ids:
-        c = id_map.get(cid)
-        if not c:
-            continue
-        if is_org(c):
-            continue
-        pid = str(c.parent_id) if getattr(c, "parent_id", None) else None
-        # parent included bo‘lmasa ham root sifatida chiqadi
-        children.setdefault(pid, []).append(c)
-
-    # Sort children by ordering
-    for pid, lst in children.items():
-        lst.sort(key=lambda x: _ordering_key(getattr(x, "ordering", "") or ""))
-
-    # Roots: parent_id None yoki parent included emas
-    roots = []
-    for c in children.get(None, []):
-        roots.append(c)
-
-    # Yana: ba’zi node parent_id bor, lekin parent excluded bo‘lsa — root bo‘lishi kerak
-    for cid in included_ids:
-        c = id_map.get(cid)
-        if not c or is_org(c):
-            continue
-        pid = getattr(c, "parent_id", None)
-        if pid and (str(pid) not in included_ids):
-            children.setdefault(None, []).append(c)
-
-    # root listni qayta sort (yuqoridagidan keyin)
-    children[None] = sorted(children.get(None, []), key=lambda x: _ordering_key(getattr(x, "ordering", "") or ""))
-
-    # -----------------------
-    # 4) Compute leaves (only export_ids that are leaf inside filtered tree)
-    # -----------------------
-    def dfs_leaves(node) -> List[Any]:
-        nid = str(node.id)
-        ch = children.get(nid, [])
-        if not ch:
-            # leaf bo‘lishi uchun u export_ids’da bo‘lsin
-            return [node] if nid in export_ids else []
-        res: List[Any] = []
-        for sub in ch:
-            res.extend(dfs_leaves(sub))
-        return res
-
-    leaves: List[Any] = []
-    for r in children.get(None, []):
-        leaves.extend(dfs_leaves(r))
-
-    # Agar export_ids bor-u lekin tree’da leaf topilmasa (edge-case), fallback: export_ids ordering bo‘yicha
-    if not leaves:
-        leaves = [id_map[cid] for cid in export_ids if cid in id_map]
-        leaves.sort(key=lambda x: _ordering_key(getattr(x, "ordering", "") or ""))
-
-    leaf_ids = [str(c.id) for c in leaves]
-
-    # -----------------------
-    # 5) Header depth calc
-    # -----------------------
-    def depth(node) -> int:
-        nid = str(node.id)
-        ch = children.get(nid, [])
-        if not ch:
-            return 1
-        return 1 + max(depth(sub) for sub in ch)
-
-    max_depth = 1
-    for r in children.get(None, []):
-        max_depth = max(max_depth, depth(r))
-
-    # -----------------------
-    # 6) Prepare workbook + header grid
-    # -----------------------
     wb = Workbook()
     ws = wb.active
     ws.title = "Reports"
 
-    total_cols = 2 + len(leaf_ids)  # № + Tashkilot + leaf columns
-    header_grid: List[List[str]] = [["" for _ in range(total_cols)] for _ in range(max_depth)]
+    # =============================
+    # 🔹 Export time (TOP LEFT)
+    # =============================
+    export_text = f"Export qilingan vaqt: {now.strftime('%Y-%m-%d %H:%M:%S')}"
 
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=2)
+    cell = ws.cell(row=1, column=1)
+
+    cell.value = export_text
+    cell.font = Font(bold=True, italic=True)
+    cell.alignment = Alignment(horizontal="left", vertical="center")
+    cell.border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+
+    HEADER_START_ROW = 2  # header shu qatordan boshlanadi
+
+    # =============================
+    # Collect column IDs
+    # =============================
+    needed_ids: Set[str] = {
+        str(col["statement_column_id"])
+        for report in reports
+        for item in report.get("report_items") or []
+        for col in item.get("statement_columns") or []
+        if col.get("statement_column_id")
+    }
+
+    if not needed_ids:
+        ws.append(["№", "Tashkilot nomi"])
+        wb.save(file_path)
+        return file_path, filename
+
+    if not statement_id:
+        statement_id = str(
+            StatementColumn.objects.filter(id=next(iter(needed_ids)))
+            .values_list("statement_id", flat=True)
+            .first()
+        )
+
+    all_cols = list(
+        StatementColumn.objects.filter(statement_id=statement_id)
+        .select_related("parent")
+        .only("id", "parent_id", "ordering", "title_uz", "title_ru", "is_organization")
+    )
+    id_map = {str(c.id): c for c in all_cols}
+
+    def is_org(c): return getattr(c, "is_organization", False)
+
+    export_ids = {cid for cid in needed_ids if cid in id_map and not is_org(id_map[cid])}
+    included_ids = set(export_ids)
+
+    for cid in list(export_ids):
+        cur = id_map.get(cid)
+        while cur and cur.parent_id:
+            included_ids.add(str(cur.parent_id))
+            cur = id_map.get(str(cur.parent_id))
+
+    children: Dict[Optional[str], List[Any]] = {}
+    for cid in included_ids:
+        c = id_map.get(cid)
+        if not c or is_org(c):
+            continue
+        children.setdefault(str(c.parent_id) if c.parent_id else None, []).append(c)
+
+    for k in children:
+        children[k].sort(key=lambda x: _ordering_key(x.ordering or ""))
+
+    def dfs(node):
+        ch = children.get(str(node.id), [])
+        if not ch:
+            return [node] if str(node.id) in export_ids else []
+        return [x for c in ch for x in dfs(c)]
+
+    leaves = [x for r in children.get(None, []) for x in dfs(r)]
+    leaf_ids = [str(c.id) for c in leaves]
+
+    def depth(n):
+        ch = children.get(str(n.id), [])
+        return 1 if not ch else 1 + max(depth(c) for c in ch)
+
+    max_depth = max((depth(r) for r in children.get(None, [])), default=1)
+    total_cols = 2 + len(leaf_ids)
+
+    header_grid = [["" for _ in range(total_cols)] for _ in range(max_depth)]
     header_grid[0][0] = "№"
-    header_grid[0][1] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
+    header_grid[0][1] = "Tashkilot nomi"
 
-    def title_of(col) -> str:
-        uz = getattr(col, "title_uz", "") or ""
-        ru = getattr(col, "title_ru", "") or ""
-        if lang == "ru":
-            return ru or uz or str(col)
-        return uz or ru or str(col)
+    def title_of(c):
+        return c.title_ru if lang == "ru" else c.title_uz
 
-    # span cache: number of leaf columns under node
-    span_cache: Dict[str, int] = {}
+    span_cache = {}
 
-    def span(node) -> int:
-        nid = str(node.id)
-        if nid in span_cache:
-            return span_cache[nid]
-        ch = children.get(nid, [])
-        if not ch:
-            # span 1 faqat leaf bo‘lsa (export leaf)
-            span_cache[nid] = 1 if nid in leaf_ids else 0
-            return span_cache[nid]
-        s = 0
-        for sub in ch:
-            s += span(sub)
-        span_cache[nid] = s
-        return s
+    def span(n):
+        if n.id in span_cache:
+            return span_cache[n.id]
+        ch = children.get(str(n.id), [])
+        span_cache[n.id] = 1 if not ch else sum(span(c) for c in ch)
+        return span_cache[n.id]
 
-    merges: List[Tuple[int, int, int, int]] = []  # 1-based
+    merges = []
 
-    # place recursion
-    def place(node, level: int, col_idx0: int) -> int:
-        """
-        col_idx0: 0-based index in grid
-        returns next free col index after this node's span
-        """
-        nid = str(node.id)
+    def place(node, level, col):
+        header_grid[level][col] = title_of(node)
         sp = span(node)
-        if sp <= 0:
-            return col_idx0
-
-        header_grid[level][col_idx0] = title_of(node)
-
-        ch = children.get(nid, [])
+        ch = children.get(str(node.id), [])
         if not ch:
-            # vertical merge down to max_depth
             if level < max_depth - 1:
-                merges.append((level + 1, col_idx0 + 1, max_depth, col_idx0 + 1))
-            return col_idx0 + 1
+                merges.append((HEADER_START_ROW + level, col + 1, HEADER_START_ROW + max_depth - 1, col + 1))
+            return col + 1
+        merges.append((HEADER_START_ROW + level, col + 1, HEADER_START_ROW + level, col + sp))
+        cur = col
+        for c in ch:
+            cur = place(c, level + 1, cur)
+        return col + sp
 
-        # horizontal merge across span
-        if sp > 1:
-            merges.append((level + 1, col_idx0 + 1, level + 1, col_idx0 + sp))
-
-        cur = col_idx0
-        for sub in ch:
-            cur = place(sub, level + 1, cur)
-        return col_idx0 + sp
-
-    # Start placing roots at col 2 (0-based)
-    cur_c = 2
+    col_cursor = 2
     for r in children.get(None, []):
-        cur_c = place(r, 0, cur_c)
+        col_cursor = place(r, 0, col_cursor)
 
-    # write header rows
+    # =============================
+    # Write headers
+    # =============================
     for row in header_grid:
         ws.append(row)
 
-    # merge fixed columns vertically
-    merges.append((1, 1, max_depth, 1))
-    merges.append((1, 2, max_depth, 2))
+    # ✅ SHU YERGA QO‘SHASIZ:
+    ws.merge_cells(
+        start_row=HEADER_START_ROW,
+        start_column=1,
+        end_row=HEADER_START_ROW + max_depth - 1,
+        end_column=1,
+    )
+    ws.merge_cells(
+        start_row=HEADER_START_ROW,
+        start_column=2,
+        end_row=HEADER_START_ROW + max_depth - 1,
+        end_column=2,
+    )
 
-    # apply merges
-    for r1, c1, r2, c2 in merges:
-        if r2 > r1 or c2 > c1:
-            ws.merge_cells(start_row=r1, start_column=c1, end_row=r2, end_column=c2)
+    # =============================
+    # Header style
+    # =============================
+    thin_border = Border(
+        left=Side(style='thin', color='000000'),
+        right=Side(style='thin', color='000000'),
+        top=Side(style='thin', color='000000'),
+        bottom=Side(style='thin', color='000000'),
+    )
 
-    # header style
-    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    header_font = Font(bold=True)
-    for row in ws.iter_rows(min_row=1, max_row=max_depth, min_col=1, max_col=total_cols):
+    header_fill = PatternFill("solid", fgColor="D9E1F2")
+
+    # Qo‘llash: har bir header katakchasiga
+    for row in ws.iter_rows(
+            min_row=HEADER_START_ROW,
+            max_row=HEADER_START_ROW + max_depth - 1,
+            min_col=1,
+            max_col=total_cols
+    ):
         for cell in row:
-            cell.alignment = header_alignment
-            cell.font = header_font
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.fill = header_fill
+            cell.border = thin_border
 
-    # freeze header
-    ws.freeze_panes = ws.cell(row=max_depth + 1, column=3)
+    for r1, c1, r2, c2 in merges:
+        ws.merge_cells(start_row=r1, start_column=c1, end_row=r2, end_column=c2)
 
-    # -----------------------
-    # 7) Build per-report values map (col_id -> value)
-    # -----------------------
-    # NOTE: bu yerda ordering emas, BEVOSITA col_id ishlatyapmiz => 100% mos tushadi
-    for idx, report in enumerate(reports, start=1):
-        org_name = report.get("organization_name", "") or ""
-        row = [idx, org_name]
+    apply_border_to_range(
+        ws,
+        HEADER_START_ROW,
+        HEADER_START_ROW + max_depth - 1,
+        1,
+        total_cols,
+        thin_border
+    )
 
-        col_value_map: Dict[str, str] = {}
-        for container in (report.get("report_items") or []):
-            for col in (container.get("statement_columns") or []):
-                cid = str(col.get("statement_column_id") or "")
-                if not cid or cid not in leaf_ids:
-                    continue
-                inners = col.get("inners") or []
-                col_value_map[cid] = _pick_best_value(inners)
+    ws.freeze_panes = ws.cell(row=HEADER_START_ROW + max_depth, column=3)
 
-        for cid in leaf_ids:
-            row.append(col_value_map.get(cid, ""))
+    # =============================
+    # Data rows
+    # =============================
+    data_start_row = ws.max_row + 1
 
-        ws.append(row)
+    for i, report in enumerate(reports, start=1):
+        row_values = [i, report.get("organization_name", "")]
+        values = {}
+        for item in report.get("report_items") or []:
+            for col in item.get("statement_columns") or []:
+                cid = str(col.get("statement_column_id"))
+                if cid in leaf_ids:
+                    values[cid] = _pick_best_value(col.get("inners") or [])
+        row_values += [values.get(cid, "") for cid in leaf_ids]
 
-    # -----------------------
-    # 8) Auto-size columns (fast & safe)
-    # -----------------------
-    max_width = 60
+        ws.append(row_values)
+
+    # Apply borders to data cells
+    data_end_row = ws.max_row
+    for row in ws.iter_rows(min_row=data_start_row, max_row=data_end_row, min_col=1, max_col=total_cols):
+        for cell in row:
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    # =============================
+    # Compact column width
+    # =============================
     for col in range(1, ws.max_column + 1):
         letter = get_column_letter(col)
-        best = 10
-        # 300 qator bilan limit (performance)
-        for r in range(1, min(ws.max_row, 300) + 1):
-            v = ws.cell(row=r, column=col).value
-            if v is None:
-                continue
-            best = max(best, len(str(v)))
-        ws.column_dimensions[letter].width = min(best + 2, max_width)
 
+        # Agar bu 1-ustun bo‘lsa (ya'ni "№")
+        if col == 1:
+            ws.column_dimensions[letter].width = 5  # qat'iy kichik qilib qo'yamiz
+            continue
+
+        # Qolganlar uchun avto-width
+        ws.column_dimensions[letter].width = min(
+            max(8, min(max(len(str(ws.cell(r, col).value or "")) for r in range(1, ws.max_row + 1)) + 1, 28)),
+            28
+        )
     wb.save(file_path)
     return file_path, filename
