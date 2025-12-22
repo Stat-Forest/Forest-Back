@@ -31,11 +31,12 @@ from apps.reports.views.dashboard import (
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
     PlantDetailReportAPIView, PlantUpdateReportAPIView, PlantReportDeleteAPIView
 
-from apps.reports.views.statement import (
-    StatementListAPIView,
-    StatementColumnTreeAPIView,
-    CorrectedStatementColumnTreeAPIView
-)
+from apps.reports.views.statement.statement import StatementListAPIView
+
+from apps.reports.views.statement.statement_column import StatementColumnTreeAPIView
+
+from apps.reports.views.statement.statement_column_corrected_org_name import CorrectedStatementColumnTreeAPIView
+
 
 from apps.reports.views.users import (
     UserListAPIView,
