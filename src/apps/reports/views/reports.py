@@ -19,6 +19,7 @@ from apps.base.views import (
     CustomCreateAPIView, CustomRetrieveAPIView, CustomUpdateAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
 from apps.logs.drf_mixins import DRFHistoryMixin
+from apps.utils.cache_list import cache_get_or_set, get_cache_version, build_list_cache_key
 
 
 @extend_schema(
@@ -37,6 +38,10 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
     # permission_classes = (CanListReport,)
+
+    CACHE_NAMESPACE = "report_list"
+    CACHE_VERSION_KEY = "report_list_version"
+    CACHE_TTL = 60
 
     queryset = Report.objects.select_related(
         'organization',
@@ -96,6 +101,30 @@ class ReportListAPIView(CustomListAPIView):
             ).order_by('-created_at')
 
         return base_qs.none()
+
+    def list(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response([])
+
+        version = get_cache_version(self.CACHE_VERSION_KEY)
+
+        cache_key = build_list_cache_key(
+            namespace=self.CACHE_NAMESPACE,
+            request=request,
+            extra={"view": "ReportListAPIView"}
+        )
+
+        def compute():
+            response = super(ReportListAPIView, self).list(request, *args, **kwargs)
+            return response.data
+
+        data = cache_get_or_set(
+            key=cache_key,
+            version=version,
+            ttl=self.CACHE_TTL,
+            compute=compute,
+        )
+        return Response(data)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
