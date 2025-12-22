@@ -160,6 +160,9 @@ class ReportExcelExportAPIView(APIView):
             download_url = request.build_absolute_uri(
                 f"/api/v1/reports/export-excel/download/?filename={filename}"
             )
+            if download_url.startswith("http://"):
+                download_url = download_url.replace("http://", "https://", 1)
+
             return Response({
                 "detail": "Export muvaffaqiyatli bajarildi",
                 "filename": filename,
