@@ -21,4 +21,5 @@ class PlanItemDetailAPIView(generics.ListAPIView):
         "plan__statement": ["exact"],
         "plan__year": ["exact"],
         "column": ["exact"],
+        "plan__season":["exact"],
     }
