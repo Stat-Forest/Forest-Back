@@ -25,7 +25,7 @@ class ReportListSerializer(serializers.ModelSerializer):
             'period', 'status',
             'created_at', 'cancel_reason',
             'cancelled_at', 'sent_at', 'accepted_at',
-            'report_items', 'time_status','report_season',
+            'report_items', 'time_status','report_season', 'foot_note',
             'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
         )
 
