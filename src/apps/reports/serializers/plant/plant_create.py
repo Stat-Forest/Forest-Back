@@ -135,6 +135,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         user = self.context["request"].user
         items_data = validated_data.pop("report_items")
         deadline_id = validated_data.get("deadline")
+        foot_note = validated_data.get("foot_note")
 
         column_ids = [item["statement_column"] for item in items_data]
         columns = StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
@@ -204,7 +205,8 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                             region=current_org.region,
                             status=Report.StatusChoices.SAVED,
                             is_plant_based=True,
-                            created_by=user
+                            created_by=user,
+                            foot_note=foot_note
                         )
                         reports_map[report_key] = report
 
@@ -245,7 +247,8 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                         region=current_org.region,
                         status=Report.StatusChoices.SAVED,
                         is_plant_based=True,
-                        created_by=user
+                        created_by=user,
+                        foot_note=foot_note
                     )
                     reports_map[report_key] = report
 
