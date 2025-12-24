@@ -147,6 +147,14 @@ class Report(AbstractBaseModel):
         blank=True,
         null=True
     )
+
+    foot_note = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Foydalanuvchi tomonidan kiritilgan izoh")
+    )
+
     # def __str__(self):
     #     return f"{self.organization.name} "
 
