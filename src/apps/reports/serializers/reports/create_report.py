@@ -42,7 +42,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = [
-            "id", "deadline","report_season","report_items"
+            "id", "deadline", "report_season", "foot_note", "report_items"
         ]
 
     def validate(self, attrs):
@@ -174,6 +174,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop("report_items")
         deadline = validated_data["deadline"]
         report_season = validated_data.get("report_season")
+        foot_note = validated_data.get("foot_note")
 
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
@@ -229,7 +230,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             report_season=report_season,
                             region=org_instance.region,
                             status=Report.StatusChoices.SAVED,
-                            created_by=user
+                            created_by=user,
+                            foot_note=foot_note
                         )
 
                         HistoryActionJournal.objects.create(
@@ -306,7 +308,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             deadline=deadline,
                             report_season=report_season,
                             status=Report.StatusChoices.SAVED,
-                            region=org_instance.region
+                            region=org_instance.region,
+                            foot_note=foot_note
                         )
 
                     reports_map[report_key] = report
