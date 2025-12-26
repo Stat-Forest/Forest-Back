@@ -1,3 +1,4 @@
+import random
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy
 
@@ -10,6 +11,7 @@ from .serializers import EimzoLoginSerializer
 from .services import verify_pkcs7
 from apps.general.models import Organization
 from apps.users.models import CustomUser
+
 
 
 User = get_user_model()
@@ -48,6 +50,9 @@ class EimzoJWTLoginView(APIView):
         uid = vo.get("UID", "")
         pinfl = vo.get("PINFL", "")
         legal_stir = vo.get("TIN", "")
+
+        if not uid:
+            uid = str(random.randint(100000, 999999))
 
         email = f"{uid}@example.com"
 
