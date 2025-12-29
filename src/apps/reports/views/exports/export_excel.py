@@ -13,6 +13,8 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from apps.reports.models import Report
 from apps.logs.models import HistoryActionJournal
 from apps.reports.serializers.reports.list_reports import ReportListSerializer
+from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
+from apps.reports.models import ReportItemInner
 from apps.reports.exports.excel_export import export_universal_report_to_excel_v2
 from apps.reports.serializers.export.export_serializers import ReportExcelExportRequestSerializer
 
@@ -45,6 +47,8 @@ class ReportExcelExportAPIView(APIView):
         report_ids = request.data.get("report_ids", [])
         lang = request.data.get("lang", "uz").lower()
         mode = str(request.data.get("mode", "")).lower()
+        aggregated_flag = request.data.get("aggregated", None)
+        row_numbers_map = request.data.get("row_numbers", {}) or {}
 
         if not report_ids:
             return Response({"detail": "report_ids ro'yxati yuborilmadi."}, status=400)
@@ -67,6 +71,9 @@ class ReportExcelExportAPIView(APIView):
         ids_param = request.query_params.get("ids", "")
         lang = request.query_params.get("lang", "uz").lower()
         mode = request.query_params.get("mode", "").lower()
+        # For GET testing, allow optional aggregated and rudimentary row_numbers via query (row_numbers not practical in GET)
+        aggregated_flag = request.query_params.get("aggregated", None)
+        row_numbers_map = {}
 
         if not ids_param:
             return Response({
@@ -91,7 +98,7 @@ class ReportExcelExportAPIView(APIView):
         # Optimallashtirilgan queryset
         reports = (
             Report.objects.filter(id__in=report_ids)
-            .select_related("organization", "statement")  # statement ni select_related qildik
+            .select_related("organization", "statement")
             .prefetch_related(
                 "report_items__statement_column",
                 "report_items__statement_column__parent",
@@ -127,10 +134,54 @@ class ReportExcelExportAPIView(APIView):
         # Yakuniy prefix — faqat fayl nomi uchun, hech qachon yo‘l emas
         filename_prefix = f"{safe_name}_{date_str}_{time_str}"
 
-        serializer = ReportListSerializer(
-            reports,
+        # Preserve input order of IDs
+        id_position = {rid: idx for idx, rid in enumerate(report_ids)}
+        base_reports = sorted(list(reports), key=lambda r: id_position.get(str(r.id), 10**9))
+
+        # Detect aggregated summary mode: if the incoming list contains any regional or national Jami
+        aggregated_mode_detected = any(getattr(r, "is_general", False) or getattr(r, "is_republic", False) for r in base_reports)
+        # Allow explicit override via request
+        aggregated_flag = request.data.get("aggregated", None) if hasattr(request, 'data') else None
+        if isinstance(aggregated_flag, bool):
+            aggregated_mode = aggregated_flag
+        else:
+            aggregated_mode = aggregated_mode_detected
+
+        # Export tarkibi: asosiy report + unga tegishli individual_general (tashkilot jami)
+        combined_reports = []
+        if aggregated_mode:
+            # In aggregated mode we mirror rows exactly; no extra individual_general rows are appended
+            combined_reports = base_reports
+        else:
+            for r in base_reports:
+                combined_reports.append(r)
+                ind = (
+                    Report.objects.filter(
+                        organization=r.organization,
+                        statement=r.statement,
+                        deadline=r.deadline,
+                        is_individual_general=True,
+                    )
+                    .select_related("organization", "statement")
+                    .prefetch_related(
+                        "report_items__statement_column",
+                        "report_items__statement_column__parent",
+                        "report_items__inners",
+                    )
+                    .first()
+                )
+                if ind:
+                    combined_reports.append(ind)
+
+        # Agar bu plantli report bo'lsa, maxsus serializer ishlatamiz
+        is_plant = ReportItemInner.objects.filter(report_item__report__in=combined_reports, plant__isnull=False).exists()
+        SerializerCls = PlantReportListSerializer if is_plant else ReportListSerializer
+        # Pass row number map for hierarchical numbering if provided
+        row_numbers_map = request.data.get("row_numbers", {}) if hasattr(request, 'data') else {}
+        serializer = SerializerCls(
+            combined_reports,
             many=True,
-            context={"request": request, "lang": lang}
+            context={"request": request, "lang": lang, "aggregated_mode": aggregated_mode, "row_number_map": row_numbers_map}
         )
 
         file_path, filename = export_universal_report_to_excel_v2(
@@ -138,6 +189,7 @@ class ReportExcelExportAPIView(APIView):
             lang=lang,
             filename_prefix=filename_prefix,  # bu yerda yangi prefix
             statement_id=str(statement.id),
+            aggregated_mode=aggregated_mode,
         )
 
         # Log yozish (statement nomi bilan boyitdik)
