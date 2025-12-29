@@ -15,6 +15,12 @@ class ReportListSerializer(serializers.ModelSerializer):
     sent_by_full_name = serializers.SerializerMethodField()
     sent_by_org_name = serializers.SerializerMethodField()
     submit_at = serializers.SerializerMethodField()
+    # Exporter helper fields
+    is_individual_general = serializers.SerializerMethodField()
+    is_general = serializers.SerializerMethodField()
+    is_republic = serializers.SerializerMethodField()
+    is_plant_based = serializers.SerializerMethodField()
+    row_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Report
@@ -27,6 +33,8 @@ class ReportListSerializer(serializers.ModelSerializer):
             'cancelled_at', 'sent_at', 'accepted_at',
             'report_items', 'time_status','report_season', 'foot_note',
             'sent_by_full_name', 'sent_by_org_name', 'sent_by_role',
+            # exporter helpers
+            'is_individual_general', 'is_general', 'is_republic', 'is_plant_based', 'row_number',
         )
 
     def get_time_status(self, obj):
@@ -42,6 +50,13 @@ class ReportListSerializer(serializers.ModelSerializer):
 
     def get_organization_name(self, obj):
         lang = get_lang_code(self.context)
+        # For aggregated views, show "<Region> – Viloyat Jami" or "Respublika Jami"
+        if getattr(obj, 'is_general', False):
+            region_label = dict(RegionChoices.choices).get(obj.region, "")
+            jami_label = _("Viloyat Jami")
+            return f"{region_label} – {jami_label}"
+        if getattr(obj, 'is_republic', False):
+            return {"uz": "Respublika Jami", "ru": "Республиканский итог"}.get(lang, "Respublika Jami")
         return get_translated_field(obj.organization, "name", lang)
 
     def get_statement_name(self, obj):
@@ -180,6 +195,28 @@ class ReportListSerializer(serializers.ModelSerializer):
         ))
 
         return data
+
+    # =====================
+    # Exporter helper fields
+    # =====================
+    def get_is_individual_general(self, obj):
+        return bool(getattr(obj, 'is_individual_general', False))
+
+    def get_is_general(self, obj):
+        return bool(getattr(obj, 'is_general', False))
+
+    def get_is_republic(self, obj):
+        return bool(getattr(obj, 'is_republic', False))
+
+    def get_is_plant_based(self, obj):
+        # Actual detection is done in exporter; keep False by default
+        return False
+
+    def get_row_number(self, obj):
+        # Frontend can supply mapping id -> hierarchical number
+        # via context['row_number_map']; fallback empty string
+        row_map = self.context.get('row_number_map') or {}
+        return row_map.get(str(obj.id), "")
 
     # ---------------------
     # COLUMN PATH
