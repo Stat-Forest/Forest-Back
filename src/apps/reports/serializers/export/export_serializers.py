@@ -16,3 +16,10 @@ class ReportExcelExportRequestSerializer(serializers.Serializer):
         required=False,
         help_text="Agar 'json' bo‘lsa, download_url qaytariladi"
     )
+    # Optional: hierarchical row numbers mapping for aggregated summary screens
+    # Example: {"<report_id>": "1", "<child_report_id>": "1.1"}
+    row_numbers = serializers.DictField(
+        child=serializers.CharField(), required=False, help_text="Hisoblangan ierarxik qator raqamlari"
+    )
+    # Optional: explicitly tell backend that this is aggregated (regional/national) screen
+    aggregated = serializers.BooleanField(required=False, default=None)
