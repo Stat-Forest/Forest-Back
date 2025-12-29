@@ -1,76 +1,132 @@
 from django.core.management.base import BaseCommand
+
 from apps.reports.models import Statement, Plant
+
 from modeltranslation.utils import auto_populate
 
 
-class Command(BaseCommand):
-    help = "Creates year-based plants for Shakl 9-O‘X and Shakl 10-O‘X"
-
-    YEARS = [
-        ("2012 va avvalgi yillar", "2012 и предыдущие годы"),
-        ("2013 yil", "2013 год"),
-        ("2014 yil", "2014 год"),
-        ("2015 yil", "2015 год"),
-        ("2016 yil", "2016 год"),
-        ("2017 yil", "2017 год"),
-        ("2018 yil", "2018 год"),
-        ("2019 yil", "2019 год"),
-        ("2020 yil", "2020 год"),
-        ("2021 yil", "2021 год"),
-        ("2022 yil", "2022 год"),
-        ("2023 yil", "2023 год"),
-        ("2024 yil", "2024 год"),
-        ("2025 yil", "2025 год"),
+CATEGORY_STRUCTURE = {
+    "Iganbarglilar": [
+        ("Qrim qarag‘ayi", "Қрим қарағайи"),
+        ("Zarafshon archasi", "Зарафшон арчаси"),
+        ("Eldor qarag‘ayi", "Элдор қарағайи"),
+        ("Virgin archasi", "Виргин арчаси"),
+        ("Kompakt tuya", "Компакт туя"),
+        ("Sharq tuya", "Шарқ туя"),
+        ("Kiparis", "Кипарис")
+    ],
+    "Yaproqbarglilar": [
+        ("Katalpa", "Катальпа"),
+        ("Qayrag‘och", "Қайрағоч"),
+        ("Eman (chereshchaty)", "Эман (черешчатый)"),
+        ("Eman (Piramida)", "Эман (Пирамида)"),
+        ("Maklyura", "Маклюра"),
+        ("Gledichiya", "Гледичия"),
+        ("Kanada bagryannigi", "Канада багрянниги"),
+        ("Shumtol (yasen)", "Шумтол (ясень)"),
+        ("Chinor", "Чинор"),
+        ("Oq akatsiya", "Оқ акация"),
+        ("Sovun daraxti", "Совун дарахти"),
+        ("Qog‘oz daraxti", "Қоғоз дарахти"),
+        ("Lola daraxti", "Лола дарахти"),
+        ("Magnoliya", "Магнолия"),
+        ("Akatsiya", "Акатция"),
+        ("Kashtan", "Каштан"),
+        ("Lipa", "Липа"),
+        ("Yapon safora", "Япон сафора"),
+        ("Sliva pissardi", "Слива писсарди"),
+        ("Zarang (klyon)", "Заранг (клён)"),
+        ("Ipak akatsiya", "Ипак акация"),
+        ("Oqqayin", "Оққайин"),
+        ("Ginkgo biloba", "Гинкго билоба"),
+        ("Kanada bundugi", "Канада  бундуги"),
+        ("Aylant", "Айлант")
+    ],
+    "Mevalilar": [
+        ("O‘rik", "Ўрик"),
+        ("Olma", "Олма"),
+        ("Shaftoli", "Шафтоли"),
+        ("Tut", "Тут"),
+        ("Gilos", "Гилос"),
+        ("Olcha (oddiy)", "Олча (оддий)"),
+        ("Bexi", "Бехи"),
+        ("Nok", "Нок"),
+        ("Xurmo", "Хурма"),
+        ("Magalepka olcha", "Магалепка олча"),
+        ("Jiyda", "Жийда"),
+        ("Chilonjiyda", "Чилонжийда"),
+        ("Qizil do‘lona", "Қизил дўлана")
+    ],
+    "Yong`oq Mevalilar": [
+        ("Shirin bodom", "Ширин бодом"),
+        ("Bodom", "Бодом"),
+        ("Funduk", "Фундук"),
+        ("Pekan (amerik. Yong‘oq)", "Пекан (америк. Ёнғоқ)"),
+        ("Xandon pista", "Хандон писта"),
+        ("Yong‘oq", "Ёнгок")
+    ],
+    "Cho'l o'simliklari": [
+        ("Saxsavul", "Саксавул"),
+        ("Cherkez", "Черкез"),
+        ("Yulg‘un", "Юлғун"),
+        ("Qoraburoq", "Қорабуроқ"),
+        ("Qandim", "Қандим")
+    ],
+    "Butalar": [
+        ("Na‘matak", "Наъматак"),
+        ("Suriya gibiskusi", "Сурия гибискуси"),
+        ("Sireni", "Сирень"),
+        ("Magoniya", "Магония"),
+        ("Yapon bexisi", "Япон бехиси"),
+        ("Amorfa", "Аморфа"),
+        ("Pirokanta", "Пироканта"),
+        ("Oddiy jasmin", "Оддий жасмин"),
+        ("Ispan droki", "Испан дроки"),
+        ("Tog‘ muruch", "Тоғ муруч"),
+        ("Uchqat (jimolost)", "Учқат (жимолость)"),
+        ("Zirk", "зирк")
     ]
+}
+
+class Command(BaseCommand):
+    help = "Reset and create categorized plants for Shakl 9-O‘X and Shakl 10-O‘X"
 
     def handle(self, *args, **kwargs):
-        with auto_populate('ru'):
-            for name_uz in ["Shakl 9-O‘X", "Shakl 10-O‘X"]:
-                statement = Statement.objects.filter(name_uz__icontains=name_uz).first()
-                if not statement:
-                    self.stderr.write(self.style.ERROR(f"❌ Statement not found: {name_uz}"))
-                    continue
+        for name_uz in ["Shakl 9-O‘X", "Shakl 10-O‘X"]:
+            statement = Statement.objects.filter(name_uz__icontains=name_uz).first()
+            if not statement:
+                self.stderr.write(self.style.ERROR(f"❌ Statement not found: {name_uz}"))
+                continue
 
-                # Create parent plant
-                parent_uz = "O‘rmon osti boyliklaridan foydalanilgan yil"
-                parent_ru = "Год использования недревесных ресурсов"
+            # ❌ Avval childlarni o‘chiramiz, keyin parentlarni
+            child_count, _ = Plant.objects.filter(statement=statement, parent__isnull=False).delete()
+            parent_count, _ = Plant.objects.filter(statement=statement, parent__isnull=True).delete()
+            total_deleted = child_count + parent_count
+            self.stdout.write(self.style.WARNING(f"🧹 {name_uz}: {total_deleted} ta eski plantlar o‘chirildi."))
 
-                parent, _ = Plant.objects.get_or_create(
-                    name_uz=parent_uz,
-                    parent=None,
-                    statement=statement,
-                    defaults={"name_ru": parent_ru},
-                )
+            created_total = 0
+            with auto_populate('ru'):
+                for category_uz, plants in CATEGORY_STRUCTURE.items():
+                    category_ru = plants[0][1] if plants else category_uz
 
-                changed = False
-                if parent.statement_id != statement.id:
-                    parent.statement = statement
-                    changed = True
-                if changed:
-                    parent.save(update_fields=["statement"])
-
-                created, updated = 0, 0
-
-                for uz, ru in self.YEARS:
-                    obj, is_created = Plant.objects.get_or_create(
-                        name_uz=uz,
-                        parent=parent,
-                        statement=statement,  # <-- fix: statement bo‘yicha ham ajratilsin
-                        defaults={"name_ru": ru},
+                    parent = Plant.objects.create(
+                        name_uz=category_uz,
+                        name_ru=category_ru,
+                        parent=None,
+                        statement=statement
                     )
 
-                    need_save = False
-                    if obj.name_ru != ru:
-                        obj.name_ru = ru
-                        need_save = True
-                    if need_save:
-                        obj.save()
-                        updated += 1
-                    if is_created:
-                        created += 1
+                    for name_uz, name_ru in plants:
+                        Plant.objects.create(
+                            name_uz=name_uz,
+                            name_ru=name_ru,
+                            parent=parent,
+                            statement=statement
+                        )
+                        created_total += 1
 
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✅ {name_uz}: {created} ta yangi, {updated} ta yangilandi."
-                    )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"✅ {name_uz}: {created_total} ta yangi plant yaratildi."
                 )
+            )
