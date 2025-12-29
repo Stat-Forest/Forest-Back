@@ -3,113 +3,143 @@ from apps.reports.models import Statement, Plant
 from modeltranslation.utils import auto_populate
 
 
+CATEGORY_STRUCTURE = {
+    "Ignabarglilar": [
+        ("Qrim qarag‘ayi", "Қрим қарағайи"),
+        ("Zarafshon archasi", "Зарафшон арчаси"),
+        ("Eldor qarag‘ayi", "Элдор қарағайи"),
+        ("Virgin archasi", "Виргин арчаси"),
+        ("Kompakt tuya", "Компакт туя"),
+        ("Sharq tuya", "Шарқ туя"),
+        ("Kiparis", "Кипарис"),
+    ],
+    "Yaproqbarglilar": [
+        ("Katalpa", "Катальпа"),
+        ("Qayrag‘och", "Қайрағоч"),
+        ("Eman (chereshchaty)", "Эман (черешчатый)"),
+        ("Eman (Piramida)", "Эман (Пирамида)"),
+        ("Maklyura", "Маклюра"),
+        ("Gledichiya", "Гледичия"),
+        ("Kanada bagryannigi", "Канада багрянниги"),
+        ("Shumtol (yasen)", "Шумтол (ясень)"),
+        ("Chinor", "Чинор"),
+        ("Oq akatsiya", "Оқ акация"),
+        ("Sovun daraxti", "Совун дарахти"),
+        ("Qog‘oz daraxti", "Қоғоз дарахти"),
+        ("Lola daraxti", "Лола дарахти"),
+        ("Magnoliya", "Магнолия"),
+        ("Akatsiya", "Акатция"),
+        ("Kashtan", "Каштан"),
+        ("Lipa", "Липа"),
+        ("Yapon safora", "Япон сафора"),
+        ("Sliva pissardi", "Слива писсарди"),
+        ("Zarang (klyon)", "Заранг (клён)"),
+        ("Ipak akatsiya", "Ипак акация"),
+        ("Oqqayin", "Оққайин"),
+        ("Ginkgo biloba", "Гинкго билоба"),
+        ("Kanada bundugi", "Канада бундуги"),
+        ("Aylant", "Айлант"),
+    ],
+    "Mevalilar": [
+        ("O‘rik", "Ўрик"),
+        ("Olma", "Олма"),
+        ("Shaftoli", "Шафтоли"),
+        ("Tut", "Тут"),
+        ("Gilos", "Гилос"),
+        ("Olcha (oddiy)", "Олча (оддий)"),
+        ("Bexi", "Бехи"),
+        ("Nok", "Нок"),
+        ("Xurmo", "Хурма"),
+        ("Magalepka olcha", "Магалепка олча"),
+        ("Jiyda", "Жийда"),
+        ("Chilonjiyda", "Чилонжийда"),
+        ("Qizil do‘lona", "Қизил дўлана"),
+    ],
+    "Yong‘oq Mevalilar": [
+        ("Shirin bodom", "Ширин бодом"),
+        ("Bodom", "Бодом"),
+        ("Funduk", "Фундук"),
+        ("Pekan (amerik. Yong‘oq)", "Пекан (америк. Ёнғоқ)"),
+        ("Xandon pista", "Хандон писта"),
+        ("Yong‘oq", "Ёнгок"),
+    ],
+    "Cho‘l o‘simliklari": [
+        ("Saxsavul", "Саксавул"),
+        ("Cherkez", "Черкез"),
+        ("Yulg‘un", "Юлғун"),
+        ("Qoraburoq", "Қорабуроқ"),
+        ("Qandim", "Қандим"),
+    ],
+    "Butalar": [
+        ("Na‘matak", "Наъматак"),
+        ("Suriya gibiskusi", "Сурия гибискуси"),
+        ("Sireni", "Сирень"),
+        ("Magoniya", "Магония"),
+        ("Yapon bexisi", "Япон бехиси"),
+        ("Amorfa", "Аморфа"),
+        ("Pirokanta", "Пироканта"),
+        ("Oddiy jasmin", "Оддий жасмин"),
+        ("Ispan droki", "Испан дроки"),
+        ("Tog‘ muruch", "Тоғ муруч"),
+        ("Uchqat (jimolost)", "Учқат (жимолость)"),
+        ("Zirk", "Зирк"),
+    ],
+}
+
+
 class Command(BaseCommand):
-    help = "Creates natural regeneration measures (2.1–2.7) for 'Shakl 11-O‘X' (safe & idempotent)"
+    help = "FULL RESET Shakl 11-O‘X plants (safe for PROTECT parent)"
 
     def handle(self, *args, **kwargs):
-        with auto_populate('ru'):
 
-            # 1. Statementni topamiz
-            statement = Statement.objects.filter(
-                name_uz__icontains="Shakl 11-O‘X"
-            ).first()
+        statement = Statement.objects.filter(
+            name_uz__icontains="Shakl 11-O‘X"
+        ).first()
 
-            if not statement:
-                self.stderr.write(
-                    self.style.ERROR("❌ Statement not found: Shakl 11-O‘X")
-                )
-                return
+        if not statement:
+            self.stderr.write(self.style.ERROR("❌ Statement not found: Shakl 11-O‘X"))
+            return
 
-            # 2. ASOSIY PARENT
-            parent_uz = "Tabiiy tiklanishga ko‘maklashildi"
-            parent_ru = "Оказано содействие естественному возобновлению"
+        # ✅ 1. CHILD plantlarni o‘chiramiz
+        child_deleted, _ = Plant.objects.filter(
+            statement=statement,
+            parent__isnull=False
+        ).delete()
 
-            parent, _ = Plant.objects.get_or_create(
-                name_uz=parent_uz,
-                parent=None,
-                defaults={
-                    "name_ru": parent_ru,
-                    "statement": statement,
-                }
+        # ✅ 2. PARENT plantlarni o‘chiramiz
+        parent_deleted, _ = Plant.objects.filter(
+            statement=statement,
+            parent__isnull=True
+        ).delete()
+
+        self.stdout.write(
+            self.style.WARNING(
+                f"🧹 Shakl 11-O‘X: {child_deleted} child + {parent_deleted} parent o‘chirildi"
             )
+        )
 
-            # majburan bog‘lab qo‘yamiz
-            changed = False
-            if parent.statement_id != statement.id:
-                parent.statement = statement
-                changed = True
+        created_total = 0
 
-            if changed:
-                parent.save(update_fields=["statement"])
-
-            # 3. 2.1–2.7 CHILD PLANTLAR
-            children = [
-                (
-                    "Kesilgan maydonlarda daraxt to‘nkalarini ko‘kartirishni ta’minlash",
-                    "Обеспечение отрастания пней деревьев на вырубках",
-                ),
-                (
-                    "Sug‘orish (yoppasiga to‘qaylarda ...)",
-                    "Орошение (в сплошных тугайных насаждениях и др.)",
-                ),
-                (
-                    "Sun’iy urug‘ sepish (shamol kam va urug‘ tarqalishi qiyin hududda)",
-                    "Искусственный посев семян (в районах со слабым ветром и трудным распространением семян)",
-                ),
-                (
-                    "Mexanik usulda yerga ishlov berish",
-                    "Механическая обработка почвы",
-                ),
-                (
-                    "Kimyoviy usulda yerga ishlov berish",
-                    "Химическая обработка почвы",
-                ),
-                (
-                    "Hududni panjara yoki boshqa unsurlar bilan o‘rash",
-                    "Ограждение территории заборами или другими элементами",
-                ),
-                (
-                    "Boshqa yo‘llar bilan daraxtni tabiiy ko‘paytirish (aniq ko‘rsatish lozim)",
-                    "Другие способы естественного возобновления деревьев (указать конкретно)",
-                ),
-            ]
-
-            created = 0
-            updated = 0
-
-            for uz_name, ru_name in children:
-                obj, is_created = Plant.objects.get_or_create(
-                    name_uz=uz_name,
-                    parent=parent,
-                    defaults={
-                        "name_ru": ru_name,
-                        "statement": statement,
-                    }
+        with auto_populate("ru"):
+            for category_uz, plants in CATEGORY_STRUCTURE.items():
+                parent = Plant.objects.create(
+                    name_uz=category_uz,
+                    name_ru=plants[0][1] if plants else category_uz,
+                    parent=None,
+                    statement=statement,
                 )
 
-                need_save = False
+                for uz, ru in plants:
+                    Plant.objects.create(
+                        name_uz=uz,
+                        name_ru=ru,
+                        parent=parent,
+                        statement=statement,
+                    )
+                    created_total += 1
 
-                if obj.statement_id != statement.id:
-                    obj.statement = statement
-                    need_save = True
-
-                if obj.parent_id != parent.id:
-                    obj.parent = parent
-                    need_save = True
-
-                if obj.name_ru != ru_name:
-                    obj.name_ru = ru_name
-                    need_save = True
-
-                if need_save:
-                    obj.save()
-                    updated += 1
-
-                if is_created:
-                    created += 1
-
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"✅ Shakl 11-O‘X (2.1–2.7) done. Created: {created}, Updated: {updated}"
-                )
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"✅ Shakl 11-O‘X: {created_total} ta yangi plant yaratildi"
             )
+        )
