@@ -234,7 +234,7 @@ def aggregate_national_report(statement, deadline, region):
 def aggregate_general_report(statement, deadline, region):
     from decimal import Decimal
     from apps.utils.services.is_that_number import safe_decimal
-    from apps.reports.models import Report, ReportItem, ReportItemInner
+    from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
     latest_deadline = Deadline.objects.filter(
         statement=statement,
@@ -288,6 +288,46 @@ def aggregate_general_report(statement, deadline, region):
         touched_column_ids.add(col_id)
         for inner in item.inners.all():
             column_total_map[col_id] += safe_decimal(inner.value)
+
+    # 🌱 Maxsus: "Urug' xarakati Reja" holatida accepted individual reportlarda REJA 0 ga tushiriladi.
+    # Regional Jami uchun REJA yig'indisini tashkilot JAMI (is_individual_general=True) reportlaridan olamiz.
+    try:
+        is_seed_statement = statement.name_uz.strip() == "Urug' xarakati Reja"
+    except Exception:
+        is_seed_statement = False
+
+    if is_seed_statement:
+        # REJA ustuni ordering va id sini topamiz
+        reja_col = StatementColumn.objects.filter(
+            statement=statement,
+            ordering="1.1.2.1",
+        ).first()
+        if reja_col:
+            # Shu regiondagi barcha tashkilot JAMI reportlaridan org-level REJA ni yig'amiz
+            org_general_reports = Report.objects.filter(
+                statement=statement,
+                is_individual_general=True,
+                is_general=False,
+                is_report=False,
+                region=region,
+            )
+
+            reja_items = (
+                ReportItem.objects
+                .filter(report__in=org_general_reports, statement_column_id=reja_col.id)
+                .prefetch_related("inners")
+            )
+
+            total_reja = Decimal(0)
+            for it in reja_items:
+                # Faqat organization-level (plant=None) qiymatini olamiz
+                org_inner = next((inn for inn in it.inners.all() if getattr(inn, "plant_id", None) is None), None)
+                if org_inner:
+                    total_reja += safe_decimal(org_inner.value)
+
+            # Ushbu qiymatni umumiy xarita va touched setga kiritamiz/yangilaymiz
+            column_total_map[reja_col.id] = total_reja
+            touched_column_ids.add(reja_col.id)
 
     # 🧾 4. Yangi ReportItem va ReportItemInner yaratish
     new_items = [
