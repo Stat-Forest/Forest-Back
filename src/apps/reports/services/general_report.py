@@ -255,17 +255,39 @@ def aggregate_general_report(statement, deadline, region):
     # 🔄 2. Avvalgi ma’lumotlarni tozalaymiz
     ReportItem.objects.filter(report=general_report).delete()
 
-    # 🔎 3. Manba: ACCEPTED individual reportlar (bevosita asosiy manba)
-    regional_reports = (
-        Report.objects.filter(
-            statement=statement,
-            is_general=False,
-            is_republic=False,
-            is_report=True,
-            status=Report.StatusChoices.ACCEPTED,
-            region=region,
-        ).select_related("organization__republic")
-    )
+    # 🔎 3. Manba tanlash: Plant-based bo'lsa – Tashkilot Jami; aks holda – ACCEPTED individual
+    def _is_plant_based_stmt(stmt) -> bool:
+        val = getattr(stmt, 'is_plant_based', None)
+        if isinstance(val, bool):
+            return val
+        # Fallback: shu statement bo'yicha birorta plant-based report bormi?
+        from apps.reports.models import Report as R
+        return R.objects.filter(statement=stmt, is_plant_based=True).exists()
+
+    use_individual_general = _is_plant_based_stmt(statement)
+
+    if use_individual_general:
+        regional_reports = (
+            Report.objects.filter(
+                statement=statement,
+                is_individual_general=True,
+                is_general=False,
+                is_report=False,
+                status=Report.StatusChoices.SAVED,
+                region=region,
+            )
+        )
+    else:
+        regional_reports = (
+            Report.objects.filter(
+                statement=statement,
+                is_general=False,
+                is_republic=False,
+                is_report=True,
+                status=Report.StatusChoices.ACCEPTED,
+                region=region,
+            ).select_related("organization__republic")
+        )
 
     # Parent general reportning deadline'i serializerdagi filterga mos kelishi uchun
     # bolalar orasidagi eng so'nggi deadline bilan sinxronlaymiz.

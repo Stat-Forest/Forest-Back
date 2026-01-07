@@ -1,74 +1,111 @@
 from decimal import Decimal
-
-from apps.reports.services.get_two_numbers_in_percent import round_decimal
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
 
-def normalize(value):
-    if value is None:
-        return Decimal(0)
+def normalize(value) -> Decimal:
+    """String yoki None tipdagi qiymatni Decimal ga xavfsiz aylantiradi."""
     try:
-        return Decimal(str(value))
+        return Decimal(str(value)) if value not in (None, "") else Decimal("0")
     except (ValueError, TypeError):
-        return Decimal(0)
+        return Decimal("0")
 
 
-def sum_values(item):
+def sum_org_level(item: ReportItem) -> Decimal:
     """
-    Berilgan ReportItem ichidagi barcha ReportItemInner qiymatlarini yig‘adi.
+    Faqat plant=None bo‘lgan ReportItemInner’lar qiymatini yig‘adi.
     """
-    if item is None:
-        return Decimal(0)
-    return sum([normalize(inner.value) for inner in item.inners.all()], Decimal(0))
+    if not item:
+        return Decimal("0")
+    return sum([normalize(inn.value) for inn in item.inners.filter(plant__isnull=True)], Decimal("0"))
 
 
-def calculate_heavy_neighborhood(report: Report):
+def calculate_heavy_neighborhood(report: Report) -> None:
     """
-    1.1.6 (%) = 1.1.5 (Amalda yetkazib berildi) / 1.1.4 (Yetkazib beriladigan ko‘chatlar soni) * 100
+    Og‘ir mahalla hisobotida FOIZ (1.1.6) ni hisoblaydi:
+    FOIZ = AMALDA / REJA * 100 (faqat plant=None bo‘yicha)
+
+    - Reja:   ordering = 1.1.4
+    - Amalda: ordering = 1.1.5
+    - Foiz:   ordering = 1.1.6
+    - Faqat `is_individual_general` bo‘lgan reportlar uchun FOIZ hisoblanadi
     """
+    ORDERING_MAP = {
+        "REJA": "1.1.4",
+        "AMALDA": "1.1.5",
+        "FOIZ": "1.1.6",
+    }
+
+    # 1. ReportItemlarni oldindan olish (optimized query)
     items = (
         report.report_items
-        .filter(statement_column__ordering__in=[
-            "1.1.4",  # Yetkazib beriladigan
-            "1.1.5",  # Amalda yetkazildi
-            "1.1.6",  # Foiz
-        ])
+        .filter(statement_column__ordering__in=ORDERING_MAP.values())
         .select_related("statement_column")
         .prefetch_related("inners")
     )
+    item_map = {item.statement_column.ordering: item for item in items}
 
-    items_by_ordering = {item.statement_column.ordering: item for item in items}
+    reja_item = item_map.get(ORDERING_MAP["REJA"])
+    amalda_item = item_map.get(ORDERING_MAP["AMALDA"])
+    foiz_item = item_map.get(ORDERING_MAP["FOIZ"])
 
-    yetkazilishi_item = items_by_ordering.get("1.1.4")
-    amalga_oshgan_item = items_by_ordering.get("1.1.5")
-    foiz_item = items_by_ordering.get("1.1.6")
+    reja_sum = sum_org_level(reja_item)
+    amalda_sum = sum_org_level(amalda_item)
 
-    yetkazilishi_value = sum_values(yetkazilishi_item)
-    amalga_oshgan_value = sum_values(amalga_oshgan_item)
+    # 2. Agar report oddiy tashkilotniki bo‘lsa (is_individual_general emas)
+    if not report.is_individual_general:
+        # 1) FOIZni 0 ga tushiramiz
+        if foiz_item:
+            for inner in foiz_item.inners.filter(plant__isnull=True):
+                if inner.value != "0":
+                    inner.value = "0"
+                    inner.save(update_fields=["value"])
+        # 2) REJAdagi organization-level innersni ham 0 qilamiz
+        if reja_item:
+            updates = []
+            for inner in reja_item.inners.filter(plant__isnull=True):
+                if inner.value != "0":
+                    inner.value = "0"
+                    updates.append(inner)
+            # agar plantli inners bo'lsa — hammasini 0 qilamiz (bu statement plantli emas)
+            for inner in reja_item.inners.filter(plant__isnull=False):
+                if inner.value != "0":
+                    inner.value = "0"
+                    updates.append(inner)
+            if updates:
+                from apps.reports.models import ReportItemInner
+                ReportItemInner.objects.bulk_update(updates, ["value"])
+        return
 
-    # === % (1.1.6) ===
-    foiz_value = (
-        (amalga_oshgan_value / yetkazilishi_value * 100)
-        if yetkazilishi_value > 0 else Decimal(0)
+    # 3. Aks holda FOIZ = AMALDA / REJA * 100 ni hisoblaymiz
+    foiz_value = round_decimal(
+        (amalda_sum / reja_sum * 100) if reja_sum else Decimal("0"),
+        places=1
     )
 
-    # ❗❗❗ SHU YERGA 1 KASR QILIB YOZILDI
-    foiz_value = round_decimal(foiz_value, 1)
-
-    # === Create or Update 1.1.6 ===
-    if foiz_item:
-        foiz_item.inners.all().delete()
-    else:
-        column_foiz = StatementColumn.objects.get(
+    # 4. Agar FOIZ uchun item mavjud bo‘lmasa — yaratamiz
+    if not foiz_item:
+        foiz_column = StatementColumn.objects.filter(
             statement=report.statement,
-            ordering="1.1.6"
-        )
+            ordering=ORDERING_MAP["FOIZ"]
+        ).first()
+        if not foiz_column:
+            return  # Agar FOIZ column topilmasa, hech narsa qilmaymiz
         foiz_item = ReportItem.objects.create(
             report=report,
-            statement_column=column_foiz
+            statement_column=foiz_column
         )
 
-    ReportItemInner.objects.create(
-        report_item=foiz_item,
-        value=str(foiz_value)  # stringga o‘girdik
-    )
+    # 5. Eski plantli qiymatlar bo‘lsa — o‘chirib yuboramiz
+    foiz_item.inners.filter(plant__isnull=False).delete()
+
+    # 6. Org-level (plant=None) qiymatini yangilaymiz yoki yaratamiz
+    org_inner = foiz_item.inners.filter(plant__isnull=True).first()
+    if not org_inner:
+        ReportItemInner.objects.create(
+            report_item=foiz_item,
+            value=str(foiz_value)
+        )
+    elif normalize(org_inner.value) != foiz_value:
+        org_inner.value = str(foiz_value)
+        org_inner.save(update_fields=["value"])
