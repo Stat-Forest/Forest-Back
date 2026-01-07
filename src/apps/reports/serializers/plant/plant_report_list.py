@@ -1,16 +1,26 @@
 import re
 from uuid import UUID
-from django.utils.translation import gettext_lazy as _
 from apps.reports.models import StatementColumn
-from apps.utils.translation import get_lang_code, get_translated_field
+from django.utils.translation import gettext_lazy as _
 from apps.reports.serializers.reports import ReportListSerializer
+from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class PlantReportListSerializer(ReportListSerializer):
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
 
-        # === Tashkilot haqida ===
+        request = self.context.get("request")
+        is_user_input_filter = None
+        if request:
+            raw = request.query_params.get("is_user_input")
+            if raw is not None:
+                raw = str(raw).strip().lower()
+                if raw in ("true", "1"):
+                    is_user_input_filter = True
+                elif raw in ("false", "0"):
+                    is_user_input_filter = False
+
         if report.is_general:
             organization_id = "general"
             organization_name = _("Viloyat darajasidagi Jami")
@@ -30,12 +40,16 @@ class PlantReportListSerializer(ReportListSerializer):
                 if report.organization else _("Nomaʼlum tashkilot")
             )
 
-        # === Barcha itemlar ===
         items = list(
             report.report_items
             .select_related("statement_column__parent")
             .prefetch_related("inners__plant")
         )
+
+        # is_user_input filter qo‘llanilyapti
+        if is_user_input_filter is not None:
+            items = [i for i in items if
+                     i.statement_column and i.statement_column.is_user_input == is_user_input_filter]
 
         def ordering_key(ordering: str):
             if not ordering:
@@ -44,7 +58,6 @@ class PlantReportListSerializer(ReportListSerializer):
 
         items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
-        # === columnlarni kashirovka qilamiz
         all_columns = StatementColumn.objects.filter(statement=report.statement).select_related("parent")
         column_map = {str(col.id): col for col in all_columns}
 
@@ -72,15 +85,12 @@ class PlantReportListSerializer(ReportListSerializer):
                     val = inner.value
                     inner_data = {"id": str(inner.id)}
 
-                    # ✅ 1. Plant-based
                     if inner.plant:
                         inner_data.update({
                             "plant_id": str(inner.plant.id),
                             "plant_name": get_translated_field(inner.plant, "name", lang),
                             "value": val,
                         })
-
-                    # ✅ 2. Organization column – if UUID -> convert to name
                     elif column.is_organization:
                         try:
                             UUID(str(val))
@@ -88,8 +98,6 @@ class PlantReportListSerializer(ReportListSerializer):
                         except Exception:
                             val = _("Nomaʼlum tashkilot")
                         inner_data["value"] = val
-
-                    # ✅ 3. Simple value
                     else:
                         inner_data["value"] = val
 
