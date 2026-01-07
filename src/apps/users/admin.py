@@ -62,7 +62,11 @@ class CustomUserAdmin(AdminHistoryMixin,admin.ModelAdmin):
             ),
         }),
     )
-
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.select_related("organization", "statement")
+    
     def save_model(self, request, obj, form, change):
         if form.cleaned_data.get("password") and not change:
             obj.set_password(form.cleaned_data["password"])
