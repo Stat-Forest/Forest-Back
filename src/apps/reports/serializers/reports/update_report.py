@@ -1,12 +1,11 @@
-import uuid
-
-from rest_framework import serializers
 from django.db import transaction
 
+from rest_framework import serializers
+
 from apps.base.serializers import CustomModelSerializer
-from apps.reports.calculate_orderings.calculated_columns import CALCULATED_COLUMNS
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services import aggregate_individual_report
+from apps.reports.calculate_orderings.calculated_columns import CALCULATED_COLUMNS
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
 
@@ -160,6 +159,36 @@ class ReportDetailSerializer(CustomModelSerializer):
             return obj.deadline.submit_at
         return None
 
+    def _parse_bool(self, value):
+        if value is None:
+            return None
+        value = str(value).strip().lower()
+        if value in ("true", "1"):
+            return True
+        if value in ("false", "0"):
+            return False
+        return None
+
     def get_report_items(self, obj):
-        items = obj.report_items.filter(statement_column__is_user_input=True)
-        return ReportItemUpdateSerializer(items, many=True).data
+        request = self.context.get("request")
+
+        raw = request.query_params.get("is_user_input") if request else None
+        is_user_input = self._parse_bool(raw)
+
+        qs = (
+            obj.report_items.model.objects
+            .filter(report=obj)
+            .select_related("statement_column")
+            .prefetch_related("inners")
+        )
+
+        if is_user_input is True:
+            qs = qs.filter(statement_column__is_user_input=True)
+        elif is_user_input is False:
+            qs = qs.filter(statement_column__is_user_input=False)
+        else:
+            # default — faqat user input
+            qs = qs.filter(statement_column__is_user_input=True)
+
+        return ReportItemUpdateSerializer(qs, many=True, context=self.context).data
+
