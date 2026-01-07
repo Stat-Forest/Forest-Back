@@ -47,8 +47,6 @@ class ReportExcelExportAPIView(APIView):
         report_ids = request.data.get("report_ids", [])
         lang = request.data.get("lang", "uz").lower()
         mode = str(request.data.get("mode", "")).lower()
-        aggregated_flag = request.data.get("aggregated", None)
-        row_numbers_map = request.data.get("row_numbers", {}) or {}
 
         if not report_ids:
             return Response({"detail": "report_ids ro'yxati yuborilmadi."}, status=400)
@@ -72,8 +70,6 @@ class ReportExcelExportAPIView(APIView):
         lang = request.query_params.get("lang", "uz").lower()
         mode = request.query_params.get("mode", "").lower()
         # For GET testing, allow optional aggregated and rudimentary row_numbers via query (row_numbers not practical in GET)
-        aggregated_flag = request.query_params.get("aggregated", None)
-        row_numbers_map = {}
 
         if not ids_param:
             return Response({
