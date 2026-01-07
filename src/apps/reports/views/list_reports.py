@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
-from apps.reports.models import Report
+from apps.reports.models import Report, Statement, Deadline
 from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
 from apps.utils.services import PeriodChoices, RegionChoices
@@ -25,13 +25,26 @@ class ExtraReportFilter(django_filters.FilterSet):
         choices=[('', 'All')] + list(RegionChoices.choices),
         label="Hudud"
     )
-    statement = django_filters.CharFilter(
+    statement = django_filters.ChoiceFilter(
         method='filter_statement',
-        label="Hisobot turi"
+        label="Hisobot turi",
+        choices=lambda: [('', 'All')] + list(
+            Statement.objects.filter(
+                reports__isnull=False
+            ).distinct().order_by('name_uz')
+            .values_list('id', 'name_uz')
+        )
     )
-    deadline = django_filters.CharFilter(
+
+    deadline = django_filters.ChoiceFilter(
         method='filter_deadline',
-        label="Muddat"
+        label="Muddat",
+        choices=lambda: [('', 'All')] + list(
+            Deadline.objects.filter(
+                reports__isnull=False
+            ).distinct().order_by('-submit_at')
+            .values_list('id', 'submit_at')
+        )
     )
 
     time_status = django_filters.ChoiceFilter(
@@ -39,7 +52,6 @@ class ExtraReportFilter(django_filters.FilterSet):
         label="Vaqt holati",
         choices=[('', 'All')] + list(Report.TimeStatus.choices)
     )
-
 
     def filter_statement_period(self, queryset, name, value):
         if value:
@@ -58,12 +70,12 @@ class ExtraReportFilter(django_filters.FilterSet):
 
     def filter_statement(self, queryset, name, value):
         if value:
-            return queryset.filter(statement=value)
+            return queryset.filter(statement_id=value)
         return queryset
 
     def filter_deadline(self, queryset, name, value):
         if value:
-            return queryset.filter(deadline=value)
+            return queryset.filter(deadline_id=value)
         return queryset
 
     def filter_time_status(self, queryset, name, value):

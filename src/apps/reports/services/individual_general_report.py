@@ -1,4 +1,7 @@
 from collections import defaultdict
+from decimal import Decimal
+from django.db import transaction
+
 from apps.utils.services.is_that_number import is_number
 
 
@@ -12,14 +15,36 @@ def get_year_from_deadline(deadline):
     return int(year_str)
 
 
+def is_seed_statement(statement):
+    """
+    Urug' xarakati Reja ni aniqlash (multilang-safe)
+    """
+    from apps.reports.models import StatementColumn
+    return StatementColumn.objects.filter(
+        statement=statement,
+        ordering__in=["1.1.2.1", "1.1.2.2", "1.1.2.3"]
+    ).count() == 3
+
+
+def is_heavy_neighborhood_statement(statement):
+    """
+    Og'ir mahalla ni aniqlash
+    """
+    from apps.reports.models import StatementColumn
+    return StatementColumn.objects.filter(
+        statement=statement,
+        ordering__in=["1.1.4", "1.1.5", "1.1.6"]
+    ).count() == 3
+
+
+@transaction.atomic
 def aggregate_individual_report(source_report):
-    from decimal import Decimal
     from apps.reports.models import (
         Report, ReportItem, ReportItemInner,
         PlanItem, StatementColumn
     )
 
-    # 1️⃣ Eski tashkilot jami reportni tozalaymiz
+    # 1️⃣ Eski individual general reportni o‘chiramiz
     Report.objects.filter(
         organization=source_report.organization,
         statement=source_report.statement,
@@ -27,7 +52,7 @@ def aggregate_individual_report(source_report):
         is_individual_general=True
     ).delete()
 
-    # 2️⃣ Tashkilot jami reportni yaratamiz
+    # 2️⃣ Yangi individual general report yaratamiz
     region = source_report.organization.region if source_report.organization else source_report.region
     republic = source_report.organization.republic if source_report.organization else source_report.republic
 
@@ -43,145 +68,130 @@ def aggregate_individual_report(source_report):
         republic=republic,
     )
 
-    # 3️⃣ Hammasi uchun ReportItem tayyorlab olish uchun qiymatlar yig‘amiz
+    # 3️⃣ Source reportdan qiymatlarni yig‘amiz
     column_values_map = defaultdict(list)
-    all_items = source_report.report_items.prefetch_related("inners")
 
-    for item in all_items:
+    source_items = (
+        source_report.report_items
+        .select_related("statement_column")
+        .prefetch_related("inners")
+    )
+
+    for item in source_items:
         for inner in item.inners.all():
             column_values_map[item.statement_column_id].append(inner.value)
 
-    # 🌱 Urug' xarakati Reja bo'lsa, FOIZ ustunini ham majburan qo'shamiz (agar yo'q bo'lsa)
-    is_seed_statement = source_report.statement.name_uz.strip() == "Urug' xarakati Reja"
-    if is_seed_statement:
+    # Statement turlari
+    seed_statement = is_seed_statement(source_report.statement)
+    heavy_statement = is_heavy_neighborhood_statement(source_report.statement)
+
+    # Seed statement uchun FOIZ ustuni majburiy
+    if seed_statement:
         foiz_col = StatementColumn.objects.filter(
             statement=source_report.statement,
             ordering="1.1.2.3"
         ).first()
         if foiz_col and foiz_col.id not in column_values_map:
-            # Bo'sh ro'yxat qo'shamiz — keyinroq qiymat "0" beriladi
             column_values_map[foiz_col.id] = []
 
-    # 4️⃣ Yangi itemlar va ularning qiymatlarini bulk yaratamiz
-    new_items = []
+    # Og'ir mahalla uchun: REJA (1.1.4) va FOIZ (1.1.6) ustunlarini majburiy qo'shamiz
+    if heavy_statement:
+        reja_col = StatementColumn.objects.filter(
+            statement=source_report.statement,
+            ordering="1.1.4"
+        ).first()
+        if reja_col and reja_col.id not in column_values_map:
+            column_values_map[reja_col.id] = []
+
+        foiz_col = StatementColumn.objects.filter(
+            statement=source_report.statement,
+            ordering="1.1.6"
+        ).first()
+        if foiz_col and foiz_col.id not in column_values_map:
+            column_values_map[foiz_col.id] = []
+
+    # 4️⃣ ReportItem larni yaratamiz
+    new_items = [
+        ReportItem(report=individual_report, statement_column_id=cid)
+        for cid in column_values_map.keys()
+    ]
+    ReportItem.objects.bulk_create(new_items)
+
+    created_items = ReportItem.objects.filter(report=individual_report)
+    item_map = {i.statement_column_id: i for i in created_items}
+
     new_inners = []
 
+    # 5️⃣ Inners qiymatlarini tayyorlaymiz
     for column_id, values in column_values_map.items():
-        report_item = ReportItem(
-            report=individual_report,
-            statement_column_id=column_id
-        )
-        new_items.append(report_item)
+        report_item = item_map[column_id]
+        value = "0"
+        ordering = getattr(report_item.statement_column, "ordering", "")
 
-        # 🌱 Urug' xarakati Reja uchun maxsus: REJA (1.1.2.1) PlanItem dan, FOIZ (1.1.2.3) = "0"
-        if is_seed_statement:
-            is_reja_column = StatementColumn.objects.filter(
-                id=column_id,
-                ordering="1.1.2.1"
-            ).exists()
-            is_foiz_column = StatementColumn.objects.filter(
-                id=column_id,
-                ordering="1.1.2.3"
-            ).exists()
-
-            if is_reja_column:
+        # 🌱 Urug' xarakati Reja
+        if seed_statement:
+            if ordering == "1.1.2.1":  # REJA
                 plan_year = get_year_from_deadline(source_report.deadline)
-                plan_value = PlanItem.objects.filter(
-                    plan__statement=source_report.statement,
-                    plan__organization=source_report.organization,
-                    plan__year=plan_year,
-                    column_id=column_id
-                ).values_list("plan_value", flat=True).first() or Decimal("0.0")
-                value = str(plan_value)
-            elif is_foiz_column:
-                # FOIZni boshlang'ich 0 qilib qo'yamiz; keyin seed_movement_plan hisoblaydi
+                plan_value = (
+                    PlanItem.objects.filter(
+                        plan__statement=source_report.statement,
+                        plan__organization=source_report.organization,
+                        plan__year=plan_year,
+                        column_id=column_id
+                    )
+                    .values_list("plan_value", flat=True)
+                    .first()
+                )
+                value = str(plan_value or Decimal("0"))
+            elif ordering == "1.1.2.3":  # FOIZ
                 value = "0"
-            else:
-                # Masalan AMALDA ustuni: numeric summasi
-                numeric_values = [Decimal(str(v)) for v in values if is_number(v)]
-                value = str(sum(numeric_values)) if numeric_values else "0"
+            else:  # AMALDA
+                nums = [Decimal(str(v)) for v in values if is_number(v)]
+                value = str(sum(nums)) if nums else "0"
+
+        # 🏘 Og‘ir mahalla
+        elif heavy_statement:
+            if ordering == "1.1.4":  # REJA (plan from PlanItem, like seed statement)
+                plan_year = get_year_from_deadline(source_report.deadline)
+                plan_value = (
+                    PlanItem.objects.filter(
+                        plan__statement=source_report.statement,
+                        plan__organization=source_report.organization,
+                        plan__year=plan_year,
+                        column_id=column_id,
+                    )
+                    .values_list("plan_value", flat=True)
+                    .first()
+                )
+                value = str(plan_value or Decimal("0"))
+            elif ordering == "1.1.6":  # FOIZ only calculated later
+                value = "0"
+            else:  # AMALDA
+                nums = [Decimal(str(v)) for v in values if is_number(v)]
+                value = str(sum(nums)) if nums else "0"
+
+        # 🧱 Oddiy statement
         else:
-            # Boshqa barcha statementlar uchun eski xulq
-            numeric_values = [Decimal(str(v)) for v in values if is_number(v)]
-            value = str(sum(numeric_values)) if numeric_values else "0"
+            nums = [Decimal(str(v)) for v in values if is_number(v)]
+            value = str(sum(nums)) if nums else "0"
 
         new_inners.append(
             ReportItemInner(report_item=report_item, value=value)
         )
 
-    # 5️⃣ Bulk create
-    ReportItem.objects.bulk_create(new_items)
     ReportItemInner.objects.bulk_create(new_inners)
 
-    # 6️⃣ Agar Urug' xarakati Reja bo'lsa, FOIZni darhol hisoblaymiz (inline)
-    if is_seed_statement:
-        from decimal import Decimal
-        from apps.reports.services.get_two_numbers_in_percent import round_decimal
-        # StatementColumn ordering larini aniqlaymiz
-        reja_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.2.1",
-        ).first()
-        amalda_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.2.2",
-        ).first()
-        foiz_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.2.3",
-        ).first()
-
-        if reja_col and amalda_col and foiz_col:
-            items = individual_report.report_items.prefetch_related("inners")
-            item_map = {i.statement_column_id: i for i in items}
-
-            reja_item = item_map.get(reja_col.id)
-            amalda_item = item_map.get(amalda_col.id)
-            foiz_item = item_map.get(foiz_col.id)
-
-            def _norm(v):
-                try:
-                    return Decimal(str(v))
-                except Exception:
-                    return Decimal("0")
-
-            # REJA org-level
-            reja_val = Decimal("0")
-            if reja_item:
-                org_inner = reja_item.inners.filter(plant__isnull=True).first()
-                if org_inner:
-                    reja_val = _norm(org_inner.value)
-
-            # AMALDA org-level yoki plant yig'indisi
-            amalda_val = Decimal("0")
-            if amalda_item:
-                org_inn = amalda_item.inners.filter(plant__isnull=True).first()
-                if org_inn:
-                    amalda_val = _norm(org_inn.value)
-                else:
-                    for inn in amalda_item.inners.all():
-                        if inn.plant_id:
-                            amalda_val += _norm(inn.value)
-
-            # FOIZni yozamiz (faqat org-level)
-            if foiz_item:
-                target = foiz_item.inners.filter(plant__isnull=True).first()
-                if not target:
-                    from apps.reports.models import ReportItemInner
-                    target = ReportItemInner.objects.create(report_item=foiz_item, value="0")
-
-                foiz_val = round_decimal((amalda_val / reja_val * 100) if reja_val else Decimal("0"))
-                if str(foiz_val) != target.value:
-                    target.value = str(foiz_val)
-                    target.save(update_fields=["value"])
-
-        # Ikkinchi safety net sifatida mavjud hisoblagichni ham chaqiramiz
+    # 6️⃣ Calculator chaqirish (SOURCE OF TRUTH)
+    if seed_statement:
         from apps.reports.report_calculate.forest_create.seed_movement_plan import (
             calculate_seed_movement_plan,
         )
-        try:
-            calculate_seed_movement_plan(individual_report)
-        except Exception:
-            pass
+        calculate_seed_movement_plan(individual_report)
+
+    elif heavy_statement:
+        from apps.reports.report_calculate.forest_create.heavy_neighborhood import (
+            calculate_heavy_neighborhood,
+        )
+        calculate_heavy_neighborhood(individual_report)
 
     return individual_report

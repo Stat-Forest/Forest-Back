@@ -39,10 +39,6 @@ class ReportListAPIView(CustomListAPIView):
     pagination_class = None
     # permission_classes = (CanListReport,)
 
-    CACHE_NAMESPACE = "report_list"
-    CACHE_VERSION_KEY = "report_list_version"
-    CACHE_TTL = 60
-
     queryset = Report.objects.select_related(
         'organization',
         'statement',
@@ -54,21 +50,16 @@ class ReportListAPIView(CustomListAPIView):
         Prefetch(
             'report_items',
             queryset=ReportItem.objects
-            .select_related('statement_column', 'statement_column__parent')
-            .prefetch_related("inners")
+                .select_related('statement_column', 'statement_column__parent')
+                .prefetch_related("inners")
         )
     ).filter(
         statement__parent__isnull=False,
     ).order_by('-created_at')
+
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
-
-    # filterset_fields = [
-    #     'status', 'organization__name', 'organization',
-    #     'statement__name', 'statement', 'statement__period',
-    #     'organization__region', 'deadline__submit_at'
-    # ]
 
     def get_queryset(self):
         user = self.request.user
@@ -106,25 +97,7 @@ class ReportListAPIView(CustomListAPIView):
         if not request.user.is_authenticated:
             return Response([])
 
-        version = get_cache_version(self.CACHE_VERSION_KEY)
-
-        cache_key = build_list_cache_key(
-            namespace=self.CACHE_NAMESPACE,
-            request=request,
-            extra={"view": "ReportListAPIView"}
-        )
-
-        def compute():
-            response = super(ReportListAPIView, self).list(request, *args, **kwargs)
-            return response.data
-
-        data = cache_get_or_set(
-            key=cache_key,
-            version=version,
-            ttl=self.CACHE_TTL,
-            compute=compute,
-        )
-        return Response(data)
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
