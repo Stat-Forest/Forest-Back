@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from django_filters.rest_framework import DjangoFilterBackend
 # Local apps
 from apps.reports.serializers.plan import (
     PlanSerializer,
@@ -142,26 +143,55 @@ class PlanRetrieveAPIView(generics.RetrieveAPIView):
 )
 class PlanListAPIView(generics.ListAPIView):
     serializer_class = PlanListSerializer
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ["statement", "organization", "year", "season"]
 
+    queryset = (
+        Plan.objects
+        .select_related("organization", "statement")
+        .prefetch_related(
+            # PLAN ITEMS → COLUMN → PARENTS (up to 3 levels)
+            Prefetch(
+                "plan_items",
+                queryset=PlanItem.objects.select_related(
+                    "column",
+                    "column__parent",
+                    "column__parent__parent",
+                ),
+            ),
+
+            # PLANT PLANS → PLANT → ITEMS → COLUMN → PARENTS
+            Prefetch(
+                "plant_plans",
+                queryset=PlantPlan.objects
+                .select_related("plant")
+                .prefetch_related(
+                    Prefetch(
+                        "items",
+                        queryset=PlantPlanItem.objects.select_related(
+                            "column",
+                            "column__parent",
+                            "column__parent__parent",
+                        ),
+                    )
+                ),
+            ),
+        )
+    )
+
     def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
 
-        # 🔹 Faqat Plan modelini select_related bilan olamiz
-        qs = Plan.objects.select_related("organization", "statement")
-
-        # 🔹 User organization bilan bog‘langan bo‘lsa filter qilamiz
         if getattr(user, "organization", None):
             qs = qs.filter(organization=user.organization)
 
-        # 🔹 ORDER
         return qs.order_by("-created_at")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["lang"] = self.request.query_params.get("lang", "uz")
         return context
-
 
 
 # =============================================================================

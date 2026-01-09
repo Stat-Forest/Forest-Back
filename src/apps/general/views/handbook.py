@@ -15,7 +15,7 @@ class HandbookListCreateView(DRFHistoryMixin,generics.ListCreateAPIView):
     """
     queryset = Handbook.objects.filter(is_seen=True).all().order_by("-created_at")
     serializer_class = HandBookSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     # ADD FILTER AND SEARCH
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

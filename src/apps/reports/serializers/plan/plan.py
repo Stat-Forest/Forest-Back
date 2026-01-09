@@ -577,13 +577,15 @@ class PlanListItemSerializer(serializers.ModelSerializer):
 
 
 # serializers.py
-from rest_framework import serializers
-from apps.reports.models import Plan
-from django.utils import timezone
-
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     statement = serializers.SerializerMethodField()
+    plan_items = PlanListItemSerializer(many=True, read_only=True)
+    plants = PlantPlanOutSerializer(
+        source="plant_plans",
+        many=True,
+        read_only=True,
+    )
     updated_at = serializers.SerializerMethodField()
 
     class Meta:
@@ -596,25 +598,31 @@ class PlanListSerializer(serializers.ModelSerializer):
             "updated_at",
             "organization",
             "statement",
+            "plan_items",
+            "plants",
         )
 
     def get_organization(self, obj):
         lang = self.context.get("lang", "uz")
+
         if lang == "ru":
             return getattr(obj.organization, "name_ru", obj.organization.name)
+
         return getattr(obj.organization, "name_uz", obj.organization.name)
 
     def get_statement(self, obj):
         lang = self.context.get("lang", "uz")
+
         if lang == "ru":
             return getattr(obj.statement, "name_ru", obj.statement.name)
+
         return getattr(obj.statement, "name_uz", obj.statement.name)
 
     def get_updated_at(self, obj):
         dt = obj.updated_at or obj.created_at
-        return timezone.localtime(dt).strftime("%d.%m.%Y %H:%M") if dt else None
-
-from rest_framework import serializers
+        if not dt:
+            return None
+        return timezone.localtime(dt).strftime("%d.%m.%Y %H:%M")
 
 
 class ColumnPlanItemSerializer(serializers.Serializer):
