@@ -20,6 +20,7 @@ ALLOWED_MODELS = [
     "Deadline",
     "Statement",
     "Plan",
+    "Handbook",
 ]
 
 
