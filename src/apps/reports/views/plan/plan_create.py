@@ -1,7 +1,7 @@
 # Standard library
-from django.db import transaction
 from django.utils.translation import gettext_lazy as _
-
+from django.db.models import Prefetch
+from django.db import transaction, IntegrityError
 # Third-party
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -9,107 +9,173 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 # Local apps
-from apps.reports.models import Plan, PlanItem
-from apps.reports.serializers.plan import PlanSerializer, PlanListSerializer
+from apps.reports.serializers.plan import (
+    PlanSerializer,
+    PlanListSerializer,
+)
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.permissions import CanCreatePlan
-from apps.utils.translation import get_lang_code, get_translated_field
 from apps.logs.drf_mixins import DRFHistoryMixin
 
-# -----------------------------------------------------------------------------
-# Plan Create API
-# -----------------------------------------------------------------------------
+from apps.reports.models import Plan, PlanItem, PlantPlan, PlantPlanItem,StatementColumn
+
+# =============================================================================
+# PLAN CREATE
+# =============================================================================
 @extend_schema(tags=["Plan"])
-class PlanCreateView(DRFHistoryMixin,generics.CreateAPIView):
+class PlanCreateView(DRFHistoryMixin, generics.CreateAPIView):
     """
-    Create a new Plan.
+    CREATE PLAN
+
+    - season OPTIONAL
+    - use_plant_plan = False -> plan_items
+    - use_plant_plan = True  -> plants
+
+    Response har doim PlanSerializer formatida
     """
-    queryset = Plan.objects.select_related("organization", "statement")
+
     serializer_class = PlanSerializer
+    queryset = Plan.objects.select_related("organization", "statement")
     permission_classes = [CanCreatePlan]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-# -----------------------------------------------------------------------------
-# Plan Retrieve API
-# -----------------------------------------------------------------------------
+        try:
+            with transaction.atomic():
+                plan = serializer.save()
+        except IntegrityError:
+            # DB-level unique constraint
+            raise CustomExceptionError(
+                400,
+                {
+                    "detail": _(
+                        "Plan already exists for this organization, statement, year and season"
+                    )
+                }
+            )
+
+        output_serializer = PlanSerializer(
+            plan,
+            context={
+                "request": request,
+                "lang": request.query_params.get("lang", "uz"),
+            },
+        )
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+
+# =============================================================================
+# PLAN RETRIEVE
+# =============================================================================
 @extend_schema(tags=["Plan"])
 class PlanRetrieveAPIView(generics.RetrieveAPIView):
-    """
-    Retrieve a single Plan by ID.
-    """
-    queryset = Plan.objects.select_related("organization", "statement")
+    queryset = (
+        Plan.objects
+        .select_related("organization", "statement")
+        .prefetch_related(
+            Prefetch(
+                "plan_items",
+                queryset=PlanItem.objects.select_related(
+                    "column",
+                    "column__parent",
+                    "column__parent__parent",
+                )
+            ),
+            Prefetch(
+                "plant_plans",
+                queryset=PlantPlan.objects
+                .select_related("plant")
+                .prefetch_related(
+                    Prefetch(
+                        "items",
+                        queryset=PlantPlanItem.objects.select_related(
+                            "column",
+                            "column__parent",
+                            "column__parent__parent",
+                        )
+                    )
+                )
+            ),
+            # 🔥 MUHIM
+            Prefetch(
+                "statement__columns",
+                queryset=StatementColumn.objects.select_related(
+                    "parent",
+                    "parent__parent",
+                )
+            )
+        )
+    )
     serializer_class = PlanSerializer
-    # permission_classes = [CanCreatePlan]
 
 
-# -----------------------------------------------------------------------------
-# Plan List API
-# -----------------------------------------------------------------------------
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lang"] = self.request.query_params.get("lang", "uz")
+        return context
+
+
+
+
+# =============================================================================
+# PLAN LIST
+# =============================================================================
 @extend_schema(
     tags=["Plan"],
     parameters=[
         OpenApiParameter(
             name="lang",
-            description="Language parameter: uz (default) or ru",
+            description="Language: uz (default) or ru",
             required=False,
             type=OpenApiTypes.STR,
             enum=["uz", "ru"],
-            location=OpenApiParameter.QUERY,
-        )
+        ),
+        OpenApiParameter(
+            name="season",
+            description="Season filter (optional)",
+            required=False,
+            type=OpenApiTypes.STR,
+        ),
     ],
 )
 class PlanListAPIView(generics.ListAPIView):
-    """
-    List Plans filtered by user's organization and user's statement_parent_id.
-    Language parameter (lang) is passed to serializer context.
-    """
-    queryset = (
-        Plan.objects.select_related("organization", "statement")
-        .prefetch_related("plan_items__column")
-    )
     serializer_class = PlanListSerializer
-    filterset_fields = ["statement", "organization", "year","season"]
+    filterset_fields = ["statement", "organization", "year", "season"]
 
     def get_queryset(self):
-        """
-        Restrict queryset to user's organization and user's statement parent.
-        """
         user = self.request.user
-        qs = self.queryset
 
-        # Organization bo‘yicha filter
-        if user.organization is not None:
-            qs = qs.filter(organization_id=user.organization.pk)
+        # 🔹 Faqat Plan modelini select_related bilan olamiz
+        qs = Plan.objects.select_related("organization", "statement")
 
-        # User.statement_parent_id bo‘yicha filter
-        if hasattr(user, 'statement') and user.statement is not None:
-            qs = qs.filter(statement__parent_id=user.statement.id)
+        # 🔹 User organization bilan bog‘langan bo‘lsa filter qilamiz
+        if getattr(user, "organization", None):
+            qs = qs.filter(organization=user.organization)
 
+        # 🔹 ORDER
         return qs.order_by("-created_at")
 
     def get_serializer_context(self):
-        """
-        Add 'lang' parameter to serializer context (default: uz).
-        """
         context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang", "uz")
-        context["lang"] = lang
+        context["lang"] = self.request.query_params.get("lang", "uz")
         return context
 
 
-# -----------------------------------------------------------------------------
-# Plan Delete API
-# -----------------------------------------------------------------------------
+
+# =============================================================================
+# PLAN DELETE
+# =============================================================================
 @extend_schema(tags=["Plan"])
-class PlanDeleteAPIView(DRFHistoryMixin,generics.DestroyAPIView):
-    """
-    Delete a Plan by ID.
-    Raises a custom exception if deletion fails.
-    """
+class PlanDeleteAPIView(DRFHistoryMixin, generics.DestroyAPIView):
     queryset = Plan.objects.all()
 
     def delete(self, request, *args, **kwargs):
         try:
-            return self.destroy(request, *args, **kwargs)
+            return super().delete(request, *args, **kwargs)
         except Exception as e:
-            raise CustomExceptionError(detail={"error": str(e)})
+            raise CustomExceptionError(
+                status_code=400,
+                detail={"error": str(e)}
+            )
