@@ -30,6 +30,7 @@ class Statement(AbstractBaseModel):
         blank=True,
         null=True,
     )
+    use_plant_plan = models.BooleanField(default=False)
 
     calculate_expression = models.TextField(
         blank=True,
