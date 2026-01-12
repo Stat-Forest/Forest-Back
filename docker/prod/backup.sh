@@ -1,60 +1,108 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# ====== Settings ======
-SCRIPT_DIR=$(dirname "$(realpath "$0")")
-PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
-ENV_FILE="$PROJECT_ROOT/.env"
+echo "===== BACKUP STARTED ====="
 
+# ========================
+# Paths (container ichida)
+# ========================
+APP_ROOT="/app"
+MEDIA_DIR="$APP_ROOT/media"
+ENV_FILE="$APP_ROOT/.env"
+BACKUP_ROOT="/backups"
+
+# ========================
+# ENV tekshirish
+# ========================
 if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ .env file not found at $ENV_FILE"
-    exit 1
+  echo "❌ .env file not found at $ENV_FILE"
+  exit 1
 fi
 
-# Read DB info from .env safely
-DB_NAME=$(grep -E '^POSTGRES_DB=' "$ENV_FILE" | cut -d '=' -f2)
-DB_USER=$(grep -E '^POSTGRES_USER=' "$ENV_FILE" | cut -d '=' -f2)
-DB_PASSWORD=$(grep -E '^POSTGRES_PASSWORD=' "$ENV_FILE" | cut -d '=' -f2)
-DB_HOST=$(grep -E '^DB_HOST=' "$ENV_FILE" | cut -d '=' -f2)
-DB_PORT=$(grep -E '^DB_PORT=' "$ENV_FILE" | cut -d '=' -f2)
+# ========================
+# ENV yuklash
+# ========================
+set -o allexport
+source "$ENV_FILE"
+set +o allexport
 
-DATE=$(date +'%Y-%m-%d_%H-%M')
-YEAR=$(date +'%Y')
-MONTH=$(date +'%m')
-DAY=$(date +'%d')
+# ========================
+# Kerakli ENV larni tekshirish
+# ========================
+REQUIRED_VARS=(
+  POSTGRES_DB
+  POSTGRES_USER
+  POSTGRES_PASSWORD
+  DB_HOST
+  DB_PORT
+)
+
+for var in "${REQUIRED_VARS[@]}"; do
+  if [ -z "${!var:-}" ]; then
+    echo "❌ ENV variable $var is missing"
+    exit 1
+  fi
+done
+
+# ========================
+# Date va papkalar
+# ========================
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+YEAR=$(date +"%Y")
+MONTH=$(date +"%m")
+DAY=$(date +"%d")
 
 PROJECT_NAME="forest_project"
-BACKUP_ROOT=/backups
 BACKUP_DIR="$BACKUP_ROOT/$YEAR/$MONTH/$DAY"
-
-RETENTION_DAYS=1095
 
 mkdir -p "$BACKUP_DIR"
 
-echo "=== Backup started at $DATE ==="
+# ========================
+# 1️⃣ PostgreSQL BACKUP
+# ========================
+echo "▶ Dumping PostgreSQL database..."
 
-# 1️⃣ Database dump
-echo "Dumping PostgreSQL database..."
-export PGPASSWORD="$DB_PASSWORD"
-pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" > "$BACKUP_DIR/db_$DATE.sql"
+export PGPASSWORD="$POSTGRES_PASSWORD"
 
-if [ $? -ne 0 ]; then
-    echo "❌ Database dump failed!"
-    exit 1
+pg_dump \
+  -h "$DB_HOST" \
+  -p "$DB_PORT" \
+  -U "$POSTGRES_USER" \
+  "$POSTGRES_DB" \
+  > "$BACKUP_DIR/db.sql"
+
+echo "✔ Database dumped successfully"
+
+# ========================
+# 2️⃣ MEDIA BACKUP
+# ========================
+if [ ! -d "$MEDIA_DIR" ]; then
+  echo "❌ Media directory not found at $MEDIA_DIR"
+  exit 1
 fi
 
-# 2️⃣ Media zipping
-echo "Zipping media files..."
-zip -r "$BACKUP_DIR/media_$DATE.zip" "$PROJECT_ROOT/src/media" >/dev/null 2>&1 || true
+echo "▶ Zipping media files..."
+zip -r "$BACKUP_DIR/media.zip" "$MEDIA_DIR" >/dev/null
+echo "✔ Media zipped"
 
-# 3️⃣ Create final zip
+# ========================
+# 3️⃣ FINAL ZIP
+# ========================
+echo "▶ Creating final backup archive..."
+
 cd "$BACKUP_DIR"
-zip -r "${PROJECT_NAME}_backup_$DATE.zip" "db_$DATE.sql" "media_$DATE.zip" >/dev/null
+zip -r "${PROJECT_NAME}_backup_$DATE.zip" db.sql media.zip >/dev/null
 
-# 4️⃣ Cleanup temp files (leave only final zip)
-rm -f "db_$DATE.sql" "media_$DATE.zip"
+# ========================
+# 4️⃣ TEMP FILES CLEANUP
+# ========================
+rm -f db.sql media.zip
 
-# 5️⃣ Delete old backups
-find "$BACKUP_ROOT" -type f -name "*.zip" -mtime +$RETENTION_DAYS -exec rm {} \;
+# ========================
+# 5️⃣ OLD BACKUPS CLEANUP (3 yil)
+# ========================
+find "$BACKUP_ROOT" -type f -name "*.zip" -mtime +1095 -delete
 
-echo "✅ Backup completed successfully: ${BACKUP_DIR}/${PROJECT_NAME}_backup_$DATE.zip"
+echo "✅ BACKUP COMPLETED SUCCESSFULLY"
+echo "📦 Backup file:"
+echo "$BACKUP_DIR/${PROJECT_NAME}_backup_$DATE.zip"
