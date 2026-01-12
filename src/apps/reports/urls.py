@@ -30,12 +30,14 @@ from apps.reports.views.dashboard import (
 )
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
     PlantDetailReportAPIView, PlantUpdateReportAPIView, PlantReportDeleteAPIView
+from apps.reports.views.plant_svodka import PlantSvodkaAPIView
 
 from apps.reports.views.statement.statement import StatementListAPIView
 
 from apps.reports.views.statement.statement_column import StatementColumnTreeAPIView
 
 from apps.reports.views.statement.statement_column_corrected_org_name import CorrectedStatementColumnTreeAPIView
+from apps.reports.views.statement.appendices import StatementAppendicesAPIView
 
 
 from apps.reports.views.users import (
@@ -69,6 +71,7 @@ urlpatterns = [
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
     path('statement-columns/', StatementColumnTreeAPIView.as_view(), name='statement-columns-list'),
     path('statement-columns-corrected-org-name/', CorrectedStatementColumnTreeAPIView.as_view(), name='statement-columns-corrected-org-name-list'),
+    path('statement-appendices/', StatementAppendicesAPIView.as_view(), name='statement-appendices'),
 
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
@@ -118,6 +121,9 @@ urlpatterns = [
     path("report-plant/", PlantListReportAPIView.as_view(), name="plant-by-app"),
     path("report-plant/<uuid:pk>/", PlantDetailReportAPIView.as_view(), name="plant-by-app"),
     path("report-plant/<uuid:pk>/delete", PlantReportDeleteAPIView.as_view(), name="plant-delete"),
+
+    # ====================  PLANT SVODKA (Calculated) =================
+    path("plant-svodka/", PlantSvodkaAPIView.as_view(), name="plant-svodka"),
 
     # ====================  EXPORT URL =================
     path("export-excel/", ReportExcelExportAPIView.as_view(), name="export-excel"),
