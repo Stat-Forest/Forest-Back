@@ -90,11 +90,12 @@ class PlantPlanItemOutSerializer(serializers.ModelSerializer):
 
 class PlantPlanOutSerializer(serializers.ModelSerializer):
     plant = serializers.UUIDField(source="plant.id")
+    plant_name = serializers.CharField(source="plant.name", read_only=True)
     items = PlantPlanItemOutSerializer(many=True)
 
     class Meta:
         model = PlantPlan
-        fields = ("plant", "items")
+        fields = ("plant", "plant_name", "items")
 
 class PlantPlanInSerializer(serializers.Serializer):
     plant = serializers.UUIDField()
