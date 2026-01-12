@@ -294,7 +294,6 @@ def export_universal_report_to_excel_v2(
 
             is_general_rep = bool(report.get("is_general") or org_id_tag == "general")
             is_republic_rep = bool(report.get("is_republic") or org_id_tag == "republic")
-            is_individual_general_rep = bool(report.get("is_individual_general") or org_id_tag == "individual")
 
             # 1) For Viloyat/Respublika Jami rows: one row with aggregated values
             if is_general_rep or is_republic_rep:
