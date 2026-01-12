@@ -210,7 +210,7 @@ class Command(BaseCommand):
                         title_uz="Amalda",
                         title_ru="Факт",
                         ordering=f"{order_prefix}.2.{o_idx}.2",
-                        is_user_input=False,
+                        is_user_input=True,
                     )
 
             self.stdout.write(self.style.SUCCESS("✅ Daromad 1 statement to‘liq va tartibli yaratildi."))
