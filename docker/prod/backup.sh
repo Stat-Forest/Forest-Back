@@ -4,7 +4,7 @@ set -euo pipefail
 echo "===== BACKUP STARTED ====="
 
 # ========================
-# Paths (container ichida)
+# Paths
 # ========================
 APP_ROOT="/app"
 MEDIA_DIR="$APP_ROOT/media"
@@ -12,7 +12,7 @@ ENV_FILE="$APP_ROOT/.env"
 BACKUP_ROOT="/backups"
 
 # ========================
-# ENV tekshirish
+# ENV file tekshirish
 # ========================
 if [ ! -f "$ENV_FILE" ]; then
   echo "❌ .env file not found at $ENV_FILE"
@@ -20,32 +20,30 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 # ========================
-# ENV yuklash
+# .env dan FAQAT kerakli DB ma’lumotlarni o‘qish
 # ========================
-set -o allexport
-source "$ENV_FILE"
-set +o allexport
+get_env () {
+  grep -E "^$1=" "$ENV_FILE" | cut -d '=' -f2-
+}
+
+POSTGRES_DB=$(get_env POSTGRES_DB)
+POSTGRES_USER=$(get_env POSTGRES_USER)
+POSTGRES_PASSWORD=$(get_env POSTGRES_PASSWORD)
+DB_HOST=$(get_env DB_HOST)
+DB_PORT=$(get_env DB_PORT)
 
 # ========================
-# Kerakli ENV larni tekshirish
+# Tekshiruv
 # ========================
-REQUIRED_VARS=(
-  POSTGRES_DB
-  POSTGRES_USER
-  POSTGRES_PASSWORD
-  DB_HOST
-  DB_PORT
-)
-
-for var in "${REQUIRED_VARS[@]}"; do
-  if [ -z "${!var:-}" ]; then
+for var in POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DB_HOST DB_PORT; do
+  if [ -z "${!var}" ]; then
     echo "❌ ENV variable $var is missing"
     exit 1
   fi
 done
 
 # ========================
-# Date va papkalar
+# Date & dirs
 # ========================
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 YEAR=$(date +"%Y")
@@ -94,15 +92,14 @@ cd "$BACKUP_DIR"
 zip -r "${PROJECT_NAME}_backup_$DATE.zip" db.sql media.zip >/dev/null
 
 # ========================
-# 4️⃣ TEMP FILES CLEANUP
+# 4️⃣ CLEANUP
 # ========================
 rm -f db.sql media.zip
 
 # ========================
-# 5️⃣ OLD BACKUPS CLEANUP (3 yil)
+# 5️⃣ RETENTION (3 yil)
 # ========================
 find "$BACKUP_ROOT" -type f -name "*.zip" -mtime +1095 -delete
 
 echo "✅ BACKUP COMPLETED SUCCESSFULLY"
-echo "📦 Backup file:"
-echo "$BACKUP_DIR/${PROJECT_NAME}_backup_$DATE.zip"
+echo "📦 $BACKUP_DIR/${PROJECT_NAME}_backup_$DATE.zip"
