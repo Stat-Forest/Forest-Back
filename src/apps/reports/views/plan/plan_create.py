@@ -19,6 +19,9 @@ from apps.reports.permissions import CanCreatePlan
 from apps.logs.drf_mixins import DRFHistoryMixin
 
 from apps.reports.models import Plan, PlanItem, PlantPlan, PlantPlanItem,StatementColumn
+from apps.users.models.users import CustomUser
+
+
 
 # =============================================================================
 # PLAN CREATE
@@ -150,7 +153,7 @@ class PlanListAPIView(generics.ListAPIView):
         Plan.objects
         .select_related("organization", "statement")
         .prefetch_related(
-            # PLAN ITEMS → COLUMN → PARENTS (up to 3 levels)
+            # PLAN ITEMS → COLUMN → PARENTS
             Prefetch(
                 "plan_items",
                 queryset=PlanItem.objects.select_related(
@@ -159,7 +162,6 @@ class PlanListAPIView(generics.ListAPIView):
                     "column__parent__parent",
                 ),
             ),
-
             # PLANT PLANS → PLANT → ITEMS → COLUMN → PARENTS
             Prefetch(
                 "plant_plans",
@@ -183,8 +185,21 @@ class PlanListAPIView(generics.ListAPIView):
         qs = super().get_queryset()
         user = self.request.user
 
-        if getattr(user, "organization", None):
+        if (
+            user.role == CustomUser.Role.BOLIM_ADMIN
+            and user.statement
+        ):
+            qs = qs.filter(statement__parent=user.statement)
+
+        elif (
+            user.role in (
+                CustomUser.Role.TASHKILOT_HODIMI,
+                CustomUser.Role.TASHKILOT_RAHBARI,
+            )
+            and user.organization
+        ):
             qs = qs.filter(organization=user.organization)
+
 
         return qs.order_by("-created_at")
 
