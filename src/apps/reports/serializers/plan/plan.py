@@ -11,6 +11,7 @@ from apps.logs.models import HistoryActionJournal
 
 from decimal import Decimal
 from apps.reports.models import Plant, PlantPlan, PlantPlanItem
+from apps.users.models.users import CustomUser
 
 class PlantPlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField()
@@ -159,6 +160,16 @@ class PlanSerializer(serializers.ModelSerializer):
         is_create = self.instance is None
 
         # ================= CREATE =================
+        request = self.context["request"]
+        user = request.user
+
+        if user.role not in (
+                CustomUser.Role.BOLIM_ADMIN,
+        ):
+            raise serializers.ValidationError("Sizga ruxsat yo‘q")
+
+
+
         if is_create:
             statement_id = attrs.get("statement")
             organization_id = attrs.get("organization")
@@ -174,6 +185,11 @@ class PlanSerializer(serializers.ModelSerializer):
             statement = Statement.objects.filter(id=statement_id).first()
             if not statement:
                 raise CustomExceptionError(400, {"statement": _("Invalid statement.")})
+
+            if statement.parent_id != user.statement_id:
+                raise serializers.ValidationError(
+                    "Plan statement user statementiga mos emas"
+                )
 
         # ================= UPDATE =================
         else:
