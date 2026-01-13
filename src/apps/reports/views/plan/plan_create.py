@@ -15,7 +15,7 @@ from apps.reports.serializers.plan import (
     PlanListSerializer,
 )
 from apps.base.exceptions.exception_files import CustomExceptionError
-from apps.reports.permissions import CanCreatePlan
+from apps.reports.permissions import CanCreatePlan,CanManagePlan
 from apps.logs.drf_mixins import DRFHistoryMixin
 
 from apps.reports.models import Plan, PlanItem, PlantPlan, PlantPlanItem,StatementColumn
@@ -40,7 +40,7 @@ class PlanCreateView(DRFHistoryMixin, generics.CreateAPIView):
 
     serializer_class = PlanSerializer
     queryset = Plan.objects.select_related("organization", "statement")
-    permission_classes = [CanCreatePlan]
+    permission_classes = [CanCreatePlan,CanManagePlan]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -215,6 +215,7 @@ class PlanListAPIView(generics.ListAPIView):
 @extend_schema(tags=["Plan"])
 class PlanDeleteAPIView(DRFHistoryMixin, generics.DestroyAPIView):
     queryset = Plan.objects.all()
+    permission_classes = [CanManagePlan,]
 
     def delete(self, request, *args, **kwargs):
         try:
