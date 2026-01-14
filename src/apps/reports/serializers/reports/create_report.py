@@ -14,7 +14,7 @@ from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services import aggregate_individual_report
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.utils.translation import get_lang_code, get_translated_field
-from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
+# from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.logs.models import HistoryActionJournal
@@ -73,10 +73,10 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                     "Bu tashkilot uchun bu hisobot turi va davr bo‘yicha hisobot mavjud."
                 )
 
-        ensure_plans_exist_simple(
-            organization=organization,
-            statement=statement
-        )
+        # ensure_plans_exist_simple(
+        #     organization=organization,
+        #     statement=statement
+        # )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
         if not deadline.organizations.filter(id=user.organization.id).exists():

@@ -17,11 +17,12 @@ class ReportItemInnerSerializer(CustomModelSerializer):
         fields = ["id", "value"]
 
     def get_value(self, obj):
-        try:
-            if obj.report_item.statement_column.is_organization:
-                return str(obj.value)
-        except Exception:
-            pass
+        # Avoid accessing obj.report_item.statement_column which can trigger N+1.
+        # We rely on a precomputed map in context: is_org_by_item_id.
+        is_org_map = self.context.get("is_org_by_item_id", {})
+        report_item_id = self.context.get("report_item_id") or getattr(obj, "report_item_id", None)
+        if report_item_id is not None and is_org_map.get(str(report_item_id)):
+            return str(obj.value)
         return obj.value
 
 
@@ -33,7 +34,10 @@ class ReportItemUpdateSerializer(serializers.ModelSerializer):
         fields = ["statement_column", "inners"]
 
     def get_inners(self, obj):
-        return ReportItemInnerSerializer(obj.inners.all(), many=True).data
+        # Pass report_item_id in context so inner serializer never dereferences FKs
+        ctx = dict(self.context)
+        ctx["report_item_id"] = str(obj.id)
+        return ReportItemInnerSerializer(obj.inners.all(), many=True, context=ctx).data
 
 
 class ReportUpdateSerializer(serializers.ModelSerializer):
@@ -190,5 +194,10 @@ class ReportDetailSerializer(CustomModelSerializer):
             # default — faqat user input
             qs = qs.filter(statement_column__is_user_input=True)
 
-        return ReportItemUpdateSerializer(qs, many=True, context=self.context).data
+        # Build map once: report_item_id -> is_organization to avoid FK access inside inner serializer
+        items_list = list(qs)
+        is_org_by_item_id = {str(it.id): bool(getattr(it.statement_column, "is_organization", False)) for it in items_list}
+        ctx = dict(self.context)
+        ctx["is_org_by_item_id"] = is_org_by_item_id
+        return ReportItemUpdateSerializer(items_list, many=True, context=ctx).data
 
