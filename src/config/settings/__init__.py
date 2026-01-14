@@ -7,4 +7,3 @@ from .redis_setup import *
 from .rest_framework import *
 from .database import *
 from .celery import *
-from .logging import *
