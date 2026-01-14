@@ -117,8 +117,16 @@ def aggregate_individual_report(source_report):
     ]
     ReportItem.objects.bulk_create(new_items)
 
-    created_items = ReportItem.objects.filter(report=individual_report)
+    # Preload created items and rely only on *_id fields to avoid FK dereferencing
+    created_items = list(ReportItem.objects.filter(report=individual_report).only("id", "statement_column_id"))
     item_map = {i.statement_column_id: i for i in created_items}
+
+    # Preload StatementColumn ordering once to prevent per-item queries later
+    from apps.reports.models import StatementColumn as SC
+    ordering_by_col_id = {
+        c.id: c.ordering
+        for c in SC.objects.filter(statement=individual_report.statement).only("id", "ordering")
+    }
 
     new_inners = []
 
@@ -126,7 +134,8 @@ def aggregate_individual_report(source_report):
     for column_id, values in column_values_map.items():
         report_item = item_map[column_id]
         value = "0"
-        ordering = getattr(report_item.statement_column, "ordering", "")
+        # Use preloaded ordering map instead of touching report_item.statement_column
+        ordering = ordering_by_col_id.get(report_item.statement_column_id, "")
 
         # 🌱 Urug' xarakati Reja
         if seed_statement:
