@@ -63,4 +63,4 @@ class Statement(AbstractBaseModel):
         verbose_name_plural = "Hisobot formalari"
 
     def __str__(self):
-        return self.name
+            return getattr(self, "name_uz", self.name)
