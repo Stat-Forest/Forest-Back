@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.reports.models import Plan, PlanItem, StatementColumn
-from apps.reports.services.ensure_plans import _is_empty_plan_value
 
 
 def ensure_plans_exist_simple(*, organization, statement):
