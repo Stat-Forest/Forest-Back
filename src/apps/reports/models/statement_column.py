@@ -85,7 +85,7 @@ class StatementColumn(AbstractBaseModel):
     #     return f"{self.parent.return_parent} - {self.title}"
 
     def __str__(self):
-        return self.title
+        return self.title_uz
 
     @property
     def is_leaf(self):
