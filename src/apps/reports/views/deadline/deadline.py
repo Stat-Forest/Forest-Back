@@ -1,8 +1,8 @@
 from django.db.models import Exists, OuterRef
-from apps.reports.models import Deadline, Report
 
-from apps.reports.models import Deadline
+from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineSerializer
+
 
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema
@@ -24,6 +24,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
         ),
     ],
 )
+@extend_schema(tags=["Deadlines"])
 class DeadlineListAPIView(generics.ListAPIView):
     serializer_class = DeadlineSerializer
     filter_backends = [DjangoFilterBackend]
