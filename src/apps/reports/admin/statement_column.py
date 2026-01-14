@@ -57,7 +57,7 @@ class StatementColumnAdmin(AdminHistoryMixin, admin.ModelAdmin):
     )
     list_filter = ('statement', OrderingFilter)
     ordering = ('ordering',)
-    raw_id_fields = ('statement', 'parent')
+    autocomplete_fields = ('statement', 'parent')
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
