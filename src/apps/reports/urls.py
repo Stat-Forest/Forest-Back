@@ -6,6 +6,7 @@ from apps.reports.views import (
     ReportUpdateAPIView, ReportRetrieveAPIView, ReportDeleteAPIView,
 
 )
+from apps.reports.views.filtered_general import FilteredGeneralReportAPIView
 from apps.reports.views.column_plant import ColumnPlantListAPIView
 from apps.reports.views.exports.export_excel import ReportExcelExportAPIView, ReportExcelDownloadAPIView
 from apps.reports.views.list_reports import IndividualGeneralReport, IndividualGeneralReportDetail, \
@@ -66,7 +67,6 @@ urlpatterns = [
     path('deadlines/', DeadlineListAPIView.as_view(), name='deadline-list'),
     path('expired-deadlines/', DeadlineExpiredListAPIView.as_view(), name='expired-deadlines'),
 
-
     # ====================  STATEMENT COLUMN URL    ====================
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
     path('statement-columns/', StatementColumnTreeAPIView.as_view(), name='statement-columns-list'),
@@ -75,6 +75,7 @@ urlpatterns = [
 
     # ====================  REPORT URL    ====================
     path('', ReportListAPIView.as_view(), name='report-list'),
+    path('filtered-general/', FilteredGeneralReportAPIView.as_view(), name='filtered-general'),
     path('create/', ReportCreateAPIView.as_view(), name='report-create'),
     path('<uuid:id>/', ReportRetrieveAPIView.as_view(), name='report-detail'),
     path('<uuid:id>/update/', ReportUpdateAPIView.as_view(), name='report-update'),

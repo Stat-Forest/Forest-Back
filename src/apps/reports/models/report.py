@@ -2,9 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 from django.db.models import TextChoices
+from django.db.models.constraints import UniqueConstraint
+
 from django.utils.timezone import  timezone
 from django.utils.translation import gettext_lazy as _
-from django.db.models.constraints import UniqueConstraint
 
 from apps.users.models import CustomUser
 from apps.utils.services import RegionChoices
