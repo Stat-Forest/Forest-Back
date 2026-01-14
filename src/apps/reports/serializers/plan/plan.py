@@ -11,6 +11,7 @@ from apps.logs.models import HistoryActionJournal
 
 from decimal import Decimal
 from apps.reports.models import Plant, PlantPlan, PlantPlanItem
+from apps.users.models.users import CustomUser
 
 class PlantPlanItemSerializer(serializers.Serializer):
     column = serializers.UUIDField()
@@ -46,8 +47,26 @@ MONTHS_BY_QUARTER = {
 }
 QUARTERS = set(MONTHS_BY_QUARTER.keys())
 
+class ColumnLangMixin:
+    def _get_lang(self):
+        return self.context.get("lang", "uz")
 
-class PlanItemSerializer(serializers.Serializer):
+    def _get_column_title(self, column):
+        lang = self._get_lang()
+        return getattr(column, f"title_{lang}", column.title)
+
+    def _get_column_parent_name(self, column):
+        names = []
+        parent = column.parent
+
+        if parent:
+            names.append(self._get_column_title(parent))
+            if parent.parent:
+                names.append(self._get_column_title(parent.parent))
+
+        return " - ".join(reversed(names)) if names else None
+
+class PlanItemSerializer(ColumnLangMixin, serializers.Serializer):
     # INPUT
     column = serializers.UUIDField(write_only=True)
 
@@ -58,34 +77,37 @@ class PlanItemSerializer(serializers.Serializer):
     plan_value = serializers.FloatField()
 
     def get_column_id(self, obj):
-        # obj.column allaqachon select_related bilan yuklangan
         return obj.column_id
 
     def get_column_name(self, obj):
-        lang = self.context.get("lang", "uz")
-        column = obj.column
-        return getattr(column, f"title_{lang}", column.title)
+        return self._get_column_title(obj.column)
 
     def get_column_parent_name(self, obj):
-        lang = self.context.get("lang", "uz")
-        names = []
-
-        parent = obj.column.parent
-        if parent:
-            names.append(getattr(parent, f"title_{lang}", parent.title))
-            if parent.parent:
-                names.append(getattr(parent.parent, f"title_{lang}", parent.parent.title))
-
-        return " - ".join(reversed(names)) if names else None
+        return self._get_column_parent_name(obj.column)
 
 
-class PlantPlanItemOutSerializer(serializers.ModelSerializer):
+
+class PlantPlanItemOutSerializer(ColumnLangMixin, serializers.ModelSerializer):
     column_id = serializers.UUIDField(source="column.id")
+    column_name = serializers.SerializerMethodField()
+    column_parent_name = serializers.SerializerMethodField()
     plan_value = serializers.DecimalField(max_digits=30, decimal_places=2)
 
     class Meta:
         model = PlantPlanItem
-        fields = ("column_id", "plan_value")
+        fields = (
+            "column_id",
+            "column_name",
+            "column_parent_name",
+            "plan_value",
+        )
+
+    def get_column_name(self, obj):
+        return self._get_column_title(obj.column)
+
+    def get_column_parent_name(self, obj):
+        return self._get_column_parent_name(obj.column)
+
 
 
 class PlantPlanOutSerializer(serializers.ModelSerializer):
@@ -138,6 +160,16 @@ class PlanSerializer(serializers.ModelSerializer):
         is_create = self.instance is None
 
         # ================= CREATE =================
+        request = self.context["request"]
+        user = request.user
+
+        if user.role not in (
+                CustomUser.Role.BOLIM_ADMIN,
+        ):
+            raise serializers.ValidationError("Sizga ruxsat yo‘q")
+
+
+
         if is_create:
             statement_id = attrs.get("statement")
             organization_id = attrs.get("organization")
@@ -153,6 +185,11 @@ class PlanSerializer(serializers.ModelSerializer):
             statement = Statement.objects.filter(id=statement_id).first()
             if not statement:
                 raise CustomExceptionError(400, {"statement": _("Invalid statement.")})
+
+            if statement.parent_id != user.statement_id:
+                raise serializers.ValidationError(
+                    "Plan statement user statementiga mos emas"
+                )
 
         # ================= UPDATE =================
         else:
