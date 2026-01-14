@@ -17,14 +17,15 @@ class StatementListAPIView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.statement:
-            return Statement.objects.filter(id=user.statement.id).prefetch_related('children')
-        return Statement.objects.filter(parent__isnull=True).prefetch_related('children')
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang")
-        if not lang:
-            lang = "uz"
-        context["lang"] = lang
-        return context
+        qs = Statement.objects.filter(is_used=True)
+
+        if user.statement:
+            return qs.filter(
+                id=user.statement.id,
+                parent__isnull=True
+            ).prefetch_related('children')
+
+        return qs.filter(
+            parent__isnull=True
+        ).prefetch_related('children')
