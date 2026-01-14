@@ -26,12 +26,35 @@ class StatementColumnFilter(django_filters.FilterSet):
         self.filters['statement'].label_from_instance = lambda obj: get_translated_field(obj, 'name', lang)
 
 
+STATEMENT_QS = (
+    Statement.objects
+    .filter(parent__isnull=False)
+    .only("id", "name_uz", "name_ru")
+)
+
+REPUBLIC_QS = (
+    Republic.objects
+    .only("id", "name")
+)
+
+# submit_at values cache (process-level)
+_SUBMIT_AT_CHOICES_CACHE = None
+
+
+def get_submit_at_choices():
+    global _SUBMIT_AT_CHOICES_CACHE
+    if _SUBMIT_AT_CHOICES_CACHE is None:
+        values = (
+            Deadline.objects
+            .order_by("submit_at")
+            .values_list("submit_at", flat=True)
+            .distinct()
+        )
+        _SUBMIT_AT_CHOICES_CACHE = [("", "Hammasi")] + [(v, v) for v in values]
+    return _SUBMIT_AT_CHOICES_CACHE
+
+
 class ReportFilter(django_filters.FilterSet):
-    republic = django_filters.ModelChoiceFilter(
-        queryset=Republic.objects.all(),
-        method="filter_by_republic",
-        label="Respublika"
-    )
     organization_region = django_filters.ChoiceFilter(
         method="filter_by_organization_region",
         choices=RegionChoices.choices,
@@ -64,12 +87,12 @@ class ReportFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
         field_name="status",
         choices=Report.StatusChoices.choices,
-        label="Type of reports"
+        label="Hisobot holati"
     )
 
     statement = django_filters.ModelChoiceFilter(
         field_name="statement",
-        queryset=Statement.objects.filter(parent__isnull=False),
+        queryset=STATEMENT_QS,
         label="Hisobot turi"
     )
     time_status = django_filters.ChoiceFilter(
@@ -92,51 +115,39 @@ class ReportFilter(django_filters.FilterSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         lang = "uz"
         if self.request:
             lang = self.request.GET.get("lang", "uz").lower()
 
-        self.filters['statement'].label_from_instance = lambda obj: get_translated_field(obj, 'name', lang)
-
-        if 'statement_column' in self.filters:
-            self.filters['statement_column'].label_from_instance = lambda obj: get_translated_field(obj, 'title', lang)
-
-        # Submit_at tanlovlari (bo'sh qiymat bilan)
-        submit_at_values = (
-            Deadline.objects
-            .order_by("submit_at")
-            .values_list("submit_at", flat=True)
-            .distinct()
+        # label_from_instance → DB yo‘q
+        self.filters["statement"].label_from_instance = (
+            lambda obj: get_translated_field(obj, "name", lang)
         )
-        choices = [('', 'Hammasi')] + [(val, val) for val in submit_at_values]
-        self.filters['submit_at'].extra['choices'] = choices
 
-        for name, f in self.filters.items():
+        # submit_at choices — CACHED
+        self.filters["submit_at"].extra["choices"] = get_submit_at_choices()
+
+        # "Hammasi" default
+        for f in self.filters.values():
             if isinstance(f, (django_filters.ChoiceFilter, django_filters.ModelChoiceFilter)):
-                if not f.extra.get('choices') and hasattr(f, 'field'):
+                if not f.extra.get("choices") and hasattr(f, "field"):
                     try:
-                        original_choices = list(f.field.choices)
-                        if ('', 'Hammasi') not in original_choices:
-                            f.extra['choices'] = [('', 'Hammasi')] + original_choices
+                        base = list(f.field.choices)
+                        if ("", "Hammasi") not in base:
+                            f.extra["choices"] = [("", "Hammasi")] + base
                     except Exception:
                         pass
 
 
     def filter_by_year(self, queryset, name, value):
-        return queryset.annotate(
-            submit_year=Substr("deadline__submit_at", 1, 4)
-        ).filter(submit_year=value)
+        return queryset.filter(deadline__submit_at__year=value)
 
     def filter_by_organization_region(self, queryset, name, value):
         return queryset.filter(
-            Q(organization__region=value) | Q(region=value, is_general=True)
+            Q(organization__region=value) |
+            Q(region=value, is_general=True)
         )
 
-    def filter_by_republic(self, queryset, name, republic_obj):
-        return queryset.filter(
-            Q(organization__republic=republic_obj) | Q(republic=republic_obj))
-
     def filter_by_submit_at(self, queryset, name, value):
-        if value:
-            return queryset.filter(deadline__submit_at=value)
-        return queryset
+        return queryset.filter(deadline__submit_at=value) if value else queryset
