@@ -14,15 +14,25 @@ class StatementChildSerializer(serializers.ModelSerializer):
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name
 
+
+
 class StatementSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
-    children = StatementChildSerializer(many=True, read_only=True)
+    children = serializers.SerializerMethodField()
 
     class Meta:
         model = Statement
-        fields = ('id', 'name', 'period','icon', 'parent', 'children')
+        fields = ('id', 'name', 'period', 'icon', 'parent', 'children')
 
     def get_name(self, obj):
         lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name
+
+    def get_children(self, obj):
+        children_qs = obj.children.filter(is_used=True)
+        return StatementChildSerializer(
+            children_qs,
+            many=True,
+            context=self.context
+        ).data

@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from apps.reports.models import Statement
-from apps.logs.mixins import AdminHistoryMixin  # ✅ qo‘shildi
+from apps.logs.mixins import AdminHistoryMixin
 
 
 class StatementAdminForm(forms.ModelForm):
@@ -26,8 +26,8 @@ class StatementAdminForm(forms.ModelForm):
 @admin.register(Statement)
 class StatementAdmin(AdminHistoryMixin, admin.ModelAdmin):
     form = StatementAdminForm
-    list_display = ('name_uz', 'name_ru', 'period', 'parent')
-    list_filter = ("name_uz", "name_ru")
+    list_display = ('name_uz', 'name_ru', 'period', 'parent','is_used')
+    list_filter = ("name_uz", "name_ru",'is_used')
     search_fields = ("name_uz", "name_ru", "period", "parent")
 
     def get_queryset(self, request):
