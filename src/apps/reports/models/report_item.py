@@ -20,7 +20,8 @@ class ReportItem(AbstractBaseModel):
     value = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Report {self.report.id} | Column: {self.statement_column.title_uz}  Value: {self.value}"
+        # Avoid dereferencing FK to StatementColumn to prevent extra queries in admin/logs
+        return f"Report {getattr(self, 'report_id', None)} | ColumnID: {getattr(self, 'statement_column_id', None)}  Value: {self.value}"
 
     class Meta:
         verbose_name = _("Report Item")
@@ -47,4 +48,5 @@ class ReportItemInner(AbstractBaseModel):
     )
 
     def __str__(self):
-        return f"Inner of ReportItem {self.report_item.id} | Value: {self.value}"
+        # Avoid dereferencing FK to ReportItem to prevent extra queries in admin/logs
+        return f"Inner of ReportItemID {getattr(self, 'report_item_id', None)} | Value: {self.value}"

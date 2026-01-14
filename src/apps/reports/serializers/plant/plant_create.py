@@ -14,7 +14,7 @@ from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
 from apps.reports.report_calculate import ALL_CALCULATORS
-from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
+# from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn, Plant
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.reports.services.individual_general_report import aggregate_individual_report
@@ -49,10 +49,10 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         submit_at = deadline.submit_at
         today = date.today()
 
-        ensure_plans_exist_simple(
-            statement=statement,
-            organization=organization
-        )
+        # ensure_plans_exist_simple(
+        #     statement=statement,
+        #     organization=organization
+        # )
 
 
         # ✅ get_week_of_month funksiyasi
