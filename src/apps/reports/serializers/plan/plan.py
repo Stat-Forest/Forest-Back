@@ -160,13 +160,13 @@ class PlanSerializer(serializers.ModelSerializer):
         is_create = self.instance is None
 
         # ================= CREATE =================
-        request = self.context["request"]
-        user = request.user
-
-        if user.role not in (
-                CustomUser.Role.BOLIM_ADMIN,
-        ):
-            raise serializers.ValidationError("Sizga ruxsat yo‘q")
+        # request = self.context["request"]
+        # user = request.user
+        #
+        # if user.role not in (
+        #         CustomUser.Role.BOLIM_ADMIN,
+        # ):
+        #     raise serializers.ValidationError("Sizga ruxsat yo‘q")
 
 
 
@@ -186,10 +186,10 @@ class PlanSerializer(serializers.ModelSerializer):
             if not statement:
                 raise CustomExceptionError(400, {"statement": _("Invalid statement.")})
 
-            if statement.parent_id != user.statement_id:
-                raise serializers.ValidationError(
-                    "Plan statement user statementiga mos emas"
-                )
+            # if statement.parent_id != user.statement_id:
+            #     raise serializers.ValidationError(
+            #         "Plan statement user statementiga mos emas"
+            #     )
 
         # ================= UPDATE =================
         else:
@@ -663,35 +663,34 @@ class PlanListSerializer(serializers.ModelSerializer):
         return timezone.localtime(dt).strftime("%d.%m.%Y %H:%M")
 
 
-class ColumnPlanItemSerializer(serializers.Serializer):
-    column_id = serializers.UUIDField(source="column.id", read_only=True)
+class FlatPlanItemSerializer(serializers.Serializer):
+    plant_id = serializers.UUIDField(allow_null=True)
+    plant_name = serializers.CharField(allow_null=True)
+
+    column_id = serializers.UUIDField(source="column.id")
     column_name = serializers.SerializerMethodField()
     column_parent_name = serializers.SerializerMethodField()
+
     plan_value = serializers.DecimalField(
         max_digits=30,
-        decimal_places=2,
-        read_only=True
+        decimal_places=2
     )
 
     def get_column_name(self, obj):
         lang = self.context.get("lang", "uz")
-        return getattr(obj.column, f"title_{lang}", obj.column.title_uz)
+        column = obj["column"]
+        return getattr(column, f"title_{lang}", column.title_uz)
 
     def get_column_parent_name(self, obj):
         lang = self.context.get("lang", "uz")
         column_map = self.context["column_map"]
 
         parents = []
-        parent = obj.column.parent
+        parent = obj["column"].parent
 
         while parent:
             parents.append(getattr(parent, f"title_{lang}", parent.title_uz))
             parent = column_map.get(parent.parent_id)
 
         return " - ".join(reversed(parents)) if parents else None
-
-class PlantPlanGroupSerializer(serializers.Serializer):
-    plant_id = serializers.UUIDField()
-    plant_name = serializers.CharField()
-    items = ColumnPlanItemSerializer(many=True)
 

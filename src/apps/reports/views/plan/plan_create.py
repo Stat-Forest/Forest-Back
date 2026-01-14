@@ -40,7 +40,7 @@ class PlanCreateView(DRFHistoryMixin, generics.CreateAPIView):
 
     serializer_class = PlanSerializer
     queryset = Plan.objects.select_related("organization", "statement")
-    permission_classes = [CanCreatePlan,CanManagePlan]
+    # permission_classes = [CanCreatePlan,CanManagePlan]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

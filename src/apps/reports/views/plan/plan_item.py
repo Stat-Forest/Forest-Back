@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,10 +11,7 @@ from apps.reports.models import (
     PlantPlanItem,
     StatementColumn,
 )
-from apps.reports.serializers.plan import (
-    ColumnPlanItemSerializer,
-    PlantPlanGroupSerializer,
-)
+from apps.reports.serializers.plan import FlatPlanItemSerializer
 
 
 @extend_schema(
@@ -25,19 +20,42 @@ from apps.reports.serializers.plan import (
         OpenApiParameter("organization", OpenApiTypes.UUID, required=True),
         OpenApiParameter("statement", OpenApiTypes.UUID, required=True),
         OpenApiParameter("year", OpenApiTypes.INT, required=True),
-        OpenApiParameter("season", OpenApiTypes.STR, required=False),
-        OpenApiParameter("lang", OpenApiTypes.STR, required=False),
+        OpenApiParameter("season", OpenApiTypes.STR),
+        OpenApiParameter("plant", OpenApiTypes.UUID),
+        OpenApiParameter("column", OpenApiTypes.UUID),
+        OpenApiParameter("lang", OpenApiTypes.STR),
     ]
 )
 class PlanItemDetailAPIView(APIView):
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
+        # ===============================
+        # ✅ REQUIRED PARAM CHECK
+        # ===============================
+        for param in ("organization", "statement", "year"):
+            if not request.query_params.get(param):
+                return Response(
+                    {"detail": f"{param} query param is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # ===============================
+        # ✅ SAFE CAST
+        # ===============================
+        try:
+            year = int(request.query_params["year"])
+        except ValueError:
+            return Response(
+                {"detail": "year must be integer"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         lang = request.query_params.get("lang", "uz")
 
         plan_filters = {
-            "organization": request.query_params.get("organization"),
-            "statement": request.query_params.get("statement"),
-            "year": request.query_params.get("year"),
+            "organization_id": request.query_params["organization"],
+            "statement_id": request.query_params["statement"],
+            "year": year,
         }
 
         season = request.query_params.get("season")
@@ -52,7 +70,9 @@ class PlanItemDetailAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 🔹 BARCHA columnlarni OLDINDAN yuklaymiz (1 ta query)
+        # ===============================
+        # ✅ COLUMN CACHE
+        # ===============================
         columns = StatementColumn.objects.all()
         column_map = {c.id: c for c in columns}
 
@@ -60,6 +80,11 @@ class PlanItemDetailAPIView(APIView):
             "lang": lang,
             "column_map": column_map,
         }
+
+        column_id = request.query_params.get("column")
+        plant_id = request.query_params.get("plant")
+
+        result = []
 
         # =====================================================
         # ✅ CASE 1: use_plant_plan = FALSE
@@ -69,45 +94,48 @@ class PlanItemDetailAPIView(APIView):
                 PlanItem.objects
                 .filter(plan=plan)
                 .select_related("column", "column__parent")
-                .order_by("column__ordering")
             )
 
-            serializer = ColumnPlanItemSerializer(
-                qs,
-                many=True,
-                context=context
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            if column_id:
+                qs = qs.filter(column_id=column_id)
+
+            for item in qs:
+                result.append({
+                    "plant_id": None,
+                    "plant_name": None,
+                    "column": item.column,
+                    "plan_value": item.plan_value,
+                })
 
         # =====================================================
         # ✅ CASE 2: use_plant_plan = TRUE
         # =====================================================
-        qs = (
-            PlantPlanItem.objects
-            .filter(plant_plan__plan=plan)
-            .select_related(
-                "column",
-                "column__parent",
-                "plant_plan__plant",
+        else:
+            qs = (
+                PlantPlanItem.objects
+                .filter(plant_plan__plan=plan)
+                .select_related(
+                    "column",
+                    "column__parent",
+                    "plant_plan__plant",
+                )
             )
-            .order_by("plant_plan__plant", "column__ordering")
-        )
 
-        grouped = defaultdict(list)
+            if plant_id:
+                qs = qs.filter(plant_plan__plant_id=plant_id)
 
-        for item in qs:
-            grouped[item.plant_plan.plant].append(item)
+            if column_id:
+                qs = qs.filter(column_id=column_id)
 
-        result = [
-            {
-                "plant_id": plant.id,
-                "plant_name": plant.name,
-                "items": items,
-            }
-            for plant, items in grouped.items()
-        ]
+            for item in qs:
+                result.append({
+                    "plant_id": item.plant_plan.plant.id,
+                    "plant_name": item.plant_plan.plant.name,
+                    "column": item.column,
+                    "plan_value": item.plan_value,
+                })
 
-        serializer = PlantPlanGroupSerializer(
+        serializer = FlatPlanItemSerializer(
             result,
             many=True,
             context=context
