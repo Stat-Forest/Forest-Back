@@ -1,11 +1,13 @@
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from rest_framework.response import Response
 
 from apps.reports.filters.report_region import ReportFilter
-from apps.reports.models import Report, Plant, ReportItem
+from apps.reports.models import Report, Plant, ReportItem, StatementColumn
 from apps.reports.permissions import CanCreateReport, CanUpdateReport
 from apps.reports.permissions.check_delete_report import CanDeleteReport
 from apps.reports.permissions.check_list_report import CanListReport
@@ -16,10 +18,10 @@ from apps.reports.serializers.reports import (
 )
 from apps.base.views import (
     CustomListAPIView,
-    CustomCreateAPIView, CustomRetrieveAPIView, CustomUpdateAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
+    CustomCreateAPIView, CustomRetrieveAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
 from apps.logs.drf_mixins import DRFHistoryMixin
-from apps.utils.cache_list import cache_get_or_set, get_cache_version, build_list_cache_key
+from apps.utils.translation import get_lang_code
 
 
 @extend_schema(
@@ -37,74 +39,114 @@ from apps.utils.cache_list import cache_get_or_set, get_cache_version, build_lis
 )
 class ReportListAPIView(CustomListAPIView):
     pagination_class = None
-    # permission_classes = (CanListReport,)
-
-    queryset = Report.objects.select_related(
-        'organization',
-        'statement',
-        'statement__parent',
-        'deadline',
-        'sent_by',
-        'sent_by_org'
-    ).prefetch_related(
-        Prefetch(
-            'report_items',
-            queryset=ReportItem.objects
-                .select_related('statement_column', 'statement_column__parent')
-                .prefetch_related("inners")
-        )
-    ).filter(
-        statement__parent__isnull=False,
-    ).order_by('-created_at')
-
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
 
-    def get_queryset(self):
+    def _base_queryset(self):
+        """
+        Faqat role/filter uchun bazaviy QS.
+        Bu yerda prefetch yo‘q -> statement_ids olish arzon.
+        """
         user = self.request.user
-        base_qs = self.queryset
-
         if not user.is_authenticated:
             return Report.objects.none()
 
+        qs = Report.objects.filter(statement__parent__isnull=False)
+
+        # umumiy reportlar list endpointda ko‘rinmasin
+        qs = qs.filter(is_general=False, is_individual_general=False, is_republic=False)
+
         if user.is_superuser:
-            return base_qs.filter(
-                is_general=False,
-                is_individual_general=False,
-                is_republic=False,
-            ).order_by('-created_at')
+            return qs
 
         if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma', 'tashkilot_rahbari']:
-            return base_qs.filter(
-                organization=user.organization,
-                is_general=False,
-                is_individual_general=False,
-                is_republic=False,
-            ).order_by('-created_at')
+            return qs.filter(organization=user.organization)
 
-        elif user.role == 'bolim_admin':
-            return base_qs.filter(
-                statement__parent_id=user.statement.id,
-                is_general=False,
-                is_individual_general=False,
-                is_republic=False,
-            ).order_by('-created_at')
+        if user.role == 'bolim_admin':
+            return qs.filter(statement__parent_id=user.statement.id)
 
-        return base_qs.none()
+        return Report.objects.none()
+
+    def get_queryset(self):
+        """
+        Final QS: select_related + prefetch_related faqat shu yerda.
+        """
+        qs = self._base_queryset()
+
+        # statement_ids - context uchun 1 marta
+        if not hasattr(self, "_statement_ids"):
+            self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
+
+        qs = (
+            qs.select_related(
+                "organization",
+                "organization__republic",
+                "statement",
+                "statement__parent",
+                "deadline",
+                "sent_by",
+                "sent_by_org",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "report_items",
+                    queryset=(
+                        ReportItem.objects
+                        .select_related("statement_column", "statement_column__parent")
+                        .prefetch_related("inners")  # inners ham prefetched
+                    )
+                )
+            )
+            .order_by("-created_at")
+        )
+        return qs
 
     def list(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response([])
-
         return super().list(request, *args, **kwargs)
 
     def get_serializer_context(self):
+        """
+        MUHIM: get_queryset() chaqirmaymiz!
+        Aks holda barcha querylar yana 1 marta aylanadi.
+        """
         context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang", "uz")
+
+        lang = self.request.query_params.get("lang", "uz").lower()
+        if lang not in ("uz", "ru"):
+            lang = "uz"
+
         context["lang"] = lang
-        plant_qs = Plant.objects.only("id", "name")
-        context["plant_map"] = {str(p.id): p.name for p in plant_qs}
+        context["lang"] = lang
+
+        # Plant map: tezkor (1 query)
+        context["plant_map"] = {
+            str(pid): name for pid, name in Plant.objects.values_list("id", "name")
+        }
+
+        # StatementColumn preload: statement_ids oldindan hisoblangan
+        statement_ids = getattr(self, "_statement_ids", [])
+        if statement_ids:
+            cols = (
+                StatementColumn.objects
+                .filter(statement_id__in=statement_ids)
+                .select_related("parent")
+                .only(
+                    "id", "parent_id", "ordering",
+                    "title_uz", "title_ru",
+                    "is_organization", "statement_id"
+                )
+            )
+            columns_by_statement_id = {}
+            for c in cols:
+                columns_by_statement_id.setdefault(str(c.statement_id), []).append(c)
+
+            context["columns_by_statement_id"] = columns_by_statement_id
+        else:
+            context["columns_by_statement_id"] = {}
+
         return context
 
 
