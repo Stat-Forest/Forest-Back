@@ -1,9 +1,6 @@
-from decimal import Decimal
-
 from apps.reports.models import Deadline
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 from apps.reports.services.get_calculation_for_generals import calculate_general_report
-from apps.reports.services.normalize_utils import normalize
 
 
 def get_or_create_general_report(statement, deadline, region=None):
@@ -199,8 +196,15 @@ def aggregate_national_report(statement, deadline, region):
     # 5️⃣ column_id -> value list bo‘yicha yagona qiymatlarni hisoblaymiz
     grouped_values = defaultdict(list)
     for item in all_items:
+        # Reja ustunlari (is_organization=True) bo'yicha faqat organization-level (plant=None) qiymatlarni yig'amiz.
+        # Sabab: Reja plant-ga bo'linmaydi, bir marta tashkilot kesimida kiritiladi va viloyat/respublika bo'yicha aynan shu qiymatlar yig'ilishi kerak.
+        is_org_level = bool(getattr(item.statement_column, "is_organization", False))
         for inner in item.inners.all():
-            grouped_values[item.statement_column_id].append(inner.value)
+            if is_org_level:
+                if getattr(inner, "plant_id", None) is None:
+                    grouped_values[item.statement_column_id].append(inner.value)
+            else:
+                grouped_values[item.statement_column_id].append(inner.value)
 
     # 6️⃣ Yangi ReportItem larni yaratamiz (faqat yagona column_id lar bilan)
     new_inners = []
@@ -308,8 +312,15 @@ def aggregate_general_report(statement, deadline, region):
     for item in all_items:
         col_id = item.statement_column_id
         touched_column_ids.add(col_id)
+        # Reja (is_organization=True) ustunlarida faqat plant=None qiymatlarni qo'shamiz,
+        # aks holda barcha inners yig'iladi (plant bo'yicha ham).
+        is_org_level = bool(getattr(item.statement_column, "is_organization", False))
         for inner in item.inners.all():
-            column_total_map[col_id] += safe_decimal(inner.value)
+            if is_org_level:
+                if getattr(inner, "plant_id", None) is None:
+                    column_total_map[col_id] += safe_decimal(inner.value)
+            else:
+                column_total_map[col_id] += safe_decimal(inner.value)
 
     # 🌱 Maxsus: "Urug' xarakati Reja" holatida accepted individual reportlarda REJA 0 ga tushiriladi.
     # Regional Jami uchun REJA yig'indisini tashkilot JAMI (is_individual_general=True) reportlaridan olamiz.
