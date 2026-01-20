@@ -40,11 +40,7 @@ class PlantReportListSerializer(ReportListSerializer):
                 if report.organization else _("Nomaʼlum tashkilot")
             )
 
-        items = list(
-            report.report_items
-            .select_related("statement_column__parent")
-            .prefetch_related("inners__plant")
-        )
+        items = list(report.report_items.all())
 
         # is_user_input filter qo‘llanilyapti
         if is_user_input_filter is not None:
