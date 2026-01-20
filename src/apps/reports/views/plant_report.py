@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from apps.reports.models import Report, Plant
+from apps.reports.models import Report, Plant, StatementColumn
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer
 from apps.reports.serializers.plant.plant_report_delete import PlantReportDeleteSerializer
@@ -46,7 +46,7 @@ class PlantListReportAPIView(CustomListAPIView):
 
     def get_queryset(self):
         return Report.objects.filter(is_plant_based=True).select_related(
-            "organization", "statement", "deadline"
+            "organization", "statement", "deadline", "sent_by", "sent_by_org"
         ).prefetch_related(
             "report_items__statement_column__parent",
             "report_items__inners__plant"
@@ -54,12 +54,19 @@ class PlantListReportAPIView(CustomListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+
         lang = self.request.query_params.get("lang", "uz").lower()
-        if lang not in ("uz", "ru"):
-            lang = "uz"
-        context["lang"] = lang
-        plant_qs = Plant.objects.only("id", "name")
-        context["plant_map"] = {str(p.id): p.name for p in plant_qs}
+        context["lang"] = lang if lang in ("uz", "ru") else "uz"
+
+        # 🔥 BARCHA statement column’larni BIR MARTA
+        columns = (
+            StatementColumn.objects
+            .select_related("parent")
+        )
+        context["statement_columns"] = {
+            str(c.id): c for c in columns
+        }
+
         return context
 
 
