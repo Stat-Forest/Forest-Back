@@ -130,3 +130,4 @@ urlpatterns = [
     path("export-excel/", ReportExcelExportAPIView.as_view(), name="export-excel"),
     path("export-excel/download/", ReportExcelDownloadAPIView.as_view(), name="export-excel-download"),
 ]
+

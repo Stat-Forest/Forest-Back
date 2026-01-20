@@ -2,9 +2,10 @@ import django_filters
 from drf_spectacular.utils import extend_schema
 
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
-from apps.reports.models import Report, Statement, Deadline
+from apps.reports.models import Report, Statement, Deadline, StatementColumn
 from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
 from apps.utils.services import PeriodChoices, RegionChoices
@@ -106,51 +107,145 @@ class IndividualGeneralReportDetail(CustomRetrieveAPIView):
 
 @extend_schema(tags=["Regional-Reports"])
 class RegionalGeneralReport(CustomListAPIView):
-    queryset = Report.objects.filter(
-        is_general=True,
-        is_republic=False
-    ).select_related("statement").prefetch_related(
-        "report_items__inners",
-        "report_items__statement_column"
-    )
     serializer_class = RegionalGeneralReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExtraReportFilter
 
+    def get_queryset(self):
+        qs = (
+            Report.objects
+            .filter(is_general=True, is_republic=False)
+            .select_related("statement")
+            .prefetch_related(
+                "report_items",
+                "report_items__inners",
+            )
+        )
+
+        # 🔑 serializer uchun kerakli statement_id lar
+        self.statement_ids = list(
+            qs.values_list("statement_id", flat=True).distinct()
+        )
+
+        return qs
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang", "uz")
-        context["lang"] = lang
+
+        # lang
+        context["lang"] = self.request.query_params.get("lang", "uz")
+
+        # 🔥 ENG MUHIM JOY
+        # StatementColumn ni 1 marta olib, dict qilamiz
+        context["columns_by_id"] = {
+            col.id: col
+            for col in (
+                StatementColumn.objects
+                .filter(statement_id__in=getattr(self, "statement_ids", []))
+                .select_related("parent")
+            )
+        }
+
         return context
 
 
 @extend_schema(tags=["Regional-Reports"])
 class RegionalGeneralReportDetail(CustomRetrieveAPIView):
-    queryset = Report.objects.filter(
-        is_general=True,
-        is_republic=False
-    ).select_related("statement").prefetch_related(
-        "report_items__inners",
-        "report_items__statement_column"
+    queryset = (
+        Report.objects
+        .filter(is_general=True, is_republic=False)
+        .select_related("statement")
+        .prefetch_related(
+            "report_items",
+            "report_items__inners",
+        )
     )
     serializer_class = RegionalGeneralReportSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        self._object = self.get_object()
+        serializer = self.get_serializer(self._object)
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lang"] = self.request.query_params.get("lang", "uz")
+        report = self._object
+        context["columns_by_id"] = {
+            col.id: col
+            for col in (
+                StatementColumn.objects
+                .filter(statement_id=report.statement_id)
+                .select_related("parent")
+            )
+        }
+        return context
 
 
 @extend_schema(tags=["Republic-Reports"])
 class RepublicGeneralReport(CustomListAPIView):
-    queryset = Report.objects.filter(is_republic=True)
-    serializer_class = ReportListSerializer
+    serializer_class = RegionalGeneralReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExtraReportFilter
 
+    def get_queryset(self):
+        qs = (
+            Report.objects
+            .filter(is_republic=True)
+            .select_related("statement")
+            .prefetch_related(
+                "report_items",
+                "report_items__inners",
+            )
+        )
+        self.statement_ids = list(
+            qs.values_list("statement_id", flat=True).distinct()
+        )
+        return qs
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        lang = self.request.query_params.get("lang", "uz")
-        context["lang"] = lang
+        # lang
+        context["lang"] = self.request.query_params.get("lang", "uz")
+        context["columns_by_id"] = {
+            col.id: col
+            for col in (
+                StatementColumn.objects
+                .filter(statement_id__in=getattr(self, "statement_ids", []))
+                .select_related("parent")
+            )
+        }
         return context
 
 
 @extend_schema(tags=["Republic-Reports"])
 class RepublicGeneralReportDetail(CustomRetrieveAPIView):
-    queryset = Report.objects.filter(is_republic=True)
-    serializer_class = ReportListSerializer
+    queryset = (
+        Report.objects
+        .filter(is_republic=True)
+        .select_related("statement")
+        .prefetch_related(
+            "report_items",
+            "report_items__inners",
+        )
+    )
+    serializer_class = RegionalGeneralReportSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        self._object = self.get_object()
+        serializer = self.get_serializer(self._object)
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lang"] = self.request.query_params.get("lang", "uz")
+        report = self._object
+        context["columns_by_id"] = {
+            col.id: col
+            for col in (
+                StatementColumn.objects
+                .filter(statement_id=report.statement_id)
+                .select_related("parent")
+            )
+        }
+        return context
