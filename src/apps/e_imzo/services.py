@@ -22,7 +22,7 @@ def verify_pkcs7(pkcs7: str) -> dict | None:
 
     if response.status_code != 200:
         return None
-    print(response.status_code, response.text)
+    print(response.status_code, response.text,'Tekshiriuv !!!')
     data = response.json()
 
     # status == 1 → imzo yaroqli
