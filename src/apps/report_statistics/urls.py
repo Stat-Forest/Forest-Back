@@ -23,9 +23,9 @@ from apps.report_statistics.views.establishment_forest import (
 
 urlpatterns =[
     path('employee-report-stat/',StatisticsEmployeeReportAPIView.as_view()),
-    path('employee-analysis-stat/',StatisticsEmployeeReportAnalysisAPIView.as_view()),
+    # path('employee-analysis-stat/',StatisticsEmployeeReportAnalysisAPIView.as_view()),
     path('finance-fund-stat/',StatisticsFinanceFundAPIView.as_view()),
-    path('finance-income-stat/',StatisticsFinanceIncomeAPIView.as_view()),
+    # path('finance-income-stat/',StatisticsFinanceIncomeAPIView.as_view()),
     path('land-acquisition-stat/',StatisticsLandAcquisitionAPIView.as_view()),
     path('land-rented-stat/',StatisticsRentLandAPIView.as_view()),
     path('land-covered-stat/',StatisticsCoveredLandAPIView.as_view()),
