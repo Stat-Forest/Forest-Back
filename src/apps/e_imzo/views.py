@@ -38,37 +38,30 @@ class EimzoJWTLoginView(APIView):
         serializer = EimzoLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        pkcs7 = serializer.validated_data["pkcs7"]
+        vo = serializer.validated_data['vo']
+        pkcs7 = serializer.validated_data['pkcs7']
+        print(pkcs7,"Keldi!!!!")
 
-        # 🔒 Faqat PKCS7 ga ishonamiz
-        print("file ", "Keldi")
-        cert_data = verify_pkcs7(pkcs7)
-        print(cert_data,"Keldi pcks7 o'tdi")
-        if not cert_data:
-            return Response(
-                {"detail": "Imzo noto‘g‘ri yoki bekor qilingan"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if not verify_pkcs7(pkcs7, vo):
+            return Response({"detail": "Imzo noto‘g‘ri yoki noto‘liq."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ❌ vo = serializer.validated_data["vo"] → IGNORE
-
-        full_name = cert_data["CN"]
+        full_name = vo.get("CN", "")
         first_name, last_name, father_name = split_full_name(full_name)
 
-        uid = cert_data["UID"] or str(random.randint(100000, 999999))
-        pinfl = cert_data["PINFL"]
-        legal_stir = cert_data["TIN"]
+        uid = vo.get("UID", "")
+        pinfl = vo.get("PINFL", "")
+        legal_stir = vo.get("TIN", "")
 
-        email = f"{uid}@eimzo.local"
+        if not uid:
+            uid = str(random.randint(100000, 999999))
+
+        email = f"{uid}@example.com"
 
         organization = None
         if legal_stir:
             organization = Organization.objects.filter(stir=legal_stir).first()
             if not organization:
-                return Response(
-                    {"detail": gettext_lazy("Tashkilot topilmadi")},
-                    status=404
-                )
+                return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
 
         user, _ = User.objects.update_or_create(
             email=email,
@@ -89,11 +82,10 @@ class EimzoJWTLoginView(APIView):
         user.save()
 
         refresh = RefreshToken.for_user(user)
-
         return Response({
             "access": str(refresh.access_token),
-            "refresh": str(refresh),
             "email": email,
+            "refresh": str(refresh),
             "role": user.role,
             "user_id": user.id
-        })
+        }, status=status.HTTP_200_OK)
