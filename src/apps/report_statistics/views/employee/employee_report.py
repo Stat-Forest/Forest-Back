@@ -60,16 +60,10 @@ class StatisticsEmployeeReportAPIView(APIView):
                     "Oliy",
                     "O`rta-mahsus",
                     "O'rta-maxsus",
-                    "Ayol",
-                    "Erak xodimlar",
-                    "Yoshlar Jami",
                 ],
                 "3": [
                     "Doimiy",
                     "Mavsumiy",
-                    "Temir daftar va ayollar daftariga kiritilgan",
-                    "Kambag’al axolidan olingan",
-                    "Kasanachilik asosida",
                 ],
             },
             "ru": {
@@ -85,16 +79,10 @@ class StatisticsEmployeeReportAPIView(APIView):
                     "Высшее",
                     "Среднее специальное",
                     "Среднее",
-                    "Женщины-1",
-                    "Мужчины-1",
-                    "Всего молодёжи",
                 ],
                 "3": [
                     "Постоянные",
                     "Сезонные",
-                    "Включённые в железную и женскую книги",
-                    "Из числа малообеспеченных",
-                    "На основе надомного труда",
                 ],
             },
         }[lang]

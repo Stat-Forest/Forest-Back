@@ -15,7 +15,6 @@ class StatementChildSerializer(serializers.ModelSerializer):
         return translated or obj.name
 
 
-
 class StatementSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()

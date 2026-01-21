@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 title_ru='Название организации',
                 ordering="1.1.1",
                 is_organization=True,
-                is_user_input=False,
+                is_user_input=True,
             )
 
             StatementColumn.objects.create(
