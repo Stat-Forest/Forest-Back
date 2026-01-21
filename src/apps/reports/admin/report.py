@@ -15,6 +15,7 @@ class ReportAdmin(AdminHistoryMixin, admin.ModelAdmin):
         'deadline',
         'status',
         'created_at',
+        'created_by'
     )
     list_filter = ('status', 'organization', 'statement', 'deadline')
     search_fields = ('organization__name', 'statement__name')
