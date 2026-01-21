@@ -1,15 +1,14 @@
 from collections import defaultdict
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from apps.reports.models import Report, ReportItem, ReportItemInner
 
 
 def calculate_seed_movement(report: Report):
     YEAR_START = "1.1.3"
 
-    # Faqat REAL manbalar
     READY_PARTS = [
-        "1.1.4.1.1.1",  # Xo‘jalik tomonidan
-        "1.1.4.1.2.1",  # Boshqa tashkilotdan
+        "1.1.4.1.1.1",
+        "1.1.4.1.2.1",
     ]
     READY_TOTAL = "1.1.4.1"
 
@@ -39,7 +38,7 @@ def calculate_seed_movement(report: Report):
         for c in report.statement.columns.filter(ordering__in=ALL_ORDERINGS)
     }
 
-    # === ReportItem + inners
+    # === ReportItem + Inners (oldindan yuklab olamiz)
     items = (
         ReportItem.objects
         .filter(report=report, statement_column__ordering__in=ALL_ORDERINGS)
@@ -47,69 +46,108 @@ def calculate_seed_movement(report: Report):
         .prefetch_related("inners")
     )
 
-    # ordering -> plant -> value
+    item_map = {item.statement_column.ordering: item for item in items}
+
+    inners_map = {
+        (item.statement_column.ordering, inner.plant_id): inner
+        for item in items
+        for inner in item.inners.all()
+        if inner.plant_id
+    }
+
+    # ordering -> plant_id -> Decimal(value)
     values = defaultdict(lambda: defaultdict(Decimal))
 
     for item in items:
         ord_ = item.statement_column.ordering
         for inner in item.inners.all():
-            if inner.plant_id:
-                try:
-                    values[ord_][inner.plant_id] += Decimal(inner.value)
-                except:
-                    pass
+            if not inner.plant_id:
+                continue
+            try:
+                values[ord_][inner.plant_id] += Decimal(inner.value or 0)
+            except (InvalidOperation, TypeError):
+                pass
 
-    def get(ordering, plant):
-        return values.get(ordering, {}).get(plant, Decimal("0"))
-
-    item_map = {i.statement_column.ordering: i for i in items}
+    def get(ordering, plant_id):
+        return values.get(ordering, {}).get(plant_id, Decimal("0"))
 
     to_create_items = []
     to_create_inners = []
     to_update_inners = []
 
-    def write(ordering, plant, value):
+    def write(ordering, plant_id, value):
         if ordering not in columns:
             return
 
         item = item_map.get(ordering)
         if not item:
-            item = ReportItem(report=report, statement_column=columns[ordering])
+            item = ReportItem(
+                report=report,
+                statement_column=columns[ordering],
+            )
             item_map[ordering] = item
             to_create_items.append(item)
 
-        existing = next(
-            (i for i in item.inners.all() if i.plant_id == plant),
-            None
-        )
+        key = (ordering, plant_id)
+        existing = inners_map.get(key)
 
         if existing:
             existing.value = str(value)
             to_update_inners.append(existing)
         else:
-            to_create_inners.append(
-                ReportItemInner(
-                    report_item=item,
-                    plant_id=plant,
-                    value=str(value)
-                )
+            new_inner = ReportItemInner(
+                report_item=item,
+                plant_id=plant_id,
+                value=str(value),
             )
+            to_create_inners.append(new_inner)
+            inners_map[key] = new_inner
 
-    # === Plantlar
-    # === Plantlar (sorted)
-    plants = sorted({plant for v in values.values() for plant in v.keys()})
+    # ======================================================================
+    # 🔑 ENG MUHIM QISM: ETALON PLANT ORDERING
+    # ======================================================================
+    def get_ordered_plants():
+        """
+        Plantlar ketma-ketligini user_input=True columnlardan olamiz.
+        Bu frontend ko‘rayotgan REAL tartib.
+        """
+        base_item = (
+            ReportItem.objects
+            .filter(
+                report=report,
+                statement_column__is_user_input=True,
+                inners__plant_id__isnull=False,
+            )
+            .prefetch_related("inners")
+            .order_by("statement_column__ordering")
+            .first()
+        )
 
-    # === HISOB
-    for plant in plants:
-        ready = sum(get(o, plant) for o in READY_PARTS)
-        spent = sum(get(o, plant) for o in SPENT_PARTS)
-        remains = get(YEAR_START, plant) + ready - spent
+        if base_item:
+            return [inner.plant_id for inner in base_item.inners.all()]
 
-        write(READY_TOTAL, plant, ready)
-        write(SPENT_TOTAL, plant, spent)
-        write(FINAL_REMAINS, plant, remains)
+        # fallback (kamdan-kam holat)
+        return sorted(
+            {plant_id for plant_dict in values.values() for plant_id in plant_dict.keys()}
+        )
 
-    # === Save
+    ordered_plants = get_ordered_plants()
+
+    # ======================================================================
+    # === HISOBLASH (logika o‘zgarmagan)
+    # ======================================================================
+    for plant_id in ordered_plants:
+        ready = sum(get(o, plant_id) for o in READY_PARTS)
+        spent = sum(get(o, plant_id) for o in SPENT_PARTS)
+        remains = get(YEAR_START, plant_id) + ready - spent
+
+        write(READY_TOTAL, plant_id, ready)
+        write(SPENT_TOTAL, plant_id, spent)
+        write(FINAL_REMAINS, plant_id, remains)
+
+    # ======================================================================
+    # === SAQLASH
+    # ======================================================================
     if to_create_items:
         ReportItem.objects.bulk_create(to_create_items)
 
