@@ -17,24 +17,41 @@ def get_year_from_deadline(deadline):
 
 def is_seed_statement(statement):
     """
-    Urug' xarakati Reja ni aniqlash (multilang-safe)
+    Urug' xarakati Reja ni aniq (explicit) identifikatsiya qilish.
+    Global plan logikasi faqat shu statement uchun qo'llanadi.
     """
-    from apps.reports.models import StatementColumn
-    return StatementColumn.objects.filter(
-        statement=statement,
-        ordering__in=["1.1.2.1", "1.1.2.2", "1.1.2.3"]
-    ).count() == 3
+    # Explicit statement-level check: prefer code, fallback to name match.
+    code = getattr(statement, "code", None)
+    name = (getattr(statement, "name", None) or "").strip().lower()
+
+    # Whitelist known identifiers for seed movement plan
+    SEED_CODES = {"seed_movement_plan", "seed_movement", "urug_xarakati_reja"}
+    SEED_NAMES = {"urug' xarakati reja", "urug xarakati reja"}
+
+    if code and code in SEED_CODES:
+        return True
+    if name in SEED_NAMES:
+        return True
+    return False
 
 
 def is_heavy_neighborhood_statement(statement):
     """
-    Og'ir mahalla ni aniqlash
+    Og'ir mahalla ni aniq (explicit) identifikatsiya qilish.
+    Global plan logikasi faqat shu statement uchun (agar qo'llansa) cheklanadi.
     """
-    from apps.reports.models import StatementColumn
-    return StatementColumn.objects.filter(
-        statement=statement,
-        ordering__in=["1.1.4", "1.1.5", "1.1.6"]
-    ).count() == 3
+    # Explicit statement-level check: prefer code, fallback to name match.
+    code = getattr(statement, "code", None)
+    name = (getattr(statement, "name", None) or "").strip().lower()
+
+    HEAVY_CODES = {"heavy_neighborhood", "ogir_mahalla"}
+    HEAVY_NAMES = {"og'ir mahalla", "ogir mahalla"}
+
+    if code and code in HEAVY_CODES:
+        return True
+    if name in HEAVY_NAMES:
+        return True
+    return False
 
 
 @transaction.atomic
