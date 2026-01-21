@@ -41,7 +41,9 @@ class EimzoJWTLoginView(APIView):
         pkcs7 = serializer.validated_data["pkcs7"]
 
         # 🔒 Faqat PKCS7 ga ishonamiz
+        print("file ", "Keldi")
         cert_data = verify_pkcs7(pkcs7)
+        print(cert_data,"Keldi pcks7 o'tdi")
         if not cert_data:
             return Response(
                 {"detail": "Imzo noto‘g‘ri yoki bekor qilingan"},
