@@ -44,7 +44,7 @@ class DeadlineListAPIView(generics.ListAPIView):
         elif getattr(user, "statement", None):
             qs = qs.filter(statement__parent_id=user.statement.pk)
         else:
-            return Deadline.objects.none()
+            return Deadline.objects.all()
 
         # === is_new_deadline filter ===
         is_new_deadline = self.request.query_params.get("is_new_deadline")
