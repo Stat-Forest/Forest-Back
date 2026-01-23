@@ -1,23 +1,17 @@
 from collections import defaultdict
-from uuid import UUID
 
 from django.db.models import Sum, FloatField
+from django.db.models.functions import Cast
 from django.utils import translation
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK
 
+from apps.utils.services import RegionChoices
+from apps.reports.models import ReportItem, Report
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-
-from apps.reports.models import ReportItem, Report
-from apps.utils.services import RegionChoices
-
-JAMI_TUSHUM_ORDERINGS = [
-    "1.1.3.1", "1.1.4.1", "1.1.5.1",
-    "1.1.6.1", "1.1.7.1", "1.1.8.1"
-]
 
 COLUMN_NAMES = [
     "Ruxsatnoma olish uchun arizalarni ko‘rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (100%)",
@@ -28,9 +22,26 @@ COLUMN_NAMES = [
     "Boshqa daromadlar (10%)"
 ]
 
-REGION_MAP_OVERRIDE = {
-    "Respublika": "Respublika tashkilotlari"  # bazadagi region nomini frontend labelga moslashtiramiz
+ORDERINGS = [
+    "1.1.8.1",
+    "1.1.7.1",
+    "1.1.6.1",
+    "1.1.5.1",
+    "1.1.4.1",
+    "1.1.3.1",
+]
+
+FIELD_NAMES = {
+    "uz": {
+        "region": "hudud",
+        "jamgarma": "Jamg'arma",
+    },
+    "ru": {
+        "region": "регион",
+        "jamgarma": "Фонд",
+    },
 }
+
 
 @extend_schema(
     summary="Jamg'arma",
@@ -55,76 +66,53 @@ REGION_MAP_OVERRIDE = {
     ],
 )
 class StatisticsFinanceFundAPIView(APIView):
-    def get_aggregated_data(self, orderings, deadline_id=None):
+    def aggregate_by_ordering(self, orderings, deadline_id=None):
         filters = {
             "statement_column__ordering__in": orderings,
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
+            "statement_column__statement__name": "Jamg'arma",
         }
 
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
-        queryset = (
+        return (
             ReportItem.objects
             .filter(**filters)
             .values(
                 "report__organization__region",
                 "statement_column__ordering",
-                "value"
             )
+            .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
-        return queryset
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
-        translation.activate(lang)
-
         deadline_id = request.query_params.get("deadline")
-        if deadline_id:
-            try:
-                UUID(deadline_id)
-            except ValueError:
-                return Response({"detail": "Invalid deadline UUID"}, status=HTTP_400_BAD_REQUEST)
 
-        # Regionlar bazasi
-        data = []
-        for _, region_label in RegionChoices.choices:
-            region_dict = {"region": str(region_label)}
-            for col in COLUMN_NAMES:
-                region_dict[col] = 0
-            region_dict["Jami tushum"] = 0
-            data.append(region_dict)
+        translation.activate(lang)
+        field_names = FIELD_NAMES[lang]
 
-        region_map = {r["region"]: r for r in data}
+        grouped = defaultdict(float)
+        qs = self.aggregate_by_ordering(ORDERINGS, deadline_id)
 
-        ordering_to_column = {
-            "1.1.3.1": COLUMN_NAMES[0],
-            "1.1.4.1": COLUMN_NAMES[1],
-            "1.1.5.1": COLUMN_NAMES[2],
-            "1.1.6.1": COLUMN_NAMES[3],
-            "1.1.7.1": COLUMN_NAMES[4],
-            "1.1.8.1": COLUMN_NAMES[5],
-        }
-
-        queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
-
-        for item in queryset:
-            region_key = item["report__organization__region"]
-            region_key = REGION_MAP_OVERRIDE.get(region_key, region_key)  # agar respub. bo‘lsa o‘zgartiramiz
+        for item in qs:
+            region = item["report__organization__region"]
             ordering = item["statement_column__ordering"]
-            raw_value = item["value"] or 0
-
-            if isinstance(raw_value, str):
-                raw_value = float(raw_value.replace(",", "."))
-
-            if region_key not in region_map:
+            try:
+                idx = ORDERINGS.index(ordering)
+                title = COLUMN_NAMES[idx]
+            except ValueError:
                 continue
 
-            region_data = region_map[region_key]
-            col_name = ordering_to_column.get(ordering)
-            if col_name:
-                region_data[col_name] += raw_value
-                region_data["Jami tushum"] += raw_value
+            grouped[(region, title)] += item["total"] or 0
 
-        return Response(data, status=HTTP_200_OK)
+        data = []
+        for region_key, region_label in RegionChoices.choices:
+            row = {field_names["region"]: str(region_label)}
+            for idx, title in enumerate(COLUMN_NAMES):
+                row[title] = grouped.get((region_key, title), 0)
+            data.append(row)
+
+        return Response({field_names["jamgarma"]: data}, status=HTTP_200_OK)
