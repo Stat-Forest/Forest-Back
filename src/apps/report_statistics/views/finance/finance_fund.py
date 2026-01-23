@@ -40,6 +40,17 @@ FIELD_NAMES = {
 }
 
 
+# Mana bu yerga sen hisoblashni xohlagan maxsus ReportItem UUIDlarini qo‘shamiz
+SPECIAL_IDS = [
+    "94aa7481-ab1f-47c0-94e9-178560bc0ca0",
+    "96fb0842-3a5a-47d9-a626-11c740084c14",
+    "d8a6f0b3-05b1-44e1-9902-64c991419ac6",
+    "9fdfd538-72f9-4705-944d-8a6f069015d4",
+    "b7959a45-5950-49f7-9f75-5ac6b8240dcc",
+    "730a82a1-0bb7-4cee-898e-cf346318f4bc",
+]
+
+
 @extend_schema(
     summary="Jamg'arma",
     description="Orderings va ORM orqali jami tushumlarni hisoblaydi",
@@ -70,26 +81,23 @@ class StatisticsFinanceFundAPIView(APIView):
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
             "statement_column__statement__name": "Jamg'arma",
+            "id__in": SPECIAL_IDS,  # Shu yerda maxsus idlar filter qilindi
         }
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
-        # ORM bilan filterlangan itemlarni oling
         qs = ReportItem.objects.filter(**filters).prefetch_related("inners", "report__organization")
 
-        # Region va column bo‘yicha summalash
         grouped = defaultdict(float)
         for item in qs:
             region = item.report.organization.region
             ordering = item.statement_column.ordering
-            # Column nomini olish
             try:
                 idx = ORDERINGS.index(ordering)
                 column_name = COLUMN_NAMES[idx]
             except ValueError:
                 continue
 
-            # item.inners ichidagi barcha value larni yig‘ish
             total = sum(float(inner.value) for inner in item.inners.all())
             grouped[(region, column_name)] += total
 
@@ -104,7 +112,6 @@ class StatisticsFinanceFundAPIView(APIView):
 
         grouped = self.aggregate_by_ordering(ORDERINGS, deadline_id)
 
-        # Natijani region bo‘yicha to‘g‘ri tuzish
         data = []
         for region_key, region_label in RegionChoices.choices:
             row = {field_names["region"]: str(region_label)}
