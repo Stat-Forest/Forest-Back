@@ -14,17 +14,11 @@ from drf_spectacular.types import OpenApiTypes
 from apps.reports.models import ReportItem, Report
 from apps.utils.services import RegionChoices
 
-# -------------------------
-# Jami tushum hisoblash uchun orderings
-# -------------------------
 JAMI_TUSHUM_ORDERINGS = [
     "1.1.3.1", "1.1.4.1", "1.1.5.1",
     "1.1.6.1", "1.1.7.1", "1.1.8.1"
 ]
 
-# -------------------------
-# Faraziy ustunlar nomi
-# -------------------------
 COLUMN_NAMES = [
     "Ruxsatnoma olish uchun arizalarni ko‘rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (100%)",
     "Hayvonot va o‘simlik dunyosiga yetkazilgan zararni qoplash bo‘yicha undirilgan mablag‘ (100%)",
@@ -34,6 +28,9 @@ COLUMN_NAMES = [
     "Boshqa daromadlar (10%)"
 ]
 
+REGION_MAP_OVERRIDE = {
+    "Respublika": "Respublika tashkilotlari"  # bazadagi region nomini frontend labelga moslashtiramiz
+}
 
 @extend_schema(
     summary="Jamg'arma",
@@ -59,10 +56,6 @@ COLUMN_NAMES = [
 )
 class StatisticsFinanceFundAPIView(APIView):
     def get_aggregated_data(self, orderings, deadline_id=None):
-        """
-        ORM orqali ReportItem larni orderings va deadline bo'yicha
-        olib keladi. Vergul bilan yozilgan qiymatlar Python ichida float ga o'tkaziladi.
-        """
         filters = {
             "statement_column__ordering__in": orderings,
             "report__is_report": True,
@@ -72,28 +65,21 @@ class StatisticsFinanceFundAPIView(APIView):
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
-        # ORM orqali data olamiz
         queryset = (
             ReportItem.objects
             .filter(**filters)
             .values(
                 "report__organization__region",
                 "statement_column__ordering",
-                "value"  # raw qiymatni olamiz
+                "value"
             )
         )
         return queryset
 
     def get(self, request):
-        # -------------------------
-        # Tilni tanlash
-        # -------------------------
         lang = request.query_params.get("lang", "uz")
         translation.activate(lang)
 
-        # -------------------------
-        # Deadline parametri
-        # -------------------------
         deadline_id = request.query_params.get("deadline")
         if deadline_id:
             try:
@@ -101,11 +87,9 @@ class StatisticsFinanceFundAPIView(APIView):
             except ValueError:
                 return Response({"detail": "Invalid deadline UUID"}, status=HTTP_400_BAD_REQUEST)
 
-        # -------------------------
-        # Faraziy regionlar bazasi
-        # -------------------------
+        # Regionlar bazasi
         data = []
-        for region_key, region_label in RegionChoices.choices:
+        for _, region_label in RegionChoices.choices:
             region_dict = {"region": str(region_label)}
             for col in COLUMN_NAMES:
                 region_dict[col] = 0
@@ -113,9 +97,6 @@ class StatisticsFinanceFundAPIView(APIView):
             data.append(region_dict)
 
         region_map = {r["region"]: r for r in data}
-
-        # ORM orqali data
-        queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
 
         ordering_to_column = {
             "1.1.3.1": COLUMN_NAMES[0],
@@ -126,12 +107,14 @@ class StatisticsFinanceFundAPIView(APIView):
             "1.1.8.1": COLUMN_NAMES[5],
         }
 
+        queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
+
         for item in queryset:
             region_key = item["report__organization__region"]
+            region_key = REGION_MAP_OVERRIDE.get(region_key, region_key)  # agar respub. bo‘lsa o‘zgartiramiz
             ordering = item["statement_column__ordering"]
             raw_value = item["value"] or 0
 
-            # Python ichida vergulni nuqtaga almashtirib floatga o'tkazamiz
             if isinstance(raw_value, str):
                 raw_value = float(raw_value.replace(",", "."))
 
