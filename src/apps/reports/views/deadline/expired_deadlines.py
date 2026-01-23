@@ -47,8 +47,8 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
             for org in deadline.organizations.all():
                 report_exists = Report.objects.filter(
                     organization=org,
-                    deadline=deadline,
-                    status=Report.StatusChoices.ACCEPTED,
+                    deadline=deadline
+                    # status=Report.StatusChoices.ACCEPTED,
                 ).exists()
 
                 if not report_exists:
