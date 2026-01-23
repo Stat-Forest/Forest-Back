@@ -1,9 +1,6 @@
 from collections import defaultdict
 
-from django.db.models import Sum, FloatField
-from django.db.models.functions import Cast
 from django.utils import translation
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
@@ -66,6 +63,7 @@ FIELD_NAMES = {
     ],
 )
 class StatisticsFinanceFundAPIView(APIView):
+
     def aggregate_by_ordering(self, orderings, deadline_id=None):
         filters = {
             "statement_column__ordering__in": orderings,
@@ -73,19 +71,29 @@ class StatisticsFinanceFundAPIView(APIView):
             "report__status": Report.StatusChoices.ACCEPTED,
             "statement_column__statement__name": "Jamg'arma",
         }
-
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
-        return (
-            ReportItem.objects
-            .filter(**filters)
-            .values(
-                "report__organization__region",
-                "statement_column__ordering",
-            )
-            .annotate(total=Sum(Cast("inners__value", FloatField())))
-        )
+        # ORM bilan filterlangan itemlarni oling
+        qs = ReportItem.objects.filter(**filters).prefetch_related("inners", "report__organization")
+
+        # Region va column bo‘yicha summalash
+        grouped = defaultdict(float)
+        for item in qs:
+            region = item.report.organization.region
+            ordering = item.statement_column.ordering
+            # Column nomini olish
+            try:
+                idx = ORDERINGS.index(ordering)
+                column_name = COLUMN_NAMES[idx]
+            except ValueError:
+                continue
+
+            # item.inners ichidagi barcha value larni yig‘ish
+            total = sum(float(inner.value) for inner in item.inners.all())
+            grouped[(region, column_name)] += total
+
+        return grouped
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
@@ -94,25 +102,14 @@ class StatisticsFinanceFundAPIView(APIView):
         translation.activate(lang)
         field_names = FIELD_NAMES[lang]
 
-        grouped = defaultdict(float)
-        qs = self.aggregate_by_ordering(ORDERINGS, deadline_id)
+        grouped = self.aggregate_by_ordering(ORDERINGS, deadline_id)
 
-        for item in qs:
-            region = item["report__organization__region"]
-            ordering = item["statement_column__ordering"]
-            try:
-                idx = ORDERINGS.index(ordering)
-                title = COLUMN_NAMES[idx]
-            except ValueError:
-                continue
-
-            grouped[(region, title)] += item["total"] or 0
-
+        # Natijani region bo‘yicha to‘g‘ri tuzish
         data = []
         for region_key, region_label in RegionChoices.choices:
             row = {field_names["region"]: str(region_label)}
-            for idx, title in enumerate(COLUMN_NAMES):
-                row[title] = grouped.get((region_key, title), 0)
+            for column_name in COLUMN_NAMES:
+                row[column_name] = grouped.get((region_key, column_name), 0)
             data.append(row)
 
         return Response({field_names["jamgarma"]: data}, status=HTTP_200_OK)
