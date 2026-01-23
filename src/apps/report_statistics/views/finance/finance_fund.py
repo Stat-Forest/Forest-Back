@@ -2,7 +2,6 @@ from collections import defaultdict
 from uuid import UUID
 
 from django.db.models import Sum, FloatField
-from django.db.models.functions import Cast, Replace
 from django.utils import translation
 
 from rest_framework.views import APIView
@@ -62,7 +61,7 @@ class StatisticsFinanceFundAPIView(APIView):
     def get_aggregated_data(self, orderings, deadline_id=None):
         """
         ORM orqali ReportItem larni orderings va deadline bo'yicha
-        agregatsiya qiladi. Vergul bilan yozilgan qiymatlarni nuqtaga almashtiradi.
+        olib keladi. Vergul bilan yozilgan qiymatlar Python ichida float ga o'tkaziladi.
         """
         filters = {
             "statement_column__ordering__in": orderings,
@@ -73,18 +72,15 @@ class StatisticsFinanceFundAPIView(APIView):
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
+        # ORM orqali data olamiz
         queryset = (
             ReportItem.objects
             .filter(**filters)
-            .annotate(
-                # vergulni nuqtaga o'zgartirib float ga cast qilamiz
-                value_float=Cast(Replace("inners__value", ",", "."), FloatField())
-            )
             .values(
                 "report__organization__region",
-                "statement_column__ordering"
+                "statement_column__ordering",
+                "value"  # raw qiymatni olamiz
             )
-            .annotate(total=Sum("value_float"))
         )
         return queryset
 
@@ -113,13 +109,13 @@ class StatisticsFinanceFundAPIView(APIView):
             region_dict = {"region": str(region_label)}
             for col in COLUMN_NAMES:
                 region_dict[col] = 0
-            region_dict["Jami tushum"] = 0  # jami tushum qo‘shildi
+            region_dict["Jami tushum"] = 0
             data.append(region_dict)
 
-        # ORM orqali agregatsiya
-        queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
-
         region_map = {r["region"]: r for r in data}
+
+        # ORM orqali data
+        queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
 
         ordering_to_column = {
             "1.1.3.1": COLUMN_NAMES[0],
@@ -133,16 +129,19 @@ class StatisticsFinanceFundAPIView(APIView):
         for item in queryset:
             region_key = item["report__organization__region"]
             ordering = item["statement_column__ordering"]
-            total = item["total"] or 0
+            raw_value = item["value"] or 0
+
+            # Python ichida vergulni nuqtaga almashtirib floatga o'tkazamiz
+            if isinstance(raw_value, str):
+                raw_value = float(raw_value.replace(",", "."))
 
             if region_key not in region_map:
                 continue
 
             region_data = region_map[region_key]
-
             col_name = ordering_to_column.get(ordering)
             if col_name:
-                region_data[col_name] += total
-                region_data["Jami tushum"] += total  # jami tushumga qo‘shamiz
+                region_data[col_name] += raw_value
+                region_data["Jami tushum"] += raw_value
 
         return Response(data, status=HTTP_200_OK)
