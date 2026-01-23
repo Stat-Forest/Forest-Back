@@ -2,7 +2,7 @@ from collections import defaultdict
 from uuid import UUID
 
 from django.db.models import Sum, FloatField
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Replace
 from django.utils import translation
 
 from rest_framework.views import APIView
@@ -37,7 +37,7 @@ COLUMN_NAMES = [
 
 
 @extend_schema(
-    summary="Regionlar bo‘yicha jami tushum",
+    summary="Jamg'arma",
     description="Orderings va ORM orqali jami tushumlarni hisoblaydi",
     tags=["Statistics"],
     parameters=[
@@ -62,7 +62,7 @@ class StatisticsFinanceFundAPIView(APIView):
     def get_aggregated_data(self, orderings, deadline_id=None):
         """
         ORM orqali ReportItem larni orderings va deadline bo'yicha
-        agregatsiya qiladi.
+        agregatsiya qiladi. Vergul bilan yozilgan qiymatlarni nuqtaga almashtiradi.
         """
         filters = {
             "statement_column__ordering__in": orderings,
@@ -76,11 +76,15 @@ class StatisticsFinanceFundAPIView(APIView):
         queryset = (
             ReportItem.objects
             .filter(**filters)
+            .annotate(
+                # vergulni nuqtaga o'zgartirib float ga cast qilamiz
+                value_float=Cast(Replace("inners__value", ",", "."), FloatField())
+            )
             .values(
                 "report__organization__region",
                 "statement_column__ordering"
             )
-            .annotate(total=Sum(Cast("inners__value", FloatField())))
+            .annotate(total=Sum("value_float"))
         )
         return queryset
 
@@ -108,14 +112,23 @@ class StatisticsFinanceFundAPIView(APIView):
         for region_key, region_label in RegionChoices.choices:
             region_dict = {"region": str(region_label)}
             for col in COLUMN_NAMES:
-                region_dict[col] = 0  # boshlang‘ich qiymat 0
-            # region_dict["Jami tushum"] = 0  # bu qatorni olib tashladik
+                region_dict[col] = 0
+            region_dict["Jami tushum"] = 0  # jami tushum qo‘shildi
             data.append(region_dict)
 
         # ORM orqali agregatsiya
         queryset = self.get_aggregated_data(JAMI_TUSHUM_ORDERINGS, deadline_id)
 
         region_map = {r["region"]: r for r in data}
+
+        ordering_to_column = {
+            "1.1.3.1": COLUMN_NAMES[0],
+            "1.1.4.1": COLUMN_NAMES[1],
+            "1.1.5.1": COLUMN_NAMES[2],
+            "1.1.6.1": COLUMN_NAMES[3],
+            "1.1.7.1": COLUMN_NAMES[4],
+            "1.1.8.1": COLUMN_NAMES[5],
+        }
 
         for item in queryset:
             region_key = item["report__organization__region"]
@@ -127,17 +140,9 @@ class StatisticsFinanceFundAPIView(APIView):
 
             region_data = region_map[region_key]
 
-            ordering_to_column = {
-                "1.1.3.1": COLUMN_NAMES[0],
-                "1.1.4.1": COLUMN_NAMES[1],
-                "1.1.5.1": COLUMN_NAMES[2],
-                "1.1.6.1": COLUMN_NAMES[3],
-                "1.1.7.1": COLUMN_NAMES[4],
-                "1.1.8.1": COLUMN_NAMES[5],
-            }
-
             col_name = ordering_to_column.get(ordering)
             if col_name:
                 region_data[col_name] += total
+                region_data["Jami tushum"] += total  # jami tushumga qo‘shamiz
 
         return Response(data, status=HTTP_200_OK)
