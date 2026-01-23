@@ -20,7 +20,6 @@ from apps.report_statistics.views.establishment_forest import (
     StatisticsBuildForestAPIView
 )
 
-
 urlpatterns =[
     path('employee-report-stat/',StatisticsEmployeeReportAPIView.as_view()),
     # path('employee-analysis-stat/',StatisticsEmployeeReportAnalysisAPIView.as_view()),
