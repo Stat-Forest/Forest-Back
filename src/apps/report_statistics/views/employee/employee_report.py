@@ -44,9 +44,9 @@ FIELD_NAMES = {
         ),
         OpenApiParameter(
             name="deadline",
-            description="Deadline ID bo‘yicha filter",
+            description="Deadline UUID bo‘yicha filter",
             required=False,
-            type=OpenApiTypes.INT,
+            type=OpenApiTypes.UUID,
             location=OpenApiParameter.QUERY,
         ),
     ],
