@@ -149,7 +149,7 @@ class StatisticsEmployeeReportAPIView(APIView):
         translation.activate(lang)
 
         translated_titles = self.get_translated_titles(lang)
-        parent_title_ilova_1 = "xodimlardan" if lang == "uz" else "Из них-1"
+        parent_title_ilova_1 = "xodimlardan" if lang == "uz" else "из них"
 
         qs1 = self.get_aggregated_data_by_titles(
             translated_titles["1"],
