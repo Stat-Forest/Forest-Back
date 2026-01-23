@@ -129,7 +129,7 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 year, month = map(int, parts)
             except ValueError:
                 raise CustomExceptionError(400, {'submit_at': _('Invalid monthly numbers.')})
-            if year > today.year or (year == today.year and month >= today.month):
+            if year > today.year or (year == today.year and month > today.month):
                 raise CustomExceptionError(400, {'submit_at': _('You can only submit for past months.')})
 
         elif statement.period == PeriodChoices.CHORAKLIK:
