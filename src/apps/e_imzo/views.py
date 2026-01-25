@@ -40,6 +40,7 @@ class EimzoJWTLoginView(APIView):
 
         vo = serializer.validated_data['vo']
         pkcs7 = serializer.validated_data['pkcs7']
+        print(pkcs7,"Keldi!!!!")
 
         if not verify_pkcs7(pkcs7, vo):
             return Response({"detail": "Imzo noto‘g‘ri yoki noto‘liq."}, status=status.HTTP_400_BAD_REQUEST)

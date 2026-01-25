@@ -8,15 +8,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiParameter,
-    OpenApiTypes,
-)
-
 from apps.utils.services import RegionChoices
 from apps.reports.models import ReportItem, Report
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 FIELD_NAMES = {
     "uz": {
@@ -49,140 +44,73 @@ FIELD_NAMES = {
         ),
         OpenApiParameter(
             name="deadline",
-            description="Deadline ID bo‘yicha filter",
+            description="Deadline UUID bo‘yicha filter",
             required=False,
-            type=OpenApiTypes.INT,
+            type=OpenApiTypes.UUID,
             location=OpenApiParameter.QUERY,
         ),
     ],
 )
 class StatisticsEmployeeReportAPIView(APIView):
+    # 🔹 ordering → label mapping
+    ORDERING_MAP = {
+        "1": {
+            "1.1.1.3.1": "Boshqaruv xodimlari",
+            "1.1.1.3.2": "Mutaxassislar",
+            "1.1.1.3.3": "Ishlab chiqarish xodimlari",
+            "1.1.1.3.4": "Texnik hodim",
+            "1.1.1.3.5": "Xizmat korsatuvchi xodimlar",
+            "1.1.1.3.6": "ishchilar",
+        },
+        "2": {
+            "2.1.4.1": "Oliy",
+            "2.1.4.2": "O`rta-mahsus",
+            "2.1.4.3": "O'rta-maxsus",
+        },
+        "3": {
+            "3.1.3.1": "Doimiy",
+            "3.1.3.2": "Mavsumiy",
+        },
+    }
 
-    def get_translated_titles(self, lang: str) -> dict:
-        return {
-            "uz": {
-                "1": [
-                    "Boshqaruv xodimlari",
-                    "Mutaxassislar",
-                    "Ishlab chiqarish xodimlari",
-                    "Texnik hodim",
-                    "Xizmat korsatuvchi xodimlar",
-                    "ishchilar",
-                ],
-                "2": [
-                    "Oliy",
-                    "O`rta-mahsus",
-                    "O'rta-maxsus",
-                ],
-                "3": [
-                    "Doimiy",
-                    "Mavsumiy",
-                ],
-            },
-            "ru": {
-                "1": [
-                    "Руководящие работники",
-                    "Специалисты",
-                    "Производственные работники",
-                    "Технический персонал",
-                    "Обслуживающий персонал",
-                    "Рабочие",
-                ],
-                "2": [
-                    "Высшее",
-                    "Среднее специальное",
-                    "Среднее",
-                ],
-                "3": [
-                    "Постоянные",
-                    "Сезонные",
-                ],
-            },
-        }[lang]
-
-    def get_aggregated_data_by_titles(
-        self,
-        titles,
-        lang,
-        parent_title=None,
-        deadline_id=None,
-    ):
-        title_key = (
-            "statement_column__title"
-            if lang == "uz"
-            else "statement_column__title_ru"
-        )
-        parent_key = (
-            "statement_column__parent__title"
-            if lang == "uz"
-            else "statement_column__parent__title_ru"
-        )
-
+    def aggregate_by_ordering(self, orderings, deadline_id=None):
         filters = {
-            f"{title_key}__in": titles,
+            "statement_column__ordering__in": orderings,
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
         }
-
-        if parent_title:
-            filters[parent_key] = parent_title
 
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
         return (
-            ReportItem.objects.filter(**filters)
-            .values("report__organization__region", title_key)
-            .annotate(
-                total=Sum(Cast("inners__value", FloatField()))
+            ReportItem.objects
+            .filter(**filters)
+            .values(
+                "report__organization__region",
+                "statement_column__ordering",
             )
+            .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
 
     def get(self, request):
-        # --- params ---
         lang = request.query_params.get("lang", "uz")
-        if lang not in ["uz", "ru"]:
-            lang = "uz"
-
         deadline_id = request.query_params.get("deadline")
 
         translation.activate(lang)
+        field_names = FIELD_NAMES[lang]
 
-        translated_titles = self.get_translated_titles(lang)
-        parent_title_ilova_1 = "xodimlardan" if lang == "uz" else "Из них-1"
+        grouped = defaultdict(lambda: defaultdict(float))
 
-        qs1 = self.get_aggregated_data_by_titles(
-            translated_titles["1"],
-            lang,
-            parent_title=parent_title_ilova_1,
-            deadline_id=deadline_id,
-        )
-        qs2 = self.get_aggregated_data_by_titles(
-            translated_titles["2"],
-            lang,
-            deadline_id=deadline_id,
-        )
-        qs3 = self.get_aggregated_data_by_titles(
-            translated_titles["3"],
-            lang,
-            deadline_id=deadline_id,
-        )
+        for block, mapping in self.ORDERING_MAP.items():
+            qs = self.aggregate_by_ordering(mapping.keys(), deadline_id)
 
-        title_key = (
-            "statement_column__title"
-            if lang == "uz"
-            else "statement_column__title_ru"
-        )
-
-        grouped_data = defaultdict(lambda: defaultdict(float))
-
-        for qs in (qs1, qs2, qs3):
             for item in qs:
                 region = item["report__organization__region"]
-                title = item[title_key]
-                grouped_data[region][title] += item["total"] or 0
+                ordering = item["statement_column__ordering"]
+                title = mapping[ordering]
 
-        field_names = FIELD_NAMES[lang]
+                grouped[(block, region)][title] += item["total"] or 0
 
         data = [{
             field_names["ilova1"]: [],
@@ -193,28 +121,16 @@ class StatisticsEmployeeReportAPIView(APIView):
         for region_key, region_label in RegionChoices.choices:
             region_name = str(region_label)
 
-            data[0][field_names["ilova1"]].append({
-                field_names["region"]: region_name,
-                **{
-                    title: grouped_data[region_key].get(title, 0)
-                    for title in translated_titles["1"]
-                },
-            })
+            for block, ilova_key in [
+                ("1", "ilova1"),
+                ("2", "ilova2"),
+                ("3", "ilova3"),
+            ]:
+                row = {field_names["region"]: region_name}
 
-            data[0][field_names["ilova2"]].append({
-                field_names["region"]: region_name,
-                **{
-                    title: grouped_data[region_key].get(title, 0)
-                    for title in translated_titles["2"]
-                },
-            })
+                for title in self.ORDERING_MAP[block].values():
+                    row[title] = grouped[(block, region_key)].get(title, 0)
 
-            data[0][field_names["ilova3"]].append({
-                field_names["region"]: region_name,
-                **{
-                    title: grouped_data[region_key].get(title, 0)
-                    for title in translated_titles["3"]
-                },
-            })
+                data[0][field_names[ilova_key]].append(row)
 
         return Response(data, status=HTTP_200_OK)
