@@ -8,6 +8,7 @@ from apps.reports.models import Plant
 from apps.reports.services.normalize_utils import normalize
 from apps.utils.translation import get_translated_field
 from django.utils import translation
+from django.db.models import Q
 
 
 Number = Decimal
@@ -34,7 +35,7 @@ def _collect_org_general_reports(statement: Statement) -> List[Report]:
             status=Report.StatusChoices.ACCEPTED,
         )
         .select_related("organization")
-        .prefetch_related("report_items__statement_column", "report_items__inners__plant")
+        .prefetch_related("report_items__inners__plant")
     )
 
 
@@ -58,65 +59,175 @@ def _sum_values_by_plant_and_column(org_reports: List[Report]) -> Dict[Tuple[str
     return totals
 
 
-def _columns_for_statement(statement: Statement) -> list[StatementColumn]:
+def _preload_columns_structure(statement: Statement) -> Tuple[
+    List[str],  # ordered leaf ids
+    Dict[str, Dict[str, object]],  # col_meta_by_id: id -> {id, ordering, name_uz, name_ru, is_organization, parent_id, statement_id}
+    Dict[str, str],  # parent_map: id -> parent_id
+    Dict[str, str],  # title_map_uz: id -> title_uz
+    Dict[str, str],  # title_map_ru: id -> title_ru
+]:
     """
-    Return ONLY leaf (childless) columns for the statement.
+    Load all columns related to the statement in ONE query and build in-memory maps.
+    The queryset returns both leaves (statement=statement) and their ancestors
+    (columns that have children with statement=statement).
+    Leaf detection and root traversal are done purely in Python using parent_id.
     """
-    return list(
+    qs = (
         StatementColumn.objects
-        .filter(
-            statement=statement,
-            children__isnull=True
-        )
-        .order_by("ordering")
+        .filter(Q(statement=statement) | Q(children__statement=statement))
+        .only("id", "parent_id", "ordering", "title_uz", "title_ru", "is_organization", "statement_id")
         .distinct()
     )
 
+    col_meta_by_id: Dict[str, Dict[str, object]] = {}
+    parent_map: Dict[str, Optional[str]] = {}
+    title_map_uz: Dict[str, str] = {}
+    title_map_ru: Dict[str, str] = {}
+    children_index: Dict[Optional[str], List[str]] = defaultdict(list)
 
-def _build_column_meta(columns: List[StatementColumn], lang: str) -> Dict[str, Dict[str, str]]:
-    meta: Dict[str, Dict[str, str]] = {}
-    for c in columns:
+    stmt_id_str = str(statement.id)
+    for c in qs:
         cid = str(c.id)
-        ordering = c.ordering or "0"
+        pid = str(c.parent_id) if c.parent_id else None
+        parent_map[cid] = pid
+        title_map_uz[cid] = getattr(c, "title_uz", "")
+        title_map_ru[cid] = getattr(c, "title_ru", "")
+        col_meta_by_id[cid] = {
+            "id": cid,
+            "ordering": c.ordering or "0",
+            "is_organization": bool(getattr(c, "is_organization", False)),
+            "parent_id": pid,
+            "statement_id": str(c.statement_id) if c.statement_id else None,
+        }
+        children_index[pid].append(cid)
+
+    # Leaves: columns that belong to this statement AND have no children among the loaded set
+    leaf_ids = [
+        cid for cid, meta in col_meta_by_id.items()
+        if meta.get("statement_id") == stmt_id_str and cid not in children_index
+    ]
+
+    # Order leaves by their ordering value (string with dotted parts), compare lexicographically
+    leaf_ids.sort(key=lambda x: col_meta_by_id[x]["ordering"])
+
+    return leaf_ids, col_meta_by_id, parent_map, title_map_uz, title_map_ru
+
+
+def _build_column_meta_from_maps(
+    leaf_ids: List[str],
+    col_meta_by_id: Dict[str, Dict[str, object]],
+    title_map_uz: Dict[str, str],
+    title_map_ru: Dict[str, str],
+    lang: str,
+) -> Dict[str, Dict[str, str]]:
+    meta: Dict[str, Dict[str, str]] = {}
+    for cid in leaf_ids:
+        base = col_meta_by_id[cid]
+        ordering = base["ordering"]
+        title = title_map_uz[cid] if lang == "uz" else title_map_ru[cid]
         meta[cid] = {
             "id": cid,
             "ordering": ordering,
             "key": ordering.replace(".", "_"),
-            "name": get_translated_field(c, "title", lang),
+            "name": title,
+            "is_organization": bool(base.get("is_organization", False)),
+            "appendix_id": None,
+            "appendix_name": None,
         }
     return meta
 
 
-def _format_variant_b(values_map: Dict[str, Number], col_meta: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+def _root_appendix_id(col_id: str, parent_map: Dict[str, Optional[str]]) -> str:
+    cur = col_id
+    while parent_map.get(cur):
+        cur = parent_map[cur]  # type: ignore[index]
+    return cur
+
+
+def _group_columns_by_appendix_ids(
+    leaf_ids: List[str],
+    parent_map: Dict[str, Optional[str]],
+    title_map_uz: Dict[str, str],
+    title_map_ru: Dict[str, str],
+    lang: str,
+) -> Tuple[Dict[str, List[str]], Dict[str, Dict[str, str]]]:
     """
-    Convert column_id -> Decimal into Variant B structure:
-    column_id -> { id, key, ordering, name, value }
-    Keep UUID keys stable and omit unknown columns defensively.
+    Returns:
+    - mapping appendix_id -> ordered list of leaf column ids under it
+    - mapping appendix_id -> {appendix_id, appendix_name}
+    All computed with pure Python parent_map traversal.
     """
-    out: Dict[str, Dict[str, str]] = {}
-    for cid, total in values_map.items():
+    by_app: Dict[str, List[str]] = OrderedDict()
+    appendix_meta: Dict[str, Dict[str, str]] = {}
+    for cid in leaf_ids:
+        aid = _root_appendix_id(cid, parent_map)
+        if aid not in by_app:
+            by_app[aid] = []
+            app_name = title_map_uz.get(aid, "") if lang == "uz" else title_map_ru.get(aid, "")
+            appendix_meta[aid] = {
+                "appendix_id": aid,
+                "appendix_name": app_name,
+            }
+        by_app[aid].append(cid)
+    return by_app, appendix_meta
+
+
+def _format_statement_columns(
+    col_ids: List[str],
+    values_map: Dict[str, Number],
+    col_meta: Dict[str, Dict[str, str]],
+    *,
+    org_name_for_special: Optional[str] = None,
+    region_name_for_special: Optional[str] = None,
+    is_republic: bool = False,
+) -> List[Dict[str, object]]:
+    """
+    Build ordered list of statement_columns for a row. Handles special case for
+    the 'Tashkilot nomi' column (is_organization=True) replacing numeric value
+    with the appropriate string.
+    """
+    out: List[Dict[str, object]] = []
+    for cid in col_ids:
         meta = col_meta.get(cid)
         if not meta:
             continue
-        out[cid] = {
-            **meta,
-            "value": normalize(total),
-        }
+        value: object
+        if meta.get("is_organization"):
+            if is_republic:
+                value = "Respublika Jami"
+            elif region_name_for_special is not None:
+                value = f"{region_name_for_special} – Viloyat Jami"
+            else:
+                value = org_name_for_special or ""
+        else:
+            value = normalize(values_map.get(cid, Decimal(0)))
+        out.append({
+            "statement_column_id": meta["id"],
+            "ordering": meta["ordering"],
+            "name": meta["name"],
+            "value": value,
+        })
     return out
 
 
 def build_plant_svodka(statement: Statement, plant: Optional[Plant] = None, include_empty: bool = True, lang: str = "uz"):
     """
-    Compute plant-based hierarchical svodka without persisting.
+    Build appendix-separated, hierarchical svodka aggregated by plant.
 
-    Response format per plant:
+    Top-level per-plant structure:
     {
-      "plant": Plant.name,
-      "rows": [
-          {"level": "region", "name": <region_name>, "depth": 0, "values": {col_id: sum, ...}},
-          {"level": "organization", "name": <org_name>, "depth": 1, "values": {...}},
-          ...,
-          {"level": "republic", "name": "Respublika Jami", "depth": 0, "values": {...}}
+      "statement": {"id": str, "name": str},
+      "plant": {"id": str, "name": str},
+      "appendices": [
+          {
+            "appendix_id": str,
+            "appendix_name": str,
+            "rows": [
+                {"level": "organization"|"region"|"republic", "depth": 2|1|0,
+                 "organization_id": str|null, "organization_name": str,
+                 "statement_columns": [{"statement_column_id", "ordering", "name", "value"}, ...]}
+            ]
+          }, ...
       ]
     }
     """
@@ -126,132 +237,168 @@ def build_plant_svodka(statement: Statement, plant: Optional[Plant] = None, incl
     else:
         plants = list(Plant.objects.filter(statement=statement).order_by("name"))
         if not plants:
-            # fallback to all plants if not bound to statement
             plants = list(Plant.objects.filter(statement__isnull=True).order_by("name"))
 
-    # 2) Source reports: per-organization general reports
+    # 2) Source reports: per-organization, plant-based accepted reports
     org_reports = _collect_org_general_reports(statement)
     if not org_reports:
         return []
 
-    # 3) Precompute totals by org/plant/column
+    # 3) Precompute totals by (org_id, plant_id, col_id)
     opc_totals = _sum_values_by_plant_and_column(org_reports)
 
-    # 4) Build organization metadata map
+    # 4) Organizations metadata
     from apps.general.models import Organization
     org_ids = {k[0] for k in opc_totals.keys()}
     org_map: Dict[str, Organization] = {
         str(o.id): o for o in Organization.objects.filter(id__in=org_ids)
     }
 
-    # 5) Statement columns to include and metadata
-    columns = _columns_for_statement(statement)
-    column_ids = [str(c.id) for c in columns]
-    col_meta = _build_column_meta(columns, lang)
+    # 5) Columns and metadata, grouped by appendix (all preloaded at once)
+    leaf_ids, col_meta_by_id, parent_map, title_map_uz, title_map_ru = _preload_columns_structure(statement)
+    col_meta = _build_column_meta_from_maps(leaf_ids, col_meta_by_id, title_map_uz, title_map_ru, lang)
 
-    result = []
+    by_app, appendix_meta = _group_columns_by_appendix_ids(leaf_ids, parent_map, title_map_uz, title_map_ru, lang)
+    for aid, col_ids in by_app.items():
+        app_name = appendix_meta[aid]["appendix_name"]
+        for cid in col_ids:
+            if cid in col_meta:
+                col_meta[cid]["appendix_id"] = aid
+                col_meta[cid]["appendix_name"] = app_name
 
-    # Helper to init value dict with zeros for consistent ordering
-    def zero_values() -> Dict[str, Number]:
-        return {cid: Decimal(0) for cid in column_ids}
+    result: List[Dict] = []
 
-    # Region display names not required as we iterate choices directly
+    # helper zeros
+    def zero_values_for(col_ids: List[str]) -> Dict[str, Number]:
+        return {cid: Decimal(0) for cid in col_ids}
+
+    # Statement meta
+    statement_meta = {
+        "id": str(statement.id),
+        "name": get_translated_field(statement, "name", lang),
+    }
 
     for p in plants:
-        # per-plant rows accumulator
-        region_rows: Dict[str, Dict] = OrderedDict()  # region -> row dict
-        org_rows: List[Dict] = []
-        republic_values: Dict[str, Number] = zero_values()
+        plant_meta = {"id": str(p.id), "name": get_translated_field(p, "name", lang)}
 
-        # First, accumulate per-org totals for this plant
-
-        # Build a quick per-org per-plant per-col matrix for current plant
-        per_org_values: Dict[str, Dict[str, Number]] = defaultdict(lambda: zero_values())
+        # Build per-org matrix limited to this plant
+        per_org_values: Dict[str, Dict[str, Number]] = defaultdict(dict)
         per_org_name: Dict[str, str] = {}
         per_org_region: Dict[str, str] = {}
 
+        # initialize dicts lazily to avoid large zero maps for all cols
         for (org_id, plant_id, col_id), value in opc_totals.items():
             if plant_id != str(p.id):
                 continue
             org = org_map.get(org_id)
             if not org:
                 continue
-            per_org_values[org_id][col_id] += value
-            per_org_name[org_id] = get_translated_field(org, 'name', lang) or str(org_id)
+            if org_id not in per_org_values:
+                per_org_values[org_id] = {}
+            per_org_values[org_id][col_id] = per_org_values[org_id].get(col_id, Decimal(0)) + value
+            per_org_name[org_id] = get_translated_field(org, "name", lang) or str(org_id)
             per_org_region[org_id] = org.region
 
-        # Assemble rows per region in a stable region order based on choices
-        # Only include regions that have at least one org row
-        has_any_org = False
-        for reg_code, reg_label in RegionChoices.choices:
-            # skip republic pseudo region
+        has_any_org = bool(per_org_values)
+
+        # Build the ONE global row set (shared across appendices)
+        base_rows: List[Dict] = []
+
+        # 1) Organization rows (sorted by region then org name) with full values map
+        for reg_code, _ in RegionChoices.choices:
             if reg_code == RegionChoices.REPUBLIC:
                 continue
-            # collect orgs of this region
+            orgs_here = [oid for oid, r in per_org_region.items() if r == reg_code]
+            for oid in sorted(orgs_here, key=lambda x: per_org_name.get(x, "")):
+                base_rows.append({
+                    "level": "organization",
+                    "depth": 2,
+                    "organization_id": oid,
+                    "organization_name": per_org_name.get(oid, oid),
+                    "_all_values": per_org_values.get(oid, {}),  # all columns
+                    "_region_code": reg_code,
+                })
+
+        # 2) Region rows (one per region with any orgs), full values map aggregated once
+        for reg_code, reg_label in RegionChoices.choices:
+            if reg_code == RegionChoices.REPUBLIC:
+                continue
             orgs_here = [oid for oid, r in per_org_region.items() if r == reg_code]
             if not orgs_here:
                 continue
-            has_any_org = True
-            # region accumulator
-            region_vals: Dict[str, Number] = zero_values()
-            # add region header row placeholder (will append after org children)
+            region_values: Dict[str, Number] = {}
+            for oid in orgs_here:
+                src = per_org_values.get(oid, {})
+                for cid, val in src.items():
+                    region_values[cid] = region_values.get(cid, Decimal(0)) + val
             with translation.override(lang):
-                region_rows[reg_code] = {
-                    "level": "region",
-                    "name": str(reg_label),
-                    "depth": 0,
-                    "values": None,  # fill later
-                }
-            # org child rows
-            for oid in sorted(orgs_here, key=lambda x: per_org_name.get(x, "")):
-                vals = per_org_values.get(oid, zero_values())
-                # accumulate to region and republic
-                for cid in column_ids:
-                    region_vals[cid] += vals.get(cid, Decimal(0))
-                    republic_values[cid] += vals.get(cid, Decimal(0))
-                org_rows.append({
-                    "level": "organization",
-                    "name": per_org_name.get(oid, oid),
-                    "depth": 1,
-                    "values": _format_variant_b(vals, col_meta),
-                })
-            # finalize region header values
-            region_rows[reg_code]["values"] = _format_variant_b(region_vals, col_meta)
-
-        # Build final rows deterministically by RegionChoices order
-        rows = []
-        for reg_code, reg_label in RegionChoices.choices:
-            if reg_code == RegionChoices.REPUBLIC:
-                continue
-            orgs_here = [oid for oid, r in per_org_region.items() if r == reg_code]
-            if not orgs_here:
-                continue
-            # append region header
-            rows.append(region_rows[reg_code])
-            # append its orgs
-            for oid in sorted(orgs_here, key=lambda x: per_org_name.get(x, "")):
-                vals = per_org_values.get(oid, zero_values())
-                rows.append({
-                    "level": "organization",
-                    "name": per_org_name.get(oid, oid),
-                    "depth": 1,
-                    "values": _format_variant_b(vals, col_meta),
-                })
-
-        # finally republic row
-        with translation.override(lang):
-            rows.append({
-                "level": "republic",
-                "name": "Respublika Jami",
-                "depth": 0,
-                "values": _format_variant_b(republic_values, col_meta),
+                region_name = str(reg_label)
+            base_rows.append({
+                "level": "region",
+                "depth": 1,
+                "organization_id": None,
+                "organization_name": f"{region_name} – Viloyat Jami",
+                "_all_values": region_values,
+                "_region_name": region_name,
+                "_region_code": reg_code,
             })
 
-        # Exclude empty plants if requested (when plant filter is applied)
+        # 3) Republic row (single), full values map aggregated once
+        republic_values: Dict[str, Number] = {}
+        for oid, src in per_org_values.items():
+            for cid, val in src.items():
+                republic_values[cid] = republic_values.get(cid, Decimal(0)) + val
+        base_rows.append({
+            "level": "republic",
+            "depth": 0,
+            "organization_id": None,
+            "organization_name": "Respublika Jami",
+            "_all_values": republic_values,
+        })
+
+        # Now serialize appendices by slicing columns from the shared rows
+        appendices_block: List[Dict] = []
+        for appendix_id, appendix_info in appendix_meta.items():
+            col_ids = by_app.get(appendix_id, [])
+            if not col_ids:
+                continue
+            rows: List[Dict] = []
+            for r in base_rows:
+                values_map = r.get("_all_values", {})
+                level = r["level"]
+                # Determine special text context
+                org_name = r.get("organization_name") if level == "organization" else None
+                region_name = r.get("_region_name") if level == "region" else None
+                is_republic = level == "republic"
+                rows.append({
+                    "level": level,
+                    "depth": r["depth"],
+                    "organization_id": r.get("organization_id"),
+                    "organization_name": r.get("organization_name"),
+                    "statement_columns": _format_statement_columns(
+                        col_ids,
+                        values_map,
+                        col_meta,
+                        org_name_for_special=org_name,
+                        region_name_for_special=region_name,
+                        is_republic=is_republic,
+                    ),
+                })
+            if include_empty or has_any_org:
+                appendices_block.append({
+                    "appendix_id": appendix_info["appendix_id"],
+                    "appendix_name": appendix_info["appendix_name"],
+                    "rows": rows,
+                })
+
         if include_empty or has_any_org:
             result.append({
-                "plant": get_translated_field(p, 'name', lang),
-                "rows": rows,
+                "statement": statement_meta,
+                "plant": plant_meta,
+                "appendices": appendices_block,
             })
 
+    # If only one plant requested, return single object for convenience
+    if plant and result:
+        return result[0]
     return result
