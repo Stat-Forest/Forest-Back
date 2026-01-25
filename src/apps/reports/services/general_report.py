@@ -148,13 +148,39 @@ def get_or_create_national_report(statement, deadline, region=None):
     return national_report
 
 
- 
+def statement_has_global_plan(statement) -> bool:
+    """
+    Explicitly detect statements with a GLOBAL PLAN (single admin-entered Reja).
+    This is a small whitelist to restore previous safe behavior.
+    """
+    code = getattr(statement, 'code', None)
+    names = [
+        (getattr(statement, 'name', None) or '').strip().lower(),
+        (getattr(statement, 'name_uz', None) or '').strip().lower(),
+        (getattr(statement, 'name_ru', None) or '').strip().lower(),
+        (getattr(statement, 'name_en', None) or '').strip().lower(),
+    ]
+
+    GLOBAL_PLAN_CODES = {
+        'seed_movement_plan', 'seed_movement', 'urug_xarakati_reja',
+        'heavy_neighborhood', 'ogir_mahalla',
+    }
+    GLOBAL_PLAN_NAMES = {
+        "urug' xarakati reja", 'urug xarakati reja',
+        "og'ir mahalla", 'ogir mahalla',
+    }
+
+    if code and code in GLOBAL_PLAN_CODES:
+        return True
+    if any(n in GLOBAL_PLAN_NAMES for n in names if n):
+        return True
+    return False
 
 
 def aggregate_national_report(statement, deadline, region):
     from collections import defaultdict
     from apps.utils.services.is_that_number import safe_decimal
-    from apps.reports.models import Report, ReportItem, ReportItemInner
+    from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 
     # 1️⃣ Oxirgi deadline-ni topamiz (faqat parent report uchun, yig'ish deadline-dan mustaqil)
     latest_deadline = Deadline.objects.filter(
@@ -196,8 +222,6 @@ def aggregate_national_report(statement, deadline, region):
     # 5️⃣ column_id -> value list bo‘yicha yagona qiymatlarni hisoblaymiz
     grouped_values = defaultdict(list)
     for item in all_items:
-        # Reja ustunlari (is_organization=True) bo'yicha faqat organization-level (plant=None) qiymatlarni yig'amiz.
-        # Sabab: Reja plant-ga bo'linmaydi, bir marta tashkilot kesimida kiritiladi va viloyat/respublika bo'yicha aynan shu qiymatlar yig'ilishi kerak.
         is_org_level = bool(getattr(item.statement_column, "is_organization", False))
         for inner in item.inners.all():
             if is_org_level:
@@ -205,6 +229,48 @@ def aggregate_national_report(statement, deadline, region):
                     grouped_values[item.statement_column_id].append(inner.value)
             else:
                 grouped_values[item.statement_column_id].append(inner.value)
+
+    # 🌱 Global-plan statementlar uchun: FOIZ ni aggregatsiyadan chiqaramiz va
+    # REJA ni Individual General reportlardan olamiz (barcha regionlar kesimida).
+    if statement_has_global_plan(statement):
+        # Map expected REJA/FOIZ orderings by statement family (seed/heavy)
+        stmt_code = getattr(statement, 'code', None)
+        stmt_name = (getattr(statement, 'name', None) or getattr(statement, 'name_uz', '')).strip().lower()
+        if stmt_code in {'seed_movement_plan', 'seed_movement', 'urug_xarakati_reja'} or stmt_name in {"urug' xarakati reja", 'urug xarakati reja'}:
+            reja_orderings = ["1.1.2.1"]
+            foiz_orderings = ["1.1.2.3"]
+        else:
+            reja_orderings = ["1.1.4"]
+            foiz_orderings = ["1.1.6"]
+
+        reja_cols = list(StatementColumn.objects.filter(statement=statement, ordering__in=reja_orderings))
+        foiz_cols = list(StatementColumn.objects.filter(statement=statement, ordering__in=foiz_orderings))
+
+        # 1) Remove FOIZ from aggregation map
+        for fc in foiz_cols:
+            if fc.id in grouped_values:
+                del grouped_values[fc.id]
+
+        # 2) Override REJA from Individual General reports (all regions)
+        org_general_reports = Report.objects.filter(
+            statement=statement,
+            is_individual_general=True,
+            is_general=False,
+            is_report=False,
+            status=Report.StatusChoices.SAVED,
+        )
+        for rc in reja_cols:
+            total_reja = safe_decimal('0')
+            reja_items = (
+                ReportItem.objects
+                .filter(report__in=org_general_reports, statement_column_id=rc.id)
+                .prefetch_related("inners")
+            )
+            for it in reja_items:
+                org_inner = next((inn for inn in it.inners.all() if getattr(inn, 'plant_id', None) is None), None)
+                if org_inner:
+                    total_reja += safe_decimal(org_inner.value)
+            grouped_values[rc.id] = [str(total_reja)]
 
     # 6️⃣ Yangi ReportItem larni yaratamiz (faqat yagona column_id lar bilan)
     new_inners = []
@@ -324,43 +390,52 @@ def aggregate_general_report(statement, deadline, region):
 
     # 🌱 Maxsus: "Urug' xarakati Reja" holatida accepted individual reportlarda REJA 0 ga tushiriladi.
     # Regional Jami uchun REJA yig'indisini tashkilot JAMI (is_individual_general=True) reportlaridan olamiz.
-    try:
-        is_seed_statement = statement.name_uz.strip() == "Urug' xarakati Reja"
-    except Exception:
-        is_seed_statement = False
+    # 🌱 Global-plan statements: override REJA from Individual General and exclude FOIZ
+    if statement_has_global_plan(statement):
+        from apps.reports.models import StatementColumn
+        stmt_code = getattr(statement, 'code', None)
+        stmt_name = (getattr(statement, 'name', None) or getattr(statement, 'name_uz', '')).strip().lower()
+        if stmt_code in {'seed_movement_plan', 'seed_movement', 'urug_xarakati_reja'} or stmt_name in {"urug' xarakati reja", 'urug xarakati reja'}:
+            reja_orderings = ["1.1.2.1"]
+            foiz_orderings = ["1.1.2.3"]
+        else:
+            reja_orderings = ["1.1.4"]
+            foiz_orderings = ["1.1.6"]
 
-    if is_seed_statement:
-        # REJA ustuni ordering va id sini topamiz
-        reja_col = StatementColumn.objects.filter(
-            statement=statement,
-            ordering="1.1.2.1",
-        ).first()
-        if reja_col:
-            # Shu regiondagi barcha tashkilot JAMI reportlaridan org-level REJA ni yig'amiz
-            org_general_reports = Report.objects.filter(
+        reja_cols = list(StatementColumn.objects.filter(statement=statement, ordering__in=reja_orderings))
+        foiz_cols = list(StatementColumn.objects.filter(statement=statement, ordering__in=foiz_orderings))
+
+        # 1) Exclude FOIZ from aggregation results (calculator will compute later)
+        for fc in foiz_cols:
+            if fc.id in column_total_map:
+                del column_total_map[fc.id]
+            if fc.id in touched_column_ids:
+                touched_column_ids.remove(fc.id)
+
+        # 2) Override REJA using Individual General reports for this region
+        org_general_reports = (
+            Report.objects.filter(
                 statement=statement,
                 is_individual_general=True,
                 is_general=False,
                 is_report=False,
+                status=Report.StatusChoices.SAVED,
                 region=region,
             )
-
+        )
+        for rc in reja_cols:
+            total_reja = Decimal(0)
             reja_items = (
                 ReportItem.objects
-                .filter(report__in=org_general_reports, statement_column_id=reja_col.id)
+                .filter(report__in=org_general_reports, statement_column_id=rc.id)
                 .prefetch_related("inners")
             )
-
-            total_reja = Decimal(0)
             for it in reja_items:
-                # Faqat organization-level (plant=None) qiymatini olamiz
-                org_inner = next((inn for inn in it.inners.all() if getattr(inn, "plant_id", None) is None), None)
+                org_inner = next((inn for inn in it.inners.all() if getattr(inn, 'plant_id', None) is None), None)
                 if org_inner:
                     total_reja += safe_decimal(org_inner.value)
-
-            # Ushbu qiymatni umumiy xarita va touched setga kiritamiz/yangilaymiz
-            column_total_map[reja_col.id] = total_reja
-            touched_column_ids.add(reja_col.id)
+            column_total_map[rc.id] = total_reja
+            touched_column_ids.add(rc.id)
 
     # 🧾 4. Yangi ReportItem va ReportItemInner yaratish
     new_items = [
