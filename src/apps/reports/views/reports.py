@@ -153,7 +153,7 @@ class ReportListAPIView(CustomListAPIView):
 class ReportCreateAPIView(DRFHistoryMixin,CustomCreateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCreateSerializer
-    permission_classes = (CanCreateReport,)
+    # permission_classes = (CanCreateReport,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
