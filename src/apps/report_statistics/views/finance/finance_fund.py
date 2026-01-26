@@ -10,22 +10,14 @@ from apps.reports.models import ReportItem, Report
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-COLUMN_NAMES = [
-    "Ruxsatnoma olish uchun arizalarni ko‘rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag‘ (100%)",
-    "Hayvonot va o‘simlik dunyosiga yetkazilgan zararni qoplash bo‘yicha undirilgan mablag‘ (100%)",
-    "Ruxsat etilgan hududlarda chorva boqish, pichan o‘rish, asalarilar uyasi va qutilarini joylashtirish, daraxt kesmagan holda o‘tin yig‘ish va boshqa maqsadlardan tushgan mablag‘ (50%)",
-    "O‘rmon fondi yerlaridagi bog‘lar va madaniy o‘rmonzorlani fuqarolarga ijaraga berishdan tushgan mablag‘ (100%)",
-    "O‘rmon xo‘jaligida yog‘och kesishdan tushgan mablag‘ (50%)",
-    "Boshqa daromadlar (10%)"
-]
-
+# "Jami tushum" childlarining ordering'lari
 ORDERINGS = [
-    "1.1.8.1",
-    "1.1.7.1",
-    "1.1.6.1",
-    "1.1.5.1",
-    "1.1.4.1",
-    "1.1.3.1",
+    "1.1.3.1",  # Ruxsatnoma olish uchun arizalarni... - Jami tushum
+    "1.1.4.1",  # Hayvonot va o'simlik dunyosiga... - Jami tushum
+    "1.1.5.1",  # Ruxsat etilgan hududlarda chorva boqish... - Jami tushum
+    "1.1.6.1",  # O'rmon fondi yerlaridagi bog'lar... - Jami tushum
+    "1.1.7.1",  # O'rmon xo'jaligida yog'och kesishdan... - Jami tushum
+    "1.1.8.1",  # Boshqa daromadlar - Jami tushum
 ]
 
 FIELD_NAMES = {
@@ -55,7 +47,7 @@ FIELD_NAMES = {
         ),
         OpenApiParameter(
             name="deadline",
-            description="Deadline UUID bo‘yicha filter",
+            description="Deadline UUID bo'yicha filter",
             required=False,
             type=OpenApiTypes.UUID,
             location=OpenApiParameter.QUERY,
@@ -75,25 +67,42 @@ class StatisticsFinanceFundAPIView(APIView):
             filters["report__deadline_id"] = deadline_id
 
         # ORM bilan filterlangan itemlarni oling
-        qs = ReportItem.objects.filter(**filters).prefetch_related("inners", "report__organization")
+        qs = ReportItem.objects.filter(**filters).prefetch_related(
+            "inners",
+            "report__organization",
+            "statement_column__parent"  # Parent ma'lumotlarini ham olamiz
+        )
 
-        # Region va column bo‘yicha summalash
+        # Region va column bo'yicha summalash
         grouped = defaultdict(float)
         for item in qs:
             region = item.report.organization.region
-            ordering = item.statement_column.ordering
-            # Column nomini olish
-            try:
-                idx = ORDERINGS.index(ordering)
-                column_name = COLUMN_NAMES[idx]
-            except ValueError:
-                continue
 
-            # item.inners ichidagi barcha value larni yig‘ish
-            total = sum(float(inner.value) for inner in item.inners.all())
+            # Parent title + "Jami tushum" ni column nomi sifatida ishlatish
+            parent_title = item.statement_column.parent.title if item.statement_column.parent else ""
+            column_name = f"{parent_title} - Jami tushum"
+
+            # item.inners ichidagi barcha value larni yig'ish
+            total = sum(float(inner.value or 0) for inner in item.inners.all())
             grouped[(region, column_name)] += total
 
         return grouped
+
+    def get_column_names_from_db(self, orderings):
+        """Database'dan parent title'larni olish"""
+        from apps.reports.models import StatementColumn
+
+        columns = StatementColumn.objects.filter(
+            ordering__in=orderings
+        ).select_related('parent')
+
+        column_names = {}
+        for column in columns:
+            parent_title = column.parent.title if column.parent else ""
+            column_name = f"{parent_title} - Jami tushum"
+            column_names[column.ordering] = column_name
+
+        return column_names
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
@@ -104,12 +113,19 @@ class StatisticsFinanceFundAPIView(APIView):
 
         grouped = self.aggregate_by_ordering(ORDERINGS, deadline_id)
 
-        # Natijani region bo‘yicha to‘g‘ri tuzish
+        # Database'dan column nomlarini olish
+        column_names_map = self.get_column_names_from_db(ORDERINGS)
+
+        # Natijani region bo'yicha to'g'ri tuzish
         data = []
         for region_key, region_label in RegionChoices.choices:
             row = {field_names["region"]: str(region_label)}
-            for column_name in COLUMN_NAMES:
+
+            # Har bir ordering uchun column nomini database'dan olamiz
+            for ordering in ORDERINGS:
+                column_name = column_names_map.get(ordering, f"Unknown - Jami tushum")
                 row[column_name] = grouped.get((region_key, column_name), 0)
+
             data.append(row)
 
         return Response({field_names["jamgarma"]: data}, status=HTTP_200_OK)
