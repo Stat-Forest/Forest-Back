@@ -2,13 +2,13 @@ from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 
 from django.utils import translation
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 
 from apps.utils.services import RegionChoices
-from apps.reports.models import ReportItem, Report, ReportItemInner
+from apps.reports.models import ReportItem, Report, ReportItemInner, StatementColumn
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
@@ -60,7 +60,7 @@ class StatisticsFinanceFundAPIView(APIView):
 
     def safe_decimal_convert(self, value):
         """
-        Qiymatni xavfsiz ravishda Decimal yoki float ga aylantirish
+        Qiymatni xavfsiz ravishda Decimal ga aylantirish
         """
         if value is None or value == '':
             return Decimal('0')
@@ -82,23 +82,29 @@ class StatisticsFinanceFundAPIView(APIView):
         """
         Ordering bo'yicha ma'lumotlarni aggregatsiya qilish
         """
+        # Base filter
         filters = {
             "statement_column__ordering__in": orderings,
             "report__is_report": True,
-            "report__status__in": [
-                Report.StatusChoices.SAVED,
-                Report.StatusChoices.SENT,
-                Report.StatusChoices.ACCEPTED
-            ],
-            "statement_column__statement__name_uz": "Jamg'arma",
         }
+
+        # Status filter - saved, sent, accepted
+        status_filter = Q(report__status=Report.StatusChoices.SAVED) | \
+                        Q(report__status=Report.StatusChoices.SENT) | \
+                        Q(report__status=Report.StatusChoices.ACCEPTED)
 
         if deadline_id:
             filters["report__deadline_id"] = deadline_id
 
-        # Optimizatsiya: select_related va prefetch_related
-        qs = ReportItem.objects.filter(**filters).select_related(
+        # Query with optimization
+        qs = ReportItem.objects.filter(
+            **filters
+        ).filter(
+            status_filter
+        ).select_related(
+            "report",
             "report__organization",
+            "statement_column",
             "statement_column__parent"
         ).prefetch_related(
             Prefetch(
@@ -107,57 +113,97 @@ class StatisticsFinanceFundAPIView(APIView):
             )
         )
 
-        print(f"🔍 Topilgan ReportItem'lar soni: {qs.count()}")
+        print(f"\n{'=' * 80}")
+        print(f"🔍 AGREGATSIYA BOSHLANDI")
+        print(f"{'=' * 80}")
+        print(f"📌 Deadline ID: {deadline_id}")
+        print(f"📌 Orderings: {orderings}")
+        print(f"📌 Topilgan ReportItem'lar soni: {qs.count()}")
+
+        # Debug: Show all found items
+        for item in qs:
+            print(f"\n🔹 ReportItem ID: {item.id}")
+            print(f"   └─ Report ID: {item.report.id}")
+            print(f"   └─ Organization: {item.report.organization.name_uz}")
+            print(f"   └─ Region: {item.report.organization.region}")
+            print(f"   └─ Column Ordering: {item.statement_column.ordering}")
+            print(f"   └─ Status: {item.report.status}")
+
+            inners = list(item.inners.all())
+            print(f"   └─ Inners count: {len(inners)}")
+            for inner in inners:
+                print(f"      └─ Inner value: '{inner.value}'")
 
         # Region va column bo'yicha summalash
         grouped = defaultdict(lambda: Decimal('0'))
 
         for item in qs:
-            region = item.report.organization.region
+            try:
+                region = item.report.organization.region
 
-            # Parent title ni tilga qarab olish
-            if item.statement_column.parent:
-                parent_title = getattr(
-                    item.statement_column.parent,
-                    f'title_{lang}',
-                    item.statement_column.parent.title_uz
-                )
-            else:
-                parent_title = ""
+                # Parent title ni tilga qarab olish
+                if item.statement_column.parent:
+                    parent_title = getattr(
+                        item.statement_column.parent,
+                        f'title_{lang}',
+                        item.statement_column.parent.title_uz
+                    )
+                else:
+                    parent_title = ""
 
-            column_name = f"{parent_title} - Jami tushum"
+                column_name = f"{parent_title} - Jami tushum"
 
-            # item.inners ichidagi barcha value larni yig'ish
-            inners_list = list(item.inners.all())
+                # item.inners ichidagi barcha value larni yig'ish
+                inners_list = list(item.inners.all())
 
-            if not inners_list:
-                print(f"⚠️ Item {item.id} uchun inners topilmadi")
+                if not inners_list:
+                    print(f"⚠️ Item {item.id} uchun inners topilmadi")
+                    continue
+
+                total = Decimal('0')
+                for inner in inners_list:
+                    value = self.safe_decimal_convert(inner.value)
+                    total += value
+
+                    # Debug uchun
+                    print(f"\n✅ QIYMAT TOPILDI:")
+                    print(f"   └─ Region: {region}")
+                    print(f"   └─ Column: {column_name}")
+                    print(f"   └─ Original Value: '{inner.value}'")
+                    print(f"   └─ Converted Value: {value}")
+                    print(f"   └─ Running Total: {total}")
+
+                grouped[(region, column_name)] += total
+
+                print(f"\n💰 JAMLANAYOTGAN QIYMAT:")
+                print(f"   └─ Key: ({region}, {column_name})")
+                print(f"   └─ Total for this item: {total}")
+                print(f"   └─ Cumulative total: {grouped[(region, column_name)]}")
+
+            except Exception as e:
+                print(f"❌ XATOLIK item {item.id} da: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
 
-            total = Decimal('0')
-            for inner in inners_list:
-                value = self.safe_decimal_convert(inner.value)
-                total += value
+        print(f"\n{'=' * 80}")
+        print(f"📊 YAKUNIY GROUPED MA'LUMOTLAR:")
+        print(f"{'=' * 80}")
+        for key, value in grouped.items():
+            print(f"   {key}: {value}")
+        print(f"{'=' * 80}\n")
 
-                # Debug uchun
-                if value != Decimal('0'):
-                    print(f"✅ Region: {region}, Column: {column_name}, Value: {inner.value} -> {value}")
-
-            grouped[(region, column_name)] += total
-
-        print(f"📊 Grouped ma'lumotlar: {dict(grouped)}")
         return grouped
 
     def get_column_names_from_db(self, orderings, lang='uz'):
         """
         Database'dan parent title'larni tilga qarab olish
         """
-        from apps.reports.models import StatementColumn
-
         columns = StatementColumn.objects.filter(
             ordering__in=orderings
         ).select_related('parent')
 
+        print(f"\n📋 COLUMN NAMES MAPPING:")
         column_names = {}
         for column in columns:
             if column.parent:
@@ -171,12 +217,20 @@ class StatisticsFinanceFundAPIView(APIView):
 
             column_name = f"{parent_title} - Jami tushum"
             column_names[column.ordering] = column_name
+            print(f"   {column.ordering} -> {column_name}")
 
         return column_names
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
         deadline_id = request.query_params.get("deadline")
+
+        print(f"\n{'#' * 80}")
+        print(f"🚀 API SO'ROV BOSHLANDI")
+        print(f"{'#' * 80}")
+        print(f"📍 Lang: {lang}")
+        print(f"📍 Deadline ID: {deadline_id}")
+        print(f"{'#' * 80}\n")
 
         translation.activate(lang)
         field_names = FIELD_NAMES[lang]
@@ -189,8 +243,11 @@ class StatisticsFinanceFundAPIView(APIView):
 
         # Natijani region bo'yicha to'g'ri tuzish
         data = []
+        print(f"\n📊 NATIJALARNI FORMATLASH:")
         for region_key, region_label in RegionChoices.choices:
             row = {field_names["region"]: str(region_label)}
+
+            print(f"\n🏛️ Region: {region_label} ({region_key})")
 
             # Har bir ordering uchun column nomini database'dan olamiz
             for ordering in ORDERINGS:
@@ -200,6 +257,13 @@ class StatisticsFinanceFundAPIView(APIView):
                 # Decimal ni float ga aylantirish (JSON serialization uchun)
                 row[column_name] = float(value)
 
+                if value > 0:
+                    print(f"   ✓ {column_name}: {float(value)}")
+
             data.append(row)
+
+        print(f"\n{'#' * 80}")
+        print(f"✅ API SO'ROV YAKUNLANDI")
+        print(f"{'#' * 80}\n")
 
         return Response({field_names["jamgarma"]: data}, status=HTTP_200_OK)
