@@ -14,6 +14,10 @@ from apps.report_statistics.views.build_forest import (
     StatisticsGolofitAPIView,
 )
 
+from apps.report_statistics.views.protect_forest import (
+    StatisticsZararkunandaAPIView,
+)
+
 from apps.report_statistics.views.land_management import (
     StatisticsLandAcquisitionAPIView,
     StatisticsRentLandAPIView,
@@ -31,7 +35,7 @@ urlpatterns =[
     path('finance-fund-stat/',StatisticsFinanceFundAPIView.as_view()),
     path('build-forest-teressa/',StatisticsTerassaAPIView.as_view()),
     path('build-forest-golofit/',StatisticsGolofitAPIView.as_view()),
-    # path('land-rented-stat/',StatisticsRentLandAPIView.as_view()),
+    path('protect-forest-zararkunanda/',StatisticsZararkunandaAPIView.as_view()),
     # path('land-covered-stat/',StatisticsCoveredLandAPIView.as_view()),
     # path('closed-forest-stat/',StatisticsClosedRootAPIView.as_view()),
     # path('build-forest-stat/',StatisticsBuildForestAPIView.as_view()),
