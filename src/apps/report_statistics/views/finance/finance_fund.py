@@ -84,6 +84,7 @@ class StatisticsFinanceFundAPIView(APIView):
         base_filters = {
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
+            "statement_column__statement__name": "Jamg'arma",
         }
 
         if deadline_id:
