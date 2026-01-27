@@ -11,7 +11,7 @@ from apps.report_statistics.views.finance import (
 
 from apps.report_statistics.views.build_forest import (
     StatisticsTerassaAPIView,
-    # StatisticsFinanceIncomeAPIView,
+    StatisticsGolofitAPIView,
 )
 
 from apps.report_statistics.views.land_management import (
@@ -30,7 +30,7 @@ urlpatterns =[
     path('employee-report-stat/',StatisticsEmployeeReportAPIView.as_view()),
     path('finance-fund-stat/',StatisticsFinanceFundAPIView.as_view()),
     path('build-forest-teressa/',StatisticsTerassaAPIView.as_view()),
-    # path('land-acquisition-stat/',StatisticsLandAcquisitionAPIView.as_view()),
+    path('build-forest-golofit/',StatisticsGolofitAPIView.as_view()),
     # path('land-rented-stat/',StatisticsRentLandAPIView.as_view()),
     # path('land-covered-stat/',StatisticsCoveredLandAPIView.as_view()),
     # path('closed-forest-stat/',StatisticsClosedRootAPIView.as_view()),
