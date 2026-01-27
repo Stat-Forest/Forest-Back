@@ -70,7 +70,6 @@ class StatisticsFinanceFundAPIView(APIView):
         base_filters = {
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
-            "statement_column__statement__title": "Jamg'arma",
         }
 
         if deadline_id:
@@ -78,6 +77,15 @@ class StatisticsFinanceFundAPIView(APIView):
 
         # Filter faqat kerakli ordering'lar bo'yicha
         ordering_filter = Q(statement_column__ordering__in=CHILDREN_ORDERINGS.keys())
+
+        # Statement nomi bo'yicha filter qo'shamiz
+        # StatementColumn -> Statement munosabatidan foydalanamiz
+        from apps.reports.models import Statement
+        jamgarma_statements = Statement.objects.filter(name="Jamg'arma")
+        statement_ids = list(jamgarma_statements.values_list('id', flat=True))
+
+        if statement_ids:
+            ordering_filter &= Q(statement_column__statement_id__in=statement_ids)
 
         # Ma'lumotlarni olish
         queryset = (
