@@ -23,7 +23,7 @@ from apps.report_statistics.views.land_management import (
 
 from apps.report_statistics.views.establishment_forest import (
     StatisticsClosedRootAPIView,
-    StatisticsBuildForestAPIView
+    # StatisticsBuildForestAPIView
 )
 
 urlpatterns =[
