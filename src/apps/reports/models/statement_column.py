@@ -1,129 +1,113 @@
-from collections import defaultdict
-
-from django.db.models import Sum, FloatField, Q
-from django.db.models.functions import Cast
-
-from django.utils import translation
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
-
-from apps.utils.services import RegionChoices
-from apps.reports.models import Report, StatementColumn
-from apps.reports.models.report_item import ReportItem
-
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-
-# Children ordering'lar va ularning nomlari
-CHILDREN_ORDERINGS = {
-    "1.1.3.1": "Ruxsatnoma olish uchun arizalarni ko'rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag' (100%) - Jami tushum",
-    "1.1.4.1": "Hayvonot va o'simlik dunyosiga yetkazilgan zararni qoplash bo'yicha undirilgan mablag' (100%) - Jami tushum",
-    "1.1.5.1": "Ruxsat etilgan hududlarda chorva boqish, pichan o'rish, asalarilar uyasi va qutilarini joylashtirish, daraxt kesmagan holda o'tin yig'ish va boshqa maqsadlardan tushgan mablag' (50%) - Jami tushum",
-    "1.1.6.1": "O'rmon fondi yerlaridagi bog'lar va madaniy o'rmonzorlani fuqarolarga ijaraga berishdan tushgan mablag' (100%) - Jami tushum",
-    "1.1.7.1": "O'rmon xo'jaligida yog'och kesishdan tushgan mablag' (50%) - Jami tushum",
-    "1.1.8.1": "Boshqa daromadlar (10%) - Jami tushum",
-}
-
-FIELD_NAMES = {
-    "uz": {
-        "region": "hudud",
-        "jamgarma": "Jamg'arma",
-    },
-    "ru": {
-        "region": "регион",
-        "jamgarma": "Фонд",
-    },
-}
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from apps.base.models import AbstractBaseModel
 
 
-@extend_schema(
-    summary="Jamg'arma",
-    description="Jami tushumlarni hudud bo'yicha hisoblaydi",
-    tags=["Statistics"],
-    parameters=[
-        OpenApiParameter(
-            name="lang",
-            description="Til parametri: uz (default) yoki ru",
-            required=False,
-            type=OpenApiTypes.STR,
-            enum=["uz", "ru"],
-            location=OpenApiParameter.QUERY,
-        ),
-        OpenApiParameter(
-            name="deadline",
-            description="Deadline UUID bo'yicha filter",
-            required=False,
-            type=OpenApiTypes.UUID,
-            location=OpenApiParameter.QUERY,
-        )
-    ],
-)
-class StatisticsFinanceFundAPIView(APIView):
-
-    def get(self, request):
-        lang = request.query_params.get("lang", "uz")
-        deadline_id = request.query_params.get("deadline")
-
-        translation.activate(lang)
-        field_names = FIELD_NAMES[lang]
-
-        # Base filters
-        base_filters = {
-            "report__is_report": True,
-            "report__status": Report.StatusChoices.ACCEPTED,
-        }
-
-        if deadline_id:
-            base_filters["report__deadline_id"] = deadline_id
-
-        # Filter faqat kerakli ordering'lar bo'yicha
-        ordering_filter = Q(statement_column__ordering__in=CHILDREN_ORDERINGS.keys())
-
-        # Statement nomi bo'yicha filter qo'shamiz
-        # StatementColumn -> Statement munosabatidan foydalanamiz
-        from apps.reports.models import Statement
-        jamgarma_statements = Statement.objects.filter(name="Jamg'arma")
-        statement_ids = list(jamgarma_statements.values_list('id', flat=True))
-
-        if statement_ids:
-            ordering_filter &= Q(statement_column__statement_id__in=statement_ids)
-
-        # Ma'lumotlarni olish
-        queryset = (
-            ReportItem.objects
-            .filter(ordering_filter, **base_filters)
-            .values(
-                "report__organization__region",
-                "statement_column__ordering",
-            )
-            .annotate(total=Sum(Cast("inners__value", FloatField())))
+class StatementColumnManager(models.Manager):
+    def get_by_natural_key(self, statement_name, title, ordering):
+        return self.get(
+            statement__name=statement_name,
+            title=title,
+            ordering=ordering,
         )
 
-        # Har bir hudud va ordering uchun ma'lumotlarni guruhlash
-        grouped = defaultdict(lambda: defaultdict(float))
 
-        for item in queryset:
-            region = item["report__organization__region"]
-            ordering = item["statement_column__ordering"]
+class StatementColumn(AbstractBaseModel):
+    class PlanStatus(models.TextChoices):
+        YANVAR = 'yanvar', _('Yanvar')
+        FEVRAL = 'fevral', _('Fevral')
+        MART = 'mart', _('Mart')
+        APREL = 'aprel', _('Aprel')
+        MAY = 'may', _('May')
+        IYUN = 'iyun', _('Iyun')
+        IYUL = 'iyul', _('Iyul')
+        AVGUST = 'avgust', _('Avgust')
+        SENTABR = 'sentabr', _('Sentabr')
+        OKTABR = 'oktabr', _('Oktabr')
+        NOYABR = 'noyabr', _('Noyabr')
+        DEKABR = 'dekabr', _('Dekabr')
 
-            # Faqat bizning CHILDREN_ORDERINGS ichida bo'lgan ordering'larni qo'shamiz
-            if ordering in CHILDREN_ORDERINGS:
-                title = CHILDREN_ORDERINGS[ordering]
-                grouped[region][title] += item["total"] or 0
+        CHORAK_1 = 'chorak_1', _('1-chorak')
+        CHORAK_2 = 'chorak_2', _('2-chorak')
+        CHORAK_3 = 'chorak_3', _('3-chorak')
+        CHORAK_4 = 'chorak_4', _('4-chorak')
 
-        # Javob formatini yaratish
-        data = []
+        # CHANGED O'rmon barpo Plan
+        YILLIK_1 = 'yillik_1', _('Yillik_1')
+        YILLIK_2 = 'yillik_2', _('Yillik_2')
+        YILLIK_3 = 'yillik_3', _('Yillik_3')
 
-        for region_key, region_label in RegionChoices.choices:
-            region_name = str(region_label)
+        YILLIK = 'yillik', _('Yillik')
+        YILLIK_TOTAL = 'yillik_total', _('Yillik Total')
 
-            row = {field_names["region"]: region_name}
+    statement = models.ForeignKey(
+        'reports.Statement',
+        on_delete=models.CASCADE,
+        related_name='columns',
+        blank=True,
+        null=True,
+        limit_choices_to={'parent__isnull': False},
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name="children",
+        null=True,
+        blank=True
+    )
+    title = models.CharField(
+        max_length=500,
+        verbose_name=_("Column Title")
+    )
+    ordering = models.CharField(
+        default="0",
+        max_length=100,
+        verbose_name=_("Ordering")
+    )
+    is_organization = models.BooleanField(default=False)
 
-            # Har bir "Jami tushum" uchun qiymat qo'shish
-            for ordering, title in CHILDREN_ORDERINGS.items():
-                row[title] = grouped[region_key].get(title, 0)
+    status_plan = models.CharField(
+        max_length=20,
+        choices=PlanStatus.choices,
+        blank=True,
+        null=True,
+        verbose_name=_("Plan holati (oy, chorak, yil)")
+    )
+    is_user_input = models.BooleanField(default=True)
 
-            data.append(row)
+    objects = StatementColumnManager()
 
-        return Response(data, status=HTTP_200_OK)
+    # @property
+    # def return_parent(self):
+    #     if self.parent is None:
+    #         return self.title
+    #     return f"{self.parent.return_parent} - {self.title}"
+
+    def __str__(self):
+        return self.title_uz
+
+    @property
+    def is_leaf(self):
+        return not StatementColumn.objects.filter(parent=self).exists()
+
+    def clean(self):
+        super().clean()
+        if self.status_plan and self.is_organization:
+            raise ValidationError(_("An instance cannot be both a plan and an organization at the same time."))
+
+    # ✅ Natural key (parent_id dan foydalanamiz, rekursiya yo‘q)
+    def natural_key(self):
+        return (
+            self.statement.name if self.statement else None,
+            self.title,
+            self.ordering,
+        )
+
+    natural_key.dependencies = ["reports.statement"]
+
+    class Meta:
+        verbose_name = "Hisobot forma ustuni"
+        verbose_name_plural = "Hisobot forma ustunlari"
+        unique_together = ("statement", "title", "parent", "ordering")
+        ordering = ["ordering"]
