@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from django.db.models import Sum, FloatField, Q
 from django.db.models.functions import Cast
-from decimal import Decimal, InvalidOperation
 
 from django.utils import translation
 from rest_framework.views import APIView
@@ -10,28 +9,18 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 
 from apps.utils.services import RegionChoices
-from apps.reports.models import ReportItem, Report, ReportItemInner, StatementColumn
+from apps.reports.models import ReportItem, Report, StatementColumn
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-# Parent ordering'lar
-PARENT_ORDERINGS = [
-    "1.1.3",
-    "1.1.4",
-    "1.1.5",
-    "1.1.6",
-    "1.1.7",
-    "1.1.8",
-]
-
 # Children ordering'lar va ularning nomlari
 CHILDREN_ORDERINGS = {
-    "1.1.3.1": "Ruxsatnoma olish uchun arizalarni... - Jami tushum",
-    "1.1.4.1": "Hayvonot va o'simlik dunyosiga... - Jami tushum",
-    "1.1.5.1": "Ruxsat etilgan hududlarda chorva boqish... - Jami tushum",
-    "1.1.6.1": "O'rmon fondi yerlaridagi bog'lar... - Jami tushum",
-    "1.1.7.1": "O'rmon xo'jaligida yog'och kesishdan... - Jami tushum",
-    "1.1.8.1": "Boshqa daromadlar - Jami tushum",
+    "1.1.3.1": "Ruxsatnoma olish uchun arizalarni ko'rib chiqqanlik va ruxsatnomalar berganlik uchun tushgan mablag' (100%) - Jami tushum",
+    "1.1.4.1": "Hayvonot va o'simlik dunyosiga yetkazilgan zararni qoplash bo'yicha undirilgan mablag' (100%) - Jami tushum",
+    "1.1.5.1": "Ruxsat etilgan hududlarda chorva boqish, pichan o'rish, asalarilar uyasi va qutilarini joylashtirish, daraxt kesmagan holda o'tin yig'ish va boshqa maqsadlardan tushgan mablag' (50%) - Jami tushum",
+    "1.1.6.1": "O'rmon fondi yerlaridagi bog'lar va madaniy o'rmonzorlani fuqarolarga ijaraga berishdan tushgan mablag' (100%) - Jami tushum",
+    "1.1.7.1": "O'rmon xo'jaligida yog'och kesishdan tushgan mablag' (50%) - Jami tushum",
+    "1.1.8.1": "Boshqa daromadlar (10%) - Jami tushum",
 }
 
 FIELD_NAMES = {
@@ -48,7 +37,7 @@ FIELD_NAMES = {
 
 @extend_schema(
     summary="Jamg'arma",
-    description="Parent va children orderings bo'yicha jami tushumlarni hisoblaydi",
+    description="Jami tushumlarni hudud bo'yicha hisoblaydi",
     tags=["Statistics"],
     parameters=[
         OpenApiParameter(
@@ -70,36 +59,6 @@ FIELD_NAMES = {
 )
 class StatisticsFinanceFundAPIView(APIView):
 
-    def aggregate_by_ordering(self, parent_orderings, children_orderings, deadline_id=None):
-        """
-        Parent va children ordering'lar bo'yicha ma'lumotlarni agregatsiya qiladi.
-        Parent yoki children ordering'ga mos keladigan barcha yozuvlarni oladi.
-        """
-        filters = Q(statement_column__ordering__in=children_orderings)
-
-        # Parent ordering'lar uchun ham filter qo'shamiz
-        for parent in parent_orderings:
-            filters |= Q(statement_column__ordering__startswith=f"{parent}.")
-
-        base_filters = {
-            "report__is_report": True,
-            "report__status": Report.StatusChoices.ACCEPTED,
-            "statement_column__statement__name": "Jamg'arma",
-        }
-
-        if deadline_id:
-            base_filters["report__deadline_id"] = deadline_id
-
-        return (
-            ReportItem.objects
-            .filter(filters, **base_filters)
-            .values(
-                "report__organization__region",
-                "statement_column__ordering",
-            )
-            .annotate(total=Sum(Cast("inners__value", FloatField())))
-        )
-
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
         deadline_id = request.query_params.get("deadline")
@@ -107,33 +66,41 @@ class StatisticsFinanceFundAPIView(APIView):
         translation.activate(lang)
         field_names = FIELD_NAMES[lang]
 
-        # Ma'lumotlarni agregatsiya qilish (parent va children ordering'lar bo'yicha)
-        qs = self.aggregate_by_ordering(
-            PARENT_ORDERINGS,
-            list(CHILDREN_ORDERINGS.keys()),
-            deadline_id
+        # Base filters
+        base_filters = {
+            "report__is_report": True,
+            "report__status": Report.StatusChoices.ACCEPTED,
+            "statement_column__statement__title": "Jamg'arma",
+        }
+
+        if deadline_id:
+            base_filters["report__deadline_id"] = deadline_id
+
+        # Filter faqat kerakli ordering'lar bo'yicha
+        ordering_filter = Q(statement_column__ordering__in=CHILDREN_ORDERINGS.keys())
+
+        # Ma'lumotlarni olish
+        queryset = (
+            ReportItem.objects
+            .filter(ordering_filter, **base_filters)
+            .values(
+                "report__organization__region",
+                "statement_column__ordering",
+            )
+            .annotate(total=Sum(Cast("inners__value", FloatField())))
         )
 
         # Har bir hudud va ordering uchun ma'lumotlarni guruhlash
         grouped = defaultdict(lambda: defaultdict(float))
 
-        for item in qs:
+        for item in queryset:
             region = item["report__organization__region"]
             ordering = item["statement_column__ordering"]
 
-            # Ordering'ni children ordering'larga moslashtirish
-            # Agar to'g'ridan-to'g'ri children ordering bo'lsa
+            # Faqat bizning CHILDREN_ORDERINGS ichida bo'lgan ordering'larni qo'shamiz
             if ordering in CHILDREN_ORDERINGS:
                 title = CHILDREN_ORDERINGS[ordering]
                 grouped[region][title] += item["total"] or 0
-            else:
-                # Agar parent ordering ostidagi boshqa children bo'lsa,
-                # tegishli parent children'ga qo'shamiz
-                for child_ordering, title in CHILDREN_ORDERINGS.items():
-                    parent = ".".join(child_ordering.split(".")[:-1])
-                    if ordering.startswith(f"{parent}."):
-                        grouped[region][title] += item["total"] or 0
-                        break
 
         # Javob formatini yaratish
         data = []
