@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 
 from apps.utils.services import RegionChoices
-from apps.reports.models import ReportItem, Report, StatementColumn
+from apps.reports.models import Report, StatementColumn
+from apps.reports.models.report_item import ReportItem
+
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
