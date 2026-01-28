@@ -1,0 +1,1 @@
+from .yer_uzlashtirish import *
