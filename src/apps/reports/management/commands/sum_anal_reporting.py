@@ -47,43 +47,51 @@ class Command(BaseCommand):
             name_ru="Сводный",
         )
 
-        # 3️⃣ Asosiy sarlavha
-        main_title = create_column(
+        # 🔹 YANGI: Yig'ma ilovasi
+        yigma_ilovasi = create_column(
             yigma_statement,
-            None,
-            "O‘rmon agentligiga yuklatilgan muhim vazifalar ijrosi to‘g‘risida malumoti",
-            "Информация о выполнении важных задач, возложенных на Агентство лесного хозяйства",
-            "1"
+            parent=None,
+            title_uz="Yig'ma ilovasi",
+            title_ru="Сводное приложение",
+            ordering="1"
         )
 
-        # 4️⃣ CHAP TOMON USTUNLAR (rasmdagi kabi)
+        # 3️⃣ Asosiy sarlavha (endi parent = yig'ma ilovasi)
+        main_title = create_column(
+            yigma_statement,
+            yigma_ilovasi,
+            "O‘rmon agentligiga yuklatilgan muhim vazifalar ijrosi to‘g‘risida ma’lumoti",
+            "Информация о выполнении важных задач, возложенных на Агентство лесного хозяйства",
+            "1.1"
+        )
+
+        # 4️⃣ CHAP TOMON USTUNLAR
         create_column(yigma_statement, main_title,
                       "Maqsadli ko‘rsatkich nomi",
                       "Наименование целевого показателя",
-                      "1.1")
+                      "1.1.1")
 
         create_column(yigma_statement, main_title,
                       "O‘lchov birligi",
                       "Единица измерения",
-                      "1.2")
+                      "1.1.2")
 
         create_column(yigma_statement, main_title,
                       "Yillik reja",
                       "План на год",
-                      "1.3")
+                      "1.1.3")
 
         create_column(yigma_statement, main_title,
                       "Amalda",
                       "Фактически",
-                      "1.4")
+                      "1.1.4")
 
         bajarilishi = create_column(
             yigma_statement,
             main_title,
             "Bajarilishi",
             "Исполнение",
-            "1.5",
-            is_user_input=False
+            "1.1.5",
         )
 
         create_column(
@@ -91,7 +99,7 @@ class Command(BaseCommand):
             bajarilishi,
             "Foizi",
             "Процент",
-            "1.5.1",
+            "1.1.5.1",
         )
 
         create_column(
@@ -99,7 +107,7 @@ class Command(BaseCommand):
             bajarilishi,
             "Farqi (+;-)",
             "Отклонение (+;-)",
-            "1.5.2",
+            "1.1.5.2",
         )
 
         # 5️⃣ HUDUDLAR
@@ -126,16 +134,21 @@ class Command(BaseCommand):
                 main_title,
                 uz,
                 ru,
-                f"1.{idx}"
+                f"1.1.{idx}"
             )
 
-            create_column(yigma_statement, region_col, "Reja", "План", f"1.{idx}.1")
-            create_column(yigma_statement, region_col, "Amalda", "Фактически", f"1.{idx}.2")
-            create_column(yigma_statement, region_col, "Foizi", "Процент", f"1.{idx}.3" )
-            create_column(yigma_statement, region_col, "Farqi (+;-)", "Отклонение (+;-)", f"1.{idx}.4")
+            create_column(yigma_statement, region_col, "Reja", "План", f"1.1.{idx}.1")
+            create_column(yigma_statement, region_col, "Amalda", "Фактически", f"1.1.{idx}.2")
+            create_column(
+                yigma_statement,
+                region_col,
+                "Foizi",
+                "Процент",
+                f"1.1.{idx}.3",
+            )
 
             idx += 1
 
         self.stdout.write(
-            self.style.SUCCESS("Yig'ma hisoboti ustunlari yaratildi!")
+            self.style.SUCCESS("✅ Yig'ma ilovasi bilan hisoboti ustunlari yaratildi!")
         )
