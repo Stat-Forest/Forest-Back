@@ -16,8 +16,10 @@ from drf_spectacular.types import OpenApiTypes
 # "Amalda" column ordering'lari va ularning nomlari
 AMALDA_ORDERINGS = {
     "1.1.2.2": "Zararkunanda va kasalliklarni aniqlash bo'yicha o'rganiladigan maydon (gektar) - amalda",
-    "1.1.3.2": "Aniqlangan zararkunanda va kasallikka qarshi kurashish bo'yicha olib boriladigan tadbir (gektar) - amalda",
-    "1.1.4.2": "Shu jumladan zararkunandalarga qarshi o'tkaziladigan biologik tadbir (gektar) - amalda",
+    "1.1.3.2": "Jami: Aniqlangan zararkunanda va kasallikka qarshi kurashish bo'yicha olib boriladigan tadbir (gektar) - amalda",
+    "1.1.4.1.2": "Biologik tadbir (oltinkoʻz, trixogramma, brokon) gektar - amalda",
+    "1.1.4.2.1": "Kimyoviy ishlov yordamida (gektar) - amalda",
+    "1.1.4.3.1": "Mexanik, agrotexnik (qo'l kuchi yordamida zararlangan shoxlardan tozalash) gektar - amalda",
 }
 
 FIELD_NAMES = {
@@ -31,7 +33,7 @@ FIELD_NAMES = {
 
 
 @extend_schema(
-    summary="Zararkunanda",
+    summary="Zararkunanda - Amalda",
     description="Zararkunanda va kasalliklarga qarshi kurashish statement uchun 'Amalda' ko'rsatkichlarini hudud bo'yicha hisoblaydi",
     tags=["Statistics"],
     parameters=[
