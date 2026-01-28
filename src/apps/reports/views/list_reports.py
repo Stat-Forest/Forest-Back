@@ -92,17 +92,103 @@ class IndividualGeneralReport(CustomListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExtraReportFilter
 
+    def get_queryset(self):
+        """
+        Optimize N+1 by selecting FKs and prefetching related items/inners once.
+        Also cache statement_ids for StatementColumn preload in context.
+        """
+        qs = (
+            Report.objects
+            .filter(is_individual_general=True)
+            .select_related(
+                "organization",
+                "organization__republic",
+                "statement",
+                "statement__parent",
+                "deadline",
+                "sent_by",
+                "sent_by_org",
+            )
+        )
+        # Replace dummy prefetch with actual Prefetch for report_items
+        from django.db.models import Prefetch
+        from apps.reports.models import ReportItem
+        qs = qs.prefetch_related(
+            Prefetch(
+                "report_items",
+                queryset=(
+                    ReportItem.objects
+                    .select_related("statement_column", "statement_column__parent")
+                    .prefetch_related("inners")
+                )
+            )
+        )
+
+        # Cache statement_ids for context preload
+        self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
+        return qs
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         lang = self.request.query_params.get("lang", "uz")
         context["lang"] = lang
+
+        # Preload StatementColumns once for all statements in the page
+        statement_ids = getattr(self, "_statement_ids", [])
+        if statement_ids:
+            columns = (
+                StatementColumn.objects
+                .filter(statement_id__in=statement_ids)
+                .select_related("parent")
+                .only("id", "parent_id", "ordering", "title_uz", "title_ru", "is_organization", "statement_id")
+            )
+            columns_by_statement_id = {}
+            for col in columns:
+                columns_by_statement_id.setdefault(str(col.statement_id), []).append(col)
+            context["columns_by_statement_id"] = columns_by_statement_id
+        else:
+            context["columns_by_statement_id"] = {}
+
         return context
 
 
 @extend_schema(tags=["Individual-Reports"])
 class IndividualGeneralReportDetail(CustomRetrieveAPIView):
-    queryset = Report.objects.filter(is_individual_general=True)
+    queryset = (
+        Report.objects
+        .filter(is_individual_general=True)
+        .select_related(
+            "organization",
+            "organization__republic",
+            "statement",
+            "statement__parent",
+            "deadline",
+            "sent_by",
+            "sent_by_org",
+        )
+        .prefetch_related(
+            "report_items__inners",
+            "report_items__statement_column",
+            "report_items__statement_column__parent",
+        )
+    )
     serializer_class = ReportListSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lang = self.request.query_params.get("lang", "uz")
+        context["lang"] = lang
+
+        # Preload columns for this statement to avoid repeated queries in serializer
+        report: Report = self.get_object()
+        cols = (
+            StatementColumn.objects
+            .filter(statement_id=report.statement_id)
+            .select_related("parent")
+            .only("id", "parent_id", "ordering", "title_uz", "title_ru", "is_organization", "statement_id")
+        )
+        context["columns_by_statement_id"] = {str(report.statement_id): list(cols)}
+        return context
 
 
 @extend_schema(tags=["Regional-Reports"])

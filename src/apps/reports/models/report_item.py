@@ -13,7 +13,7 @@ class ReportItem(AbstractBaseModel):
     )
     statement_column = models.ForeignKey(
         "reports.StatementColumn",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="items",
         verbose_name=_("Statement Column")
     )
