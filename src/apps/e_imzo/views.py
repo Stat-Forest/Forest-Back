@@ -38,22 +38,24 @@ class EimzoJWTLoginView(APIView):
         serializer = EimzoLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        vo = serializer.validated_data['vo']
         pkcs7 = serializer.validated_data['pkcs7']
-        print(pkcs7,"Keldi!!!!")
+        vo = serializer.validated_data.get('vo') 
 
-        if not verify_pkcs7(pkcs7, vo):
-            return Response({"detail": "Imzo noto‘g‘ri yoki noto‘liq."}, status=status.HTTP_400_BAD_REQUEST)
+        # 🔑 Agar vo kelmagan bo‘lsa — pkcs7 dan chiqaramiz
+        vo = verify_pkcs7(pkcs7, vo)
+
+        if not vo:
+            return Response(
+                {"detail": gettext_lazy("Imzo noto‘g‘ri yoki noto‘liq.")},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         full_name = vo.get("CN", "")
         first_name, last_name, father_name = split_full_name(full_name)
 
-        uid = vo.get("UID", "")
+        uid = vo.get("UID") or str(random.randint(100000, 999999))
         pinfl = vo.get("PINFL", "")
         legal_stir = vo.get("TIN", "")
-
-        if not uid:
-            uid = str(random.randint(100000, 999999))
 
         email = f"{uid}@example.com"
 
@@ -61,7 +63,10 @@ class EimzoJWTLoginView(APIView):
         if legal_stir:
             organization = Organization.objects.filter(stir=legal_stir).first()
             if not organization:
-                return Response({'detail': gettext_lazy('Tashkilot topilmadi')}, status=404)
+                return Response(
+                    {'detail': gettext_lazy('Tashkilot topilmadi')},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
         user, _ = User.objects.update_or_create(
             email=email,
@@ -82,10 +87,11 @@ class EimzoJWTLoginView(APIView):
         user.save()
 
         refresh = RefreshToken.for_user(user)
+
         return Response({
             "access": str(refresh.access_token),
-            "email": email,
             "refresh": str(refresh),
+            "email": email,
             "role": user.role,
             "user_id": user.id
         }, status=status.HTTP_200_OK)
