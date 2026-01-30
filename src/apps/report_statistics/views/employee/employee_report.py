@@ -78,6 +78,7 @@ class StatisticsEmployeeReportAPIView(APIView):
             "statement_column__ordering__in": orderings,
             "report__is_report": True,
             "report__status": Report.StatusChoices.ACCEPTED,
+            "statement_column__statement__name": "Xodimlar hisobi",
         }
 
         if deadline_id:
