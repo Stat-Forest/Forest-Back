@@ -111,14 +111,18 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
         valid_deadlines = []
 
         for deadline in queryset:
-            # TASHKILOT_RAHBARI / HODIMI uchun: shu deadline ichida user.organization borligini tekshirish
-            if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
-                if not user.organization or user.organization not in deadline.organizations.all():
-                    continue
+
+            if user.role in {
+                CustomUser.Role.TASHKILOT_RAHBARI,
+                CustomUser.Role.TASHKILOT_HODIMI
+            }:
+                orgs = deadline.organizations.filter(id=user.organization_id)
+            else:
+                orgs = deadline.organizations.all()
 
             valid_organizations = []
 
-            for org in deadline.organizations.all():
+            for org in orgs:
                 report_exists = Report.objects.filter(
                     organization=org,
                     deadline=deadline,
@@ -134,3 +138,4 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
 
         serializer = self.get_serializer(valid_deadlines, many=True)
         return Response(serializer.data)
+
