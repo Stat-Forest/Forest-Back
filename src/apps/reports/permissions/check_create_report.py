@@ -1,9 +1,11 @@
 from rest_framework.permissions import BasePermission
 
 class CanCreateReport(BasePermission):
-    def has_object_permission(self, request, view, obj=None):
-        allowed_roles = ['tashkilot_hodimi', 'hududiy_boshqarma']
+    def has_object_permission(self, request, view, obj):
+        if request.user.role == 'super_admin':
+            return True
+
         return (
-            request.user.role in allowed_roles and
-            obj.organization == request.user.organization
+            request.user.role in ['tashkilot_hodimi', 'hududiy_boshqarma']
+            and obj.organization == request.user.organization
         )
