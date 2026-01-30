@@ -1,16 +1,14 @@
 from datetime import date
 
-from django.db import models
 from rest_framework import generics
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
 
 from apps.reports.models import Deadline, Report
-from apps.reports.serializers.deadline.expired_deadlines import (
-    DeadlineExpiredSerializer
-)
+from apps.reports.serializers.deadline.expired_deadlines import DeadlineExpiredSerializer
 from apps.utils.services import PeriodChoices
+from apps.users.models import CustomUser  
 
 
 class DeadlineExpiredFilter(FilterSet):
@@ -47,16 +45,8 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = DeadlineExpiredFilter
 
-    class Role(models.TextChoices):
-        SUPER_ADMIN = "super_admin", "Super Admin"
-        RAHBARIYAT = "rahbariyat", "Rahbariyat"
-        BOLIM_ADMIN = "bolim_admin", "Bo‘lim Admin"
-        TASHKILOT_RAHBARI = "tashkilot_rahbari", "Tashkilot rahbari"
-        TASHKILOT_HODIMI = "tashkilot_hodimi", "Tashkilot hodimi"
-        HUDUDIY_BOSHQARMA = "hududiy_boshqarma", "Hududiy boshqarma"
-
     def get_queryset(self):
-        user = self.request.user
+        user: CustomUser = self.request.user
 
         queryset = (
             Deadline.objects
@@ -67,30 +57,34 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
         )
 
         # SUPER_ADMIN — hammasi
-        if user.role == self.Role.SUPER_ADMIN:
+        if user.role == CustomUser.Role.SUPER_ADMIN:
             return queryset
 
         # BOLIM_ADMIN — faqat o‘z statementlari
-        if user.role == self.Role.BOLIM_ADMIN:
+        if user.role == CustomUser.Role.BOLIM_ADMIN:
             return queryset.filter(statement=user.statement)
 
         # TASHKILOT_RAHBARI / TASHKILOT_HODIMI — faqat user.organization ichida bo‘lgan deadline
-        if user.role in {self.Role.TASHKILOT_RAHBARI, self.Role.TASHKILOT_HODIMI}:
-            return queryset.filter(organizations=user.organization)
+        if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
+            # Agar user.organization bo‘lsa faqat shu organizationga tegishli deadline
+            if user.organization:
+                return queryset.filter(organizations=user.organization)
+            else:
+                return queryset.none()
 
         # Default: hech narsa qaytmasin
         return queryset.none()
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        user = request.user
+        user: CustomUser = request.user
 
         valid_deadlines = []
 
         for deadline in queryset:
             # TASHKILOT_RAHBARI / HODIMI uchun: shu deadline ichida user.organization borligini tekshirish
-            if user.role in {self.Role.TASHKILOT_RAHBARI, self.Role.TASHKILOT_HODIMI}:
-                if user.organization not in deadline.organizations.all():
+            if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
+                if not user.organization or user.organization not in deadline.organizations.all():
                     continue  # bu deadline ularga ko‘rinmaydi
 
             valid_organizations = []
