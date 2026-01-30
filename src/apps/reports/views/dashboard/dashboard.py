@@ -58,7 +58,7 @@ class DashboardStatListView(CustomGenericAPIView):
                 status=400
             )
 
-        # ===== expired_deadlines LOGIC =====
+        # ===== expired_deadlines LOGIC (FIXED) =====
         expired_deadlines_count = 0
 
         expired_deadlines_qs = (
@@ -68,15 +68,34 @@ class DashboardStatListView(CustomGenericAPIView):
         )
 
         for deadline in expired_deadlines_qs:
-            for org in deadline.organizations.all():
+
+            if user.role in {
+                CustomUser.Role.TASHKILOT_RAHBARI,
+                CustomUser.Role.TASHKILOT_HODIMI
+            }:
+                if not user.organization:
+                    continue
+
                 report_exists = Report.objects.filter(
                     deadline=deadline,
-                    organization=org
+                    organization_id=user.organization.id,
+                    is_report=True,
                 ).exists()
 
                 if not report_exists:
                     expired_deadlines_count += 1
-                    break  # bitta organization yetarli
+
+            else:
+                for org in deadline.organizations.all():
+                    report_exists = Report.objects.filter(
+                        deadline=deadline,
+                        organization=org,
+                        is_report=True,
+                    ).exists()
+
+                    if not report_exists:
+                        expired_deadlines_count += 1
+                        break  # bitta organization yetarli
 
         data = {
             "sent_reports": report_qs.filter(
