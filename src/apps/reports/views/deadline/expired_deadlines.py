@@ -58,16 +58,22 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
 
         # SUPER_ADMIN — hammasi
         if user.role == CustomUser.Role.SUPER_ADMIN:
+            print("super")
+            print(queryset)
             return queryset
 
         # BOLIM_ADMIN — faqat o‘z statementlari
         if user.role == CustomUser.Role.BOLIM_ADMIN:
+            print('bolim')
+            print(queryset.filter(statement=user.statement))
             return queryset.filter(statement=user.statement)
 
         # TASHKILOT_RAHBARI / TASHKILOT_HODIMI — faqat user.organization ichida bo‘lgan deadline
         if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
+            print('xodim')
             # Agar user.organization bo‘lsa faqat shu organizationga tegishli deadline
             if user.organization:
+                print(queryset.filter(organizations=user.organization))
                 return queryset.filter(organizations=user.organization)
             else:
                 return queryset.none()
