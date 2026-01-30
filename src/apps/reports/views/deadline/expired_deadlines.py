@@ -126,6 +126,7 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
                 report_exists = Report.objects.filter(
                     organization=org,
                     deadline=deadline,
+                    is_report=True,
                     status=Report.StatusChoices.ACCEPTED,
                 ).exists()
 
