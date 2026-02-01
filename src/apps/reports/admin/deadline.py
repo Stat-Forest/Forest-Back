@@ -90,11 +90,19 @@ class DeadlineAdminForm(forms.ModelForm):
 
         # --- submit_at format validation ---
         if period == "daily":
+            # 1️⃣ qat'iy format: YYYY-MM-DD
+            pattern = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$"
+            if not re.match(pattern, submit_at):
+                raise forms.ValidationError(
+                    _("Invalid date format. Use YYYY-MM-DD (e.g. 2025-01-01)")
+                )
+
+            # 2️⃣ real sana ekanini tekshirish (masalan 2025-02-30 bo‘lmasligi kerak)
             try:
                 datetime.strptime(submit_at, "%Y-%m-%d")
-            except Exception:
+            except ValueError:
                 raise forms.ValidationError(
-                    _("Invalid date format. Use YYYY-MM-DD")
+                    _("Invalid calendar date.")
                 )
 
         elif period == "weekly":
@@ -103,12 +111,16 @@ class DeadlineAdminForm(forms.ModelForm):
                     _("Invalid week format. Use: YYYY-MM-HAFTALIK_x")
                 )
 
+
         elif period == "monthly":
-            try:
-                datetime.strptime(submit_at, "%Y-%m")
-            except Exception:
+
+            pattern = r"^\d{4}_(0[1-9]|1[0-2])$"
+
+            if not re.match(pattern, submit_at):
                 raise forms.ValidationError(
-                    _("Invalid month format. Use YYYY-MM")
+
+                    _("Invalid month format. Use YYYY_MM (e.g. 2025_01, 2025_12)")
+
                 )
 
         elif period == "quarterly":
