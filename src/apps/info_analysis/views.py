@@ -1,3 +1,4 @@
+import uuid
 from debug_toolbar.utils import is_processable_html_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -92,7 +93,12 @@ class ReportAnalysisDashboardView(APIView):
         # =============================
         organization = data.get("organization")
         if organization:
-            reports = reports.filter(organization_id=organization)
+            try:
+                org_uuid = uuid.UUID(organization)
+                reports = reports.filter(organization_id=org_uuid)
+            except ValueError:
+                # Invalid UUID, filterni qo‘ymaymiz
+                pass
 
         computed_values = {}
         response_items = []
