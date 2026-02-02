@@ -30,9 +30,9 @@ class ReportAnalysisDashboardView(APIView):
             ),
             OpenApiParameter(
                 name="organization",
-                type=OpenApiTypes.INT,
+                type=OpenApiTypes.UUID,
                 required=False,
-                description="Organization ID"
+                description="Organization UUID"
             ),
 
             # ===== DEADLINE FILTERS =====
