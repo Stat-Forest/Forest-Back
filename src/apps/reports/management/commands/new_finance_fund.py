@@ -19,9 +19,9 @@ class Command(BaseCommand):
 
             # Asosiy statement
             daromad_statement = Statement.objects.create(
-                name="Daromad 1",
-                name_uz="Daromad 1",
-                name_ru="Доход 1",
+                name="Daromad",
+                name_uz="Daromad",
+                name_ru="Доход",
                 parent=moliya_statement,
                 period=PeriodChoices.OYLIK,
             )
@@ -29,9 +29,9 @@ class Command(BaseCommand):
             # 1 - asosiy root
             tushumlar = StatementColumn.objects.create(
                 statement=daromad_statement,
-                title="Daromad 1 ilovasi",
-                title_uz="Daromad 1 ilovasi",
-                title_ru="Доход приложение 1",
+                title="Daromad ilovasi",
+                title_uz="Daromad ilovasi",
+                title_ru="Доход приложение",
                 ordering="1",
             )
 

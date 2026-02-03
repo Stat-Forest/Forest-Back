@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 ordering=f"{base_ordering}.{idx}",
                 is_user_input=is_user_input
             )
-
+    
     def handle(self, *args, **kwargs):
         with transaction.atomic():
             urmon = Statement.objects.create(name="O‘rmon kadastri, ijara", name_ru="Лесной кадастр, аренда")
