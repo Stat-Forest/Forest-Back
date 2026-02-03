@@ -1,4 +1,3 @@
-# apps/e_imzo/views.py
 import random
 
 from django.contrib.auth import get_user_model
@@ -22,39 +21,23 @@ class EimzoJWTLoginView(APIView):
         serializer = EimzoLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        vo = serializer.validated_data.get("vo") or {}
         pkcs7 = serializer.validated_data["pkcs7"]
-        frontend_vo = serializer.validated_data.get("vo") or {}
 
-        # 1️⃣ Avval E-IMZO serverdan VO olishga harakat qilamiz
-        vo = verify_pkcs7(pkcs7)
-
-        # 2️⃣ Agar e-imzo ishlamasa → frontend VO
-        if not vo:
-            vo = frontend_vo
-
-        # 3️⃣ Agar baribir VO bo‘lmasa → xato
-        if not vo:
+        if not verify_pkcs7(pkcs7, vo):
             return Response(
-                {"detail": "VO olinmadi (pkcs7 ham, frontend vo ham yo‘q)"},
+                {"detail": "Imzo noto‘g‘ri yoki noto‘liq."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 4️⃣ VO dan ma’lumotlar
         full_name = vo.get("CN", "")
         uid = vo.get("UID") or str(random.randint(100000, 999999))
         pinfl = vo.get("PINFL", "")
         legal_stir = vo.get("TIN", "")
 
-        if not legal_stir:
-            return Response(
-                {"detail": "TIN topilmadi"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         first_name, last_name, father_name = split_full_name(full_name)
-        email = f"{uid}@eimzo.local"
+        email = f"{uid}@example.com"
 
-        # 5️⃣ Organization
         organization = Organization.objects.filter(stir=legal_stir).first()
         if not organization:
             return Response(
@@ -62,7 +45,6 @@ class EimzoJWTLoginView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 6️⃣ User create/update
         user, _ = User.objects.update_or_create(
             email=email,
             defaults={
@@ -81,19 +63,15 @@ class EimzoJWTLoginView(APIView):
         user.set_password(uid)
         user.save()
 
-        # 7️⃣ JWT
         refresh = RefreshToken.for_user(user)
 
         return Response(
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
-                "user_id": user.id,
-                "email": user.email,
+                "email": email,
                 "role": user.role,
+                "user_id": user.id,
             },
             status=status.HTTP_200_OK
         )
-
-
-print('ishladi')
