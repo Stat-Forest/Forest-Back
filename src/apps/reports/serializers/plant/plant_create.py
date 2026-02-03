@@ -14,7 +14,7 @@ from apps.utils.services import PeriodChoices
 from apps.utils.translation import get_lang_code
 from apps.base.serializers import CustomSerializer
 from apps.reports.report_calculate import ALL_CALCULATORS
-from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
+from apps.reports.services.simple_ensure_plans import ensure_plant_plans_exist
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn, Plant
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.reports.services.individual_general_report import aggregate_individual_report
@@ -23,6 +23,7 @@ from apps.reports.services.report_calculate_expressions import calculate_by_expr
 
 class PlantBasedReportItemSerializer(CustomSerializer):
     statement_column = serializers.UUIDField()
+    source_report = serializers.UUIDField(required=False)
     inners = serializers.ListField(child=serializers.DictField())
 
 
@@ -49,7 +50,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         submit_at = deadline.submit_at
         today = date.today()
 
-        ensure_plans_exist_simple(
+        ensure_plant_plans_exist(
             statement=statement,
             organization=organization
         )
@@ -137,12 +138,17 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
         foot_note = validated_data.get("foot_note")
 
         column_ids = [item["statement_column"] for item in items_data]
-        columns = StatementColumn.objects.filter(id__in=column_ids).select_related("statement")
+        columns = list(
+            StatementColumn.objects
+            .filter(id__in=column_ids)
+            .only("id", "is_organization", "statement_id")
+        )
         columns_map = {str(col.id): col for col in columns}
 
-        report_items_buffer = []
-        report_inners_buffer = []
-        reports_map = {}
+        # Buffers and mappings
+        pending_items_map = {}  # (report_id, column_id) -> ReportItem (unsaved)
+        inners_by_key = {}      # (report_id, column_id) -> list[dict(value, plant_id)]
+        reports_map = {}        # (organization_id, statement_id) -> Report instance
         current_org = None
 
         # ✅ Plant ID larni oldindan tekshirib olamiz (FK xatosi bo'lmasligi uchun)
@@ -167,6 +173,7 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                 })
 
         with transaction.atomic():
+            # 1) Build reports, pending ReportItems (without manual PKs) and cache inners per item-key
             for item in items_data:
                 col_id = str(item["statement_column"])
                 column = columns_map.get(col_id)
@@ -175,29 +182,34 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
 
                 inners = item.get("inners", [])
 
-                # ✅ 1. "Tashkilot nomi" column -> org_id dan tashkilotni aniqlash
+                # Organization column determines current organization and must not contain plant values
                 if column.is_organization:
+                    if any(inner.get("plant") for inner in inners):
+                        raise serializers.ValidationError(
+                            {"plant": "Tashkilotga oid ustunlarda plant yuborish taqiqlanadi."}
+                        )
+
                     if not inners or not inners[0].get("value"):
                         raise serializers.ValidationError("Tashkilot ID kiritilishi kerak.")
 
                     org_id = inners[0]["value"]
 
-                    # UUID formatini tekshirish
+                    # UUID format validation
                     try:
                         UUID(str(org_id))
                     except Exception:
                         raise serializers.ValidationError(f"Noto‘g‘ri tashkilot ID formati: {org_id}")
 
-                    # Tashkilotni olish
+                    # Fetch organization
                     try:
                         current_org = Organization.objects.get(id=org_id)
                     except Organization.DoesNotExist:
                         raise serializers.ValidationError(f"Tashkilot topilmadi: {org_id}")
 
-                    # ✅ Report yaratamiz
+                    # Ensure report exists for (org, statement)
                     report_key = (current_org.id, column.statement.id)
                     if report_key not in reports_map:
-                        report = Report.objects.create(
+                        reports_map[report_key] = Report.objects.create(
                             organization=current_org,
                             statement=column.statement,
                             deadline_id=deadline_id,
@@ -205,41 +217,36 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                             status=Report.StatusChoices.SAVED,
                             is_plant_based=True,
                             created_by=user,
-                            foot_note=foot_note
+                            foot_note=foot_note,
                         )
-                        reports_map[report_key] = report
 
                     report = reports_map[report_key]
-                    report_item_id = uuid.uuid4()
 
-                    # ✅ Tashkilot column uchun ham ReportItem saqlanadi
-                    report_items_buffer.append(
-                        ReportItem(
-                            id=report_item_id,
+                    # Prepare a pending ReportItem for the organization column
+                    key = (report.id, column.id)
+                    if key not in pending_items_map:
+                        pending_items_map[key] = ReportItem(
                             report=report,
-                            statement_column=column
+                            statement_column_id=column.id,
                         )
-                    )
 
-                    # ✅ va ichiga organization_id (UUID) saqlaymiz
-                    report_inners_buffer.append(
-                        ReportItemInner(
-                            report_item_id=report_item_id,
-                            value=str(org_id)
-                        )
-                    )
+                    # Store the inner for organization (value only, no plant)
+                    inners_by_key.setdefault(key, []).append({
+                        "value": str(org_id),
+                        "plant_id": None,
+                    })
                     continue
 
-                # ✅ 2. Org aniqlanmagan bo‘lsa xato
+                # For non-organization columns, ensure organization is determined
                 if not current_org:
                     raise serializers.ValidationError(
                         "Tashkilot aniqlanmagan, iltimos 'Tashkilot nomi' columnni yuboring."
                     )
 
-                # ✅ 3. Reportni yaratamiz yoki olamiz
+                # Ensure report exists for (org, statement)
                 report_key = (current_org.id, column.statement.id)
                 if report_key not in reports_map:
-                    report = Report.objects.create(
+                    reports_map[report_key] = Report.objects.create(
                         organization=current_org,
                         statement=column.statement,
                         deadline_id=deadline_id,
@@ -247,39 +254,71 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                         status=Report.StatusChoices.SAVED,
                         is_plant_based=True,
                         created_by=user,
-                        foot_note=foot_note
+                        foot_note=foot_note,
                     )
-                    reports_map[report_key] = report
 
                 report = reports_map[report_key]
-                report_item_id = uuid.uuid4()
 
-                # ✅ Oddiy ReportItem
-                report_items_buffer.append(
-                    ReportItem(
-                        id=report_item_id,
+                # Prepare a pending ReportItem for this column
+                key = (report.id, column.id)
+                if key not in pending_items_map:
+                    pending_items_map[key] = ReportItem(
                         report=report,
-                        statement_column=column
+                        statement_column_id=column.id,
                     )
-                )
 
-                # ✅ Plant innerlar
+                # Normalize and cache inners for later save
                 for inner in inners:
                     raw_value = inner.get("value")
                     normalize_value = normalize_decimal_input_dote(raw_value)
-                    report_inners_buffer.append(
-                        ReportItemInner(
-                            report_item_id=report_item_id,
-                            plant_id=inner.get("plant"),
-                            value=normalize_value
-                        )
+                    inners_by_key.setdefault(key, []).append({
+                        "value": normalize_value,
+                        "plant_id": inner.get("plant"),
+                    })
+
+            # 2) Persist ReportItems safely without manual PKs
+            items_to_create = list(pending_items_map.values())
+            if items_to_create:
+                ReportItem.objects.bulk_create(items_to_create)
+
+            # 3) Refetch items to build a reliable mapping (report_id, column_id) -> ReportItem
+            # We only refetch for the keys we just created
+            keys = list(pending_items_map.keys())
+            if keys:
+                report_ids = {rid for rid, _ in keys}
+                column_ids_set = {cid for _, cid in keys}
+                fetched_items = ReportItem.objects.filter(
+                    report_id__in=report_ids,
+                    statement_column_id__in=column_ids_set,
+                )
+                item_map = {
+                    (ri.report_id, ri.statement_column_id): ri for ri in fetched_items
+                }
+
+                # Ensure all expected keys exist
+                missing_keys = [k for k in keys if k not in item_map]
+                if missing_keys:
+                    raise serializers.ValidationError(
+                        "ReportItem yaratishda xatolik yuz berdi (ba'zi ustunlar topilmadi)."
                     )
 
-            # Bulk create
-            ReportItem.objects.bulk_create(report_items_buffer)
-            ReportItemInner.objects.bulk_create(report_inners_buffer)
+                # 4) Build ReportItemInner instances now that we have guaranteed ReportItems
+                report_inners_buffer = []
+                for key, inners_list in inners_by_key.items():
+                    report_item = item_map[key]
+                    for inner in inners_list:
+                        report_inners_buffer.append(
+                            ReportItemInner(
+                                report_item=report_item,
+                                plant_id=inner.get("plant_id"),
+                                value=inner.get("value"),
+                            )
+                        )
 
-            # ✅ Hisob-kitob
+                if report_inners_buffer:
+                    ReportItemInner.objects.bulk_create(report_inners_buffer)
+
+            # 5) Calculations on each report
             for report in reports_map.values():
                 statement = report.statement
                 if func := ALL_CALCULATORS.get(report.statement.name_uz):
