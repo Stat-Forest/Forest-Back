@@ -88,8 +88,6 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
 
     #CustomMiddleWare for Enter Admin
-    "config.settings.middlewares.AdminIPWhitelistMiddleware",
-
     "django.contrib.auth.middleware.AuthenticationMiddleware",
 
     "apps.users.middleware.ActiveUserMiddleware",
