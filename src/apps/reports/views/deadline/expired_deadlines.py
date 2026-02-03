@@ -1,16 +1,15 @@
 from datetime import date
 
-from django.db import models
 from rest_framework import generics
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
 
 from apps.reports.models import Deadline, Report
-from apps.reports.serializers.deadline.expired_deadlines import (
-    DeadlineExpiredSerializer
-)
+from apps.reports.serializers.deadline.expired_deadlines import DeadlineExpiredSerializer
 from apps.utils.services import PeriodChoices
+from apps.users.models import CustomUser
 
 
 class DeadlineExpiredFilter(FilterSet):
@@ -41,22 +40,43 @@ class DeadlineExpiredFilter(FilterSet):
         return queryset
 
 
-@extend_schema(tags=["Deadlines"])
+@extend_schema(
+    tags=["Deadlines"],
+    parameters=[
+        OpenApiParameter(
+            name="statement",
+            description="Statement UUID",
+            required=False,
+            type=OpenApiTypes.UUID
+        ),
+        OpenApiParameter(
+            name="deadline_at",
+            description="Deadline date (YYYY-MM-DD)",
+            required=False,
+            type=OpenApiTypes.DATE
+        ),
+        OpenApiParameter(
+            name="organizations",
+            description="Organization UUID",
+            required=False,
+            type=OpenApiTypes.UUID
+        ),
+        OpenApiParameter(
+            name="period",
+            description="Period: daily, weekly, monthly, quarterly, yearly",
+            required=False,
+            type=OpenApiTypes.STR,
+            enum=[c[0] for c in PeriodChoices.choices]
+        ),
+    ]
+)
 class DeadlineExpiredListAPIView(generics.ListAPIView):
     serializer_class = DeadlineExpiredSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = DeadlineExpiredFilter
 
-    class Role(models.TextChoices):
-        SUPER_ADMIN = "super_admin", "Super Admin"
-        RAHBARIYAT = "rahbariyat", "Rahbariyat"
-        BOLIM_ADMIN = "bolim_admin", "Bo‘lim Admin"
-        TASHKILOT_RAHBARI = "tashkilot_rahbari", "Tashkilot rahbari"
-        TASHKILOT_HODIMI = "tashkilot_hodimi", "Tashkilot hodimi"
-        HUDUDIY_BOSHQARMA = "hududiy_boshqarma", "Hududiy boshqarma"
-
     def get_queryset(self):
-        user = self.request.user
+        user: CustomUser = self.request.user
 
         queryset = (
             Deadline.objects
@@ -67,38 +87,46 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
         )
 
         # SUPER_ADMIN — hammasi
-        if user.role == self.Role.SUPER_ADMIN:
+        if user.role == CustomUser.Role.SUPER_ADMIN:
             return queryset
 
-        # BOLIM_ADMIN — faqat o‘z statementlari
-        if user.role == self.Role.BOLIM_ADMIN:
-            return queryset.filter(statement=user.statement)
+        # BOLIM_ADMIN — faqat o‘z statement parentiga teng bo‘lgan deadlinelar
+        if user.role == CustomUser.Role.BOLIM_ADMIN and user.statement:
+            return queryset.filter(statement__parent=user.statement)
 
         # TASHKILOT_RAHBARI / TASHKILOT_HODIMI — faqat user.organization ichida bo‘lgan deadline
-        if user.role in {self.Role.TASHKILOT_RAHBARI, self.Role.TASHKILOT_HODIMI}:
-            return queryset.filter(organizations=user.organization)
+        if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
+            if user.organization:
+                return queryset.filter(organizations=user.organization)
+            else:
+                return queryset.none()
 
         # Default: hech narsa qaytmasin
         return queryset.none()
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        user = request.user
+        user: CustomUser = request.user
 
         valid_deadlines = []
 
         for deadline in queryset:
-            # TASHKILOT_RAHBARI / HODIMI uchun: shu deadline ichida user.organization borligini tekshirish
-            if user.role in {self.Role.TASHKILOT_RAHBARI, self.Role.TASHKILOT_HODIMI}:
-                if user.organization not in deadline.organizations.all():
-                    continue  # bu deadline ularga ko‘rinmaydi
+
+            if user.role in {
+                CustomUser.Role.TASHKILOT_RAHBARI,
+                CustomUser.Role.TASHKILOT_HODIMI
+            }:
+                orgs = deadline.organizations.filter(id=user.organization_id)
+            else:
+                orgs = deadline.organizations.all()
 
             valid_organizations = []
 
-            for org in deadline.organizations.all():
+            for org in orgs:
                 report_exists = Report.objects.filter(
                     organization=org,
                     deadline=deadline,
+                    is_report=True,
                     status=Report.StatusChoices.ACCEPTED,
                 ).exists()
 
@@ -111,3 +139,4 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
 
         serializer = self.get_serializer(valid_deadlines, many=True)
         return Response(serializer.data)
+
