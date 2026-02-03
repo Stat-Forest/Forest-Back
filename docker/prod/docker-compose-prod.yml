@@ -112,12 +112,25 @@ services:
       - forest_network
     restart: always
 
+  e_imzo_server:
+    build:
+      context: ../../e-imzo-server
+      dockerfile: Dockerfile
+    container_name: e_imzo_server_prod
+    restart: always
+    expose:
+      - "8080"
+      - "8081"
+    networks:
+      - forest_network
+
 volumes:
   postgres_data:
   redis_data:
   certbot-etc:
   certbot-var:
   backups_data:
+  e_imzo_server:
 
 
 networks:
