@@ -7,8 +7,8 @@ from apps.utils.services import PeriodChoices
 class Command(BaseCommand):
     def handle(self, *args, **options):
         parent_statement_2 = Statement.objects.get(
-            name_uz="O'rmon barpo qilish",
-            name_ru="Создание леса",
+            name_uz="Ko‘chatchilik va urug‘chilikni rivojlantirish",
+            name_ru="Развитие питомниководства и семеноводства",
         )
 
         kochat_statement = Statement.objects.create(
