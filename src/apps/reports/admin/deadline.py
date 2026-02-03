@@ -1,44 +1,51 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
+
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.admin import DateFieldListFilter
 from django.utils.translation import gettext_lazy as _
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from apps.general.models import Organization
 from apps.reports.models import Deadline
 from apps.logs.mixins import AdminHistoryMixin
-from django.utils.safestring import mark_safe
 
 
+# ================================
+# Validators
+# ================================
 def validate_deadline_at(value):
-    """DD/MM/YYYY format validatsiyasi"""
+    """
+    DD/MM/YYYY format validatsiyasi
+    """
     if isinstance(value, str):
         try:
             datetime.strptime(value, "%d/%m/%Y")
         except ValueError:
-            raise forms.ValidationError(_("Deadline date must be in DD/MM/YYYY format"))
+            raise forms.ValidationError(
+                _("Deadline date must be in DD/MM/YYYY format")
+            )
 
 
+# ================================
+# Admin Form
+# ================================
 class DeadlineAdminForm(forms.ModelForm):
     organizations = forms.ModelMultipleChoiceField(
-        queryset=Organization.objects.all().order_by('name'),
+        queryset=Organization.objects.all().order_by("name"),
         required=True,
         widget=FilteredSelectMultiple(
             verbose_name=_("Organizations"),
             is_stacked=False,
-            attrs={
-                "style": "height: 350px; width: 350px;"
-            }
-        )
+            attrs={"style": "height: 350px; width: 350px;"},
+        ),
     )
 
     class Media:
         css = {
-            "all": (
-                "admin/css/widgets.css",
-            )
+            "all": ("admin/css/widgets.css",)
         }
         js = (
             "admin/js/core.js",
@@ -49,15 +56,12 @@ class DeadlineAdminForm(forms.ModelForm):
         model = Deadline
         fields = "__all__"
 
-    def clean_organizations(self):
-        return self.cleaned_data["organizations"]
-
     def clean(self):
         cleaned_data = super().clean()
 
         organizations = cleaned_data.get("organizations")
         statement = cleaned_data.get("statement")
-        submission_at = cleaned_data.get("submit_at")
+        submit_at = cleaned_data.get("submit_at")
         deadline_at = cleaned_data.get("deadline_at")
         period = statement.period if statement else None
 
@@ -66,54 +70,76 @@ class DeadlineAdminForm(forms.ModelForm):
             validate_deadline_at(deadline_at)
 
         # --- duplicate check ---
-        if organizations and statement and submission_at:
-            existing = Deadline.objects.filter(
+        if organizations and statement and submit_at:
+            qs = Deadline.objects.filter(
                 statement=statement,
-                submit_at=submission_at
+                submit_at=submit_at,
             )
 
-            # === UPDATE out of itself ===
-            if self.instance and self.instance.pk:
-                existing = existing.exclude(pk=self.instance.pk)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
 
-            for d in existing:
-                if set(d.organizations.all()) == set(organizations):
+            for obj in qs:
+                if set(obj.organizations.all()) == set(organizations):
                     raise forms.ValidationError(
-                        _("A deadline already exists for this combination of organizations, statement, and submit_at.")
+                        _(
+                            "A deadline already exists for this combination of "
+                            "organizations, statement, and submit_at."
+                        )
                     )
 
-        # --- submit_at formatlar ---
+        # --- submit_at format validation ---
         if period == "daily":
+            # 1️⃣ qat'iy format: YYYY-MM-DD
+            pattern = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$"
+            if not re.match(pattern, submit_at):
+                raise forms.ValidationError(
+                    _("Invalid date format. Use YYYY-MM-DD (e.g. 2025-01-01)")
+                )
+
+            # 2️⃣ real sana ekanini tekshirish (masalan 2025-02-30 bo‘lmasligi kerak)
             try:
-                datetime.strptime(submission_at, "%Y-%m-%d")
+                datetime.strptime(submit_at, "%Y-%m-%d")
             except ValueError:
-                raise forms.ValidationError(_("Invalid date format. Please use YYYY-MM-DD"))
+                raise forms.ValidationError(
+                    _("Invalid calendar date.")
+                )
 
         elif period == "weekly":
-            pattern = r"^\d{4}-\d{2}-HAFTALIK_[1-4]$"
-            if not re.match(pattern, submission_at):
-                raise forms.ValidationError(_("Invalid week format. Use: YYYY-MM-HAFTALIK_x"))
+            if not re.match(r"^\d{4}-\d{2}-HAFTALIK_[1-4]$", submit_at):
+                raise forms.ValidationError(
+                    _("Invalid week format. Use: YYYY-MM-HAFTALIK_x")
+                )
+
 
         elif period == "monthly":
-            try:
-                datetime.strptime(submission_at, "%Y-%m")
-            except ValueError:
-                raise forms.ValidationError(_("Invalid month format. Use: YYYY-MM"))
+
+            pattern = r"^\d{4}_(0[1-9]|1[0-2])$"
+
+            if not re.match(pattern, submit_at):
+                raise forms.ValidationError(
+
+                    _("Invalid month format. Use YYYY_MM (e.g. 2025_01, 2025_12)")
+
+                )
 
         elif period == "quarterly":
-            pattern = r"^\d{4}-CHORAK_[1-4]$"
-            if not re.match(pattern, submission_at):
-                raise forms.ValidationError(_("Invalid quarter format. Use: YYYY-CHORAK_x"))
+            if not re.match(r"^\d{4}-CHORAK_[1-4]$", submit_at):
+                raise forms.ValidationError(
+                    _("Invalid quarter format. Use: YYYY-CHORAK_x")
+                )
 
         elif period == "yearly":
-            if not submission_at.isdigit() or len(submission_at) != 4:
-                raise forms.ValidationError(_("Invalid year format. Use: YYYY"))
+            if not submit_at.isdigit() or len(submit_at) != 4:
+                raise forms.ValidationError(
+                    _("Invalid year format. Use YYYY")
+                )
 
         return cleaned_data
 
 
 # ================================
-# Custom Date Filter
+# Deadline date filter (custom)
 # ================================
 class DeadlineDateFilter(admin.SimpleListFilter):
     title = _("Deadline date")
@@ -133,15 +159,19 @@ class DeadlineDateFilter(admin.SimpleListFilter):
         if self.value() == "today":
             return queryset.filter(deadline_at=today)
 
-        elif self.value() == "past_7":
-            from datetime import timedelta
-            start = today - timedelta(days=7)
-            return queryset.filter(deadline_at__gte=start, deadline_at__lt=today)
+        if self.value() == "past_7":
+            return queryset.filter(
+                deadline_at__gte=today - timedelta(days=7),
+                deadline_at__lte=today,
+            )
 
-        elif self.value() == "this_month":
-            return queryset.filter(deadline_at__year=today.year, deadline_at__month=today.month)
+        if self.value() == "this_month":
+            return queryset.filter(
+                deadline_at__year=today.year,
+                deadline_at__month=today.month,
+            )
 
-        elif self.value() == "this_year":
+        if self.value() == "this_year":
             return queryset.filter(deadline_at__year=today.year)
 
         return queryset
@@ -156,47 +186,60 @@ class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
 
     list_display = (
         "statement",
-        "statement__period",
+        "statement_period",
         "submit_at",
         "deadline_at_display",
         "organizations_display",
+        "created_at",
     )
 
     list_filter = (
         "statement",
         "submit_at",
         DeadlineDateFilter,
+        ("created_at", DateFieldListFilter),  # ✅ created_at filter
     )
 
-    search_fields = ("statement__name", "submit_at", "deadline_at")
+    search_fields = (
+        "statement__name",
+        "submit_at",
+    )
 
-    def organizations_display(self, obj):
-        orgs = obj.organizations.all().order_by("name")
+    ordering = ("-created_at",)
 
-        html_list = "<ul style='margin:0; padding-left:16px;'>"
-        for org in orgs:
-            html_list += f"<li>{org.name}</li>"
-        html_list += "</ul>"
+    # ----------------------------
+    # Custom columns
+    # ----------------------------
+    def statement_period(self, obj):
+        return obj.statement.period if obj.statement else "-"
 
-        # scroll beramiz
-        return mark_safe(
-            f"""
-            <div style="
-                max-height: 150px;
-                overflow-y: auto;
-                border: 1px solid #ddd;
-                padding: 4px 8px;
-                background: #fafafa;
-                border-radius: 4px;
-            ">
-                {html_list}
-            </div>
-            """
-        )
-
-    organizations_display.short_description = _("Organizations")
+    statement_period.short_description = _("Period")
 
     def deadline_at_display(self, obj):
         return obj.deadline_at.strftime("%d/%m/%Y") if obj.deadline_at else "-"
 
     deadline_at_display.short_description = _("Deadline date")
+
+    def organizations_display(self, obj):
+        orgs = obj.organizations.all().order_by("name")
+
+        items = "".join(f"<li>{org.name}</li>" for org in orgs)
+
+        return mark_safe(
+            f"""
+            <div style="
+                max-height:150px;
+                overflow-y:auto;
+                border:1px solid #ddd;
+                padding:6px;
+                background:#fafafa;
+                border-radius:4px;
+            ">
+                <ul style="margin:0;padding-left:18px;">
+                    {items}
+                </ul>
+            </div>
+            """
+        )
+
+    organizations_display.short_description = _("Organizations")

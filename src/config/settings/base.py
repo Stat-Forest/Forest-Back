@@ -11,7 +11,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
-DEBUG = True
+DEBUG = False
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -70,6 +70,9 @@ INSTALLED_APPS = [
     "apps.report_statistics.apps.ReportStatisticsConfig",
     "apps.e_imzo.apps.EImzoConfig",
     "apps.logs.apps.LogsConfig",
+    "apps.info_analysis.apps.InfoAnalysisConfig",
+
+
 ]
 
 # ===============================
