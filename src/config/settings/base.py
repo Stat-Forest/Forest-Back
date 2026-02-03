@@ -15,6 +15,11 @@ DEBUG = False
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOW_CREDENTIALS = True
+
+# files will be installed here
+EXPORT_ROOT = os.path.join(BASE_DIR, "exports")
+
 ALLOWED_HOSTS = [
     "forest.yutori.uz", "www.forest.yutori.uz",
     "93.188.84.164", "localhost", "127.0.0.1",
@@ -29,6 +34,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://localhost:5174",
     "http://stat-urmon.uz",
     "https://stat-urmon.uz",
+    "http://localhost:8000"
 ]
 
 # ===============================
@@ -80,6 +86,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+
+    #CustomMiddleWare for Enter Admin
+    "config.settings.middlewares.AdminIPWhitelistMiddleware",
 
     "django.contrib.auth.middleware.AuthenticationMiddleware",
 

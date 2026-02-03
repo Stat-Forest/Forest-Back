@@ -33,16 +33,16 @@ CHILD_PLANTS = [
 
 
 class Command(BaseCommand):
-    help = "Create parent + child plants for 'Daromad 1' statement"
+    help = "Create parent + child plants for 'Daromad' statement"
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write("🚀 Creating Daromad 1 plant structure...")
+        self.stdout.write("🚀 Creating Daromad plant structure...")
 
         try:
-            statement = Statement.objects.get(name="Daromad 1")
+            statement = Statement.objects.get(name="Daromad")
         except Statement.DoesNotExist:
-            self.stderr.write("❌ Statement 'Daromad 1' topilmadi")
+            self.stderr.write("❌ Statement 'Daromad' topilmadi")
             return
 
         # 1️⃣ Parent plant
@@ -78,6 +78,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"✅ Daromad 1 plants ready | Parent: 1 | Children: {created_children}"
+                f"✅ Daromad plants ready | Parent: 1 | Children: {created_children}"
             )
         )

@@ -17,6 +17,10 @@ class Command(BaseCommand):
             "python manage.py forest_additional",
             "python manage.py second_forest_additional",
             "python manage.py third_forest_additional",
+            "python manage.py shakl_reports",
+            "python manage.py shakl_plants_8",
+            "python manage.py shakl_plants_9_10",
+            "python manage.py shakl_plants_11",
         ]
 
         for cmd in commands:
