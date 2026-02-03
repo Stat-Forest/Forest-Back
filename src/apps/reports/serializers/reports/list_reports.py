@@ -1,4 +1,6 @@
 import re
+
+from celery.bin.celery import report
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -16,7 +18,7 @@ class ReportListSerializer(serializers.ModelSerializer):
     sent_by_full_name = serializers.SerializerMethodField()
     sent_by_org_name = serializers.SerializerMethodField()
     submit_at = serializers.SerializerMethodField()
-
+    deadline_at = serializers.SerializerMethodField()
     # exporter helpers
     is_individual_general = serializers.SerializerMethodField()
     is_general = serializers.SerializerMethodField()
@@ -33,6 +35,7 @@ class ReportListSerializer(serializers.ModelSerializer):
             "period", "status",
             "created_at", "cancel_reason",
             "cancelled_at", "sent_at", "accepted_at",
+            "deadline_at",
             "report_items", "time_status", "report_season", "foot_note",
             "sent_by_full_name", "sent_by_org_name", "sent_by_role",
             "is_individual_general", "is_general", "is_republic", "is_plant_based", "row_number",
@@ -41,6 +44,9 @@ class ReportListSerializer(serializers.ModelSerializer):
     # ---------------------
     # SIMPLE FIELDS
     # ---------------------
+
+    def get_deadline_at(self, obj):
+        return obj.deadline.deadline_at if obj.deadline else None
 
     def get_time_status(self, obj):
         if obj.time_status:
