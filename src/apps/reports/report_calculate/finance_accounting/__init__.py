@@ -5,8 +5,8 @@ from apps.reports.report_calculate.finance_accounting.new_found import calculate
 calculators = {
     "Jamg'arma": calculate_jamgarma,
     "Фонд": calculate_jamgarma,
-    "Daromad": calculate_income_summary,
-    "Доход": calculate_income_summary,
-    "Daromad 1": calculate_daromad_plant_based,
-    "Доход 1": calculate_daromad_plant_based
+    # "Daromad": calculate_income_summary,
+    # "Доход": calculate_income_summary,
+    "Daromad": calculate_daromad_plant_based,
+    "Доход": calculate_daromad_plant_based
 }
