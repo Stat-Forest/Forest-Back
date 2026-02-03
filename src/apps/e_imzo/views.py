@@ -94,3 +94,6 @@ class EimzoJWTLoginView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+print('ishladi')
