@@ -85,18 +85,35 @@ def aggregate_individual_report(source_report):
         republic=republic,
     )
 
-    # 3️⃣ Source reportdan qiymatlarni yig‘amiz
-    column_values_map = defaultdict(list)
-
-    source_items = (
-        source_report.report_items
-        .select_related("statement_column")
-        .prefetch_related("inners")
+    # 3️⃣ Source reportdan qiymatlarni yig‘amiz (preload EVERYTHING once)
+    # Columns for the statement
+    columns = list(
+        StatementColumn.objects
+        .filter(statement=source_report.statement)
+        .only("id", "ordering")
     )
+    columns_by_id = {c.id: c for c in columns}
+    columns_by_ordering = {c.ordering: c for c in columns}
 
-    for item in source_items:
-        for inner in item.inners.all():
-            column_values_map[item.statement_column_id].append(inner.value)
+    # Map report_item.id -> statement_column_id
+    source_items = list(
+        ReportItem.objects
+        .filter(report=source_report)
+        .only("id", "statement_column_id")
+    )
+    col_id_by_item_id = {it.id: it.statement_column_id for it in source_items}
+
+    # Pull all inners once and build column_values_map without touching ORM in loops
+    source_inners = list(
+        ReportItemInner.objects
+        .filter(report_item__report=source_report)
+        .only("id", "report_item_id", "value")
+    )
+    column_values_map = defaultdict(list)
+    for inner in source_inners:
+        col_id = col_id_by_item_id.get(inner.report_item_id)
+        if col_id:
+            column_values_map[col_id].append(inner.value)
 
     # Statement turlari
     seed_statement = is_seed_statement(source_report.statement)
@@ -104,26 +121,17 @@ def aggregate_individual_report(source_report):
 
     # Seed statement uchun FOIZ ustuni majburiy
     if seed_statement:
-        foiz_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.2.3"
-        ).first()
+        foiz_col = columns_by_ordering.get("1.1.2.3")
         if foiz_col and foiz_col.id not in column_values_map:
             column_values_map[foiz_col.id] = []
 
     # Og'ir mahalla uchun: REJA (1.1.4) va FOIZ (1.1.6) ustunlarini majburiy qo'shamiz
     if heavy_statement:
-        reja_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.4"
-        ).first()
+        reja_col = columns_by_ordering.get("1.1.4")
         if reja_col and reja_col.id not in column_values_map:
             column_values_map[reja_col.id] = []
 
-        foiz_col = StatementColumn.objects.filter(
-            statement=source_report.statement,
-            ordering="1.1.6"
-        ).first()
+        foiz_col = columns_by_ordering.get("1.1.6")
         if foiz_col and foiz_col.id not in column_values_map:
             column_values_map[foiz_col.id] = []
 
@@ -138,12 +146,25 @@ def aggregate_individual_report(source_report):
     created_items = list(ReportItem.objects.filter(report=individual_report).only("id", "statement_column_id"))
     item_map = {i.statement_column_id: i for i in created_items}
 
-    # Preload StatementColumn ordering once to prevent per-item queries later
-    from apps.reports.models import StatementColumn as SC
-    ordering_by_col_id = {
-        c.id: c.ordering
-        for c in SC.objects.filter(statement=individual_report.statement).only("id", "ordering")
-    }
+    # Reuse already preloaded statement columns for ordering
+    ordering_by_col_id = {c.id: c.ordering for c in columns}
+
+    # Preload PlanItem values once for relevant columns (by current statement, org, year)
+    plan_year = get_year_from_deadline(source_report.deadline)
+    relevant_col_ids = list(column_values_map.keys())
+    plan_values_by_col_id = {}
+    if relevant_col_ids:
+        plan_qs = (
+            PlanItem.objects
+            .filter(
+                plan__statement=source_report.statement,
+                plan__organization=source_report.organization,
+                plan__year=plan_year,
+                column_id__in=relevant_col_ids,
+            )
+            .values_list("column_id", "plan_value")
+        )
+        plan_values_by_col_id = {col_id: (val or Decimal("0")) for col_id, val in plan_qs}
 
     new_inners = []
 
@@ -157,17 +178,7 @@ def aggregate_individual_report(source_report):
         # 🌱 Urug' xarakati Reja
         if seed_statement:
             if ordering == "1.1.2.1":  # REJA
-                plan_year = get_year_from_deadline(source_report.deadline)
-                plan_value = (
-                    PlanItem.objects.filter(
-                        plan__statement=source_report.statement,
-                        plan__organization=source_report.organization,
-                        plan__year=plan_year,
-                        column_id=column_id
-                    )
-                    .values_list("plan_value", flat=True)
-                    .first()
-                )
+                plan_value = plan_values_by_col_id.get(column_id, Decimal("0"))
                 value = str(plan_value or Decimal("0"))
             elif ordering == "1.1.2.3":  # FOIZ
                 value = "0"
@@ -178,17 +189,7 @@ def aggregate_individual_report(source_report):
         # 🏘 Og‘ir mahalla
         elif heavy_statement:
             if ordering == "1.1.4":  # REJA (plan from PlanItem, like seed statement)
-                plan_year = get_year_from_deadline(source_report.deadline)
-                plan_value = (
-                    PlanItem.objects.filter(
-                        plan__statement=source_report.statement,
-                        plan__organization=source_report.organization,
-                        plan__year=plan_year,
-                        column_id=column_id,
-                    )
-                    .values_list("plan_value", flat=True)
-                    .first()
-                )
+                plan_value = plan_values_by_col_id.get(column_id, Decimal("0"))
                 value = str(plan_value or Decimal("0"))
             elif ordering == "1.1.6":  # FOIZ only calculated later
                 value = "0"

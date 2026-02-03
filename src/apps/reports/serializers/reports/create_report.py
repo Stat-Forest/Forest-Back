@@ -8,17 +8,16 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from apps.general.models import Organization
-from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.utils.services import PeriodChoices
+from apps.logs.models import HistoryActionJournal
 from apps.reports.report_calculate import ALL_CALCULATORS
 from apps.reports.services import aggregate_individual_report
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.utils.translation import get_lang_code, get_translated_field
 from apps.reports.services.simple_ensure_plans import ensure_plans_exist_simple
+from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.reports.models import Report, ReportItem, StatementColumn, ReportItemInner
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
-from apps.logs.models import HistoryActionJournal
-
 
 
 class ReportItemInnerSerializer(serializers.ModelSerializer):
@@ -38,11 +37,14 @@ class ReportItemSerializer(serializers.ModelSerializer):
 # 12 ta viloyat, 1ta shahar, qoraqol respublikasi. boshqa tashkilotlar.
 class ReportCreateSerializer(serializers.ModelSerializer):
     report_items = serializers.ListField(write_only=True)
+    source_report = serializers.UUIDField(
+        write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = Report
         fields = [
-            "id", "deadline", "report_season", "foot_note", "report_items"
+            "id", "deadline", "report_season", "foot_note", "source_report", "report_items"
         ]
 
     def validate(self, attrs):
@@ -50,14 +52,57 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         statement = deadline.statement
         report_items = attrs['report_items']
         user = self.context['request'].user
-        organization = user.organization
+        user_org = user.organization
         is_individual_general = attrs.get("is_individual_general", False)
         report_season = attrs.get("report_season")
+
+        # Detect svodka statement and resolve organization from source_report
+        stmt_name_uz = (getattr(statement, "name_uz", "") or "").strip()
+        is_svodka_stmt = stmt_name_uz == "Ko'chat va Nihol Yetishtirish Jami"
+        resolved_org = user_org
+        source_report_obj = None
+        if is_svodka_stmt:
+            source_report_id = attrs.get("source_report")
+            if not source_report_id:
+                raise ValidationError({"source_report": _("Svodka uchun manba report (source_report) majburiy")})
+
+            # Fetch and validate source report
+            try:
+                source_report_obj = Report.objects.select_related("statement", "organization", "deadline").get(id=source_report_id)
+            except Report.DoesNotExist:
+                raise ValidationError({"source_report": _("Manba report topilmadi")})
+
+            base_name_uz = (getattr(source_report_obj.statement, "name_uz", "") or "").strip()
+            if base_name_uz != "Ko‘chat va Nihol":
+                raise ValidationError({"source_report": _("Manba report 'Ko‘chat va Nihol' bo‘lishi shart")})
+
+            if source_report_obj.organization_id != user_org.id:
+                raise ValidationError({"source_report": _("Manba report boshqa tashkilotga tegishli")})
+
+            # Compare years of submit_at
+            def _extract_year(submit_at_val: str) -> int:
+                if not submit_at_val:
+                    return 0
+                s = str(submit_at_val)
+                try:
+                    return int(s.split("-")[0])
+                except Exception:
+                    try:
+                        return int(s)
+                    except Exception:
+                        return 0
+
+            src_year = _extract_year(getattr(source_report_obj.deadline, "submit_at", ""))
+            tgt_year = _extract_year(getattr(deadline, "submit_at", ""))
+            if src_year and tgt_year and src_year != tgt_year:
+                raise ValidationError({"source_report": _("Manba report yili bilan svodka yili bir xil bo‘lishi kerak")})
+
+            resolved_org = source_report_obj.organization
 
         # 1. Duplicated reportni tekshir
         if not is_individual_general:
             qs = Report.objects.filter(
-                organization=organization,
+                organization=resolved_org,
                 statement=statement,
                 deadline=deadline,
                 is_individual_general=False
@@ -74,12 +119,12 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 )
 
         ensure_plans_exist_simple(
-            organization=organization,
+            organization=resolved_org,
             statement=statement
         )
 
         # 2. Userning organizationi shu deadlinega tegishli emasmi?
-        if not deadline.organizations.filter(id=user.organization.id).exists():
+        if not deadline.organizations.filter(id=user_org.id).exists():
             raise CustomExceptionError(400, _('Sizga bu deadline uchun ruxsat berilmagan.'))
 
         print("🧪 deadline:", deadline)
@@ -167,6 +212,11 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise CustomExceptionError(400, {'report': _('This report already exists.')})
 
+        # Attach resolved org and source_report for create()
+        attrs["_resolved_organization"] = resolved_org
+        if source_report_obj:
+            attrs["_source_report_obj"] = source_report_obj
+
         return attrs
 
     def create(self, validated_data):
@@ -175,6 +225,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         deadline = validated_data["deadline"]
         report_season = validated_data.get("report_season")
         foot_note = validated_data.get("foot_note")
+        resolved_org = validated_data.pop("_resolved_organization", getattr(user, "organization", None))
+        source_report_obj = validated_data.pop("_source_report_obj", None)
 
         column_ids = [item["statement_column"] for item in items_data]
         columns_map = {
@@ -188,6 +240,12 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         report_inners_buffer = []
 
         with transaction.atomic():
+            # Detect svodka once for this request
+            stmt_name_uz = (getattr(deadline.statement, "name_uz", "") or "").strip()
+            is_svodka_stmt = stmt_name_uz == "Ko'chat va Nihol Yetishtirish Jami"
+            if is_svodka_stmt and resolved_org and not current_org_id:
+                current_org_id = str(resolved_org.id)
+
             for item in items_data:
                 col_id = item["statement_column"]
                 column = columns_map.get(col_id)
@@ -199,12 +257,16 @@ class ReportCreateSerializer(serializers.ModelSerializer):
 
                 # === ORGANIZATION USTUNI ===
                 if column.is_organization:
-                    if not inners_data or "value" not in inners_data[0]:
-                        raise serializers.ValidationError(
-                            {"detail": f"Organization inners required for column {col_id}"}
-                        )
-                    current_org_id = inners_data[0]["value"]
-                    org_instance = Organization.objects.get(id=current_org_id)
+                    if is_svodka_stmt:
+                        current_org_id = str(resolved_org.id)
+                        org_instance = resolved_org
+                    else:
+                        if not inners_data or "value" not in inners_data[0]:
+                            raise serializers.ValidationError(
+                                {"detail": f"Organization inners required for column {col_id}"}
+                            )
+                        current_org_id = inners_data[0]["value"]
+                        org_instance = Organization.objects.get(id=current_org_id)
 
                     report_key = (current_org_id, str(column.statement.id))
 
@@ -231,7 +293,8 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             region=org_instance.region,
                             status=Report.StatusChoices.SAVED,
                             created_by=user,
-                            foot_note=foot_note
+                            foot_note=foot_note,
+                            source_report=source_report_obj if is_svodka_stmt else None,
                         )
 
                         HistoryActionJournal.objects.create(
@@ -309,11 +372,12 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             report_season=report_season,
                             status=Report.StatusChoices.SAVED,
                             region=org_instance.region,
-                            foot_note=foot_note
+                            foot_note=foot_note,
+                            source_report=source_report_obj if is_svodka_stmt else None,
                         )
 
                     reports_map[report_key] = report
-                    
+
                 report = reports_map[report_key]
 
                 report_item_id = uuid.uuid4()
@@ -334,22 +398,27 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                         )
                     )
 
-            # === YIG‘ILGAN MA’LUMOTLARNI SAQLASH ===
-            ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
-            ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
+            with transaction.atomic():
 
-            # === HISOBLASH VA JAMI REPORTLAR ===
-            if reports_map:
-                for report in reports_map.values():
-                    statement = report.statement
-                    statement_name = report.statement.name_uz
-                    calculate_func = ALL_CALCULATORS.get(statement_name)
+                # 1. bulk saqlash
+                ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
+                ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
 
-                    if calculate_func:
-                        calculate_func(report)
-                    elif statement.calculate_expression:
-                        calculate_by_expressions(report)
+                # 2. 🔑 MUHIM JOY
+                def run_after_commit():
+                    for report in reports_map.values():
+                        print("STATEMENT NAME:", repr(report.statement.name_uz))
+                        statement = report.statement
+                        calculate_func = ALL_CALCULATORS.get(statement.name_uz)
+                        print("CALCULATOR FOUND:", calculate_func)
 
-                    aggregate_individual_report(report)
+                        if calculate_func:
+                            calculate_func(report)
+                        elif statement.calculate_expression:
+                            calculate_by_expressions(report)
+
+                        aggregate_individual_report(report)
+
+                transaction.on_commit(run_after_commit)
 
             return list(reports_map.values())

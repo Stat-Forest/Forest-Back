@@ -19,7 +19,7 @@ class Plant(AbstractBaseModel):
 
     parent = models.ForeignKey(
         'self',
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='children'

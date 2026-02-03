@@ -57,6 +57,13 @@ class Report(AbstractBaseModel):
         verbose_name=_("Deadline"),
         related_name="reports",
     )
+    source_report = models.ForeignKey(
+        "self",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL
+    )
+
     status = models.CharField(
         max_length=20,
         choices=StatusChoices.choices,
