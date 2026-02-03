@@ -9,8 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.general.models import Organization
 from apps.users.models import CustomUser
 from apps.e_imzo.serializers import EimzoLoginSerializer
-from apps.users.e_imzo.services import verify_pkcs7
-from apps.users.e_imzo.utils import split_full_name
+from apps.e_imzo.services import verify_pkcs7
+from apps.e_imzo.utils import split_full_name
 
 User = get_user_model()
 
