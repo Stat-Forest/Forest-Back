@@ -6,6 +6,7 @@ from apps.reports.report_calculate.forest_create.forest_create_statement import 
 from apps.reports.report_calculate.forest_create.golofit_statement import calculate_golofit_statement
 from apps.reports.report_calculate.forest_create.green_environment import calculate_green_environment
 from apps.reports.report_calculate.forest_create.heavy_neighborhood import calculate_heavy_neighborhood
+from apps.reports.report_calculate.forest_create.plant_nursery_svodka import calculate_kochat_nursery
 from apps.reports.report_calculate.forest_create.save_healthy import calculate_save_healthy
 from apps.reports.report_calculate.forest_create.seed_movement import calculate_seed_movement
 from apps.reports.report_calculate.forest_create.pencil_preparation import calculate_make_pencil
@@ -44,5 +45,7 @@ calculators = {
     "Terassa": calculate_terrassa_statement,
     "Терраса": calculate_terrassa_statement,
     "Golofit": calculate_golofit_statement,
-    "Голофит": calculate_golofit_statement
+    "Голофит": calculate_golofit_statement,
+    "Ko'chat va Nihol Yetishtirish Jami": calculate_kochat_nursery,
+    "Всего выращивание саженцев и рассады": calculate_kochat_nursery
 }
