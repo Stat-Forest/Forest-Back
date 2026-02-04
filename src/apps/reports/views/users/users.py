@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import generics
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -71,12 +72,11 @@ class UserListAPIView(generics.ListAPIView):
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
             orgs = user.region_user_orgs.all()
 
-            # himoya: noto‘g‘ri sozlama bo‘lsa
             if not orgs.exists():
-                return qs.none()
+                return qs.filter(id=user.id)  # hech bo‘lmasa o‘zi
 
             return qs.filter(
-                organization__in=orgs
+                Q(organization__in=orgs) | Q(id=user.id)
             )
 
         # ORGANIZATION USER
