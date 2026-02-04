@@ -112,7 +112,7 @@ class PlantPlanItemOutSerializer(ColumnLangMixin, serializers.ModelSerializer):
 
 class PlantPlanOutSerializer(serializers.ModelSerializer):
     plant = serializers.UUIDField(source="plant.id")
-    plant_name = serializers.CharField(source="plant.name", read_only=True)
+    plant_name = serializers.CharField(source="plant.name_uz", read_only=True)
     items = PlantPlanItemOutSerializer(many=True)
 
     class Meta:
