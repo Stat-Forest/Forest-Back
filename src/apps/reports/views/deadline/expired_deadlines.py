@@ -90,18 +90,26 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
         if user.role == CustomUser.Role.SUPER_ADMIN:
             return queryset
 
-        # BOLIM_ADMIN — faqat o‘z statement parentiga teng bo‘lgan deadlinelar
+        # BOLIM_ADMIN
         if user.role == CustomUser.Role.BOLIM_ADMIN and user.statement:
             return queryset.filter(statement__parent=user.statement)
 
-        # TASHKILOT_RAHBARI / TASHKILOT_HODIMI — faqat user.organization ichida bo‘lgan deadline
-        if user.role in {CustomUser.Role.TASHKILOT_RAHBARI, CustomUser.Role.TASHKILOT_HODIMI}:
+        # HUDUDIY_BOSHQARMA
+        if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+            orgs = user.region_user_orgs.all()
+            return queryset.filter(
+                organizations__in=orgs
+            ).distinct()
+
+        # TASHKILOT
+        if user.role in {
+            CustomUser.Role.TASHKILOT_RAHBARI,
+            CustomUser.Role.TASHKILOT_HODIMI
+        }:
             if user.organization:
                 return queryset.filter(organizations=user.organization)
-            else:
-                return queryset.none()
+            return queryset.none()
 
-        # Default: hech narsa qaytmasin
         return queryset.none()
 
     def list(self, request, *args, **kwargs):
@@ -112,11 +120,20 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
 
         for deadline in queryset:
 
+            # ===== organization scope =====
             if user.role in {
                 CustomUser.Role.TASHKILOT_RAHBARI,
                 CustomUser.Role.TASHKILOT_HODIMI
             }:
-                orgs = deadline.organizations.filter(id=user.organization_id)
+                orgs = deadline.organizations.filter(
+                    id=user.organization_id
+                )
+
+            elif user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+                orgs = deadline.organizations.filter(
+                    id__in=user.region_user_orgs.values_list("id", flat=True)
+                )
+
             else:
                 orgs = deadline.organizations.all()
 
@@ -139,4 +156,3 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
 
         serializer = self.get_serializer(valid_deadlines, many=True)
         return Response(serializer.data)
-

@@ -61,11 +61,20 @@ class ReportListAPIView(CustomListAPIView):
         if user.is_superuser:
             return qs
 
-        if user.role in ['tashkilot_hodimi', 'hududiy_boshqarma', 'tashkilot_rahbari']:
+        # TASHKILOT_HODIMI / TASHKILOT_RAHBARI
+        if user.role in ['tashkilot_hodimi', 'tashkilot_rahbari']:
             return qs.filter(organization=user.organization)
 
+        # BOLIM_ADMIN
         if user.role == 'bolim_admin':
             return qs.filter(statement__parent_id=user.statement.id)
+
+        # HUDUDIY_BOSHQARMA
+        if user.role == 'hududiy_boshqarma':
+            orgs = user.region_user_orgs.all()
+            if orgs.exists():
+                return qs.filter(organization__in=orgs)
+            return qs.none()
 
         return Report.objects.none()
 

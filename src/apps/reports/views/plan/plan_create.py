@@ -185,21 +185,28 @@ class PlanListAPIView(generics.ListAPIView):
         qs = super().get_queryset()
         user = self.request.user
 
+        # BOLIM_ADMIN
         if (
-            user.role == CustomUser.Role.BOLIM_ADMIN
-            and user.statement
+                user.role == CustomUser.Role.BOLIM_ADMIN
+                and user.statement
         ):
             qs = qs.filter(statement__parent=user.statement)
 
+        # HUDUDIY_BOSHQARMA
+        elif user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+            qs = qs.filter(
+                organization__in=user.region_user_orgs.all()
+            )
+
+        # TASHKILOT
         elif (
-            user.role in (
+                user.role in (
                 CustomUser.Role.TASHKILOT_HODIMI,
                 CustomUser.Role.TASHKILOT_RAHBARI,
-            )
-            and user.organization
+        )
+                and user.organization
         ):
             qs = qs.filter(organization=user.organization)
-
 
         return qs.order_by("-created_at")
 
