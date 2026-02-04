@@ -29,13 +29,14 @@ class DashboardStatService:
         user = self.user
 
         # SUPER / MARKAZIY
-        if not user.organization and not user.statement:
-            return {
-                "reports": Report.objects.filter(is_report=True),
-                "deadlines": Deadline.objects.all(),
-                "users": CustomUser.objects.all(),
-                "plans": Plan.objects.all(),
-            }
+        if user.role == CustomUser.Role.SUPER_ADMIN:
+            if not user.organization and not user.statement:
+                return {
+                    "reports": Report.objects.filter(is_report=True),
+                    "deadlines": Deadline.objects.all(),
+                    "users": CustomUser.objects.all(),
+                    "plans": Plan.objects.all(),
+                }
 
         # STATEMENT
         if user.statement:
