@@ -7,7 +7,7 @@ from django.db.models.constraints import UniqueConstraint
 from django.utils.timezone import  timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.users.models import CustomUser
+from apps.reports.choices import UserRoleChoices
 from apps.utils.services import RegionChoices
 from apps.base.models import AbstractBaseModel
 
@@ -106,10 +106,9 @@ class Report(AbstractBaseModel):
         null=True,
         blank=True,
     )
-    sent_by_role =  models.CharField(
-        choices=CustomUser.Role.choices,
+    sent_by_role = models.CharField(
+        choices=UserRoleChoices.choices,
         max_length=50,
-        help_text="Foydalanuvchining tizimdagi roli",
         null=True,
         blank=True,
     )
