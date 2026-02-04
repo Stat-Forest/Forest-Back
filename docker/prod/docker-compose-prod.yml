@@ -112,12 +112,15 @@ services:
       - forest_network
     restart: always
 
+
+
 volumes:
   postgres_data:
   redis_data:
   certbot-etc:
   certbot-var:
   backups_data:
+
 
 
 networks:
