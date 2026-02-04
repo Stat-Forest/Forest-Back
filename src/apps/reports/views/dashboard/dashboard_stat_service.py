@@ -1,11 +1,9 @@
-# apps/reports/views/dashboard/dashboard_stat_service.py
 from datetime import date
 from django.core.cache import cache
 from django.db.models import Exists, OuterRef
 
 from apps.reports.models import Report, Deadline, Plan
 from apps.users.models import CustomUser
-
 
 DASHBOARD_CACHE_TTL = 10  # seconds
 
@@ -59,7 +57,7 @@ class DashboardStatService:
 
         # HUDUDIY BOSHQARMA
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-            orgs = user.region_user_orgs.all()
+            orgs = list(user.region_user_orgs.all())
             return {
                 "reports": Report.objects.filter(
                     organization__in=orgs,
@@ -100,48 +98,55 @@ class DashboardStatService:
     def _get_expired_deadlines_count(self, deadlines_qs):
         user = self.user
 
-        base_report_qs = Report.objects.filter(
-            deadline=OuterRef("pk"),
-            is_report=True
-        )
-
         # ORGANIZATION USER
         if user.role in {
             CustomUser.Role.TASHKILOT_RAHBARI,
             CustomUser.Role.TASHKILOT_HODIMI
         }:
+            base_report_qs = Report.objects.filter(
+                deadline=OuterRef("pk"),
+                organization=user.organization,
+                is_report=True
+            )
             expired = deadlines_qs.filter(
                 deadline_at__lt=date.today()
             ).annotate(
-                has_report=Exists(
-                    base_report_qs.filter(organization=user.organization)
-                )
+                has_report=Exists(base_report_qs)
             ).filter(has_report=False)
-
             return expired.count()
 
         # HUDUDIY BOSHQARMA
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-            orgs = user.region_user_orgs.all()
+            orgs = list(user.region_user_orgs.all())
+            if not orgs:
+                return 0
 
-            expired = deadlines_qs.filter(
-                deadline_at__lt=date.today(),
-                organizations__in=orgs
-            ).distinct().annotate(
-                has_report=Exists(
-                    base_report_qs.filter(organization__in=orgs)
+            expired_count = 0
+            for deadline in deadlines_qs.filter(deadline_at__lt=date.today()).distinct():
+                # deadline har biri uchun org bo'yicha tekshiramiz
+                has_report_for_all_orgs = any(
+                    Report.objects.filter(
+                        deadline=deadline,
+                        organization=org,
+                        is_report=True
+                    ).exists()
+                    for org in orgs
                 )
-            ).filter(has_report=False)
+                if not has_report_for_all_orgs:
+                    expired_count += 1
 
-            return expired.count()
+            return expired_count
 
-        # OTHERS
+        # OTHER ROLES
+        base_report_qs = Report.objects.filter(
+            deadline=OuterRef("pk"),
+            is_report=True
+        )
         expired = deadlines_qs.filter(
             deadline_at__lt=date.today()
         ).annotate(
             has_report=Exists(base_report_qs)
         ).filter(has_report=False)
-
         return expired.count()
 
     # ================= MAIN CALCULATION =================
