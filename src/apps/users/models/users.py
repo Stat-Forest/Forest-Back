@@ -5,9 +5,12 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser
 
+from django.core.exceptions import ValidationError
 from apps.base.models import AbstractBaseModel
 from apps.users.manager import CustomUserManager
 from apps.users.validations.passport_number_validate import validate_passport_number, validate_jshshr
+from apps.utils.services import RegionChoices
+from apps.general.models import Organization
 
 
 class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
@@ -198,7 +201,55 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         null=True,
         help_text="Foydalanuvchining to‘liq FISH (E-Imzodan kelgan `cn`)"
     )
+
+    # ======  ROLE HUDUDIY BOSHQARMA =========
+    region = models.CharField(
+        max_length=50,
+        choices=RegionChoices.choices,
+        blank=True,
+        null=True,
+        help_text="Hududiy boshqarma foydalanuvchisi uchun region"
+    )
+
+    region_user_orgs = models.ManyToManyField(
+        Organization,
+        blank=True,
+        related_name="regional_users",
+        verbose_name="Biriktirilgan tashkilotlar",
+        help_text="Hududiy boshqarma foydalanuvchisiga biriktiriladigan tashkilotlar"
+
+    )
     last_activity = models.DateTimeField(null=True, blank=True)
+
+    # def clean(self):
+    #     super().clean()
+    #
+    #     if self.role == self.Role.HUDUDIY_BOSHQARMA:
+    #         # 1. Region majburiy
+    #         if not self.region:
+    #             raise ValidationError({
+    #                 "region": _("Hududiy boshqarma foydalanuvchisi uchun region majburiy.")
+    #             })
+    #
+    #         # 2. Organization majburiy
+    #         if not self.pk:
+    #             # M2M save bo‘lishidan oldin tekshirib bo‘lmaydi
+    #             return
+    #
+    #         orgs = self.region_user_orgs.all()
+    #         if not orgs.exists():
+    #             raise ValidationError({
+    #                 "region_user_orgs": _("Kamida bitta tashkilot biriktirilishi shart.")
+    #             })
+    #
+    #         # 3. Organization.region == user.region tekshiruvi
+    #         invalid_orgs = orgs.exclude(region=self.region)
+    #         if invalid_orgs.exists():
+    #             raise ValidationError({
+    #                 "region_user_orgs": _(
+    #                     "Biriktirilgan tashkilotlar foydalanuvchi regioniga mos emas."
+    #                 )
+    #             })
 
     class Meta:
         verbose_name = "Foydalanuvchi"
