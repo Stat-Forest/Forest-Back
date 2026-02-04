@@ -57,19 +57,36 @@ class UserListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+
         qs = CustomUser.objects.select_related(
             "organization",
             "statement"
         )
 
-        user_org = getattr(user, 'organization', None)
+        # SUPERUSER – hammasi
+        if user.is_superuser:
+            return qs
 
+        # HUDUDIY BOSHQARMA
+        if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+            orgs = user.region_user_orgs.all()
+
+            # agar org biriktirilmagan bo‘lsa
+            if not orgs.exists():
+                return qs.none()
+
+            return qs.filter(organization__in=orgs)
+
+        # ORGANIZATION USER
+        user_org = getattr(user, "organization", None)
         if user_org:
-            qs = qs.filter(organization=user_org)
-        elif getattr(user, "statement", None) is not None:
-            qs = qs.filter(statement_id=user.statement.pk)
+            return qs.filter(organization=user_org)
 
-        return qs
+        # STATEMENT USER
+        if getattr(user, "statement", None) is not None:
+            return qs.filter(statement_id=user.statement.pk)
+
+        return qs.none()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
