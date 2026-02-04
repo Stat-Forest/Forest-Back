@@ -9,6 +9,7 @@ from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer,
 from apps.reports.serializers.plant.plant_report_delete import PlantReportDeleteSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
+from apps.reports.services.pagination import ReportPagination
 
 
 @extend_schema(tags=["Plant-Reports"])
@@ -42,6 +43,7 @@ class UniversalPlantReportCreateAPIView(DRFHistoryMixin, APIView):
     ]
 )
 class PlantListReportAPIView(CustomListAPIView):
+    pagination_class = ReportPagination
     serializer_class = PlantReportListSerializer
 
     def get_queryset(self):

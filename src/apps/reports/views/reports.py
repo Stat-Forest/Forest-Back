@@ -3,6 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.pagination import LimitOffsetPagination
 
 from rest_framework.response import Response
 
@@ -20,6 +21,7 @@ from apps.base.views import (
     CustomCreateAPIView, CustomRetrieveAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
 from apps.logs.drf_mixins import DRFHistoryMixin
+from apps.reports.services.pagination import ReportPagination
 
 
 @extend_schema(
@@ -36,11 +38,11 @@ from apps.logs.drf_mixins import DRFHistoryMixin
     ]
 )
 class ReportListAPIView(CustomListAPIView):
-    pagination_class = None
+    pagination_class = ReportPagination
+
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
-
 
     def _base_queryset(self):
         """
