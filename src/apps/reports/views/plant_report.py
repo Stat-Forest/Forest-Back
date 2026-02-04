@@ -43,7 +43,7 @@ class UniversalPlantReportCreateAPIView(DRFHistoryMixin, APIView):
     ]
 )
 class PlantListReportAPIView(CustomListAPIView):
-    pagination_class = ReportPagination
+    # pagination_class = ReportPagination
     serializer_class = PlantReportListSerializer
 
     def get_queryset(self):

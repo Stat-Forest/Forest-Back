@@ -38,7 +38,7 @@ from apps.reports.services.pagination import ReportPagination
     ]
 )
 class ReportListAPIView(CustomListAPIView):
-    pagination_class = ReportPagination
+    # pagination_class = ReportPagination
 
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
