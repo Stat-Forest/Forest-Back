@@ -39,7 +39,7 @@ from apps.reports.services.pagination import ReportPagination
 )
 class ReportListAPIView(CustomListAPIView):
     # pagination_class = ReportPagination
-
+    pagination_class = None
     serializer_class = ReportListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ReportFilter
