@@ -67,24 +67,29 @@ class UserListAPIView(generics.ListAPIView):
         if user.is_superuser:
             return qs
 
-        # HUDUDIY BOSHQARMA
+        # HUDUDIY BOSHQARMA (organization ham, statement ham yo‘q)
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
             orgs = user.region_user_orgs.all()
 
-            # agar org biriktirilmagan bo‘lsa
+            # himoya: noto‘g‘ri sozlama bo‘lsa
             if not orgs.exists():
                 return qs.none()
 
-            return qs.filter(organization__in=orgs)
+            return qs.filter(
+                organization__in=orgs
+            )
 
         # ORGANIZATION USER
-        user_org = getattr(user, "organization", None)
-        if user_org:
-            return qs.filter(organization=user_org)
+        if user.organization_id:
+            return qs.filter(
+                organization_id=user.organization_id
+            )
 
         # STATEMENT USER
-        if getattr(user, "statement", None) is not None:
-            return qs.filter(statement_id=user.statement.pk)
+        if user.statement_id:
+            return qs.filter(
+                statement_id=user.statement_id
+            )
 
         return qs.none()
 
