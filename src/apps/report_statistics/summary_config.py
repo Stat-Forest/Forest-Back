@@ -1,8 +1,8 @@
 SUMMARY_CONFIG = [
     {
-        "column_name": "O‘rmon bilan qoplangan yer maydonlari",
+        "column_name": "O'rmon bilan qoplangan yer maydonlari",
         "unit": "gektar",
-        "statement_name": "O‘rmon bilan qoplangan yerlar",
+        "statement_name": "O'rmon bilan qoplangan yerlar",
         "period": "yearly",
         "plan": None,
         "actual": {
@@ -10,9 +10,9 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "O‘rmon yerlarini o‘zlashtirib, foydalanishga kiritish",
+        "column_name": "O'rmon yerlarini o'zlashtirib, foydalanishga kiritish",
         "unit": "gektar",
-        "statement_name": "Yer o‘zlashtirish",
+        "statement_name": "Yer o'zlashtirish",
         "period": "yearly",
         "plan": {
             "column_id": "b0397d0b-5cfe-4325-8e1e-391b955c195f",
@@ -22,7 +22,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Dorivor o‘simliklar plantatsiyalarini barpo etish",
+        "column_name": "Dorivor o'simliklar plantatsiyalarini barpo etish",
         "unit": "gektar",
         "statement_name": "Dorivor yetishtirish",
         "period": "monthly",
@@ -34,7 +34,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Dorivor o‘simliklar xomashyosini tayyorlash",
+        "column_name": "Dorivor o'simliklar xomashyosini tayyorlash",
         "unit": "tonna",
         "statement_name": "Dorivor yetishtirish",
         "period": "monthly",
@@ -46,7 +46,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Cho‘l, tog‘li va tog‘oldi hududlarida himoya o‘rmonzorlari (ihota) barpo etish",
+        "column_name": "Cho'l, tog'li va tog'oldi hududlarida himoya o'rmonzorlari (ihota) barpo etish",
         "unit": "gektor",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
@@ -58,7 +58,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Niholxona va ko‘chatchonalar tashkil etish (gektar)",
+        "column_name": "Niholxona va ko'chatchonalar tashkil etish (gektar)",
         "unit": "mln dona",
         "statement_name": "Ko'chatxona va Niholxona Jami",
         "period": "monthly",
@@ -70,7 +70,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Orolbo‘yi mintaqasi va boshqa cho‘l hududlarida yashil qoplama barpo etish",
+        "column_name": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
         "unit": "ming gektar",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
@@ -82,7 +82,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Jumladan, tut ko‘chatlari yetishtirish",
+        "column_name": "Jumladan, tut ko'chatlari yetishtirish",
         "unit": "mln dona",
         "statement_name": "Tut Ko'chat va Tut Nihol",
         "period": "monthly",
