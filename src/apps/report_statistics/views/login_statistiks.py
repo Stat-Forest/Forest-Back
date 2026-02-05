@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from django.db.models import Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,13 +25,13 @@ class ReportLoginSummaryAPIView(APIView):
                 name="monthly",
                 type=OpenApiTypes.STR,
                 required=False,
-                description="Oylik: YYYY-MM"
+                description="Oylik davr: YYYY-MM"
             ),
             OpenApiParameter(
                 name="yearly",
                 type=OpenApiTypes.STR,
                 required=False,
-                description="Yillik: YYYY"
+                description="Yillik davr: YYYY"
             ),
         ]
     )
@@ -47,8 +48,9 @@ class ReportLoginSummaryAPIView(APIView):
 
         for cfg in SUMMARY_CONFIG:
             print("\n==============================")
-            print("CFG COLUMN:", cfg["column_name"])
-            print("CFG PERIOD:", cfg["period"])
+            print("COLUMN NAME:", cfg["column_name"])
+            print("STATEMENT NAME:", cfg["statement_name"])
+            print("PERIOD:", cfg["period"])
             print("==============================")
 
             # 1️⃣ STATEMENT
@@ -56,14 +58,13 @@ class ReportLoginSummaryAPIView(APIView):
                 name_uz=cfg["statement_name"]
             ).first()
 
-            print("STATEMENT FROM CFG:", cfg["statement_name"])
             print("STATEMENT FOUND:", bool(statement))
 
             if not statement:
                 print("❌ STATEMENT NOT FOUND → SKIP")
                 continue
 
-            print("✅ STATEMENT:", statement.id, statement.name_uz)
+            print("✅ STATEMENT ID:", statement.id)
 
             # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(statement=statement)
@@ -75,15 +76,15 @@ class ReportLoginSummaryAPIView(APIView):
 
             if cfg["period"] == "monthly" and monthly:
                 deadline_qs = deadline_qs.filter(submit_at=monthly)
-                print("📅 APPLY MONTHLY FILTER:", monthly)
+                print("APPLY MONTHLY FILTER:", monthly)
 
             elif cfg["period"] == "yearly" and yearly:
                 deadline_qs = deadline_qs.filter(submit_at=yearly)
-                print("📅 APPLY YEARLY FILTER:", yearly)
+                print("APPLY YEARLY FILTER:", yearly)
 
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
-                print("📅 FALLBACK → LAST CREATED DEADLINE")
+                print("FALLBACK → LAST CREATED DEADLINE")
 
             deadline = deadline_qs.first()
             print("DEADLINE FOUND:", bool(deadline))
@@ -92,7 +93,7 @@ class ReportLoginSummaryAPIView(APIView):
                 print("❌ DEADLINE NOT FOUND → SKIP")
                 continue
 
-            print("✅ DEADLINE:", deadline.id, deadline.submit_at)
+            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at)
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
@@ -104,9 +105,6 @@ class ReportLoginSummaryAPIView(APIView):
 
             print("REPORT COUNT:", reports.count())
 
-            if not reports.exists():
-                print("❌ NO ACCEPTED REPORTS")
-
             plan_value = Decimal("0")
             actual_value = Decimal("0")
 
@@ -116,16 +114,9 @@ class ReportLoginSummaryAPIView(APIView):
                 print("\nPLAN CFG:", plan_cfg)
 
                 plan_column = StatementColumn.objects.filter(
-                    statement=statement,
-                    title=plan_cfg["column_title"],
-                    ordering=plan_cfg["ordering"],
+                    id=plan_cfg["column_id"]
                 ).first()
 
-                print("PLAN COLUMN QUERY:", {
-                    "statement": statement.name_uz,
-                    "title": plan_cfg["column_title"],
-                    "ordering": plan_cfg["ordering"],
-                })
                 print("PLAN COLUMN FOUND:", bool(plan_column))
 
                 if plan_column:
@@ -142,22 +133,17 @@ class ReportLoginSummaryAPIView(APIView):
                     )
 
                     print("✅ PLAN VALUE:", plan_value)
+                else:
+                    print("❌ PLAN COLUMN NOT FOUND")
 
             # 5️⃣ ACTUAL
             actual_cfg = cfg["actual"]
             print("\nACTUAL CFG:", actual_cfg)
 
             actual_column = StatementColumn.objects.filter(
-                statement=statement,
-                title=actual_cfg["column_title"],
-                ordering=actual_cfg["ordering"],
+                id=actual_cfg["column_id"]
             ).first()
 
-            print("ACTUAL COLUMN QUERY:", {
-                "statement": statement.name_uz,
-                "title": actual_cfg["column_title"],
-                "ordering": actual_cfg["ordering"],
-            })
             print("ACTUAL COLUMN FOUND:", bool(actual_column))
 
             if actual_column:
@@ -174,6 +160,8 @@ class ReportLoginSummaryAPIView(APIView):
                 )
 
                 print("✅ ACTUAL VALUE:", actual_value)
+            else:
+                print("❌ ACTUAL COLUMN NOT FOUND")
 
             # 6️⃣ RESPONSE
             result.append({
