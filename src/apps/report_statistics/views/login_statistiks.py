@@ -51,7 +51,7 @@ class ReportLoginSummaryAPIView(APIView):
 
             # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(
-                statement__parent=statement
+                statement=statement
             )
 
             if cfg["period"] == "monthly" and monthly:
