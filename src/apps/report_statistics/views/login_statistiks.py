@@ -56,8 +56,6 @@ class ReportLoginSummaryAPIView(APIView):
             deadline_qs = Deadline.objects.filter(
                 statement=statement
             )
-            if deadline_qs:
-                print('deadlinelar keldi')
 
 
             if cfg["period"] == "monthly" and monthly:
@@ -66,7 +64,8 @@ class ReportLoginSummaryAPIView(APIView):
 
             elif cfg["period"] == "yearly" and yearly:
                 deadline_qs = deadline_qs.filter(submit_at=yearly)
-                print('bbb')
+                print('bbb',deadline_qs.first())
+
 
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
@@ -74,7 +73,6 @@ class ReportLoginSummaryAPIView(APIView):
 
             deadline = deadline_qs.first()
             if not deadline:
-                # 🔒 himoya: 500 bo‘lmasin
                 continue
 
             # 3️⃣ REPORTS
@@ -95,11 +93,13 @@ class ReportLoginSummaryAPIView(APIView):
                     statement=statement,
                     title=plan_cfg["column_title"]
                 )
+                print('keldi plan_column_qs')
 
                 if plan_cfg.get("ordering"):
                     plan_column_qs = plan_column_qs.filter(
                         ordering=plan_cfg["ordering"]
                     )
+                    print('keldi plan_ordering_qs')
 
                 plan_column = plan_column_qs.first()
 
@@ -112,6 +112,7 @@ class ReportLoginSummaryAPIView(APIView):
                         .aggregate(total=Sum("value"))["total"]
                         or Decimal("0")
                     )
+                    print('plan value ====')
 
             # 5️⃣ ACTUAL
             actual_cfg = cfg["actual"]
