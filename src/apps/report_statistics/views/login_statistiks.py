@@ -11,8 +11,8 @@ from apps.reports.models import (
     StatementColumn,
     Deadline,
 )
-from apps.reports.serializers.summary import ReportSummarySerializer
-from apps.reports.services.summary_config import SUMMARY_CONFIG
+from apps.report_statistics.serializers import ReportSummarySerializer
+from apps.report_statistics.summary_config import SUMMARY_CONFIG
 
 
 class ReportLoginSummaryAPIView(APIView):
