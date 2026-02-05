@@ -3,9 +3,9 @@ SUMMARY_CONFIG = [
         "column_name": "O‘rmon bilan qoplangan yer maydonlari",
         "unit": "gektar",
         "statement_name": "O‘rmon bilan qoplangan yerlar",
-        "period": "monthly",
+        "period": "yearly",
         "actual": {
-            "column_title": "O‘rmon bilan qoplangan yerlar",
+            "column_title": "O‘rmon bilan qoplanmagan yerlar (ga)",
             "ordering": "6.1.2",
         },
         "plan": None,
