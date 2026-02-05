@@ -45,7 +45,8 @@ class ReportLoginSummaryAPIView(APIView):
             statement = Statement.objects.filter(
                 name=cfg["statement_name"]
             ).first()
-            print('11111')
+            print('11111',statement.name)
+
             if not statement:
                 continue
 
@@ -53,6 +54,7 @@ class ReportLoginSummaryAPIView(APIView):
             deadline_qs = Deadline.objects.filter(
                 statement=statement
             )
+            
 
             if cfg["period"] == "monthly" and monthly:
                 deadline_qs = deadline_qs.filter(submit_at=monthly)
