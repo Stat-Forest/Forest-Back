@@ -43,7 +43,7 @@ class ReportLoginSummaryAPIView(APIView):
         for cfg in SUMMARY_CONFIG:
             # 1️⃣ STATEMENT
             statement = Statement.objects.filter(
-                name=cfg["statement_name"]
+                name_uz=cfg["statement_name"]
             ).first()
 
             if statement:
