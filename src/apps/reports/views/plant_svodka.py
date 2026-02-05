@@ -17,6 +17,12 @@ from apps.reports.serializers.plant.plant_svodka import PlantSvodkaQuerySerializ
     responses={200: dict},
     parameters=[
         OpenApiParameter(
+            "appendix",
+            OpenApiTypes.INT,
+            OpenApiParameter.QUERY,
+            required=False
+        ),
+        OpenApiParameter(
             "deadline",
             OpenApiTypes.UUID,
             OpenApiParameter.QUERY,
