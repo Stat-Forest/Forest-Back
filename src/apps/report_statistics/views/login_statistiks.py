@@ -45,30 +45,30 @@ class ReportLoginSummaryAPIView(APIView):
             statement = Statement.objects.filter(
                 name=cfg["statement_name"]
             ).first()
-            print(statement.name,"keldi","====","statement")
+            print('11111')
             if not statement:
                 continue
 
-            # 2️⃣ DEADLINE (qat’iy qoida)
-            deadline_qs = Deadline.objects.filter(statement=statement)
-            print("keldi",deadline_qs.count,"====deadline_qs")
+            # 2️⃣ DEADLINE
+            deadline_qs = Deadline.objects.filter(
+                statement__parent=statement
+            )
 
             if cfg["period"] == "monthly" and monthly:
                 deadline_qs = deadline_qs.filter(submit_at=monthly)
-                print(deadline_qs.first,"monthly keldi")
+                print('aaaaa')
 
             elif cfg["period"] == "yearly" and yearly:
                 deadline_qs = deadline_qs.filter(submit_at=yearly)
-                print(deadline_qs.first, "yearly keldi")
+                print('bbb')
 
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
-                print(deadline_qs.count, "-created_at keldi")
-
+                print('sss')
 
             deadline = deadline_qs.first()
-            print(deadline.submit_at,'deadline 70 qator keldi')
             if not deadline:
+                # 🔒 himoya: 500 bo‘lmasin
                 continue
 
             # 3️⃣ REPORTS
@@ -78,7 +78,6 @@ class ReportLoginSummaryAPIView(APIView):
                 is_report=True,
                 status=Report.StatusChoices.ACCEPTED
             )
-
 
             plan_value = Decimal("0")
             actual_value = Decimal("0")
@@ -90,13 +89,11 @@ class ReportLoginSummaryAPIView(APIView):
                     statement=statement,
                     title=plan_cfg["column_title"]
                 )
-                print('00000000')
 
                 if plan_cfg.get("ordering"):
                     plan_column_qs = plan_column_qs.filter(
                         ordering=plan_cfg["ordering"]
                     )
-                    print('11111111')
 
                 plan_column = plan_column_qs.first()
 
@@ -122,7 +119,6 @@ class ReportLoginSummaryAPIView(APIView):
                 actual_column_qs = actual_column_qs.filter(
                     ordering=actual_cfg["ordering"]
                 )
-                print("33333")
 
             actual_column = actual_column_qs.first()
 
@@ -135,9 +131,8 @@ class ReportLoginSummaryAPIView(APIView):
                     .aggregate(total=Sum("value"))["total"]
                     or Decimal("0")
                 )
-                print('4444444',actual_value)
 
-            # 6️⃣ RESPONSE ROW
+            # 6️⃣ RESPONSE
             result.append({
                 "column_name": cfg["column_name"],
                 "unit": cfg["unit"],
