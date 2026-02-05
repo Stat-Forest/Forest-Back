@@ -91,7 +91,7 @@ class ReportLoginSummaryAPIView(APIView):
             if plan_cfg:
                 plan_column_qs = StatementColumn.objects.filter(
                     statement=statement,
-                    title_uz=plan_cfg["column_title"]
+                    title=plan_cfg["column_title"]
                 )
                 print('keldi plan_column_qs')
 
@@ -107,7 +107,7 @@ class ReportLoginSummaryAPIView(APIView):
                     plan_value = (
                         ReportItem.objects.filter(
                             report__in=reports,
-                            statement_column_uz=plan_column
+                            statement_column=plan_column
                         )
                         .aggregate(total=Sum("value"))["total"]
                         or Decimal("0")
