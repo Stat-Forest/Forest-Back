@@ -1,4 +1,5 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from django.db.models import Q
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -45,12 +46,22 @@ class ReportLoginSummaryAPIView(APIView):
             print("PERIOD:", cfg["period"])
             print("==============================")
 
-            # 1️⃣ STATEMENT
-            statement = Statement.objects.filter(name_uz=cfg["statement_name"]).first()
+            # 1️⃣ STATEMENT - name maydoni orqali qidirish (name_uz emas!)
+            statement = Statement.objects.filter(
+                Q(name=cfg["statement_name"]) | Q(name_uz=cfg["statement_name"])
+            ).first()
+
             if not statement:
-                print("❌ STATEMENT NOT FOUND → SKIP")
+                print(f"❌ STATEMENT NOT FOUND: {cfg['statement_name']}")
+                print("Available statements:", list(Statement.objects.values_list('name', 'name_uz')))
+                result.append({
+                    "column_name": cfg["column_name"],
+                    "unit": cfg["unit"],
+                    "plan": Decimal("0"),
+                    "actual": Decimal("0"),
+                })
                 continue
-            print("✅ STATEMENT ID:", statement.id)
+            print("✅ STATEMENT ID:", statement.id, "| name:", statement.name)
 
             # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(statement=statement)
@@ -70,53 +81,110 @@ class ReportLoginSummaryAPIView(APIView):
 
             deadline = deadline_qs.first()
             if not deadline:
-                print("❌ DEADLINE NOT FOUND → SKIP")
+                print("❌ DEADLINE NOT FOUND")
+                result.append({
+                    "column_name": cfg["column_name"],
+                    "unit": cfg["unit"],
+                    "plan": Decimal("0"),
+                    "actual": Decimal("0"),
+                })
                 continue
             print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at)
 
-            # 3️⃣ REPORTS
+            # 3️⃣ REPORTS - faqat ACCEPTED statusdagi reportlar
             reports = Report.objects.filter(
                 statement=statement,
                 deadline=deadline,
+                status=Report.StatusChoices.ACCEPTED,  # Faqat ACCEPTED
                 is_report=True,
             )
-            if cfg["period"] in ["monthly", "yearly"]:
-                # Agar oylik/yillik filter ishlatilsa, faqat ACCEPTED status
-                reports = reports.filter(status=Report.StatusChoices.ACCEPTED)
 
             print("REPORT COUNT:", reports.count())
             if reports.count() == 0:
-                print(f"⚠️ WARNING: No reports found for statement {statement.name_uz} and deadline {deadline.submit_at}")
+                print(f"⚠️ WARNING: No accepted reports found for {statement.name} and deadline {deadline.submit_at}")
+                result.append({
+                    "column_name": cfg["column_name"],
+                    "unit": cfg["unit"],
+                    "plan": Decimal("0"),
+                    "actual": Decimal("0"),
+                })
+                continue
 
             # 4️⃣ PLAN
             plan_value = Decimal("0")
             plan_cfg = cfg.get("plan")
+
             if plan_cfg:
-                plan_column = StatementColumn.objects.filter(id=plan_cfg["column_id"]).first()
-                if plan_column:
-                    plan_items_qs = ReportItem.objects.filter(
+                plan_column_id = plan_cfg["column_id"]
+                print(f"PLAN COLUMN ID: {plan_column_id}")
+
+                # StatementColumn mavjudligini tekshirish
+                plan_column = StatementColumn.objects.filter(id=plan_column_id).first()
+                if not plan_column:
+                    print(f"⚠️ WARNING: Plan column {plan_column_id} not found")
+                else:
+                    print(f"✅ PLAN COLUMN: {plan_column.title}")
+
+                    # ReportItem'larni olish
+                    plan_items = ReportItem.objects.filter(
                         report__in=reports,
-                        statement_column=plan_column
+                        statement_column_id=plan_column_id
+                    ).exclude(
+                        Q(value__isnull=True) | Q(value='') | Q(value='None')
                     )
-                    plan_value = sum(
-                        Decimal(item.value) if item.value and item.value.strip() else Decimal("0")
-                        for item in plan_items_qs
-                    )
+
+                    print(f"PLAN ITEMS COUNT: {plan_items.count()}")
+
+                    # Qiymatlarni yig'ish
+                    for item in plan_items:
+                        try:
+                            if item.value and item.value.strip():
+                                val = Decimal(item.value.strip())
+                                plan_value += val
+                                print(f"  + Plan item value: {val}")
+                        except (InvalidOperation, ValueError) as e:
+                            print(f"⚠️ Invalid plan value: '{item.value}' - Error: {e}")
+                            continue
+
+                    print(f"TOTAL PLAN VALUE: {plan_value}")
 
             # 5️⃣ ACTUAL
             actual_value = Decimal("0")
             actual_cfg = cfg.get("actual")
+
             if actual_cfg:
-                actual_column = StatementColumn.objects.filter(id=actual_cfg["column_id"]).first()
-                if actual_column:
-                    actual_items_qs = ReportItem.objects.filter(
+                actual_column_id = actual_cfg["column_id"]
+                print(f"ACTUAL COLUMN ID: {actual_column_id}")
+
+                # StatementColumn mavjudligini tekshirish
+                actual_column = StatementColumn.objects.filter(id=actual_column_id).first()
+                if not actual_column:
+                    print(f"⚠️ WARNING: Actual column {actual_column_id} not found")
+                else:
+                    print(f"✅ ACTUAL COLUMN: {actual_column.title}")
+
+                    # ReportItem'larni olish
+                    actual_items = ReportItem.objects.filter(
                         report__in=reports,
-                        statement_column=actual_column
+                        statement_column_id=actual_column_id
+                    ).exclude(
+                        Q(value__isnull=True) | Q(value='') | Q(value='None')
                     )
-                    actual_value = sum(
-                        Decimal(item.value) if item.value and item.value.strip() else Decimal("0")
-                        for item in actual_items_qs
-                    )
+
+                    print(f"ACTUAL ITEMS COUNT: {actual_items.count()}")
+
+                    # Qiymatlarni yig'ish
+                    for item in actual_items:
+                        try:
+                            if item.value and item.value.strip():
+                                val = Decimal(item.value.strip())
+                                actual_value += val
+                                print(f"  + Actual item value: {val}")
+                        except (InvalidOperation, ValueError) as e:
+                            print(f"⚠️ Invalid actual value: '{item.value}' - Error: {e}")
+                            continue
+
+                    print(f"TOTAL ACTUAL VALUE: {actual_value}")
 
             # 6️⃣ RESPONSE
             result.append({
