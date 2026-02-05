@@ -26,6 +26,11 @@ class PlantSvodkaQuerySerializer(CustomSerializer):
         allow_null=True,
         help_text="Optional Plant ID (UUID)"
     )
+    appendix = serializers.UUIDField(
+        required=False,
+        allow_null=True,
+        help_text="Optional Appendix ID (UUID)"
+    )
 
     lang = serializers.ChoiceField(
         choices=["uz", "ru"],
