@@ -3,15 +3,8 @@ from decimal import Decimal
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from django.db.models import Q
 
-from apps.reports.models import (
-    Report,
-    ReportItem,
-    Statement,
-    StatementColumn,
-    Deadline,
-)
+from apps.reports.models import Report, ReportItem, Statement, StatementColumn, Deadline
 from apps.report_statistics.serializers import ReportSummarySerializer
 from apps.report_statistics.summary_config import SUMMARY_CONFIG
 
@@ -54,7 +47,6 @@ class ReportLoginSummaryAPIView(APIView):
 
             # 1️⃣ STATEMENT
             statement = Statement.objects.filter(name_uz=cfg["statement_name"]).first()
-            print("STATEMENT FOUND:", bool(statement))
             if not statement:
                 print("❌ STATEMENT NOT FOUND → SKIP")
                 continue
@@ -64,17 +56,19 @@ class ReportLoginSummaryAPIView(APIView):
             deadline_qs = Deadline.objects.filter(statement=statement)
 
             if cfg["period"] == "monthly" and monthly:
+                # Oylik filter
                 deadline_qs = deadline_qs.filter(submit_at=monthly)
                 print("APPLY MONTHLY FILTER:", monthly)
             elif cfg["period"] == "yearly" and yearly:
+                # Yillik filter
                 deadline_qs = deadline_qs.filter(submit_at=yearly)
                 print("APPLY YEARLY FILTER:", yearly)
             else:
+                # fallback → oxirgi yaratilgan deadline
                 deadline_qs = deadline_qs.order_by("-created_at")
                 print("FALLBACK → LAST CREATED DEADLINE")
 
             deadline = deadline_qs.first()
-            print("DEADLINE FOUND:", bool(deadline))
             if not deadline:
                 print("❌ DEADLINE NOT FOUND → SKIP")
                 continue
@@ -85,14 +79,17 @@ class ReportLoginSummaryAPIView(APIView):
                 statement=statement,
                 deadline=deadline,
                 is_report=True,
-                status=Report.StatusChoices.ACCEPTED
             )
-            print("REPORT COUNT:", reports.count())
+            if cfg["period"] in ["monthly", "yearly"]:
+                # Agar oylik/yillik filter ishlatilsa, faqat ACCEPTED status
+                reports = reports.filter(status=Report.StatusChoices.ACCEPTED)
 
-            plan_value = Decimal("0")
-            actual_value = Decimal("0")
+            print("REPORT COUNT:", reports.count())
+            if reports.count() == 0:
+                print(f"⚠️ WARNING: No reports found for statement {statement.name_uz} and deadline {deadline.submit_at}")
 
             # 4️⃣ PLAN
+            plan_value = Decimal("0")
             plan_cfg = cfg.get("plan")
             if plan_cfg:
                 plan_column = StatementColumn.objects.filter(id=plan_cfg["column_id"]).first()
@@ -101,25 +98,25 @@ class ReportLoginSummaryAPIView(APIView):
                         report__in=reports,
                         statement_column=plan_column
                     )
-                    # ✅ TextField bilan Decimalga safe conversion
                     plan_value = sum(
                         Decimal(item.value) if item.value and item.value.strip() else Decimal("0")
                         for item in plan_items_qs
                     )
 
             # 5️⃣ ACTUAL
-            actual_cfg = cfg["actual"]
-            actual_column = StatementColumn.objects.filter(id=actual_cfg["column_id"]).first()
-            if actual_column:
-                actual_items_qs = ReportItem.objects.filter(
-                    report__in=reports,
-                    statement_column=actual_column
-                )
-                # ✅ TextField bilan Decimalga safe conversion
-                actual_value = sum(
-                    Decimal(item.value) if item.value and item.value.strip() else Decimal("0")
-                    for item in actual_items_qs
-                )
+            actual_value = Decimal("0")
+            actual_cfg = cfg.get("actual")
+            if actual_cfg:
+                actual_column = StatementColumn.objects.filter(id=actual_cfg["column_id"]).first()
+                if actual_column:
+                    actual_items_qs = ReportItem.objects.filter(
+                        report__in=reports,
+                        statement_column=actual_column
+                    )
+                    actual_value = sum(
+                        Decimal(item.value) if item.value and item.value.strip() else Decimal("0")
+                        for item in actual_items_qs
+                    )
 
             # 6️⃣ RESPONSE
             result.append({
