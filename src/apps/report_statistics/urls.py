@@ -19,7 +19,7 @@ from apps.report_statistics.views.protect_forest import (
 from apps.report_statistics.views.monitor_forest import (
     StatisticsYerOzlashtirishAmaldaAPIView,
 )
-
+from .views.login_statistiks import ReportLoginSummaryAPIView
 
 
 urlpatterns =[
@@ -29,4 +29,8 @@ urlpatterns =[
     path('build-forest-golofit/',StatisticsGolofitAPIView.as_view()),
     path('protect-forest-zararkunanda/',StatisticsZararkunandaAPIView.as_view()),
     path('monitor-forest-uzlashtirish/',StatisticsYerOzlashtirishAmaldaAPIView.as_view()),
+
+    #=========================== login stats ===============================
+    path('login-stats/',ReportLoginSummaryAPIView.as_view()),
+
 ]
