@@ -211,7 +211,8 @@ def _format_statement_columns(
     return out
 
 
-def build_plant_svodka(statement: Statement, deadline, plant: Optional[Plant] = None, include_empty: bool = True, lang: str = "uz"):
+def build_plant_svodka(statement: Statement, deadline, appendix_id: Optional[str] = None, plant: Optional[Plant] = None,
+                       include_empty: bool = True, lang: str = "uz"):
     """
     Build appendix-separated, hierarchical svodka aggregated by plant.
 
@@ -361,18 +362,27 @@ def build_plant_svodka(statement: Statement, deadline, plant: Optional[Plant] = 
 
         # Now serialize appendices by slicing columns from the shared rows
         appendices_block: List[Dict] = []
-        for appendix_id, appendix_info in appendix_meta.items():
-            col_ids = by_app.get(appendix_id, [])
+
+        for aid, appendix_info in appendix_meta.items():
+
+            # ✅ FILTER BY APPENDIX
+            if appendix_id and aid != str(appendix_id):
+                continue
+
+            col_ids = by_app.get(aid, [])
             if not col_ids:
                 continue
+
             rows: List[Dict] = []
+
             for r in base_rows:
                 values_map = r.get("_all_values", {})
                 level = r["level"]
-                # Determine special text context
+
                 org_name = r.get("organization_name") if level == "organization" else None
                 region_name = r.get("_region_name") if level == "region" else None
                 is_republic = level == "republic"
+
                 rows.append({
                     "level": level,
                     "depth": r["depth"],
@@ -387,6 +397,7 @@ def build_plant_svodka(statement: Statement, deadline, plant: Optional[Plant] = 
                         is_republic=is_republic,
                     ),
                 })
+
             if include_empty or has_any_org:
                 appendices_block.append({
                     "appendix_id": appendix_info["appendix_id"],
