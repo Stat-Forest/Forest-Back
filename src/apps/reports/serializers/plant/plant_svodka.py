@@ -11,6 +11,10 @@ class PlantSvodkaQuerySerializer(CustomSerializer):
     - Browsable API (HTML form)
     - Query params validation
     """
+    deadline = serializers.UUIDField(
+        required=True,
+        help_text="Optional Deadline (UUID)"
+    )
 
     statement = serializers.UUIDField(
         required=True,
