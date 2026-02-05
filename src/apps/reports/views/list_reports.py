@@ -208,6 +208,21 @@ class RegionalGeneralReport(CustomListAPIView):
             )
         )
 
+        user = self.request.user
+
+        # ✅ HUDUDIY_BOSHQARMA — region based filtering
+        if user.is_authenticated and user.role == "hududiy_boshqarma":
+            org_regions = (
+                user.region_user_orgs
+                .values_list("region", flat=True)
+                .distinct()
+            )
+
+            if not org_regions:
+                return qs.none()
+
+            qs = qs.filter(region__in=org_regions)
+
         # 🔑 serializer uchun kerakli statement_id lar
         self.statement_ids = list(
             qs.values_list("statement_id", flat=True).distinct()
@@ -248,6 +263,24 @@ class RegionalGeneralReportDetail(CustomRetrieveAPIView):
     )
     serializer_class = RegionalGeneralReportSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_authenticated and user.role == "hududiy_boshqarma":
+            org_regions = (
+                user.region_user_orgs
+                .values_list("region", flat=True)
+                .distinct()
+            )
+
+            if not org_regions:
+                return qs.none()
+
+            return qs.filter(region__in=org_regions)
+
+        return qs
+
     def retrieve(self, request, *args, **kwargs):
         self._object = self.get_object()
         serializer = self.get_serializer(self._object)
@@ -275,6 +308,10 @@ class RepublicGeneralReport(CustomListAPIView):
     filterset_class = ExtraReportFilter
 
     def get_queryset(self):
+        user = self.request.user
+        # HUDUDIY_BOSHQARMA: hide Republic General Reports completely
+        if user.is_authenticated and getattr(user, 'role', None) == 'hududiy_boshqarma':
+            return Report.objects.none()
         qs = (
             Report.objects
             .filter(is_republic=True)
@@ -288,7 +325,6 @@ class RepublicGeneralReport(CustomListAPIView):
             qs.values_list("statement_id", flat=True).distinct()
         )
         return qs
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         # lang
@@ -316,6 +352,14 @@ class RepublicGeneralReportDetail(CustomRetrieveAPIView):
         )
     )
     serializer_class = RegionalGeneralReportSerializer
+
+    def get_queryset(self):
+        """HUDUDIY_BOSHQARMA must not see Republic General Reports."""
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_authenticated and getattr(user, 'role', None) == 'hududiy_boshqarma':
+            return qs.none()
+        return qs
 
     def retrieve(self, request, *args, **kwargs):
         self._object = self.get_object()
