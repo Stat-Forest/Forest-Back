@@ -56,6 +56,7 @@ class PlantSvodkaAPIView(GenericAPIView):
         deadline_id = serializer.validated_data["deadline"]
         statement_id = serializer.validated_data["statement"]
         plant_id = serializer.validated_data.get("plant")
+        appendix_id = serializer.validated_data.get("appendix")
 
         deadline = Deadline.objects.filter(id=deadline_id).first()
         if not deadline:
@@ -76,6 +77,7 @@ class PlantSvodkaAPIView(GenericAPIView):
         data = build_plant_svodka(
             statement=statement,
             deadline=deadline,
+            appendix_id=appendix_id,
             plant=plant,
             lang=lang
         )
