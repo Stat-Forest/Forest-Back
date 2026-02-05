@@ -5,7 +5,7 @@ from rest_framework.generics import GenericAPIView
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from apps.reports.models import Statement, Plant
+from apps.reports.models import Statement, Plant, Deadline
 from apps.utils.translation import get_lang_code
 from apps.reports.services.plant_svodka import build_plant_svodka
 from apps.reports.serializers.plant.plant_svodka import PlantSvodkaQuerySerializer
@@ -16,6 +16,12 @@ from apps.reports.serializers.plant.plant_svodka import PlantSvodkaQuerySerializ
     request=None,
     responses={200: dict},
     parameters=[
+        OpenApiParameter(
+            "deadline",
+            OpenApiTypes.UUID,
+            OpenApiParameter.QUERY,
+            required=True
+        ),
         OpenApiParameter(
             name="statement",
             type=OpenApiTypes.UUID,
@@ -43,12 +49,17 @@ class PlantSvodkaAPIView(GenericAPIView):
     serializer_class = PlantSvodkaQuerySerializer
     queryset = Statement.objects.none()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
+        deadline_id = serializer.validated_data["deadline"]
         statement_id = serializer.validated_data["statement"]
         plant_id = serializer.validated_data.get("plant")
+
+        deadline = Deadline.objects.filter(id=deadline_id).first()
+        if not deadline:
+            return Response({"detail": "Deadline not found"}, status=404)
 
         statement = Statement.objects.filter(id=statement_id).first()
         if not statement:
@@ -60,9 +71,13 @@ class PlantSvodkaAPIView(GenericAPIView):
             if not plant:
                 return Response({"detail": "Plant not found"}, status=404)
 
-        # Resolve language: serializer value has priority; then query/header via helper
         lang = serializer.validated_data.get("lang") or get_lang_code(request)
 
-        include_empty = plant is None
-        data = build_plant_svodka(statement, plant, include_empty=include_empty, lang=lang)
+        data = build_plant_svodka(
+            statement=statement,
+            deadline=deadline,
+            plant=plant,
+            lang=lang
+        )
+
         return Response(data)
