@@ -40,16 +40,15 @@ def parse_period(period: str) -> PeriodRange:
     return PeriodRange(kind="year", year=year)
 
 
-def filter_reports_by_period(statement, period: PeriodRange):
+def filter_reports_by_period(statement, deadline_id):
     """
-    Returns a queryset of ACCEPTED individual reports for the given statement in the selected period.
-    Deadline.submit_at formats in project (examples):
-      - quarterly: YYYY-CHORAK_n
-      - yearly: YYYY
-    We'll match using startswith accordingly.
+    Deadline FK asosida qat’iy filter.
+    Hech qanday string parsing YO‘Q.
     """
+
     qs = Report.objects.filter(
         statement=statement,
+        deadline_id=deadline_id,
         is_report=True,
         status=Report.StatusChoices.ACCEPTED,
         is_general=False,
@@ -57,14 +56,6 @@ def filter_reports_by_period(statement, period: PeriodRange):
         is_republic=False,
     )
 
-    if period.kind == "quarter":
-        pattern = f"{period.year}-CHORAK_{period.quarter}"
-        qs = qs.filter(deadline__submit_at__startswith=pattern)
-    else:
-        # year match
-        qs = qs.filter(deadline__submit_at__startswith=str(period.year))
-
-    # Prefetch items and inners; statement_column for names/orderings
     qs = (
         qs.select_related(
             "organization",
@@ -83,7 +74,9 @@ def filter_reports_by_period(statement, period: PeriodRange):
         )
         .order_by("organization__name")
     )
+
     return qs
+
 
 
 def _safe_decimal(v) -> Decimal:
@@ -343,13 +336,13 @@ def build_republic_snapshot(reports: List[Report], lang: str) -> Dict:
     }
 
 
-def build_filtered_payload(statement, period: PeriodRange, lang: str) -> Dict:
+def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
     """
     Returns a payload with:
       - regions: [ { region, general (region jami), organizations: [ReportListSerializer-like dicts for individuals] } ]
       - republic: republic jami snapshot
     """
-    qs = filter_reports_by_period(statement, period)
+    qs = filter_reports_by_period(statement, deadline_id)
 
     # Materialize individuals for reuse and avoid repeated DB hits
     reports = list(qs)
