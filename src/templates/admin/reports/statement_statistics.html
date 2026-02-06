@@ -1,5 +1,3 @@
-<!-- templates/admin/reports/statement_statistics.html -->
-
 {% extends "admin/change_list.html" %}
 {% load i18n admin_urls static %}
 
@@ -7,90 +5,667 @@
 <div id="content-main">
     <div class="module filtered" id="changelist">
         
-        <!-- Filter qismi -->
+        <!-- Filter sidebar -->
         <div id="changelist-filter">
-            <h2>{% trans 'Filter' %}</h2>
-            <h3>{% trans 'Status bo\'yicha' %}</h3>
-            <ul>
-                <li{% if not current_status %} class="selected"{% endif %}>
-                    <a href="?">{% trans 'Barchasi' %}</a>
-                </li>
-                {% for value, label in status_choices %}
-                <li{% if current_status == value %} class="selected"{% endif %}>
-                    <a href="?status={{ value }}">{{ label }}</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        
-        <!-- Statistika jadvali -->
-        <div class="results">
-            <table id="result_list">
-                <thead>
-                    <tr>
-                        <th scope="col">
-                            <div class="text">Statement nomi</div>
-                        </th>
-                        <th scope="col">
-                            <div class="text">Saqlangan</div>
-                        </th>
-                        <th scope="col">
-                            <div class="text">Yuborilgan</div>
-                        </th>
-                        <th scope="col">
-                            <div class="text">Bekor qilingan</div>
-                        </th>
-                        <th scope="col">
-                            <div class="text">Qabul qilingan</div>
-                        </th>
-                        <th scope="col">
-                            <div class="text">Jami</div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in statistics %}
-                    <tr class="{% cycle 'row1' 'row2' %}">
-                        <td>{{ stat.statement.name }}</td>
-                        <td>
-                            <span class="badge badge-info">{{ stat.saved }}</span>
-                        </td>
-                        <td>
-                            <span class="badge badge-warning">{{ stat.sent }}</span>
-                        </td>
-                        <td>
-                            <span class="badge badge-danger">{{ stat.cancelled }}</span>
-                        </td>
-                        <td>
-                            <span class="badge badge-success">{{ stat.accepted }}</span>
-                        </td>
-                        <td>
-                            <strong>{{ stat.total }}</strong>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6">{% trans 'Statistika mavjud emas' %}</td>
-                    </tr>
+            <h2>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
+                    <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                Филтр
+            </h2>
+            
+            <!-- Status filter -->
+            <div class="filter-section">
+                <h3>Ҳолати бўйича</h3>
+                <ul class="filter-list">
+                    <li{% if not current_status %} class="selected"{% endif %}>
+                        <a href="?parent_filter={{ parent_filter }}&specific_parent={{ specific_parent }}">
+                            <span class="filter-dot"></span>
+                            Барчаси
+                        </a>
+                    </li>
+                    {% for value, label in status_choices %}
+                    <li{% if current_status == value %} class="selected"{% endif %}>
+                        <a href="?status={{ value }}&parent_filter={{ parent_filter }}&specific_parent={{ specific_parent }}">
+                            <span class="filter-dot status-{{ value }}"></span>
+                            {{ label }}
+                        </a>
+                    </li>
                     {% endfor %}
-                </tbody>
-            </table>
+                </ul>
+            </div>
+
+            <!-- Parent filter -->
+            <div class="filter-section">
+                <h3>Ҳисобот формаси бўйича</h3>
+                <ul class="filter-list">
+                    <li{% if not parent_filter and not specific_parent %} class="selected"{% endif %}>
+                        <a href="?status={{ current_status }}">
+                            <span class="filter-dot"></span>
+                            Барчаси
+                        </a>
+                    </li>
+                    <li{% if parent_filter == 'without_parent' %} class="selected"{% endif %}>
+                        <a href="?status={{ current_status }}&parent_filter=without_parent">
+                            <span class="filter-dot"></span>
+                            Фақат асосий формалар
+                        </a>
+                    </li>
+                    <li{% if parent_filter == 'with_parent' %} class="selected"{% endif %}>
+                        <a href="?status={{ current_status }}&parent_filter=with_parent">
+                            <span class="filter-dot"></span>
+                            Фақат ички формалар
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Specific parent filter -->
+            {% if all_parent_statements %}
+            <div class="filter-section">
+                <h3>Асосий форма танлаш</h3>
+                <ul class="filter-list parent-list">
+                    {% for parent in all_parent_statements %}
+                    <li{% if specific_parent == parent.id|stringformat:"s" %} class="selected"{% endif %}>
+                        <a href="?status={{ current_status }}&specific_parent={{ parent.id }}" title="{{ parent.name_uz|default:parent.name }}">
+                            <span class="filter-dot"></span>
+                            {{ parent.name_uz|default:parent.name|truncatechars:35 }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
         
+        <!-- Main content area -->
+        <div class="results">
+            <!-- Export buttons -->
+            <div class="export-section">
+                <h3 class="export-title">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    Экспорт қилиш
+                </h3>
+                <div class="export-buttons">
+                    <a href="?{{ request.GET.urlencode }}&export=csv" class="export-btn csv-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                        </svg>
+                        CSV форматда юклаб олиш
+                    </a>
+                    <a href="?{{ request.GET.urlencode }}&export=excel" class="export-btn excel-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                        </svg>
+                        Excel форматда юклаб олиш
+                    </a>
+                </div>
+            </div>
+
+            <!-- Header statistics -->
+            <div class="stats-header">
+                <div class="stats-card stats-primary">
+                    <div class="stats-icon">📊</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами формалар</div>
+                        <div class="stats-value">{{ total_stats.total_statements }}</div>
+                    </div>
+                </div>
+
+                <div class="stats-card stats-total">
+                    <div class="stats-icon">📈</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами ҳисоботлар</div>
+                        <div class="stats-value">{{ total_stats.total_reports }}</div>
+                    </div>
+                </div>
+
+                <div class="stats-card stats-saved">
+                    <div class="stats-icon">💾</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами сақланган</div>
+                        <div class="stats-value">{{ total_stats.total_saved }}</div>
+                    </div>
+                </div>
+
+                <div class="stats-card stats-sent">
+                    <div class="stats-icon">📤</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами юборилган</div>
+                        <div class="stats-value">{{ total_stats.total_sent }}</div>
+                    </div>
+                </div>
+
+                <div class="stats-card stats-cancelled">
+                    <div class="stats-icon">❌</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами бекор қилинган</div>
+                        <div class="stats-value">{{ total_stats.total_cancelled }}</div>
+                    </div>
+                </div>
+
+                <div class="stats-card stats-accepted">
+                    <div class="stats-icon">✅</div>
+                    <div class="stats-info">
+                        <div class="stats-label">Жами қабул қилинган</div>
+                        <div class="stats-value">{{ total_stats.total_accepted }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics table -->
+            <div class="table-container">
+                <table id="result_list" class="modern-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="col-statement">
+                                <div class="text">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
+                                        <path d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2z"/>
+                                        <path d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
+                                    </svg>
+                                    Ҳисобот формаси
+                                </div>
+                            </th>
+                            <th scope="col" class="col-parent">
+                                <div class="text">Юқори форма</div>
+                            </th>
+                            <th scope="col" class="col-status">
+                                <div class="text">Сақланган</div>
+                            </th>
+                            <th scope="col" class="col-status">
+                                <div class="text">Юборилган</div>
+                            </th>
+                            <th scope="col" class="col-status">
+                                <div class="text">Бекор қилинган</div>
+                            </th>
+                            <th scope="col" class="col-status">
+                                <div class="text">Қабул қилинган</div>
+                            </th>
+                            <th scope="col" class="col-total">
+                                <div class="text">Жами</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in statistics %}
+                        <tr class="{% cycle 'row1' 'row2' %} {% if stat.is_parent %}parent-row{% endif %}">
+                            <td class="col-statement">
+                                {% if stat.is_parent %}
+                                    <strong class="parent-name">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
+                                            <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
+                                        </svg>
+                                        {{ stat.statement_name_uz }}
+                                    </strong>
+                                {% else %}
+                                    <span class="child-name">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px; opacity: 0.5;">
+                                            <path d="M4.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-7z"/>
+                                        </svg>
+                                        {{ stat.statement_name_uz }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="col-parent">
+                                <span class="parent-badge">{{ stat.parent_name_uz }}</span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-saved">
+                                    {{ stat.saved }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-sent">
+                                    {{ stat.sent }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-cancelled">
+                                    {{ stat.cancelled }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-accepted">
+                                    {{ stat.accepted }}
+                                </span>
+                            </td>
+                            <td class="col-total">
+                                <strong class="total-count">{{ stat.total }}</strong>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">Статистика мавжуд эмас</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 </div>
 
 <style>
+    /* Main layout */
+    #changelist {
+        display: flex;
+        gap: 20px;
+    }
+
+    /* Filter sidebar */
+    #changelist-filter {
+        width: 280px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        height: fit-content;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    #changelist-filter h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .filter-section {
+        margin-bottom: 25px;
+    }
+
+    .filter-section h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5a6c7d;
+        margin: 0 0 10px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .filter-list li {
+        margin-bottom: 5px;
+    }
+
+    .filter-list li a {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #495057;
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+
+    .filter-list li a:hover {
+        background: #e9ecef;
+        color: #212529;
+    }
+
+    .filter-list li.selected a {
+        background: #417690;
+        color: white;
+        font-weight: 500;
+    }
+
+    .filter-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6c757d;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .filter-list li.selected .filter-dot {
+        background: white;
+    }
+
+    .filter-dot.status-saved {
+        background: #17a2b8;
+    }
+
+    .filter-dot.status-sent {
+        background: #ffc107;
+    }
+
+    .filter-dot.status-cancelled {
+        background: #dc3545;
+    }
+
+    .filter-dot.status-accepted {
+        background: #28a745;
+    }
+
+    .parent-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .parent-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .parent-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .parent-list::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    /* Main content area */
+    .results {
+        flex: 1;
+    }
+
+    /* Export section */
+    .export-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .export-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 15px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .export-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .csv-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .csv-btn:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    }
+
+    .excel-btn {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+
+    .excel-btn:hover {
+        background: linear-gradient(135deg, #0f8a7e 0%, #32d66f 100%);
+    }
+
+    /* Header statistics */
+    .stats-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stats-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .stats-icon {
+        font-size: 36px;
+        line-height: 1;
+    }
+
+    .stats-info {
+        flex: 1;
+    }
+
+    .stats-label {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .stats-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    /* Цветные акценты для карточек */
+    .stats-primary {
+        border-left: 4px solid #667eea;
+    }
+
+    .stats-total {
+        border-left: 4px solid #764ba2;
+    }
+
+    .stats-saved {
+        border-left: 4px solid #17a2b8;
+    }
+
+    .stats-sent {
+        border-left: 4px solid #ffc107;
+    }
+
+    .stats-cancelled {
+        border-left: 4px solid #dc3545;
+    }
+
+    .stats-accepted {
+        border-left: 4px solid #28a745;
+    }
+
+    /* Table */
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .modern-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .modern-table thead th {
+        padding: 15px 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .modern-table thead th .text {
+        display: flex;
+        align-items: center;
+    }
+
+    .modern-table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .modern-table tbody tr.parent-row {
+        background-color: #f0f4ff;
+    }
+
+    .modern-table tbody tr.parent-row:hover {
+        background-color: #e6edff;
+    }
+
+    .modern-table tbody td {
+        padding: 14px 12px;
+        font-size: 14px;
+    }
+
+    /* Column widths */
+    .col-statement {
+        width: 35%;
+    }
+
+    .col-parent {
+        width: 20%;
+    }
+
+    .col-status {
+        width: 9%;
+        text-align: center;
+    }
+
+    .col-total {
+        width: 9%;
+        text-align: center;
+    }
+
+    /* Badges */
     .badge {
         display: inline-block;
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: bold;
-        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 20px;
+        min-width: 40px;
+        text-align: center;
     }
-    .badge-info { background-color: #17a2b8; color: white; }
-    .badge-warning { background-color: #ffc107; color: black; }
-    .badge-danger { background-color: #dc3545; color: white; }
-    .badge-success { background-color: #28a745; color: white; }
+
+    .badge-saved {
+        background-color: #e7f5fe;
+        color: #0277bd;
+    }
+
+    .badge-sent {
+        background-color: #fff8e1;
+        color: #f57c00;
+    }
+
+    .badge-cancelled {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    .badge-accepted {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .parent-badge {
+        padding: 4px 10px;
+        background: #e9ecef;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #495057;
+    }
+
+    .parent-name {
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .child-name {
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .total-count {
+        font-size: 16px;
+        color: #2c3e50;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px !important;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .empty-text {
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        #changelist {
+            flex-direction: column;
+        }
+
+        #changelist-filter {
+            width: 100%;
+        }
+
+        .stats-header {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+    }
 </style>
 {% endblock %}
