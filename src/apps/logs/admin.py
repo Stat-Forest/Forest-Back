@@ -1,13 +1,51 @@
 from django.urls import path
 from django.contrib import admin
 from django.http import HttpResponse
+from django.contrib.admin import SimpleListFilter
+from django.db.models import Case, When, Value, IntegerField
 from openpyxl import Workbook
 
 from .models import HistoryActionJournal
 
 
+# =======================
+# ORGANIZATION ORDER FILTER
+# =======================
+class OrganizationOrderFilter(SimpleListFilter):
+    title = "Order by organization activity"
+    parameter_name = "org_order"
+
+    def lookups(self, request, model_admin):
+        return (
+            ('active_first', 'Active organizations first'),
+            ('inactive_first', 'Inactive organizations first'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() in ('active_first', 'inactive_first'):
+            qs = queryset.annotate(
+                org_active=Case(
+                    When(
+                        user__organization__user__last_login__isnull=False,
+                        then=Value(1)
+                    ),
+                    default=Value(0),
+                    output_field=IntegerField()
+                )
+            )
+            if self.value() == 'active_first':
+                return qs.order_by('-org_active', '-created_at')
+            return qs.order_by('org_active', '-created_at')
+
+        return queryset
+
+
+# =======================
+# ADMIN CONFIG
+# =======================
 @admin.register(HistoryActionJournal)
 class HistoryActionJournalAdmin(admin.ModelAdmin):
+
     # -------- LIST VIEW ----------
     list_display = (
         'user',
@@ -22,6 +60,8 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
     # -------- FILTERS ----------
     list_filter = (
         'user',
+        'user__organization',
+        OrganizationOrderFilter,   # 👈 faqat order_by
         'model_name',
         'action',
         'created_at',
@@ -39,7 +79,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     # -------- CUSTOM DISPLAY ----------
     def user_organization(self, obj):
-        if obj.user and hasattr(obj.user, 'organization') and obj.user.organization:
+        if obj.user and getattr(obj.user, 'organization', None):
             return obj.user.organization.name_uz
         return "-"
     user_organization.short_description = "Organization"
