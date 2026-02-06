@@ -9,64 +9,16 @@ from .models import HistoryActionJournal
 
 
 # =======================
-# USER LOGIN FILTER
-# =======================
-class UserLoginFilter(SimpleListFilter):
-    title = "User login status"
-    parameter_name = "user_login_status"
-
-    def lookups(self, request, model_admin):
-        return (
-            ('login_users', 'Login qilgan userlar'),
-            ('never_login_users', 'Login qilmagan userlar'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == 'login_users':
-            return queryset.filter(user__last_login__isnull=False)
-        if self.value() == 'never_login_users':
-            return queryset.filter(user__last_login__isnull=True)
-        return queryset
-
-
-# =======================
-# ORGANIZATION LOGIN FILTER
-# =======================
-class OrganizationLoginFilter(SimpleListFilter):
-    title = "Organization login status"
-    parameter_name = "organization_login_status"
-
-    def lookups(self, request, model_admin):
-        return (
-            ('login_orgs', 'Login qilgan organizationlar'),
-            ('never_login_orgs', 'Login qilmagan organizationlar'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == 'login_orgs':
-            return queryset.filter(
-                user__organization__user__last_login__isnull=False
-            ).distinct()
-
-        if self.value() == 'never_login_orgs':
-            return queryset.exclude(
-                user__organization__user__last_login__isnull=False
-            ).distinct()
-
-        return queryset
-
-
-# =======================
 # ORGANIZATION ORDER FILTER
 # =======================
-class OrganizationLoginOrderFilter(SimpleListFilter):
+class OrganizationOrderFilter(SimpleListFilter):
     title = "Order by organization activity"
-    parameter_name = "organization_order"
+    parameter_name = "org_order"
 
     def lookups(self, request, model_admin):
         return (
-            ('active_first', 'Active organizationlar (login bor)'),
-            ('inactive_first', 'Inactive organizationlar (login yo‘q)'),
+            ('active_first', 'Active organizations first'),
+            ('inactive_first', 'Inactive organizations first'),
         )
 
     def queryset(self, request, queryset):
@@ -107,10 +59,9 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     # -------- FILTERS ----------
     list_filter = (
-        UserLoginFilter,
-        OrganizationLoginFilter,
-        OrganizationLoginOrderFilter,
+        'user',
         'user__organization',
+        OrganizationOrderFilter,   # 👈 faqat order_by
         'model_name',
         'action',
         'created_at',
