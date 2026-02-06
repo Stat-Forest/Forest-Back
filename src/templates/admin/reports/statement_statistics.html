@@ -38,7 +38,7 @@
             <!-- Specific parent filter -->
             {% if all_parent_statements %}
             <div class="filter-section">
-                <h3>Asosiy forma tanlash</h3>
+                <h3>Асосий форма танлаш</h3>
                 <ul class="filter-list parent-list">
                     <li{% if not specific_parent %} class="selected"{% endif %}>
                         <a href="?status={{ current_status }}">
@@ -68,7 +68,7 @@
                         <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                         <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
                     </svg>
-                    Eksport qilish
+                    Экспорт қилиш
                 </h3>
                 <div class="export-buttons">
                     <a href="?{{ request.GET.urlencode }}&export=csv" class="export-btn csv-btn">
@@ -76,14 +76,14 @@
                             <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
                             <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
                         </svg>
-                        CSV formatda yuklab olish
+                        CSV форматда юклаб олиш
                     </a>
                     <a href="?{{ request.GET.urlencode }}&export=excel" class="export-btn excel-btn">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
                             <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
                         </svg>
-                        Excel formatda yuklab olish
+                        Excel форматда юклаб олиш
                     </a>
                 </div>
             </div>
@@ -93,7 +93,7 @@
                 <div class="stats-card stats-primary">
                     <div class="stats-icon">📊</div>
                     <div class="stats-info">
-                        <div class="stats-label">Asosiy formalar</div>
+                        <div class="stats-label">Асосий формалар</div>
                         <div class="stats-value">{{ total_stats.total_statements }}</div>
                     </div>
                 </div>
@@ -101,7 +101,7 @@
                 <div class="stats-card stats-total">
                     <div class="stats-icon">📈</div>
                     <div class="stats-info">
-                        <div class="stats-label">Jami hisobotlar</div>
+                        <div class="stats-label">Жами ҳисоботлар</div>
                         <div class="stats-value">{{ total_stats.total_reports }}</div>
                     </div>
                 </div>
@@ -109,7 +109,7 @@
                 <div class="stats-card stats-saved">
                     <div class="stats-icon">💾</div>
                     <div class="stats-info">
-                        <div class="stats-label">Jami saqlangan</div>
+                        <div class="stats-label">Жами сақланган</div>
                         <div class="stats-value">{{ total_stats.total_saved }}</div>
                     </div>
                 </div>
@@ -117,7 +117,7 @@
                 <div class="stats-card stats-sent">
                     <div class="stats-icon">📤</div>
                     <div class="stats-info">
-                        <div class="stats-label">Jami yuborilgan</div>
+                        <div class="stats-label">Жами юборилган</div>
                         <div class="stats-value">{{ total_stats.total_sent }}</div>
                     </div>
                 </div>
@@ -125,7 +125,7 @@
                 <div class="stats-card stats-cancelled">
                     <div class="stats-icon">❌</div>
                     <div class="stats-info">
-                        <div class="stats-label">Jami bekor qilingan</div>
+                        <div class="stats-label">Жами бекор қилинган</div>
                         <div class="stats-value">{{ total_stats.total_cancelled }}</div>
                     </div>
                 </div>
@@ -133,7 +133,7 @@
                 <div class="stats-card stats-accepted">
                     <div class="stats-icon">✅</div>
                     <div class="stats-info">
-                        <div class="stats-label">Jami qabul qilingan</div>
+                        <div class="stats-label">Жами қабул қилинган</div>
                         <div class="stats-value">{{ total_stats.total_accepted }}</div>
                     </div>
                 </div>
@@ -144,134 +144,80 @@
                 <table id="result_list" class="modern-table">
                     <thead>
                         <tr>
-                            <th scope="col" class="col-expand"></th>
                             <th scope="col" class="col-statement">
                                 <div class="text">
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
                                         <path d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2z"/>
                                         <path d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
                                     </svg>
-                                    Hisobot Formasi
+                                    Ҳисобот формаси
                                 </div>
                             </th>
                             <th scope="col" class="col-children">
-                                <div class="text">Ichki Formalar</div>
+                                <div class="text">Ички формалар</div>
                             </th>
                             <th scope="col" class="col-status">
-                                <div class="text">Saqlangan</div>
+                                <div class="text">Сақланган</div>
                             </th>
                             <th scope="col" class="col-status">
-                                <div class="text">Yuborilgan</div>
+                                <div class="text">Юборилган</div>
                             </th>
                             <th scope="col" class="col-status">
-                                <div class="text">Bekor qilingan</div>
+                                <div class="text">Бекор қилинган</div>
                             </th>
                             <th scope="col" class="col-status">
-                                <div class="text">Qabul qilingan</div>
+                                <div class="text">Қабул қилинган</div>
                             </th>
                             <th scope="col" class="col-total">
-                                <div class="text">Jami</div>
+                                <div class="text">Жами</div>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for stat in statistics %}
-                            {% if stat.is_parent %}
-                            <tr class="parent-row" data-parent-id="{{ stat.statement_id }}">
-                                <td class="col-expand">
-                                    {% if stat.child_count > 0 %}
-                                    <button class="expand-btn" onclick="toggleChildren({{ stat.statement_id }})">
-                                        <svg class="expand-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                                        </svg>
-                                    </button>
-                                    {% endif %}
-                                </td>
-                                <td class="col-statement">
-                                    <strong class="parent-name">
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
-                                            <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
-                                        </svg>
-                                        {{ stat.statement_name_uz }}
-                                    </strong>
-                                </td>
-                                <td class="col-children">
-                                    {% if stat.child_count > 0 %}
-                                    <span class="child-count-badge">
-                                        {{ stat.child_count }} та
-                                    </span>
-                                    {% else %}
-                                    <span class="child-count-badge-empty">-</span>
-                                    {% endif %}
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-saved">
-                                        {{ stat.saved }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-sent">
-                                        {{ stat.sent }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-cancelled">
-                                        {{ stat.cancelled }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-accepted">
-                                        {{ stat.accepted }}
-                                    </span>
-                                </td>
-                                <td class="col-total">
-                                    <strong class="total-count">{{ stat.total }}</strong>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr class="child-row" data-parent-id="{{ stat.parent_id }}" style="display: none;">
-                                <td class="col-expand"></td>
-                                <td class="col-statement">
-                                    <div class="child-name">
-                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px; opacity: 0.5;">
-                                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
-                                        </svg>
-                                        {{ stat.statement_name_uz }}
-                                    </div>
-                                </td>
-                                <td class="col-children">
-                                    <span class="child-count-badge-empty">-</span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-saved-child">
-                                        {{ stat.saved }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-sent-child">
-                                        {{ stat.sent }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-cancelled-child">
-                                        {{ stat.cancelled }}
-                                    </span>
-                                </td>
-                                <td class="col-status">
-                                    <span class="badge badge-accepted-child">
-                                        {{ stat.accepted }}
-                                    </span>
-                                </td>
-                                <td class="col-total">
-                                    <span class="total-count-child">{{ stat.total }}</span>
-                                </td>
-                            </tr>
-                            {% endif %}
+                        <tr class="{% cycle 'row1' 'row2' %} parent-row">
+                            <td class="col-statement">
+                                <strong class="parent-name">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
+                                        <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
+                                    </svg>
+                                    {{ stat.statement_name_uz }}
+                                </strong>
+                            </td>
+                            <td class="col-children">
+                                <span class="child-count-badge">
+                                    {{ stat.child_count }} та
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-saved">
+                                    {{ stat.saved }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-sent">
+                                    {{ stat.sent }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-cancelled">
+                                    {{ stat.cancelled }}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-accepted">
+                                    {{ stat.accepted }}
+                                </span>
+                            </td>
+                            <td class="col-total">
+                                <strong class="total-count">{{ stat.total }}</strong>
+                            </td>
+                        </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 <div class="empty-icon">📊</div>
-                                <div class="empty-text">Statistika mavjud emas !</div>
+                                <div class="empty-text">Статистика мавжуд эмас</div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -282,24 +228,6 @@
 
     </div>
 </div>
-
-<script>
-function toggleChildren(parentId) {
-    const childRows = document.querySelectorAll(`tr.child-row[data-parent-id="${parentId}"]`);
-    const expandBtn = document.querySelector(`tr.parent-row[data-parent-id="${parentId}"] .expand-btn`);
-    const expandIcon = expandBtn.querySelector('.expand-icon');
-
-    childRows.forEach(row => {
-        if (row.style.display === 'none') {
-            row.style.display = 'table-row';
-            expandIcon.style.transform = 'rotate(180deg)';
-        } else {
-            row.style.display = 'none';
-            expandIcon.style.transform = 'rotate(0deg)';
-        }
-    });
-}
-</script>
 
 <style>
     /* Main layout */
@@ -531,6 +459,7 @@ function toggleChildren(parentId) {
         color: #2c3e50;
     }
 
+    /* Цветные акценты для карточек */
     .stats-primary {
         border-left: 4px solid #667eea;
     }
@@ -596,23 +525,12 @@ function toggleChildren(parentId) {
         background-color: #f8f9fa;
     }
 
-    /* Parent row styling */
     .modern-table tbody tr.parent-row {
-        background-color: #e6edff;
-        font-weight: 500;
+        background-color: #f0f4ff;
     }
 
     .modern-table tbody tr.parent-row:hover {
-        background-color: #d4e0ff;
-    }
-
-    /* Child row styling */
-    .modern-table tbody tr.child-row {
-        background-color: #f8f9fa;
-    }
-
-    .modern-table tbody tr.child-row:hover {
-        background-color: #e9ecef;
+        background-color: #e6edff;
     }
 
     .modern-table tbody td {
@@ -621,17 +539,12 @@ function toggleChildren(parentId) {
     }
 
     /* Column widths */
-    .col-expand {
-        width: 40px;
-        text-align: center;
-    }
-
     .col-statement {
         width: 35%;
     }
 
     .col-children {
-        width: 13%;
+        width: 15%;
         text-align: center;
     }
 
@@ -643,27 +556,6 @@ function toggleChildren(parentId) {
     .col-total {
         width: 10%;
         text-align: center;
-    }
-
-    /* Expand button */
-    .expand-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-
-    .expand-btn:hover {
-        background-color: rgba(0,0,0,0.05);
-        border-radius: 4px;
-    }
-
-    .expand-icon {
-        transition: transform 0.3s ease;
     }
 
     /* Badges */
@@ -678,110 +570,42 @@ function toggleChildren(parentId) {
     }
 
     .badge-saved {
-        background-color: #d1ecf1;
-        color: #0c5460;
-    }
-
-    .badge-sent {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-
-    .badge-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .badge-accepted {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    /* Child badges - lighter colors */
-    .badge-saved-child {
-        display: inline-block;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        border-radius: 20px;
-        min-width: 40px;
-        text-align: center;
         background-color: #e7f5fe;
         color: #0277bd;
     }
 
-    .badge-sent-child {
-        display: inline-block;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        border-radius: 20px;
-        min-width: 40px;
-        text-align: center;
+    .badge-sent {
         background-color: #fff8e1;
         color: #f57c00;
     }
 
-    .badge-cancelled-child {
-        display: inline-block;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        border-radius: 20px;
-        min-width: 40px;
-        text-align: center;
+    .badge-cancelled {
         background-color: #ffebee;
         color: #c62828;
     }
 
-    .badge-accepted-child {
-        display: inline-block;
-        padding: 6px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        border-radius: 20px;
-        min-width: 40px;
-        text-align: center;
+    .badge-accepted {
         background-color: #e8f5e9;
         color: #2e7d32;
     }
 
     .child-count-badge {
         padding: 5px 12px;
-        background: #667eea;
+        background: #e9ecef;
         border-radius: 15px;
         font-size: 13px;
         font-weight: 600;
-        color: white;
-    }
-
-    .child-count-badge-empty {
-        color: #999;
-        font-size: 13px;
+        color: #495057;
     }
 
     .parent-name {
         color: #2c3e50;
         font-size: 14px;
-        font-weight: 600;
-    }
-
-    .child-name {
-        color: #495057;
-        font-size: 13px;
-        padding-left: 20px;
     }
 
     .total-count {
         font-size: 16px;
         color: #2c3e50;
-        font-weight: 700;
-    }
-
-    .total-count-child {
-        font-size: 14px;
-        color: #495057;
-        font-weight: 500;
     }
 
     /* Empty state */
