@@ -175,8 +175,16 @@
                     </thead>
                     <tbody>
                         {% for stat in statistics %}
-                        <tr class="{% cycle 'row1' 'row2' %} parent-row">
+                        <!-- Parent row -->
+                        <tr class="parent-row" data-parent-id="{{ stat.statement.id }}">
                             <td class="col-statement">
+                                {% if stat.children %}
+                                <span class="toggle-icon" onclick="toggleChildren({{ stat.statement.id }})">
+                                    <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                                    </svg>
+                                </span>
+                                {% endif %}
                                 <strong class="parent-name">
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;">
                                         <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
@@ -190,29 +198,51 @@
                                 </span>
                             </td>
                             <td class="col-status">
-                                <span class="badge badge-saved">
-                                    {{ stat.saved }}
-                                </span>
+                                <span class="badge badge-saved">{{ stat.saved }}</span>
                             </td>
                             <td class="col-status">
-                                <span class="badge badge-sent">
-                                    {{ stat.sent }}
-                                </span>
+                                <span class="badge badge-sent">{{ stat.sent }}</span>
                             </td>
                             <td class="col-status">
-                                <span class="badge badge-cancelled">
-                                    {{ stat.cancelled }}
-                                </span>
+                                <span class="badge badge-cancelled">{{ stat.cancelled }}</span>
                             </td>
                             <td class="col-status">
-                                <span class="badge badge-accepted">
-                                    {{ stat.accepted }}
-                                </span>
+                                <span class="badge badge-accepted">{{ stat.accepted }}</span>
                             </td>
                             <td class="col-total">
                                 <strong class="total-count">{{ stat.total }}</strong>
                             </td>
                         </tr>
+
+                        <!-- Child rows -->
+                        {% for child in stat.children %}
+                        <tr class="child-row" data-parent="{{ stat.statement.id }}" style="display: none;">
+                            <td class="col-statement">
+                                <span class="child-indent" style="margin-left: {{ child.level|add:1 }}0px;">
+                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 5px; opacity: 0.5;">
+                                        <path d="M4.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-7z"/>
+                                    </svg>
+                                    {{ child.statement_name_uz }}
+                                </span>
+                            </td>
+                            <td class="col-children">-</td>
+                            <td class="col-status">
+                                <span class="badge badge-saved">{{ child.saved }}</span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-sent">{{ child.sent }}</span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-cancelled">{{ child.cancelled }}</span>
+                            </td>
+                            <td class="col-status">
+                                <span class="badge badge-accepted">{{ child.accepted }}</span>
+                            </td>
+                            <td class="col-total">
+                                <strong class="total-count">{{ child.total }}</strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% empty %}
                         <tr>
                             <td colspan="7" class="empty-state">
@@ -228,6 +258,24 @@
 
     </div>
 </div>
+
+<script>
+function toggleChildren(parentId) {
+    const childRows = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
+    const parentRow = document.querySelector(`tr[data-parent-id="${parentId}"]`);
+    const chevron = parentRow.querySelector('.chevron');
+
+    childRows.forEach(row => {
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+            chevron.style.transform = 'rotate(90deg)';
+        } else {
+            row.style.display = 'none';
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    });
+}
+</script>
 
 <style>
     /* Main layout */
@@ -527,15 +575,36 @@
 
     .modern-table tbody tr.parent-row {
         background-color: #f0f4ff;
+        cursor: pointer;
     }
 
     .modern-table tbody tr.parent-row:hover {
         background-color: #e6edff;
     }
 
+    .modern-table tbody tr.child-row {
+        background-color: #fafbfc;
+    }
+
+    .modern-table tbody tr.child-row:hover {
+        background-color: #f1f3f5;
+    }
+
     .modern-table tbody td {
         padding: 14px 12px;
         font-size: 14px;
+    }
+
+    /* Toggle icon */
+    .toggle-icon {
+        display: inline-block;
+        cursor: pointer;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .chevron {
+        transition: transform 0.3s ease;
     }
 
     /* Column widths */
@@ -601,6 +670,11 @@
     .parent-name {
         color: #2c3e50;
         font-size: 14px;
+    }
+
+    .child-indent {
+        color: #6c757d;
+        font-size: 13px;
     }
 
     .total-count {
