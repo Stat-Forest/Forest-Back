@@ -122,10 +122,10 @@
                     <tbody>
                         {% for stat in statistics %}
                         <!-- Parent row -->
-                        <tr class="parent-row {% if stat.children %}has-children{% endif %}" data-parent-id="{{ stat.statement.id }}" {% if stat.children %}onclick="toggleChildren({{ stat.statement.id }})"{% endif %}>
+                        <tr class="parent-row {% if stat.children %}has-children{% endif %}" data-parent-id="{{ stat.statement.id }}">
                             <td class="col-statement">
                                 {% if stat.children %}
-                                <span class="toggle-icon">
+                                <span class="toggle-icon" onclick="toggleChildren({{ stat.statement.id }}); event.stopPropagation();">
                                     <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                                         <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
                                     </svg>
@@ -395,11 +395,18 @@ function toggleChildren(parentId) {
         font-size: 13px;
         letter-spacing: 0.5px;
         text-transform: uppercase;
+        color: white !important;
     }
 
     .modern-table thead th .text {
         display: flex;
         align-items: center;
+        color: white !important;
+    }
+
+    .modern-table thead th .text svg {
+        color: white !important;
+        fill: white !important;
     }
 
     .modern-table tbody tr {
@@ -444,12 +451,11 @@ function toggleChildren(parentId) {
         width: 20px;
         height: 20px;
         text-align: center;
-        pointer-events: none; /* Click eventni parent'ga o'tkazish */
+        cursor: pointer;
     }
 
     .chevron {
         transition: transform 0.3s ease;
-        pointer-events: none; /* Click eventni parent'ga o'tkazish */
     }
 
     /* Column widths */
