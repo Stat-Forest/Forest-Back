@@ -96,7 +96,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
         # Stil uchun ranglar
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_font = Font(bold=True, color="FFFFFF", size=11)
         header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         # Border
@@ -107,9 +107,12 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
             bottom=Side(style='thin')
         )
 
-        # Data alignment
-        data_alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-        center_alignment = Alignment(horizontal="center", vertical="center")
+        # Data alignment - wrap_text=False qilib qo'yamiz
+        data_alignment_left = Alignment(horizontal="left", vertical="top", wrap_text=False)
+        data_alignment_center = Alignment(horizontal="center", vertical="top", wrap_text=False)
+
+        # Font for data
+        data_font = Font(size=10)
 
         # Headerlar
         headers = [
@@ -119,7 +122,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
             'Amal',
             'Model',
             'Obyekt',
-            'O\'zgarish xabari',
+            "O'zgarish xabari",
             'Sana'
         ]
 
@@ -137,72 +140,94 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
             # №
             cell = ws.cell(row=row_num, column=1)
             cell.value = row_num - 1
-            cell.alignment = center_alignment
+            cell.alignment = data_alignment_center
             cell.border = thin_border
+            cell.font = data_font
 
             # Foydalanuvchi
             cell = ws.cell(row=row_num, column=2)
             if obj.user:
-                user_display = f"{obj.user.first_name} {obj.user.last_name}" if obj.user.first_name else obj.user.email
+                user_display = f"{obj.user.first_name} {obj.user.last_name}".strip()
+                if not user_display:
+                    user_display = obj.user.email if obj.user.email else "-"
                 cell.value = user_display
             else:
                 cell.value = "-"
-            cell.alignment = data_alignment
+            cell.alignment = data_alignment_left
             cell.border = thin_border
+            cell.font = data_font
 
             # Tashkilot
             cell = ws.cell(row=row_num, column=3)
             if obj.user and getattr(obj.user, 'organization', None):
                 org = obj.user.organization
                 org_name = org.name_uz if hasattr(org, 'name_uz') and org.name_uz else str(org)
-                cell.value = org_name
+                cell.value = str(org_name) if org_name else "-"
             else:
                 cell.value = "-"
-            cell.alignment = data_alignment
+            cell.alignment = data_alignment_left
             cell.border = thin_border
+            cell.font = data_font
 
             # Amal
             cell = ws.cell(row=row_num, column=4)
-            cell.value = str(obj.get_action_display()) if hasattr(obj, 'get_action_display') else str(obj.action)
-            cell.alignment = center_alignment
+            action_display = str(obj.get_action_display()) if hasattr(obj, 'get_action_display') else str(obj.action)
+            cell.value = action_display
+            cell.alignment = data_alignment_center
             cell.border = thin_border
+            cell.font = data_font
 
             # Model
             cell = ws.cell(row=row_num, column=5)
             cell.value = str(obj.model_name) if obj.model_name else ''
-            cell.alignment = data_alignment
+            cell.alignment = data_alignment_left
             cell.border = thin_border
+            cell.font = data_font
 
             # Obyekt
             cell = ws.cell(row=row_num, column=6)
-            cell.value = str(obj.object_repr) if obj.object_repr else ''
-            cell.alignment = data_alignment
+            obyekt_text = str(obj.object_repr) if obj.object_repr else ''
+            # Juda uzun matnlarni qisqartirish (ixtiyoriy)
+            if len(obyekt_text) > 100:
+                obyekt_text = obyekt_text[:97] + '...'
+            cell.value = obyekt_text
+            cell.alignment = data_alignment_left
             cell.border = thin_border
+            cell.font = data_font
 
             # O'zgarish xabari
             cell = ws.cell(row=row_num, column=7)
-            cell.value = str(obj.change_message) if obj.change_message else ''
-            cell.alignment = data_alignment
+            change_text = str(obj.change_message) if obj.change_message else ''
+            # Juda uzun matnlarni qisqartirish (ixtiyoriy)
+            if len(change_text) > 150:
+                change_text = change_text[:147] + '...'
+            cell.value = change_text
+            cell.alignment = data_alignment_left
             cell.border = thin_border
+            cell.font = data_font
 
             # Sana
             cell = ws.cell(row=row_num, column=8)
             cell.value = obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else ''
-            cell.alignment = center_alignment
+            cell.alignment = data_alignment_center
             cell.border = thin_border
+            cell.font = data_font
+
+            # Qator balandligini belgilash - har bir qator uchun
+            ws.row_dimensions[row_num].height = 30
 
         # Ustunlar kengligini sozlash
         ws.column_dimensions['A'].width = 6  # №
-        ws.column_dimensions['B'].width = 30  # Foydalanuvchi
-        ws.column_dimensions['C'].width = 50  # Tashkilot
-        ws.column_dimensions['D'].width = 15  # Amal
-        ws.column_dimensions['E'].width = 25  # Model
-        ws.column_dimensions['F'].width = 40  # Obyekt
-        ws.column_dimensions['G'].width = 50  # O'zgarish xabari
+        ws.column_dimensions['B'].width = 25  # Foydalanuvchi
+        ws.column_dimensions['C'].width = 60  # Tashkilot - KENGAYTIRILDI
+        ws.column_dimensions['D'].width = 12  # Amal
+        ws.column_dimensions['E'].width = 18  # Model
+        ws.column_dimensions['F'].width = 70  # Obyekt - KENGAYTIRILDI
+        ws.column_dimensions['G'].width = 80  # O'zgarish xabari - KENGAYTIRILDI
         ws.column_dimensions['H'].width = 20  # Sana
 
         # Birinchi qatorni (header) balandligini sozlash
-        ws.row_dimensions[1].height = 30
+        ws.row_dimensions[1].height = 35
 
         # Freeze panes - header qatorini doimo ko'rinishda qoldirish
         ws.freeze_panes = 'A2'
