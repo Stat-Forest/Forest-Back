@@ -70,7 +70,8 @@ class DeadlineListAPIView(generics.ListAPIView):
 
             report_exists_qs = Report.objects.filter(
                 deadline=OuterRef("pk"),
-                is_report=True
+                status=Report.StatusChoices.ACCEPTED,
+                is_report=True,
             )
 
             # 🔥 HUDUDIY_BOSHQARMA → faqat region_user_orgs
