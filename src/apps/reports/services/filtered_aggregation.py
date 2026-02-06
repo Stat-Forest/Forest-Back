@@ -452,7 +452,40 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
     # republic jami from all filtered individuals
     republic_snapshot = build_republic_snapshot(reports, lang)
 
+    # Transform regions to match the regional endpoint format
+    results = []
+    
+    # Add regions with their organizations as children
+    for region_data in regions_payload:
+        region_item = {
+            "id": f"general_{region_data['region']}",
+            "organization_name": region_data['general']['organization_name'],
+            "report_items": region_data['general']['report_items'],
+            "children_reports": [
+                {
+                    "id": org["id"],
+                    "organization_name": org["organization_name"],
+                    "report_items": org["report_items"],
+                    "sent_by_full_name": None,
+                    "sent_by_org_name": org.get("organization_name"),
+                    "sent_by_role": None
+                }
+                for org in region_data['organizations']
+            ]
+        }
+        results.append(region_item)
+    
+    # Add republic as a separate item in results
+    results.append({
+        "id": "republic",
+        "organization_name": republic_snapshot["organization_name"],
+        "report_items": republic_snapshot["report_items"],
+        "children_reports": []
+    })
+    
     return {
-        "regions": regions_payload,
-        "republic": republic_snapshot,
+        "count": len(results),
+        "next": None,
+        "previous": None,
+        "results": results,
     }
