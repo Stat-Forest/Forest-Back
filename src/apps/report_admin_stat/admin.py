@@ -24,36 +24,23 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
 
         # Filter parametrlari
         status_filter = request.GET.get('status', '')
-        parent_filter = request.GET.get('parent_filter', '')  # 'with_parent', 'without_parent', 'all'
         specific_parent = request.GET.get('specific_parent', '')  # Muayyan parent ID
 
-        # Base queryset - barcha statement-lar
-        statements = StatementStatistics.objects.all()
+        # FAQAT parent statement-larni olish (parent=None)
+        if specific_parent:
+            # Muayyan parent tanlangan bo'lsa
+            statements = StatementStatistics.objects.filter(id=specific_parent, parent__isnull=True)
+        else:
+            # Barcha parent statement-lar
+            statements = StatementStatistics.objects.filter(parent__isnull=True)
 
-        # Parent filter qo'llash
-        if parent_filter == 'without_parent':
-            # Faqat parent yo'q statement-lar (parent=None)
-            statements = statements.filter(parent__isnull=True)
-        elif parent_filter == 'with_parent':
-            # Faqat parent bor statement-lar
-            statements = statements.filter(parent__isnull=False)
-        elif specific_parent:
-            # Muayyan parent-ning child-lari
-            statements = statements.filter(parent_id=specific_parent)
-        # 'all' yoki bo'sh bo'lsa - barchasi
-
-        # Har bir statement uchun status bo'yicha count
+        # Har bir parent statement uchun statistika
         statistics = []
 
         for statement in statements:
-            # Agar statement parent bo'lsa, barcha child-larini ham hisobga olish
-            if statement.parent is None:
-                # Parent statement - barcha child-larni qo'shish
-                child_statements = self.get_all_children(statement)
-                all_statement_ids = [statement.id] + [s.id for s in child_statements]
-            else:
-                # Child statement - faqat o'zini
-                all_statement_ids = [statement.id]
+            # Parent va barcha child-larini olish
+            child_statements = self.get_all_children(statement)
+            all_statement_ids = [statement.id] + [s.id for s in child_statements]
 
             # Base query
             base_query = Report.objects.filter(
@@ -75,9 +62,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
             statistics.append({
                 'statement': statement,
                 'statement_name_uz': getattr(statement, 'name_uz', statement.name),
-                'parent_name_uz': getattr(statement.parent, 'name_uz',
-                                          statement.parent.name) if statement.parent else '-',
-                'is_parent': statement.parent is None,
+                'child_count': len(child_statements),  # Nechta child bor
                 'saved': saved_count,
                 'sent': sent_count,
                 'cancelled': cancelled_count,
@@ -102,7 +87,6 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         extra_context['statistics'] = statistics
         extra_context['status_choices'] = Report.StatusChoices.choices
         extra_context['current_status'] = status_filter
-        extra_context['parent_filter'] = parent_filter
         extra_context['specific_parent'] = specific_parent
         extra_context['all_parent_statements'] = all_parent_statements
         extra_context['total_stats'] = total_stats
@@ -132,26 +116,20 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
     def get_statistics_data(self, request):
         """Statistika ma'lumotlarini olish (export uchun)"""
         status_filter = request.GET.get('status', '')
-        parent_filter = request.GET.get('parent_filter', '')
         specific_parent = request.GET.get('specific_parent', '')
 
-        statements = StatementStatistics.objects.all()
-
-        if parent_filter == 'without_parent':
-            statements = statements.filter(parent__isnull=True)
-        elif parent_filter == 'with_parent':
-            statements = statements.filter(parent__isnull=False)
-        elif specific_parent:
-            statements = statements.filter(parent_id=specific_parent)
+        # FAQAT parent statement-lar
+        if specific_parent:
+            statements = StatementStatistics.objects.filter(id=specific_parent, parent__isnull=True)
+        else:
+            statements = StatementStatistics.objects.filter(parent__isnull=True)
 
         statistics = []
 
         for statement in statements:
-            if statement.parent is None:
-                child_statements = self.get_all_children(statement)
-                all_statement_ids = [statement.id] + [s.id for s in child_statements]
-            else:
-                all_statement_ids = [statement.id]
+            # Parent va barcha child-lari
+            child_statements = self.get_all_children(statement)
+            all_statement_ids = [statement.id] + [s.id for s in child_statements]
 
             base_query = Report.objects.filter(
                 statement_id__in=all_statement_ids,
@@ -170,9 +148,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
             statistics.append({
                 'statement': statement,
                 'statement_name_uz': getattr(statement, 'name_uz', statement.name),
-                'parent_name_uz': getattr(statement.parent, 'name_uz',
-                                          statement.parent.name) if statement.parent else '-',
-                'is_parent': statement.parent is None,
+                'child_count': len(child_statements),
                 'saved': saved_count,
                 'sent': sent_count,
                 'cancelled': cancelled_count,
@@ -196,7 +172,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         # Header
         writer.writerow([
             'Ҳисобот формаси',
-            'Юқори форма',
+            'Ички формалар сони',
             'Сақланган',
             'Юборилган',
             'Бекор қилинган',
@@ -209,7 +185,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         for stat in statistics:
             writer.writerow([
                 stat['statement_name_uz'],
-                stat['parent_name_uz'],
+                stat['child_count'],
                 stat['saved'],
                 stat['sent'],
                 stat['cancelled'],
@@ -256,7 +232,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         # Headers
         headers = [
             'Ҳисобот формаси',
-            'Юқори форма',
+            'Ички формалар сони',
             'Сақланган',
             'Юборилган',
             'Бекор қилинган',
@@ -276,7 +252,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
 
         for row_idx, stat in enumerate(statistics, 2):
             ws.cell(row=row_idx, column=1, value=stat['statement_name_uz'])
-            ws.cell(row=row_idx, column=2, value=stat['parent_name_uz'])
+            ws.cell(row=row_idx, column=2, value=stat['child_count'])
             ws.cell(row=row_idx, column=3, value=stat['saved'])
             ws.cell(row=row_idx, column=4, value=stat['sent'])
             ws.cell(row=row_idx, column=5, value=stat['cancelled'])
@@ -287,12 +263,9 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
             for col in range(1, 8):
                 cell = ws.cell(row=row_idx, column=col)
                 cell.border = border
-                cell.alignment = Alignment(horizontal='left' if col <= 2 else 'center', vertical='center')
-
-                # Parent row styling
-                if stat['is_parent']:
-                    cell.font = Font(bold=True)
-                    cell.fill = PatternFill(start_color="f0f4ff", end_color="f0f4ff", fill_type="solid")
+                cell.alignment = Alignment(horizontal='left' if col == 1 else 'center', vertical='center')
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="f0f4ff", end_color="f0f4ff", fill_type="solid")
 
         # Jami qator
         total_row = len(statistics) + 3
@@ -304,8 +277,8 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         ws.cell(row=total_row, column=7, value=sum(s['total'] for s in statistics)).font = Font(bold=True)
 
         # Column widths
-        ws.column_dimensions['A'].width = 40
-        ws.column_dimensions['B'].width = 30
+        ws.column_dimensions['A'].width = 45
+        ws.column_dimensions['B'].width = 20
         ws.column_dimensions['C'].width = 15
         ws.column_dimensions['D'].width = 15
         ws.column_dimensions['E'].width = 18
