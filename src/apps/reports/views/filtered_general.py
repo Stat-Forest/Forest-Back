@@ -17,7 +17,7 @@ from apps.reports.services.filtered_aggregation import parse_period, build_filte
             description="Statement UUID",
         ),
         OpenApiParameter(
-            name="period",
+            name="deadline",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             required=True,
@@ -42,12 +42,13 @@ class FilteredGeneralReportAPIView(CustomListAPIView):
 
     def list(self, request, *args, **kwargs):
         statement_id = request.query_params.get("statement")
-        period_raw = request.query_params.get("period")
+        deadline_id = request.query_params.get("deadline")
         lang = (request.query_params.get("lang") or "uz").lower()
+
         if lang not in ("uz", "ru"):
             lang = "uz"
 
-        if not statement_id or not period_raw:
+        if not statement_id or not deadline_id:
             return Response({"detail": "statement and period are required"}, status=400)
 
         try:
@@ -56,10 +57,5 @@ class FilteredGeneralReportAPIView(CustomListAPIView):
         except Exception:
             return Response({"detail": "Invalid statement"}, status=400)
 
-        try:
-            period = parse_period(period_raw)
-        except Exception as e:
-            return Response({"detail": f"Invalid period: {e}"}, status=400)
-
-        payload = build_filtered_payload(statement, period, lang)
+        payload = build_filtered_payload(statement, deadline_id, lang)
         return Response(payload, status=200)
