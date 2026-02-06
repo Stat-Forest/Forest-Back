@@ -70,23 +70,45 @@ def _raise_missing_plan_error(missing_columns):
     raise serializers.ValidationError({"non_field_errors": [msg]})
 
 
+from decimal import Decimal
+from rest_framework import serializers
+from apps.reports.models import (
+    Plan,
+    PlantPlan,
+    PlantPlanItem,
+    StatementColumn,
+)
+
 
 def ensure_plant_plans_exist(*, organization, statement):
     """
-    Plant-based reportlar uchun VALIDATSIYA
+    Plant-based reportlar uchun reja validatsiyasi.
 
-    Qoidalar:
-    1) Plan mavjud bo‘lishi shart
-    2) Kamida 1 ta PlantPlan bo‘lishi shart
-    3) Kamida 1 ta PlantPlanItem bo‘lishi shart
-    4) Kamida 1 ta PlantPlanItem.plan_value > 0 bo‘lishi shart
+    MUHIM QOIDA:
+    Agar statementda status_plan mavjud bo‘lgan column bo‘lmasa —
+    umuman plan tekshirilmaydi (SKIP).
     """
 
-    # 1️⃣ PLAN BORLIGINI TEKSHIRAMIZ
+    # ===============================
+    # 0️⃣ REJA TALAB QILINADIMI?
+    # ===============================
+    plan_columns = StatementColumn.objects.filter(
+        statement=statement,
+        status_plan__isnull=False,
+        is_user_input=True,
+    ).only("id")
+
+    # ✅ Agar umuman rejalik ustun bo‘lmasa — tekshirish shart emas
+    if not plan_columns.exists():
+        return
+
+    # ===============================
+    # 1️⃣ PLAN BORLIGINI TEKSHIR
+    # ===============================
     plans = Plan.objects.filter(
         organization=organization,
-        statement=statement
-    )
+        statement=statement,
+    ).only("id")
 
     if not plans.exists():
         raise serializers.ValidationError({
@@ -95,10 +117,12 @@ def ensure_plant_plans_exist(*, organization, statement):
             ]
         })
 
-    # 2️⃣ PLANTPLAN BORLIGINI TEKSHIRAMIZ
+    # ===============================
+    # 2️⃣ PLANTPLAN BORLIGI
+    # ===============================
     plant_plans = PlantPlan.objects.filter(
         plan__in=plans
-    )
+    ).only("id")
 
     if not plant_plans.exists():
         raise serializers.ValidationError({
@@ -107,22 +131,13 @@ def ensure_plant_plans_exist(*, organization, statement):
             ]
         })
 
-    # 3️⃣ QAYSI USTUNLAR REJALIK EKANINI ANIQLAYMIZ
-    plan_columns = StatementColumn.objects.filter(
-        statement=statement,
-        status_plan__isnull=False,
-        is_user_input=True
-    )
-
-    if not plan_columns.exists():
-        # Agar bu statementda umuman plan talab qilinmasa
-        return
-
-    # 4️⃣ PLANTPLANITEM LARNI TEKSHIRAMIZ
+    # ===============================
+    # 3️⃣ PLANTPLANITEM BORLIGI
+    # ===============================
     plant_plan_items = PlantPlanItem.objects.filter(
         plant_plan__in=plant_plans,
         column__in=plan_columns
-    )
+    ).only("id", "plan_value")
 
     if not plant_plan_items.exists():
         raise serializers.ValidationError({
@@ -131,14 +146,13 @@ def ensure_plant_plans_exist(*, organization, statement):
             ]
         })
 
-    # 5️⃣ KAMIDA BITTA > 0 QIYMAT BORLIGINI TEKSHIRAMIZ
-    has_positive_value = plant_plan_items.filter(
-        plan_value__gt=Decimal("0")
-    ).exists()
-
-    if not has_positive_value:
+    # ===============================
+    # 4️⃣ KAMIDA BITTA > 0 QIYMAT
+    # ===============================
+    if not plant_plan_items.filter(plan_value__gt=Decimal("0")).exists():
         raise serializers.ValidationError({
             "non_field_errors": [
                 "Bu hisobot uchun plant bo‘yicha reja qiymatlari 0 dan katta emas."
             ]
         })
+
