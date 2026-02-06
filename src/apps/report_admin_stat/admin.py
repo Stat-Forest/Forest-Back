@@ -24,63 +24,45 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
 
         # Filter parametrlari
         status_filter = request.GET.get('status', '')
-        specific_parent = request.GET.get('specific_parent', '')  # Muayyan parent ID
+        specific_parent = request.GET.get('specific_parent', '')
 
         # FAQAT parent statement-larni olish (parent=None)
         if specific_parent:
-            # Muayyan parent tanlangan bo'lsa
             statements = StatementStatistics.objects.filter(id=specific_parent, parent__isnull=True)
         else:
-            # Barcha parent statement-lar
             statements = StatementStatistics.objects.filter(parent__isnull=True)
 
         # Har bir parent statement uchun statistika
         statistics = []
 
         for statement in statements:
-            # Parent va barcha child-larini olish
-            child_statements = self.get_all_children(statement)
-            all_statement_ids = [statement.id] + [s.id for s in child_statements]
+            # Parent statistikasi
+            parent_stats = self.get_statement_stats(statement, status_filter)
+            parent_stats['is_parent'] = True
+            parent_stats['statement_id'] = statement.id
+            statistics.append(parent_stats)
 
-            # Base query
-            base_query = Report.objects.filter(
-                statement_id__in=all_statement_ids,
-                is_report=True
-            )
-
-            # Status filter qo'llash
-            if status_filter:
-                base_query = base_query.filter(status=status_filter)
-
-            # Har bir status uchun count
-            saved_count = base_query.filter(status=Report.StatusChoices.SAVED).count()
-            sent_count = base_query.filter(status=Report.StatusChoices.SENT).count()
-            cancelled_count = base_query.filter(status=Report.StatusChoices.CANCELLED).count()
-            accepted_count = base_query.filter(status=Report.StatusChoices.ACCEPTED).count()
-            total_count = base_query.count()
-
-            statistics.append({
-                'statement': statement,
-                'statement_name_uz': getattr(statement, 'name_uz', statement.name),
-                'child_count': len(child_statements),  # Nechta child bor
-                'saved': saved_count,
-                'sent': sent_count,
-                'cancelled': cancelled_count,
-                'accepted': accepted_count,
-                'total': total_count,
-            })
+            # Child statement-lar statistikasi
+            child_statements = StatementStatistics.objects.filter(parent=statement)
+            for child in child_statements:
+                child_stats = self.get_statement_stats(child, status_filter)
+                child_stats['is_parent'] = False
+                child_stats['parent_id'] = statement.id
+                child_stats['statement_id'] = child.id
+                statistics.append(child_stats)
 
         # Parent statement-larni dropdown uchun olish
         all_parent_statements = StatementStatistics.objects.filter(parent__isnull=True)
 
-        # Umumiy statistikani hisoblash
+        # Umumiy statistikani hisoblash (faqat parent-lar uchun)
+        parent_stats_only = [s for s in statistics if s.get('is_parent')]
         total_stats = {
-            'total_reports': sum(s['total'] for s in statistics),
-            'total_saved': sum(s['saved'] for s in statistics),
-            'total_sent': sum(s['sent'] for s in statistics),
-            'total_cancelled': sum(s['cancelled'] for s in statistics),
-            'total_accepted': sum(s['accepted'] for s in statistics),
-            'total_statements': len(statistics),
+            'total_reports': sum(s['total'] for s in parent_stats_only),
+            'total_saved': sum(s['saved'] for s in parent_stats_only),
+            'total_sent': sum(s['sent'] for s in parent_stats_only),
+            'total_cancelled': sum(s['cancelled'] for s in parent_stats_only),
+            'total_accepted': sum(s['accepted'] for s in parent_stats_only),
+            'total_statements': len(parent_stats_only),
         }
 
         extra_context = extra_context or {}
@@ -92,6 +74,39 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         extra_context['total_stats'] = total_stats
 
         return super().changelist_view(request, extra_context=extra_context)
+
+    def get_statement_stats(self, statement, status_filter=''):
+        """Bitta statement uchun statistika"""
+        # Faqat shu statement uchun hisobotlar (child-larsiz)
+        base_query = Report.objects.filter(
+            statement_id=statement.id,
+            is_report=True
+        )
+
+        # Status filter qo'llash
+        if status_filter:
+            base_query = base_query.filter(status=status_filter)
+
+        # Har bir status uchun count
+        saved_count = base_query.filter(status=Report.StatusChoices.SAVED).count()
+        sent_count = base_query.filter(status=Report.StatusChoices.SENT).count()
+        cancelled_count = base_query.filter(status=Report.StatusChoices.CANCELLED).count()
+        accepted_count = base_query.filter(status=Report.StatusChoices.ACCEPTED).count()
+        total_count = base_query.count()
+
+        # Child-lar sonini hisoblash
+        child_count = StatementStatistics.objects.filter(parent=statement).count()
+
+        return {
+            'statement': statement,
+            'statement_name_uz': getattr(statement, 'name_uz', statement.name),
+            'child_count': child_count,
+            'saved': saved_count,
+            'sent': sent_count,
+            'cancelled': cancelled_count,
+            'accepted': accepted_count,
+            'total': total_count,
+        }
 
     def get_all_children(self, statement):
         """Rekursiv ravishda barcha child statement-larni olish"""
@@ -118,7 +133,6 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         status_filter = request.GET.get('status', '')
         specific_parent = request.GET.get('specific_parent', '')
 
-        # FAQAT parent statement-lar
         if specific_parent:
             statements = StatementStatistics.objects.filter(id=specific_parent, parent__isnull=True)
         else:
@@ -127,34 +141,19 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         statistics = []
 
         for statement in statements:
-            # Parent va barcha child-lari
-            child_statements = self.get_all_children(statement)
-            all_statement_ids = [statement.id] + [s.id for s in child_statements]
+            # Parent statistikasi
+            parent_stats = self.get_statement_stats(statement, status_filter)
+            parent_stats['is_parent'] = True
+            parent_stats['level'] = 0
+            statistics.append(parent_stats)
 
-            base_query = Report.objects.filter(
-                statement_id__in=all_statement_ids,
-                is_report=True
-            )
-
-            if status_filter:
-                base_query = base_query.filter(status=status_filter)
-
-            saved_count = base_query.filter(status=Report.StatusChoices.SAVED).count()
-            sent_count = base_query.filter(status=Report.StatusChoices.SENT).count()
-            cancelled_count = base_query.filter(status=Report.StatusChoices.CANCELLED).count()
-            accepted_count = base_query.filter(status=Report.StatusChoices.ACCEPTED).count()
-            total_count = base_query.count()
-
-            statistics.append({
-                'statement': statement,
-                'statement_name_uz': getattr(statement, 'name_uz', statement.name),
-                'child_count': len(child_statements),
-                'saved': saved_count,
-                'sent': sent_count,
-                'cancelled': cancelled_count,
-                'accepted': accepted_count,
-                'total': total_count,
-            })
+            # Child statement-lar
+            child_statements = StatementStatistics.objects.filter(parent=statement)
+            for child in child_statements:
+                child_stats = self.get_statement_stats(child, status_filter)
+                child_stats['is_parent'] = False
+                child_stats['level'] = 1
+                statistics.append(child_stats)
 
         return statistics
 
@@ -183,9 +182,16 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         # Data
         statistics = self.get_statistics_data(request)
         for stat in statistics:
+            # Indent qo'shish (parent/child ko'rinishi uchun)
+            indent = '  ' if not stat.get('is_parent') else ''
+            name = f"{indent}{stat['statement_name_uz']}"
+
+            # Child count faqat parent uchun
+            child_info = str(stat['child_count']) if stat.get('is_parent') else '-'
+
             writer.writerow([
-                stat['statement_name_uz'],
-                stat['child_count'],
+                name,
+                child_info,
                 stat['saved'],
                 stat['sent'],
                 stat['cancelled'],
@@ -193,16 +199,17 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
                 stat['total'],
             ])
 
-        # Jami qator
+        # Jami qator (faqat parent-lar uchun)
+        parent_stats = [s for s in statistics if s.get('is_parent')]
         writer.writerow([])
         writer.writerow([
             'ЖАМИ:',
             '',
-            sum(s['saved'] for s in statistics),
-            sum(s['sent'] for s in statistics),
-            sum(s['cancelled'] for s in statistics),
-            sum(s['accepted'] for s in statistics),
-            sum(s['total'] for s in statistics),
+            sum(s['saved'] for s in parent_stats),
+            sum(s['sent'] for s in parent_stats),
+            sum(s['cancelled'] for s in parent_stats),
+            sum(s['accepted'] for s in parent_stats),
+            sum(s['total'] for s in parent_stats),
         ])
 
         return response
@@ -219,9 +226,11 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         ws = wb.active
         ws.title = "Statistika"
 
-        # Header styling
+        # Styling
         header_fill = PatternFill(start_color="667eea", end_color="667eea", fill_type="solid")
         header_font = Font(bold=True, color="FFFFFF", size=12)
+        parent_fill = PatternFill(start_color="e6edff", end_color="e6edff", fill_type="solid")
+        child_fill = PatternFill(start_color="f8f9fa", end_color="f8f9fa", fill_type="solid")
         border = Border(
             left=Side(style='thin'),
             right=Side(style='thin'),
@@ -250,34 +259,86 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         # Data
         statistics = self.get_statistics_data(request)
 
-        for row_idx, stat in enumerate(statistics, 2):
-            ws.cell(row=row_idx, column=1, value=stat['statement_name_uz'])
-            ws.cell(row=row_idx, column=2, value=stat['child_count'])
-            ws.cell(row=row_idx, column=3, value=stat['saved'])
-            ws.cell(row=row_idx, column=4, value=stat['sent'])
-            ws.cell(row=row_idx, column=5, value=stat['cancelled'])
-            ws.cell(row=row_idx, column=6, value=stat['accepted'])
-            ws.cell(row=row_idx, column=7, value=stat['total'])
+        row_idx = 2
+        for stat in statistics:
+            is_parent = stat.get('is_parent', False)
 
-            # Styling
-            for col in range(1, 8):
-                cell = ws.cell(row=row_idx, column=col)
+            # Indent uchun probel qo'shish
+            indent = '' if is_parent else '    '
+            name = f"{indent}{stat['statement_name_uz']}"
+
+            # Fill color
+            fill_color = parent_fill if is_parent else child_fill
+
+            # Name
+            cell = ws.cell(row=row_idx, column=1, value=name)
+            cell.font = Font(bold=is_parent, size=11)
+            cell.fill = fill_color
+            cell.border = border
+            cell.alignment = Alignment(horizontal='left', vertical='center')
+
+            # Child count (faqat parent uchun)
+            child_info = stat['child_count'] if is_parent else '-'
+            cell = ws.cell(row=row_idx, column=2, value=child_info)
+            cell.fill = fill_color
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+
+            # Statistics
+            for col_idx, key in enumerate(['saved', 'sent', 'cancelled', 'accepted', 'total'], 3):
+                cell = ws.cell(row=row_idx, column=col_idx, value=stat[key])
+                cell.fill = fill_color
                 cell.border = border
-                cell.alignment = Alignment(horizontal='left' if col == 1 else 'center', vertical='center')
-                cell.font = Font(bold=True)
-                cell.fill = PatternFill(start_color="f0f4ff", end_color="f0f4ff", fill_type="solid")
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.font = Font(bold=is_parent)
+
+            row_idx += 1
 
         # Jami qator
-        total_row = len(statistics) + 3
-        ws.cell(row=total_row, column=1, value='ЖАМИ:').font = Font(bold=True, size=12)
-        ws.cell(row=total_row, column=3, value=sum(s['saved'] for s in statistics)).font = Font(bold=True)
-        ws.cell(row=total_row, column=4, value=sum(s['sent'] for s in statistics)).font = Font(bold=True)
-        ws.cell(row=total_row, column=5, value=sum(s['cancelled'] for s in statistics)).font = Font(bold=True)
-        ws.cell(row=total_row, column=6, value=sum(s['accepted'] for s in statistics)).font = Font(bold=True)
-        ws.cell(row=total_row, column=7, value=sum(s['total'] for s in statistics)).font = Font(bold=True)
+        parent_stats = [s for s in statistics if s.get('is_parent')]
+        total_row = row_idx + 1
+
+        total_fill = PatternFill(start_color="d4d4ff", end_color="d4d4ff", fill_type="solid")
+
+        cell = ws.cell(row=total_row, column=1, value='ЖАМИ:')
+        cell.font = Font(bold=True, size=12)
+        cell.fill = total_fill
+        cell.border = border
+
+        ws.cell(row=total_row, column=2, value='').fill = total_fill
+
+        cell = ws.cell(row=total_row, column=3, value=sum(s['saved'] for s in parent_stats))
+        cell.font = Font(bold=True)
+        cell.fill = total_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
+
+        cell = ws.cell(row=total_row, column=4, value=sum(s['sent'] for s in parent_stats))
+        cell.font = Font(bold=True)
+        cell.fill = total_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
+
+        cell = ws.cell(row=total_row, column=5, value=sum(s['cancelled'] for s in parent_stats))
+        cell.font = Font(bold=True)
+        cell.fill = total_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
+
+        cell = ws.cell(row=total_row, column=6, value=sum(s['accepted'] for s in parent_stats))
+        cell.font = Font(bold=True)
+        cell.fill = total_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
+
+        cell = ws.cell(row=total_row, column=7, value=sum(s['total'] for s in parent_stats))
+        cell.font = Font(bold=True)
+        cell.fill = total_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
 
         # Column widths
-        ws.column_dimensions['A'].width = 45
+        ws.column_dimensions['A'].width = 50
         ws.column_dimensions['B'].width = 20
         ws.column_dimensions['C'].width = 15
         ws.column_dimensions['D'].width = 15
