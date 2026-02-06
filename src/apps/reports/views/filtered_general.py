@@ -13,14 +13,14 @@ from apps.reports.services.filtered_aggregation import parse_period, build_filte
             name="statement",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-            required=True,
+            required=False,
             description="Statement UUID",
         ),
         OpenApiParameter(
             name="deadline",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-            required=True,
+            required=False,
             description="Period filter: YYYY or YYYY-Qn (e.g., 2025 or 2025-Q2)",
         ),
         OpenApiParameter(
@@ -49,7 +49,7 @@ class FilteredGeneralReportAPIView(CustomListAPIView):
             lang = "uz"
 
         if not statement_id or not deadline_id:
-            return Response({"detail": "statement and period are required"}, status=400)
+            return Response([], status=200)
 
         try:
             from apps.reports.models import Statement
