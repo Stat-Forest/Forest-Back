@@ -11,6 +11,7 @@ from apps.users.models import CustomUser
 from apps.e_imzo.serializers import EimzoLoginSerializer
 from apps.e_imzo.services import verify_pkcs7
 from apps.e_imzo.utils import split_full_name
+from apps.logs.models import HistoryActionJournal
 
 User = get_user_model()
 
@@ -45,7 +46,8 @@ class EimzoJWTLoginView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        user, _ = User.objects.update_or_create(
+        # Foydalanuvchini yaratish yoki yangilash
+        user, created = User.objects.update_or_create(
             email=email,
             defaults={
                 "tin": legal_stir,
@@ -62,6 +64,17 @@ class EimzoJWTLoginView(APIView):
 
         user.set_password(uid)
         user.save()
+
+        # HistoryActionJournal ga yozuv qo‘shish
+        action_type = "add" if created else "login"
+        HistoryActionJournal.objects.create(
+            user=user,
+            action=action_type,
+            model_name="CustomUser",
+            object_repr=str(user),
+            object_id=str(user.id),
+            change_message=f"User {'created' if created else 'logged in'} via E-imzo"
+        )
 
         refresh = RefreshToken.for_user(user)
 
