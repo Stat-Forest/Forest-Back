@@ -1,19 +1,72 @@
-# apps/users/admin.py
+from datetime import timedelta
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.db.models import Exists, OuterRef
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 from apps.users.models import CustomUser, PersonalInfo
+from apps.logs.models import HistoryActionJournal
 from apps.logs.mixins import AdminHistoryMixin
 from apps.users.admin_forms import CustomUserAdminForm
 
+
+# ================================
+# INLINE
+# ================================
 class PersonalInfoInline(admin.StackedInline):
     model = PersonalInfo
     fk_name = "user"
     extra = 0
     can_delete = False
 
+
+# ================================
+# CUSTOM FILTER (LOGIN STATUS)
+# ================================
+class LoginStatusFilter(admin.SimpleListFilter):
+    title = _("Login holati")
+    parameter_name = "login_status"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("never", _("Hech qachon sitega kirmagan")),
+            ("7d", _("Oxirgi 7 kun ichida kirmagan")),
+            ("1m", _("Oxirgi 1 oy ichida kirmagan")),
+            ("3m", _("Oxirgi 3 oy ichida kirmagan")),
+        )
+
+    def queryset(self, request, queryset):
+        now = timezone.now()
+        login_logs = HistoryActionJournal.objects.filter(
+            user=OuterRef("pk"),
+            action="login",
+        )
+
+        if self.value() == "never":
+            return queryset.exclude(Exists(login_logs))
+        if self.value() == "7d":
+            return queryset.exclude(
+                Exists(login_logs.filter(created_at__gte=now - timedelta(days=7)))
+            )
+        if self.value() == "1m":
+            return queryset.exclude(
+                Exists(login_logs.filter(created_at__gte=now - timedelta(days=30)))
+            )
+        if self.value() == "3m":
+            return queryset.exclude(
+                Exists(login_logs.filter(created_at__gte=now - timedelta(days=90)))
+            )
+        return queryset
+
+
+# ================================
+# USER ADMIN
+# ================================
 @admin.register(CustomUser)
 class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     model = CustomUser
@@ -22,34 +75,70 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     filter_horizontal = ("region_user_orgs",)
 
     list_display = (
-        "id", "email", "organization", "statement",
-        "first_name", "last_name", "role", "gender", "is_active"
+        "id",
+        "email",
+        "organization",
+        "statement",
+        "first_name",
+        "last_name",
+        "role",
+        "gender",
+        "is_active",
+        "last_login",
     )
-    list_filter = ("role", "organization", "statement", "region")
+
+    list_filter = (
+        LoginStatusFilter,
+        "role",
+        "organization",
+        "statement",
+        "region",
+    )
+
     search_fields = (
-        "email", "first_name", "last_name",
-        "phone_number", "passport_number", "jshshr", "user_number"
+        "email",
+        "first_name",
+        "last_name",
+        "phone_number",
+        "passport_number",
+        "jshshr",
+        "user_number",
     )
+
     ordering = ("-created_at",)
     readonly_fields = ("last_login", "created_at", "updated_at", "user_number")
+    actions = ["export_to_excel"]
 
     fieldsets = (
         (_("Login Credentials"), {"fields": ("email", "password")}),
         (_("Personal Info"), {
             "fields": (
-                "first_name", "last_name", "father_name",
-                "gender", "user_number", "statement",
-                "organization", "date_of_birth", "date_of_place",
-                "nationality", "passport_number", "jshshr",
-                "phone_number", "address"
+                "first_name",
+                "last_name",
+                "father_name",
+                "gender",
+                "user_number",
+                "statement",
+                "organization",
+                "date_of_birth",
+                "date_of_place",
+                "nationality",
+                "passport_number",
+                "jshshr",
+                "phone_number",
+                "address",
             )
         }),
         (_("Hududiy boshqarma"), {"fields": ("region", "region_user_orgs")}),
         (_("Permissions and Role"), {
             "fields": (
-                "role", "is_active", "is_staff",
-                "is_superuser", "is_disabled",
-                "groups", "user_permissions"
+                "role",
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "is_disabled",
+                "groups",
+                "user_permissions",
             )
         }),
         (_("Important Dates"), {"fields": ("created_at", "updated_at")}),
@@ -59,18 +148,220 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         (_("Create User"), {
             "classes": ("wide",),
             "fields": (
-                "email", "password1", "password2",
-                "first_name", "last_name", "father_name",
-                "gender", "nationality", "passport_number", "phone_number",
-                "date_of_birth", "date_of_place", "address",
-                "role", "statement", "organization",
-                "region", "region_user_orgs",
-                "is_active", "is_staff", "is_superuser",
-                "is_disabled", "groups", "user_permissions"
+                "email",
+                "password1",
+                "password2",
+                "first_name",
+                "last_name",
+                "father_name",
+                "gender",
+                "nationality",
+                "passport_number",
+                "phone_number",
+                "date_of_birth",
+                "date_of_place",
+                "address",
+                "role",
+                "statement",
+                "organization",
+                "region",
+                "region_user_orgs",
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "is_disabled",
+                "groups",
+                "user_permissions",
             ),
         }),
     )
 
+    # ================================
+    # OXIRGI LOGIN VAQTINI OLISH
+    # ================================
+    def get_user_last_login(self, user):
+        """Foydalanuvchining oxirgi login vaqti"""
+        last_login = HistoryActionJournal.objects.filter(
+            user=user,
+            action='login'
+        ).order_by('-created_at').first()
+
+        if last_login:
+            return last_login.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        return "Hech qachon"
+
+    # ================================
+    # EXPORT SELECTED USERS TO EXCEL
+    # ================================
+    def export_to_excel(self, request, queryset):
+        """Excel formatda export qilish"""
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="foydalanuvchilar.xlsx"'
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Foydalanuvchilar"
+
+        # Stil uchun ranglar
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        # Border
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Data alignment
+        data_alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        center_alignment = Alignment(horizontal="center", vertical="center")
+
+        # Headerlar
+        headers = [
+            '№',
+            'Email',
+            'Ism',
+            'Familiya',
+            'Tashkilot',
+            "Bo'lim",
+            'Rol',
+            'Jinsi',
+            'Telefon',
+            'Passport',
+            'JSHSHR',
+            'Faol',
+            'Oxirgi login'
+        ]
+
+        # Header qo'shish
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+            cell.border = thin_border
+
+        # Ma'lumotlar qo'shish
+        for row_num, user in enumerate(queryset, start=2):
+            # №
+            cell = ws.cell(row=row_num, column=1)
+            cell.value = row_num - 1
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # Email
+            cell = ws.cell(row=row_num, column=2)
+            cell.value = str(user.email) if user.email else ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Ism
+            cell = ws.cell(row=row_num, column=3)
+            cell.value = str(user.first_name) if user.first_name else ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Familiya
+            cell = ws.cell(row=row_num, column=4)
+            cell.value = str(user.last_name) if user.last_name else ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Tashkilot
+            cell = ws.cell(row=row_num, column=5)
+            if user.organization:
+                org_name = user.organization.name_uz if hasattr(user.organization,
+                                                                'name_uz') and user.organization.name_uz else str(
+                    user.organization)
+                cell.value = org_name
+            else:
+                cell.value = ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Bayonot
+            cell = ws.cell(row=row_num, column=6)
+            cell.value = str(user.statement) if user.statement else ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Rol
+            cell = ws.cell(row=row_num, column=7)
+            cell.value = str(user.get_role_display()) if hasattr(user, 'get_role_display') else ''
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+            # Jinsi
+            cell = ws.cell(row=row_num, column=8)
+            cell.value = str(user.get_gender_display()) if hasattr(user, 'get_gender_display') and user.gender else ''
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # Telefon
+            cell = ws.cell(row=row_num, column=9)
+            cell.value = str(user.phone_number) if user.phone_number else ''
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # Passport
+            cell = ws.cell(row=row_num, column=10)
+            cell.value = str(user.passport_number) if user.passport_number else ''
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # JSHSHR
+            cell = ws.cell(row=row_num, column=11)
+            cell.value = str(user.jshshr) if user.jshshr else ''
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # Faol
+            cell = ws.cell(row=row_num, column=12)
+            cell.value = "Ha" if user.is_active else "Yo'q"
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+            # Oxirgi login
+            cell = ws.cell(row=row_num, column=13)
+            cell.value = self.get_user_last_login(user)
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+        # Ustunlar kengligini sozlash
+        ws.column_dimensions['A'].width = 6  # №
+        ws.column_dimensions['B'].width = 30  # Email
+        ws.column_dimensions['C'].width = 20  # Ism
+        ws.column_dimensions['D'].width = 20  # Familiya
+        ws.column_dimensions['E'].width = 50  # Tashkilot
+        ws.column_dimensions['F'].width = 30  # Bayonot
+        ws.column_dimensions['G'].width = 25  # Rol
+        ws.column_dimensions['H'].width = 12  # Jinsi
+        ws.column_dimensions['I'].width = 18  # Telefon
+        ws.column_dimensions['J'].width = 15  # Passport
+        ws.column_dimensions['K'].width = 18  # JSHSHR
+        ws.column_dimensions['L'].width = 10  # Faol
+        ws.column_dimensions['M'].width = 22  # Oxirgi login
+
+        # Birinchi qatorni (header) balandligini sozlash
+        ws.row_dimensions[1].height = 30
+
+        # Freeze panes - header qatorini doimo ko'rinishda qoldirish
+        ws.freeze_panes = 'A2'
+
+        wb.save(response)
+        return response
+
+    export_to_excel.short_description = _("Excel formatda yuklab olish")
+
+    # ================================
+    # SAVE / HUDUDIY BOSHQA LOGIKA
+    # ================================
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("organization", "statement")
 
@@ -82,7 +373,6 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-        # Rolga mos guruhni yangilash
         role_group_map = {
             CustomUser.Role.SUPER_ADMIN: "super_admin",
             CustomUser.Role.RAHBARIYAT: "rahbariyat",
@@ -97,13 +387,12 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
                 group = Group.objects.get(name=group_name)
                 obj.groups.set([group])
             except Group.DoesNotExist:
-                print(f"Group {group_name} not found!")
+                pass
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         obj = form.instance
 
-        # Faqat HUDUDIY_BOSHQARMA uchun tekshiruv
         if obj.role != CustomUser.Role.HUDUDIY_BOSHQARMA:
             return
 
@@ -116,11 +405,8 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
 
         invalid_orgs = orgs.exclude(region=obj.region)
         if invalid_orgs.exists():
-            raise ValidationError(
-                "Biriktirilgan tashkilotlar foydalanuvchi regioniga mos emas"
-            )
+            raise ValidationError("Tashkilotlar regionga mos emas")
 
-        # Rol o‘zgarganda eski M2M va regionni tozalash
         if change:
             old_role = (
                 CustomUser.objects
@@ -128,10 +414,16 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
                 .values_list("role", flat=True)
                 .first()
             )
-            if old_role == CustomUser.Role.HUDUDIY_BOSHQARMA and obj.role != CustomUser.Role.HUDUDIY_BOSHQARMA:
+            if (
+                    old_role == CustomUser.Role.HUDUDIY_BOSHQARMA
+                    and obj.role != CustomUser.Role.HUDUDIY_BOSHQARMA
+            ):
                 obj.region = None
                 obj.region_user_orgs.clear()
                 obj.save(update_fields=["region"])
 
-# Groupni admin dan chiqarish
+
+# ================================
+# GROUPNI ADMIN DAN CHIQARISH
+# ================================
 admin.site.unregister(Group)
