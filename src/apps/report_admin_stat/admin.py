@@ -118,6 +118,7 @@ class StatementStatisticsAdmin(admin.ModelAdmin):
         extra_context['specific_parent'] = specific_parent
         extra_context['all_parent_statements'] = all_parent_statements
         extra_context['total_stats'] = total_stats
+        extra_context['request'] = request  # request objektini qo'shish
 
         return super().changelist_view(request, extra_context=extra_context)
 
