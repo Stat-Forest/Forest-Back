@@ -1,13 +1,99 @@
 from django.urls import path
 from django.contrib import admin
 from django.http import HttpResponse
+from django.contrib.admin import SimpleListFilter
+from django.db.models import Case, When, Value, IntegerField
 from openpyxl import Workbook
 
 from .models import HistoryActionJournal
 
 
+# =======================
+# USER LOGIN FILTER
+# =======================
+class UserLoginFilter(SimpleListFilter):
+    title = "User login status"
+    parameter_name = "user_login_status"
+
+    def lookups(self, request, model_admin):
+        return (
+            ('login_users', 'Login qilgan userlar'),
+            ('never_login_users', 'Login qilmagan userlar'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'login_users':
+            return queryset.filter(user__last_login__isnull=False)
+        if self.value() == 'never_login_users':
+            return queryset.filter(user__last_login__isnull=True)
+        return queryset
+
+
+# =======================
+# ORGANIZATION LOGIN FILTER
+# =======================
+class OrganizationLoginFilter(SimpleListFilter):
+    title = "Organization login status"
+    parameter_name = "organization_login_status"
+
+    def lookups(self, request, model_admin):
+        return (
+            ('login_orgs', 'Login qilgan organizationlar'),
+            ('never_login_orgs', 'Login qilmagan organizationlar'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'login_orgs':
+            return queryset.filter(
+                user__organization__user__last_login__isnull=False
+            ).distinct()
+
+        if self.value() == 'never_login_orgs':
+            return queryset.exclude(
+                user__organization__user__last_login__isnull=False
+            ).distinct()
+
+        return queryset
+
+
+# =======================
+# ORGANIZATION ORDER FILTER
+# =======================
+class OrganizationLoginOrderFilter(SimpleListFilter):
+    title = "Order by organization activity"
+    parameter_name = "organization_order"
+
+    def lookups(self, request, model_admin):
+        return (
+            ('active_first', 'Active organizationlar (login bor)'),
+            ('inactive_first', 'Inactive organizationlar (login yo‘q)'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() in ('active_first', 'inactive_first'):
+            qs = queryset.annotate(
+                org_active=Case(
+                    When(
+                        user__organization__user__last_login__isnull=False,
+                        then=Value(1)
+                    ),
+                    default=Value(0),
+                    output_field=IntegerField()
+                )
+            )
+            if self.value() == 'active_first':
+                return qs.order_by('-org_active', '-created_at')
+            return qs.order_by('org_active', '-created_at')
+
+        return queryset
+
+
+# =======================
+# ADMIN CONFIG
+# =======================
 @admin.register(HistoryActionJournal)
 class HistoryActionJournalAdmin(admin.ModelAdmin):
+
     # -------- LIST VIEW ----------
     list_display = (
         'user',
@@ -21,7 +107,9 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     # -------- FILTERS ----------
     list_filter = (
-        'user',
+        UserLoginFilter,
+        OrganizationLoginFilter,
+        OrganizationLoginOrderFilter,
         'user__organization',
         'model_name',
         'action',
@@ -40,7 +128,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     # -------- CUSTOM DISPLAY ----------
     def user_organization(self, obj):
-        if obj.user and hasattr(obj.user, 'organization') and obj.user.organization:
+        if obj.user and getattr(obj.user, 'organization', None):
             return obj.user.organization.name_uz
         return "-"
     user_organization.short_description = "Organization"
