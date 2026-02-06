@@ -22,6 +22,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
     # -------- FILTERS ----------
     list_filter = (
         'user',
+        'user__organization',
         'model_name',
         'action',
         'created_at',
