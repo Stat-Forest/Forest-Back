@@ -1,0 +1,96 @@
+<!-- templates/admin/reports/statement_statistics.html -->
+
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module filtered" id="changelist">
+        
+        <!-- Filter qismi -->
+        <div id="changelist-filter">
+            <h2>{% trans 'Filter' %}</h2>
+            <h3>{% trans 'Status bo\'yicha' %}</h3>
+            <ul>
+                <li{% if not current_status %} class="selected"{% endif %}>
+                    <a href="?">{% trans 'Barchasi' %}</a>
+                </li>
+                {% for value, label in status_choices %}
+                <li{% if current_status == value %} class="selected"{% endif %}>
+                    <a href="?status={{ value }}">{{ label }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Statistika jadvali -->
+        <div class="results">
+            <table id="result_list">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            <div class="text">Statement nomi</div>
+                        </th>
+                        <th scope="col">
+                            <div class="text">Saqlangan</div>
+                        </th>
+                        <th scope="col">
+                            <div class="text">Yuborilgan</div>
+                        </th>
+                        <th scope="col">
+                            <div class="text">Bekor qilingan</div>
+                        </th>
+                        <th scope="col">
+                            <div class="text">Qabul qilingan</div>
+                        </th>
+                        <th scope="col">
+                            <div class="text">Jami</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in statistics %}
+                    <tr class="{% cycle 'row1' 'row2' %}">
+                        <td>{{ stat.statement.name }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ stat.saved }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-warning">{{ stat.sent }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-danger">{{ stat.cancelled }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success">{{ stat.accepted }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ stat.total }}</strong>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">{% trans 'Statistika mavjud emas' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+</div>
+
+<style>
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 4px;
+    }
+    .badge-info { background-color: #17a2b8; color: white; }
+    .badge-warning { background-color: #ffc107; color: black; }
+    .badge-danger { background-color: #dc3545; color: white; }
+    .badge-success { background-color: #28a745; color: white; }
+</style>
+{% endblock %}

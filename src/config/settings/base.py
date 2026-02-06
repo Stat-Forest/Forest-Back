@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     "apps.e_imzo.apps.EImzoConfig",
     "apps.logs.apps.LogsConfig",
     "apps.info_analysis.apps.InfoAnalysisConfig",
+    "apps.report_admin_stat.apps.ReportAdminStatConfig",
+
 
 
 ]
