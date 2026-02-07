@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Subquery, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponse
@@ -26,7 +26,7 @@ class PersonalInfoInline(admin.StackedInline):
 
 
 # ================================
-# CUSTOM FILTER (LOGIN STATUS)
+# CUSTOM FILTER (LOGIN STATUS) - TUZATILGAN
 # ================================
 class LoginStatusFilter(admin.SimpleListFilter):
     title = _("Login holati")
@@ -41,27 +41,43 @@ class LoginStatusFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset
+
         now = timezone.now()
-        login_logs = HistoryActionJournal.objects.filter(
-            user=OuterRef("pk"),
-            action="login",
-        )
 
         if self.value() == "never":
-            return queryset.exclude(Exists(login_logs))
+            # Hech qachon login qilmagan userlar
+            user_ids_with_login = HistoryActionJournal.objects.filter(
+                action='login'
+            ).values_list('user_id', flat=True).distinct()
+
+            return queryset.exclude(id__in=user_ids_with_login)
+
+        # Vaqt chegaralarini aniqlash
         if self.value() == "7d":
-            return queryset.exclude(
-                Exists(login_logs.filter(created_at__gte=now - timedelta(days=7)))
-            )
-        if self.value() == "1m":
-            return queryset.exclude(
-                Exists(login_logs.filter(created_at__gte=now - timedelta(days=30)))
-            )
-        if self.value() == "3m":
-            return queryset.exclude(
-                Exists(login_logs.filter(created_at__gte=now - timedelta(days=90)))
-            )
-        return queryset
+            date_threshold = now - timedelta(days=7)
+        elif self.value() == "1m":
+            date_threshold = now - timedelta(days=30)
+        elif self.value() == "3m":
+            date_threshold = now - timedelta(days=90)
+        else:
+            return queryset
+
+        # Har bir user uchun eng oxirgi login vaqtini topish
+        latest_login_per_user = HistoryActionJournal.objects.filter(
+            user_id=OuterRef('pk'),
+            action='login'
+        ).order_by('-created_at').values('created_at')[:1]
+
+        # Oxirgi login vaqti threshold dan oldingi yoki hech qachon login qilmagan userlar
+        user_ids = queryset.annotate(
+            last_login_time=Subquery(latest_login_per_user)
+        ).filter(
+            Q(last_login_time__lt=date_threshold) | Q(last_login_time__isnull=True)
+        ).values_list('id', flat=True)
+
+        return queryset.filter(id__in=user_ids)
 
 
 # ================================
@@ -84,7 +100,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         "role",
         "gender",
         "is_active",
-        "last_login",
+        "get_last_login_display",
     )
 
     list_filter = (
@@ -177,7 +193,35 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     )
 
     # ================================
-    # OXIRGI LOGIN VAQTINI OLISH
+    # OXIRGI LOGIN VAQTINI KO'RSATISH
+    # ================================
+    def get_last_login_display(self, obj):
+        """List display uchun oxirgi login"""
+        last_login = HistoryActionJournal.objects.filter(
+            user=obj,
+            action='login'
+        ).order_by('-created_at').first()
+
+        if last_login:
+            # Vaqt farqini hisoblash
+            now = timezone.now()
+            days_diff = (now - last_login.created_at).days
+
+            if days_diff == 0:
+                return f"✅ {last_login.created_at.strftime('%H:%M:%S')}"
+            elif days_diff <= 7:
+                return f"✅ {days_diff} kun oldin"
+            elif days_diff <= 30:
+                return f"⚠️ {days_diff} kun oldin"
+            else:
+                return f"❌ {days_diff} kun oldin"
+
+        return "❌ Hech qachon"
+
+    get_last_login_display.short_description = _("Oxirgi login")
+
+    # ================================
+    # OXIRGI LOGIN VAQTINI OLISH (export uchun)
     # ================================
     def get_user_last_login(self, user):
         """Foydalanuvchining oxirgi login vaqti"""
@@ -189,6 +233,28 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         if last_login:
             return last_login.created_at.strftime('%Y-%m-%d %H:%M:%S')
         return "Hech qachon"
+
+    def get_login_status(self, user):
+        """Login holatini aniqlash"""
+        last_login = HistoryActionJournal.objects.filter(
+            user=user,
+            action='login'
+        ).order_by('-created_at').first()
+
+        if not last_login:
+            return "Hech qachon sitega kirmagan"
+
+        now = timezone.now()
+        days_diff = (now - last_login.created_at).days
+
+        if days_diff <= 7:
+            return "Faol"
+        elif days_diff <= 30:
+            return "Oxirgi 1 oy ichida kirmagan"
+        elif days_diff <= 90:
+            return "Oxirgi 3 oy ichida kirmagan"
+        else:
+            return "Oxirgi 3 oydan ko'proq vaqt ichida kirmagan"
 
     # ================================
     # EXPORT SELECTED USERS TO EXCEL
@@ -235,7 +301,8 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
             'Passport',
             'JSHSHR',
             'Faol',
-            'Oxirgi login'
+            'Oxirgi login',
+            'Login holati'
         ]
 
         # Header qo'shish
@@ -333,6 +400,12 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
             cell.alignment = center_alignment
             cell.border = thin_border
 
+            # Login holati
+            cell = ws.cell(row=row_num, column=14)
+            cell.value = self.get_login_status(user)
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
         # Ustunlar kengligini sozlash
         ws.column_dimensions['A'].width = 6  # №
         ws.column_dimensions['B'].width = 30  # Email
@@ -347,6 +420,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         ws.column_dimensions['K'].width = 18  # JSHSHR
         ws.column_dimensions['L'].width = 10  # Faol
         ws.column_dimensions['M'].width = 22  # Oxirgi login
+        ws.column_dimensions['N'].width = 35  # Login holati
 
         # Birinchi qatorni (header) balandligini sozlash
         ws.row_dimensions[1].height = 30
