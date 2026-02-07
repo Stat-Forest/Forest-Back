@@ -32,10 +32,8 @@ class LoginStatusFilter(admin.SimpleListFilter):
 
         now = timezone.now()
 
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-
         if self.value() == "never":
+            # Hech qachon login qilmagan organizatsiyalar
             org_ids_with_login = HistoryActionJournal.objects.filter(
                 action='login',
                 user__organization__isnull=False
@@ -43,7 +41,8 @@ class LoginStatusFilter(admin.SimpleListFilter):
 
             return queryset.exclude(id__in=org_ids_with_login)
 
-        elif self.value() == "7d":
+        # Vaqt chegaralarini aniqlash
+        if self.value() == "7d":
             date_threshold = now - timedelta(days=7)
         elif self.value() == "1m":
             date_threshold = now - timedelta(days=30)
@@ -52,25 +51,25 @@ class LoginStatusFilter(admin.SimpleListFilter):
         else:
             return queryset
 
-        latest_login_subquery = HistoryActionJournal.objects.filter(
-            user_id=OuterRef('pk'),
+        # Har bir organizatsiya uchun eng oxirgi login vaqtini topish
+        latest_login_per_org = HistoryActionJournal.objects.filter(
+            user__organization=OuterRef('pk'),
             action='login'
         ).order_by('-created_at').values('created_at')[:1]
 
-        users_not_logged_recently = User.objects.annotate(
-            last_login_time=Subquery(latest_login_subquery)
-        ).filter(
-            organization__isnull=False
+        # Oxirgi login vaqti threshold dan oldingi yoki hech qachon login qilmagan organizatsiyalar
+        org_ids = queryset.annotate(
+            last_login_time=Subquery(latest_login_per_org)
         ).filter(
             Q(last_login_time__lt=date_threshold) | Q(last_login_time__isnull=True)
-        ).values_list('organization_id', flat=True).distinct()
+        ).values_list('id', flat=True)
 
-        return queryset.filter(id__in=users_not_logged_recently)
+        return queryset.filter(id__in=org_ids)
 
 
 @admin.register(Organization)
 class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
-    list_display = ('name_uz', 'region', 'stir', 'get_last_login')
+    list_display = ('name_uz', 'region', 'stir', 'get_last_login', 'get_login_status_display')
     list_filter = ('region', LoginStatusFilter)
     search_fields = ('name', 'name_uz', 'name_ru', 'stir')
     actions = ['export_to_csv', 'export_to_excel']
@@ -87,6 +86,30 @@ class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
         return "Hech qachon"
 
     get_last_login.short_description = _("Oxirgi login")
+
+    def get_login_status_display(self, obj):
+        """Login holatini rangli ko'rsatish"""
+        last_login = HistoryActionJournal.objects.filter(
+            user__organization=obj,
+            action='login'
+        ).order_by('-created_at').first()
+
+        if not last_login:
+            return "❌ Hech qachon"
+
+        now = timezone.now()
+        days_diff = (now - last_login.created_at).days
+
+        if days_diff <= 7:
+            return "✅ Faol"
+        elif days_diff <= 30:
+            return "⚠️ 1 oy ichida kirmagan"
+        elif days_diff <= 90:
+            return "⚠️ 3 oy ichida kirmagan"
+        else:
+            return "❌ 3+ oy ichida kirmagan"
+
+    get_login_status_display.short_description = _("Login holati")
 
     def get_login_status(self, obj):
         """Login holatini aniqlash"""
@@ -124,7 +147,8 @@ class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
             'Tashkilot nomi',
             'Region',
             'STIR',
-            'Oxirgi login'
+            'Oxirgi login',
+            'Login holati'
         ])
 
         # Ma'lumotlar
@@ -133,13 +157,15 @@ class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
             region = str(org.region) if org.region else ''
             stir = str(org.stir) if hasattr(org, 'stir') and org.stir else ''
             last_login = self.get_last_login(org)
+            login_status = self.get_login_status(org)
 
             writer.writerow([
                 index,
                 name_uz,
                 region,
                 stir,
-                last_login
+                last_login,
+                login_status
             ])
 
         return response
@@ -180,7 +206,8 @@ class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
             'Tashkilot nomi',
             'Region',
             'STIR',
-            'Oxirgi login'
+            'Oxirgi login',
+            'Login holati'
         ]
 
         # Header qo'shish
@@ -225,12 +252,19 @@ class OrganizationAdmin(AdminHistoryMixin, TranslationAdmin):
             cell.alignment = center_alignment
             cell.border = thin_border
 
-        # Ustunlar kengligini sozlash - KENGAYTIRILDI
-        ws.column_dimensions['A'].width = 8  # №
-        ws.column_dimensions['B'].width = 70  # Tashkilot nomi - KENGAYTIRILDI
+            # Login holati
+            cell = ws.cell(row=row_num, column=6)
+            cell.value = self.get_login_status(org)
+            cell.alignment = center_alignment
+            cell.border = thin_border
+
+        # Ustunlar kengligini sozlash
+        ws.column_dimensions['A'].width = 8   # №
+        ws.column_dimensions['B'].width = 70  # Tashkilot nomi
         ws.column_dimensions['C'].width = 20  # Region
         ws.column_dimensions['D'].width = 15  # STIR
         ws.column_dimensions['E'].width = 22  # Oxirgi login
+        ws.column_dimensions['F'].width = 30  # Login holati
 
         # Birinchi qatorni (header) balandligini sozlash
         ws.row_dimensions[1].height = 30
