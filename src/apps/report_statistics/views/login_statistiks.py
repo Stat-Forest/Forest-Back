@@ -1,5 +1,5 @@
 from decimal import Decimal, InvalidOperation
-from django.db.models import Q, Sum, F
+from django.db.models import Q
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -96,10 +96,7 @@ class ReportLoginSummaryAPIView(APIView):
             )
 
             print("REPORT COUNT:", reports.count())
-
-            # Report plant_based ekanligini tekshirish
-            has_plant_based = reports.filter(is_plant_based=True).exists()
-            print("HAS PLANT_BASED REPORTS:", has_plant_based)
+            print("REPORTS IDs:", list(reports.values_list('id', flat=True)))
 
             if reports.count() == 0:
                 print(f"⚠️ WARNING: No accepted reports found")
@@ -115,44 +112,49 @@ class ReportLoginSummaryAPIView(APIView):
             def get_total_value(column_id, reports_qs):
                 total = Decimal("0")
 
+                print(f"\n    🔍 Searching for column_id: {column_id}")
+
                 # ReportItem'lardan qidirish
                 items = ReportItem.objects.filter(
                     report__in=reports_qs,
                     statement_column_id=column_id
-                ).exclude(
-                    Q(value__isnull=True) | Q(value='') | Q(value='None')
                 )
 
-                print(f"    Direct ReportItem count: {items.count()}")
+                print(f"    📊 Found ReportItems: {items.count()}")
 
                 for item in items:
-                    # Agar ReportItemInner mavjud bo'lsa, undan olish
+                    print(f"    📄 Processing ReportItem ID: {item.id}")
+                    print(f"       Direct value: {item.value}")
+
+                    # Avval ReportItemInner mavjudligini tekshirish
                     inner_values = ReportItemInner.objects.filter(
                         report_item=item
-                    ).exclude(
-                        Q(value__isnull=True) | Q(value='') | Q(value='None')
                     )
 
+                    print(f"       Found {inner_values.count()} inner values")
+
                     if inner_values.exists():
-                        print(f"    Using ReportItemInner (count: {inner_values.count()})")
+                        # Agar inner values bo'lsa, ularni yig'ish
                         for inner in inner_values:
                             try:
-                                if inner.value and inner.value.strip():
+                                if inner.value and inner.value.strip() and inner.value.strip() not in ['', 'None',
+                                                                                                       'null']:
                                     val = Decimal(inner.value.strip())
                                     total += val
-                                    print(f"      + Inner value: {val}")
-                            except (InvalidOperation, ValueError) as e:
-                                print(f"      ⚠️ Invalid inner value: '{inner.value}' - {e}")
+                                    print(f"       ✅ Added inner value: {val} (total now: {total})")
+                            except (InvalidOperation, ValueError, TypeError) as e:
+                                print(f"       ⚠️ Invalid inner value: '{inner.value}' - {e}")
                     else:
-                        # Aks holda ReportItem.value dan olish
+                        # Agar inner yo'q bo'lsa, direct value ishlatish
                         try:
-                            if item.value and item.value.strip():
+                            if item.value and item.value.strip() and item.value.strip() not in ['', 'None', 'null']:
                                 val = Decimal(item.value.strip())
                                 total += val
-                                print(f"      + Direct value: {val}")
-                        except (InvalidOperation, ValueError) as e:
-                            print(f"      ⚠️ Invalid value: '{item.value}' - {e}")
+                                print(f"       ✅ Added direct value: {val} (total now: {total})")
+                        except (InvalidOperation, ValueError, TypeError) as e:
+                            print(f"       ⚠️ Invalid direct value: '{item.value}' - {e}")
 
+                print(f"    💰 TOTAL for column {column_id}: {total}")
                 return total
 
             # 4️⃣ PLAN
@@ -161,7 +163,7 @@ class ReportLoginSummaryAPIView(APIView):
 
             if plan_cfg:
                 plan_column_id = plan_cfg["column_id"]
-                print(f"PLAN COLUMN ID: {plan_column_id}")
+                print(f"\n📋 PLAN COLUMN ID: {plan_column_id}")
 
                 plan_column = StatementColumn.objects.filter(id=plan_column_id).first()
                 if not plan_column:
@@ -169,7 +171,7 @@ class ReportLoginSummaryAPIView(APIView):
                 else:
                     print(f"✅ PLAN COLUMN: {plan_column.title}")
                     plan_value = get_total_value(plan_column_id, reports)
-                    print(f"TOTAL PLAN VALUE: {plan_value}")
+                    print(f"📊 TOTAL PLAN VALUE: {plan_value}")
 
             # 5️⃣ ACTUAL
             actual_value = Decimal("0")
@@ -177,7 +179,7 @@ class ReportLoginSummaryAPIView(APIView):
 
             if actual_cfg:
                 actual_column_id = actual_cfg["column_id"]
-                print(f"ACTUAL COLUMN ID: {actual_column_id}")
+                print(f"\n📋 ACTUAL COLUMN ID: {actual_column_id}")
 
                 actual_column = StatementColumn.objects.filter(id=actual_column_id).first()
                 if not actual_column:
@@ -185,7 +187,7 @@ class ReportLoginSummaryAPIView(APIView):
                 else:
                     print(f"✅ ACTUAL COLUMN: {actual_column.title}")
                     actual_value = get_total_value(actual_column_id, reports)
-                    print(f"TOTAL ACTUAL VALUE: {actual_value}")
+                    print(f"📊 TOTAL ACTUAL VALUE: {actual_value}")
 
             # 6️⃣ RESPONSE
             result.append({
