@@ -23,42 +23,20 @@ def get_translated_field(obj, field: str, lang: str, default_lang: str = "uz"):
 
 
 def get_lang_code(source, default_lang="uz"):
-    """
-    Accepts a request object, context dict, or direct language string and returns normalized language code.
-    """
     if source is None:
         return default_lang
 
     if isinstance(source, str):
-        source = source.lower()
-        if source in ["uz", "ru"]:
-            return source
-        return default_lang
+        return source if source in ["uz", "ru"] else default_lang
 
     if hasattr(source, "query_params"):
-        query_lang = source.query_params.get("lang")
-
+        lang = source.query_params.get("lang")
     elif isinstance(source, dict):
-        query_lang = source.get("lang")
-
+        lang = source.get("lang")
     else:
-        query_lang = None
+        lang = None
 
-    if query_lang:
-        query_lang = query_lang.lower()
-        if query_lang in ["uz", "ru"]:
-            return query_lang
-
-    if hasattr(source, "META"):
-        raw = source.META.get("HTTP_ACCEPT_LANGUAGE", default_lang)
-    else:
-        raw = default_lang
-
-    lang = raw.split(",")[0].strip().lower()
-
-    if lang.startswith("uz"):
-        return "uz"
-    elif lang.startswith("ru"):
-        return "ru"
+    if lang and lang.lower() in ["uz", "ru"]:
+        return lang.lower()
 
     return default_lang

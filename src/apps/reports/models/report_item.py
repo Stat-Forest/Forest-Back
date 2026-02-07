@@ -26,6 +26,11 @@ class ReportItem(AbstractBaseModel):
     class Meta:
         verbose_name = _("Report Item")
         verbose_name_plural = _("Report Items")
+        indexes = [
+            models.Index(fields=['report']),
+            models.Index(fields=['statement_column']),
+            models.Index(fields=['report', 'statement_column']),
+        ]
         # unique_together = ("report", "statement_column", "plant")
 
 
@@ -50,3 +55,9 @@ class ReportItemInner(AbstractBaseModel):
     def __str__(self):
         # Avoid dereferencing FK to ReportItem to prevent extra queries in admin/logs
         return f"Inner of ReportItemID {getattr(self, 'report_item_id', None)} | Value: {self.value}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["report_item"]),
+            models.Index(fields=["plant"])
+        ]

@@ -106,8 +106,17 @@ class StatementColumn(AbstractBaseModel):
 
     natural_key.dependencies = ["reports.statement"]
 
+    def get_is_leaf(self, children_dict):
+        """Children dict berilsa, is_leaf ni tekshirish"""
+        return not children_dict.get(str(self.id))
+
     class Meta:
         verbose_name = "Hisobot forma ustuni"
         verbose_name_plural = "Hisobot forma ustunlari"
         unique_together = ("statement", "title", "parent", "ordering")
         ordering = ["ordering"]
+        indexes = [
+            models.Index(fields=['statement', 'parent']),
+            models.Index(fields=['ordering']),
+            models.Index(fields=['statement', 'parent', 'ordering']),
+        ]
