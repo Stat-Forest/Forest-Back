@@ -27,7 +27,7 @@ class EimzoJWTLoginView(APIView):
 
         if not verify_pkcs7(pkcs7, vo):
             return Response(
-                {"detail": "Imzo noto‘g‘ri yoki noto‘liq."},
+                {"detail": "Imzo noto'g'ri yoki noto'liq."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -65,15 +65,28 @@ class EimzoJWTLoginView(APIView):
         user.set_password(uid)
         user.save()
 
-        # HistoryActionJournal ga yozuv qo‘shish
-        action_type = "add" if created else "login"
+        # HistoryActionJournal ga yozuv qo'shish
+        # MUHIM: Yangi yaratilgan user uchun ham 'login' yozamiz
+        # Chunki filter 'login' va 'add' ni birga tekshiradi
+        if created:
+            # User yaratildi - 'add' action
+            HistoryActionJournal.objects.create(
+                user=user,
+                action="add",
+                model_name="CustomUser",
+                object_repr=str(user),
+                object_id=str(user.id),
+                change_message="User created via E-imzo"
+            )
+
+        # Login action har doim yoziladi (created=True bo'lsa ham)
         HistoryActionJournal.objects.create(
             user=user,
-            action=action_type,
+            action="login",
             model_name="CustomUser",
             object_repr=str(user),
             object_id=str(user.id),
-            change_message=f"User {'created' if created else 'logged in'} via E-imzo"
+            change_message=f"User logged in via E-imzo {'(first time)' if created else ''}"
         )
 
         refresh = RefreshToken.for_user(user)

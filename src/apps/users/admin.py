@@ -47,12 +47,13 @@ class LoginStatusFilter(admin.SimpleListFilter):
         now = timezone.now()
 
         if self.value() == "never":
-            # Hech qachon login qilmagan userlar
-            user_ids_with_login = HistoryActionJournal.objects.filter(
-                action='login'
+            # Hech qachon login qilmagan userlar (admin va e-imzo orqali ham)
+            # 'login' va 'add' actionlarini tekshiramiz
+            user_ids_with_activity = HistoryActionJournal.objects.filter(
+                Q(action='login') | Q(action='add')
             ).values_list('user_id', flat=True).distinct()
 
-            return queryset.exclude(id__in=user_ids_with_login)
+            return queryset.exclude(id__in=user_ids_with_activity)
 
         # Vaqt chegaralarini aniqlash
         if self.value() == "7d":
@@ -64,17 +65,18 @@ class LoginStatusFilter(admin.SimpleListFilter):
         else:
             return queryset
 
-        # Har bir user uchun eng oxirgi login vaqtini topish
-        latest_login_per_user = HistoryActionJournal.objects.filter(
+        # Har bir user uchun eng oxirgi login yoki add vaqtini topish
+        # E-imzo orqali yaratilgan userlar uchun ham 'add' actionini hisoblaymiz
+        latest_activity_per_user = HistoryActionJournal.objects.filter(
             user_id=OuterRef('pk'),
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').values('created_at')[:1]
 
-        # Oxirgi login vaqti threshold dan oldingi yoki hech qachon login qilmagan userlar
+        # Oxirgi faollik vaqti threshold dan oldingi yoki hech qachon faollik qilmagan userlar
         user_ids = queryset.annotate(
-            last_login_time=Subquery(latest_login_per_user)
+            last_activity_time=Subquery(latest_activity_per_user)
         ).filter(
-            Q(last_login_time__lt=date_threshold) | Q(last_login_time__isnull=True)
+            Q(last_activity_time__lt=date_threshold) | Q(last_activity_time__isnull=True)
         ).values_list('id', flat=True)
 
         return queryset.filter(id__in=user_ids)
@@ -197,9 +199,10 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     # ================================
     def get_last_login_display(self, obj):
         """List display uchun oxirgi login"""
+        # Login yoki Add actionni topamiz (E-imzo uchun ham)
         last_login = HistoryActionJournal.objects.filter(
             user=obj,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if last_login:
@@ -227,7 +230,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         """Foydalanuvchining oxirgi login vaqti"""
         last_login = HistoryActionJournal.objects.filter(
             user=user,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if last_login:
@@ -238,7 +241,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         """Login holatini aniqlash"""
         last_login = HistoryActionJournal.objects.filter(
             user=user,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if not last_login:
