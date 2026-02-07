@@ -26,7 +26,7 @@ class PersonalInfoInline(admin.StackedInline):
 
 
 # ================================
-# CUSTOM FILTER (LOGIN STATUS) - TUZATILGAN
+# CUSTOM FILTER (LOGIN STATUS) - TO'LIQ TUZATILGAN
 # ================================
 class LoginStatusFilter(admin.SimpleListFilter):
     title = _("Login holati")
@@ -47,15 +47,25 @@ class LoginStatusFilter(admin.SimpleListFilter):
         now = timezone.now()
 
         if self.value() == "never":
-            # Hech qachon login qilmagan userlar (admin va e-imzo orqali ham)
-            # 'login' va 'add' actionlarini tekshiramiz
-            user_ids_with_activity = HistoryActionJournal.objects.filter(
-                Q(action='login') | Q(action='add')
-            ).values_list('user_id', flat=True).distinct()
+            # VARIANT 1: Hech qachon login yoki add action bo'lmagan userlar
+            # Bu usul: HistoryActionJournal da user_id mavjud bo'lmagan userlarni topadi
 
-            return queryset.exclude(id__in=user_ids_with_activity)
+            # Barcha user_id'larni olish (login yoki add action bilan)
+            user_ids_with_login_or_add = set(
+                HistoryActionJournal.objects.filter(
+                    Q(action='login') | Q(action='add'),
+                    user__isnull=False  # Faqat user bilan bog'langan actionlar
+                ).values_list('user_id', flat=True)
+            )
 
-        # Vaqt chegaralarini aniqlash
+            # Agar user_id'lar topilmasa, barcha userlarni qaytaramiz
+            if not user_ids_with_login_or_add:
+                return queryset  # Barcha userlar hech qachon kirmagan
+
+            # User_id'lar ro'yxatida bo'lmagan userlarni qaytarish
+            return queryset.exclude(id__in=user_ids_with_login_or_add)
+
+        # Vaqt chegaralarini aniqlash (7d, 1m, 3m)
         if self.value() == "7d":
             date_threshold = now - timedelta(days=7)
         elif self.value() == "1m":
@@ -66,20 +76,19 @@ class LoginStatusFilter(admin.SimpleListFilter):
             return queryset
 
         # Har bir user uchun eng oxirgi login yoki add vaqtini topish
-        # E-imzo orqali yaratilgan userlar uchun ham 'add' actionini hisoblaymiz
-        latest_activity_per_user = HistoryActionJournal.objects.filter(
+        latest_activity_subquery = HistoryActionJournal.objects.filter(
             user_id=OuterRef('pk'),
             action__in=['login', 'add']
         ).order_by('-created_at').values('created_at')[:1]
 
-        # Oxirgi faollik vaqti threshold dan oldingi yoki hech qachon faollik qilmagan userlar
-        user_ids = queryset.annotate(
-            last_activity_time=Subquery(latest_activity_per_user)
+        # Annotate qilib, filtrlaymiz
+        filtered_users = queryset.annotate(
+            last_activity_time=Subquery(latest_activity_subquery)
         ).filter(
             Q(last_activity_time__lt=date_threshold) | Q(last_activity_time__isnull=True)
-        ).values_list('id', flat=True)
+        )
 
-        return queryset.filter(id__in=user_ids)
+        return filtered_users
 
 
 # ================================
