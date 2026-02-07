@@ -190,3 +190,8 @@ class Report(AbstractBaseModel):
                 name="unique_org_statement_deadline_only_for_non_individual_general"
             )
         ]
+        indexes = [
+            models.Index(fields=['organization', 'statement', 'status', '-created_at']),
+            models.Index(fields=['statement', 'status']),
+            models.Index(fields=['organization', 'status']),
+        ]
