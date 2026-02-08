@@ -45,8 +45,15 @@ class ReportLoginSummaryAPIView(APIView):
             print(f"CONFIG: {cfg['column_name']}")
             print(f"  Statement Name: {cfg['statement_name']}")
             print(f"  Period: {cfg['period']}")
-            print(f"  Plan Column ID: {cfg.get('plan', {}).get('column_id', 'N/A')}")
-            print(f"  Actual Column ID: {cfg.get('actual', {}).get('column_id', 'N/A')}")
+
+            # Safe access to plan and actual column IDs
+            plan_cfg = cfg.get('plan')
+            actual_cfg = cfg.get('actual')
+            plan_column_id = plan_cfg.get('column_id') if plan_cfg else None
+            actual_column_id = actual_cfg.get('column_id') if actual_cfg else None
+
+            print(f"  Plan Column ID: {plan_column_id if plan_column_id else 'N/A'}")
+            print(f"  Actual Column ID: {actual_column_id if actual_column_id else 'N/A'}")
             print(f"{'=' * 80}")
 
             # 1️⃣ STATEMENT
@@ -107,7 +114,7 @@ class ReportLoginSummaryAPIView(APIView):
                 print(f"   Filter: Latest (any)")
 
             # Debug: Show all available deadlines for this statement
-            all_deadlines = Deadline.objects.filter(statement=statement).values('id', 'submit_at')
+            all_deadlines = list(Deadline.objects.filter(statement=statement).values('id', 'submit_at')[:10])
             print(f"\n   📋 All deadlines for this statement ({len(all_deadlines)}):")
             for d in all_deadlines[:5]:
                 print(f"      - ID: {d['id']}, submit_at: {d['submit_at']}")
@@ -149,9 +156,11 @@ class ReportLoginSummaryAPIView(APIView):
 
                 # Debug: check if reports exist with different filters
                 all_reports = Report.objects.filter(statement=statement, deadline=deadline)
-                print(f"   📋 Reports for this statement+deadline (any status): {all_reports.count()}")
-                for r in all_reports.values('id', 'status', 'organization__name')[:3]:
-                    print(f"      - Report {r['id']}: status={r['status']}, org={r.get('organization__name', 'N/A')}")
+                all_count = all_reports.count()
+                print(f"   📋 Reports for this statement+deadline (any status): {all_count}")
+                if all_count > 0:
+                    for r in all_reports.values('id', 'status')[:3]:
+                        print(f"      - Report {r['id']}: status={r['status']}")
 
                 result.append({
                     "column_name": cfg["column_name"],
@@ -175,9 +184,10 @@ class ReportLoginSummaryAPIView(APIView):
                     print(f"  ❌ Column {column_id} does not exist in database!")
                     return Decimal("0")
 
-                column_info = StatementColumn.objects.filter(id=column_id).values('id', 'title', 'title_uz',
+                column_info = StatementColumn.objects.filter(id=column_id).values('id', 'title_uz',
                                                                                   'statement_id').first()
-                print(f"  📋 Column info: {column_info}")
+                print(
+                    f"  📋 Column: {column_info.get('title_uz', 'N/A')} (statement: {column_info.get('statement_id', 'N/A')})")
 
                 # Get ReportItems
                 report_items = ReportItem.objects.filter(
@@ -192,15 +202,15 @@ class ReportLoginSummaryAPIView(APIView):
                     print(f"  ⚠️  No ReportItems for this column")
 
                     # Debug: Show what columns DO exist for these reports
-                    existing_columns = ReportItem.objects.filter(
+                    existing_columns = list(ReportItem.objects.filter(
                         report__in=reports_qs
-                    ).values_list('statement_column_id', flat=True).distinct()[:10]
-                    print(f"  📋 Columns that DO exist in these reports: {list(existing_columns)}")
+                    ).values_list('statement_column_id', flat=True).distinct()[:10])
+                    print(f"  📋 Columns that exist in reports: {existing_columns}")
 
                     return Decimal("0")
 
                 # Show sample ReportItems
-                sample_items = report_items.values('id', 'report_id', 'value')[:3]
+                sample_items = list(report_items.values('id', 'report_id', 'value')[:3])
                 print(f"  📄 Sample ReportItems:")
                 for item in sample_items:
                     print(f"     - ID: {item['id']}, Report: {item['report_id']}, Value: {item['value']}")
@@ -232,7 +242,8 @@ class ReportLoginSummaryAPIView(APIView):
                                         print(f"     + {val}")
                                 except (InvalidOperation, ValueError, TypeError) as e:
                                     skipped_count += 1
-                                    print(f"     ⚠️  Skipped invalid: '{inner.value}' ({e})")
+                                    if skipped_count <= 3:
+                                        print(f"     ⚠️  Skipped: '{inner.value}' ({e})")
                             else:
                                 skipped_count += 1
                         else:
@@ -255,7 +266,8 @@ class ReportLoginSummaryAPIView(APIView):
                                         print(f"     + {val}")
                                 except (InvalidOperation, ValueError, TypeError) as e:
                                     skipped_count += 1
-                                    print(f"     ⚠️  Skipped invalid: '{item.value}' ({e})")
+                                    if skipped_count <= 3:
+                                        print(f"     ⚠️  Skipped: '{item.value}' ({e})")
                             else:
                                 skipped_count += 1
                         else:
@@ -268,23 +280,21 @@ class ReportLoginSummaryAPIView(APIView):
 
             # 5️⃣ CALCULATE PLAN
             plan_value = Decimal("0")
-            plan_cfg = cfg.get("plan")
-
-            if plan_cfg:
-                plan_column_id = plan_cfg["column_id"]
+            if plan_cfg and plan_column_id:
                 print(f"\n📋 PROCESSING PLAN")
                 print(f"   Column ID: {plan_column_id}")
                 plan_value = get_total_value(plan_column_id, reports)
+            else:
+                print(f"\n⏭️  SKIPPING PLAN (not configured)")
 
             # 6️⃣ CALCULATE ACTUAL
             actual_value = Decimal("0")
-            actual_cfg = cfg.get("actual")
-
-            if actual_cfg:
-                actual_column_id = actual_cfg["column_id"]
+            if actual_cfg and actual_column_id:
                 print(f"\n📋 PROCESSING ACTUAL")
                 print(f"   Column ID: {actual_column_id}")
                 actual_value = get_total_value(actual_column_id, reports)
+            else:
+                print(f"\n⏭️  SKIPPING ACTUAL (not configured)")
 
             # 7️⃣ ADD TO RESULT
             result.append({
