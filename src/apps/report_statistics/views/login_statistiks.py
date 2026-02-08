@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, DecimalField
+from django.db.models.functions import Cast
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -32,19 +33,20 @@ class ReportLoginSummaryAPIView(APIView):
         monthly = request.query_params.get("monthly")
         yearly = request.query_params.get("yearly")
 
-        print("\n=== QUERY PARAMS ===")
-        print("monthly:", monthly)
-        print("yearly:", yearly)
-        print("====================")
+        print("\n" + "=" * 60)
+        print("QUERY PARAMS:")
+        print(f"  monthly: {monthly}")
+        print(f"  yearly: {yearly}")
+        print("=" * 60)
 
         result = []
 
         for cfg in SUMMARY_CONFIG:
-            print("\n==============================")
-            print("COLUMN NAME:", cfg["column_name"])
-            print("STATEMENT NAME:", cfg["statement_name"])
-            print("PERIOD:", cfg["period"])
-            print("==============================")
+            print(f"\n{'=' * 60}")
+            print(f"Processing: {cfg['column_name']}")
+            print(f"Statement: {cfg['statement_name']}")
+            print(f"Period: {cfg['period']}")
+            print(f"{'=' * 60}")
 
             # 1️⃣ STATEMENT
             statement = Statement.objects.filter(
@@ -60,22 +62,51 @@ class ReportLoginSummaryAPIView(APIView):
                     "actual": Decimal("0"),
                 })
                 continue
-            print("✅ STATEMENT ID:", statement.id, "| name:", statement.name)
+
+            print(f"✅ Statement found: ID={statement.id}, name={statement.name}")
 
             # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(statement=statement)
 
-            if cfg["period"] == "monthly" and monthly:
-                deadline_qs = deadline_qs.filter(submit_at=monthly)
-                print("APPLY MONTHLY FILTER:", monthly)
-            elif cfg["period"] == "yearly" and yearly:
-                deadline_qs = deadline_qs.filter(submit_at=yearly)
-                print("APPLY YEARLY FILTER:", yearly)
+            # Period detection based on submit_at format:
+            # - Yearly: "2025" (4 chars)
+            # - Monthly: "2025-01" (7 chars, contains '-', no 'CHORAK')
+            # - Quarterly: "2025-CHORAK_1" (contains 'CHORAK')
+
+            if cfg["period"] == "monthly":
+                if monthly:
+                    deadline_qs = deadline_qs.filter(submit_at=monthly)
+                    print(f"📅 Filtered by monthly: {monthly}")
+                else:
+                    # Latest monthly deadline
+                    from django.db.models.functions import Length
+                    deadline_qs = deadline_qs.annotate(
+                        submit_len=Length('submit_at')
+                    ).filter(
+                        submit_len=7,
+                        submit_at__contains='-'
+                    ).exclude(
+                        submit_at__contains='CHORAK'
+                    ).order_by("-created_at")
+                    print("📅 Using latest monthly deadline")
+
+            elif cfg["period"] == "yearly":
+                if yearly:
+                    deadline_qs = deadline_qs.filter(submit_at=yearly)
+                    print(f"📅 Filtered by yearly: {yearly}")
+                else:
+                    # Latest yearly deadline
+                    from django.db.models.functions import Length
+                    deadline_qs = deadline_qs.annotate(
+                        submit_len=Length('submit_at')
+                    ).filter(submit_len=4).order_by("-created_at")
+                    print("📅 Using latest yearly deadline")
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
-                print("FALLBACK → LAST CREATED DEADLINE")
+                print("📅 Using latest deadline (any period)")
 
             deadline = deadline_qs.first()
+
             if not deadline:
                 print("❌ DEADLINE NOT FOUND")
                 result.append({
@@ -85,24 +116,21 @@ class ReportLoginSummaryAPIView(APIView):
                     "actual": Decimal("0"),
                 })
                 continue
-            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at)
+
+            print(f"✅ Deadline found: ID={deadline.id}, submit_at={deadline.submit_at}")
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
                 statement=statement,
                 deadline=deadline,
                 status=Report.StatusChoices.ACCEPTED,
-                is_report=True,
             )
 
-            print("REPORT COUNT:", reports.count())
+            report_count = reports.count()
+            print(f"📊 Found {report_count} accepted reports")
 
-            # Report plant_based ekanligini tekshirish
-            has_plant_based = reports.filter(is_plant_based=True).exists()
-            print("HAS PLANT_BASED REPORTS:", has_plant_based)
-
-            if reports.count() == 0:
-                print(f"⚠️ WARNING: No accepted reports found")
+            if report_count == 0:
+                print("⚠️  No accepted reports found")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -111,83 +139,97 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # Helper function to get value from ReportItem or ReportItemInner
-            def get_total_value(column_id, reports_qs):
-                total = Decimal("0")
+            print(f"   Report IDs: {list(reports.values_list('id', flat=True)[:5])}{'...' if report_count > 5 else ''}")
 
-                # ReportItem'lardan qidirish
-                items = ReportItem.objects.filter(
+            # 4️⃣ OPTIMIZED VALUE EXTRACTION
+            def get_total_value(column_id, reports_qs):
+                """
+                Optimized function to sum values from ReportItemInner for a given column
+                across multiple reports.
+                """
+                print(f"\n  🔍 Extracting values for column_id: {column_id}")
+
+                # Get ReportItems for this column
+                report_items = ReportItem.objects.filter(
                     report__in=reports_qs,
                     statement_column_id=column_id
-                ).exclude(
-                    Q(value__isnull=True) | Q(value='') | Q(value='None')
                 )
 
-                print(f"    Direct ReportItem count: {items.count()}")
+                item_count = report_items.count()
+                print(f"  📝 Found {item_count} ReportItems")
 
-                for item in items:
-                    # Agar ReportItemInner mavjud bo'lsa, undan olish
-                    inner_values = ReportItemInner.objects.filter(
-                        report_item=item
-                    ).exclude(
-                        Q(value__isnull=True) | Q(value='') | Q(value='None')
-                    )
+                if item_count == 0:
+                    print(f"  ⚠️  No ReportItems found for column {column_id}")
+                    return Decimal("0")
 
-                    if inner_values.exists():
-                        print(f"    Using ReportItemInner (count: {inner_values.count()})")
-                        for inner in inner_values:
-                            try:
-                                if inner.value and inner.value.strip():
-                                    val = Decimal(inner.value.strip())
+                # Get all inner values
+                inners = ReportItemInner.objects.filter(
+                    report_item__in=report_items
+                )
+
+                inner_count = inners.count()
+                print(f"  📦 Found {inner_count} ReportItemInners")
+
+                total = Decimal("0")
+
+                if inner_count > 0:
+                    # Sum from inners
+                    for inner in inners:
+                        if inner.value:
+                            value_str = str(inner.value).strip()
+                            if value_str and value_str not in ['', 'None', 'null']:
+                                try:
+                                    val = Decimal(value_str)
                                     total += val
-                                    print(f"      + Inner value: {val}")
-                            except (InvalidOperation, ValueError) as e:
-                                print(f"      ⚠️ Invalid inner value: '{inner.value}' - {e}")
-                    else:
-                        # Aks holda ReportItem.value dan olish
-                        try:
-                            if item.value and item.value.strip():
-                                val = Decimal(item.value.strip())
-                                total += val
-                                print(f"      + Direct value: {val}")
-                        except (InvalidOperation, ValueError) as e:
-                            print(f"      ⚠️ Invalid value: '{item.value}' - {e}")
+                                except (InvalidOperation, ValueError, TypeError) as e:
+                                    print(f"  ⚠️  Invalid inner value: '{inner.value}' - {e}")
+                else:
+                    # Fallback to direct values from ReportItem
+                    print("  ℹ️  No inners found, using direct ReportItem values")
+                    for item in report_items:
+                        if item.value:
+                            value_str = str(item.value).strip()
+                            if value_str and value_str not in ['', 'None', 'null']:
+                                try:
+                                    val = Decimal(value_str)
+                                    total += val
+                                except (InvalidOperation, ValueError, TypeError) as e:
+                                    print(f"  ⚠️  Invalid item value: '{item.value}' - {e}")
 
+                print(f"  💰 TOTAL: {total}")
                 return total
 
-            # 4️⃣ PLAN
+            # 5️⃣ CALCULATE PLAN
             plan_value = Decimal("0")
             plan_cfg = cfg.get("plan")
 
             if plan_cfg:
                 plan_column_id = plan_cfg["column_id"]
-                print(f"PLAN COLUMN ID: {plan_column_id}")
+                print(f"\n📋 Processing PLAN (column_id: {plan_column_id})")
 
                 plan_column = StatementColumn.objects.filter(id=plan_column_id).first()
-                if not plan_column:
-                    print(f"⚠️ WARNING: Plan column not found")
-                else:
-                    print(f"✅ PLAN COLUMN: {plan_column.title}")
+                if plan_column:
+                    print(f"   Column: {plan_column.title}")
                     plan_value = get_total_value(plan_column_id, reports)
-                    print(f"TOTAL PLAN VALUE: {plan_value}")
+                else:
+                    print(f"   ⚠️  Plan column not found")
 
-            # 5️⃣ ACTUAL
+            # 6️⃣ CALCULATE ACTUAL
             actual_value = Decimal("0")
             actual_cfg = cfg.get("actual")
 
             if actual_cfg:
                 actual_column_id = actual_cfg["column_id"]
-                print(f"ACTUAL COLUMN ID: {actual_column_id}")
+                print(f"\n📋 Processing ACTUAL (column_id: {actual_column_id})")
 
                 actual_column = StatementColumn.objects.filter(id=actual_column_id).first()
-                if not actual_column:
-                    print(f"⚠️ WARNING: Actual column not found")
-                else:
-                    print(f"✅ ACTUAL COLUMN: {actual_column.title}")
+                if actual_column:
+                    print(f"   Column: {actual_column.title}")
                     actual_value = get_total_value(actual_column_id, reports)
-                    print(f"TOTAL ACTUAL VALUE: {actual_value}")
+                else:
+                    print(f"   ⚠️  Actual column not found")
 
-            # 6️⃣ RESPONSE
+            # 7️⃣ ADD TO RESULT
             result.append({
                 "column_name": cfg["column_name"],
                 "unit": cfg["unit"],
@@ -195,9 +237,14 @@ class ReportLoginSummaryAPIView(APIView):
                 "actual": actual_value,
             })
 
-        print("\n===== FINAL RESULT =====")
-        print(result)
-        print("========================")
+            print(f"\n✅ Result: plan={plan_value}, actual={actual_value}")
+
+        print("\n" + "=" * 60)
+        print("FINAL RESULTS:")
+        print("=" * 60)
+        for item in result:
+            print(f"{item['column_name']:60s} | Plan: {item['plan']:>10} | Actual: {item['actual']:>10}")
+        print("=" * 60 + "\n")
 
         serializer = ReportSummarySerializer(result, many=True)
         return Response(serializer.data)
