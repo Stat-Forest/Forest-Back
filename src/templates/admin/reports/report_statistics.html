@@ -1,209 +1,895 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
 
-{% block content %}
+{% block extrahead %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.stats-page {
-    display: flex;
-    justify-content: center;
-    padding: 30px 10px;
-    width: 100%;
+/* Asosiy o'zgaruvchilar */
+:root {
+    --primary-color: #4361ee;
+    --primary-light: #4895ef;
+    --secondary-color: #3f37c9;
+    --success-color: #4cc9f0;
+    --warning-color: #f72585;
+    --danger-color: #7209b7;
+    --dark-color: #1a1a2e;
+    --light-color: #f8f9fa;
+    --gray-color: #6c757d;
+    --border-color: #dee2e6;
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
 
-.stats-wrapper {
-    background: #fff;
-    width: 100%;
-    padding: 26px 28px;
-    border-radius: 14px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.06);
+/* Asosiy container */
+.stats-dashboard {
+    padding: 30px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.stats-header {
+/* Kartochka */
+.dashboard-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+/* Dashboard header */
+.dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    padding: 30px 40px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.2;
+    animation: float 20s linear infinite;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-50px, -50px) rotate(360deg); }
+}
+
+.header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    position: relative;
+    z-index: 2;
 }
 
-.stats-header h1 {
-    font-size: 26px;
-    font-weight: 700;
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.export-btn {
-    background: linear-gradient(135deg, #f2f3f2, #f3f8f3);
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-text h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
     color: white;
-    padding: 10px 18px;
-    border-radius: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.header-text p {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Export tugmasi */
+.export-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 14px 28px;
+    border-radius: 14px;
     text-decoration: none;
     font-weight: 600;
-    box-shadow: 0 4px 10px rgba(67,160,71,.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
 }
 
-.export-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(67,160,71,.4);
+.export-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    color: white;
 }
 
-/* FILTER BAR */
-.filter-bar {
+/* Filterlar bo'limi */
+.filters-section {
+    padding: 35px 40px;
+    background: var(--light-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.filter-item {
+    position: relative;
+}
+
+.filter-label {
     display: flex;
+    align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 12px;
+    font-size: 15px;
 }
 
-.filter-bar select {
-    padding: 10px 12px;
+.filter-label-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
     border-radius: 10px;
-    border: 1px solid #e0e5eb;
-    min-width: 220px;
-    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 16px 20px;
+    padding-right: 50px;
+    border: 2px solid #e0e6ed;
+    border-radius: 12px;
+    background: white;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--dark-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234361ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+    background-size: 18px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+    transform: translateY(-2px);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
 }
 
 .filter-btn {
-    background: linear-gradient(135deg,#1976d2,#0d47a1);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    padding: 10px 18px;
-    border-radius: 10px;
     border: none;
+    padding: 16px 36px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+}
+
+.filter-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
 }
 
 .clear-btn {
-    background: #9e9e9e;
-    color: white;
-    padding: 10px 18px;
-    border-radius: 10px;
+    background: transparent;
+    color: var(--gray-color);
+    border: 2px solid var(--border-color);
+    padding: 16px 36px;
+    border-radius: 12px;
     text-decoration: none;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
 }
 
-/* TABLE */
-.stats-table {
+.clear-btn:hover {
+    background: var(--light-color);
+    border-color: #adb5bd;
+    transform: translateY(-3px);
+    color: var(--dark-color);
+}
+
+/* Stats cards */
+.stats-cards {
+    padding: 30px 40px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+}
+
+.stat-card {
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--hover-shadow);
+}
+
+.stat-value {
+    font-size: 40px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--gray-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Jadval bo'limi */
+.table-section {
+    padding: 0;
+    overflow-x: auto;
+}
+
+.data-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
+    min-width: 1000px;
 }
 
-.stats-table thead {
-    background: #f6f8fb;
+.data-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-.stats-table th {
-    padding: 14px 12px;
+.data-table th {
+    padding: 22px 28px;
     text-align: left;
     font-weight: 700;
-    border-bottom: 2px solid #e0e5eb;
+    color: var(--dark-color);
+    border-bottom: 2px solid var(--border-color);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    position: relative;
 }
 
-.stats-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eef1f4;
+.data-table th::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+    transition: width 0.3s ease;
 }
 
-.stats-table tr:nth-child(even) {
-    background: #fbfcfe;
+.data-table th:hover::after {
+    width: 100%;
 }
 
-.stats-table tr:hover {
-    background: #eef5ff;
+.data-table td {
+    padding: 20px 28px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #4a5568;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.count-badge {
-    background: #1e88e5;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 14px;
+.data-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.data-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(67, 97, 238, 0.05) 0%, rgba(63, 55, 201, 0.05) 100%);
+    transform: translateX(4px);
+    box-shadow: -4px 0 0 var(--primary-color);
+}
+
+/* Status badge'lar */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 13px;
     font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 50px;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.status-saved {
+    background: linear-gradient(135deg, #f6e05e 0%, #d69e2e 100%);
+    color: #744210;
+    border: none;
+}
+
+.status-accepted {
+    background: linear-gradient(135deg, #68d391 0%, #38a169 100%);
+    color: #22543d;
+    border: none;
+}
+
+.status-sent {
+    background: linear-gradient(135deg, #63b3ed 0%, #3182ce 100%);
+    color: #2c5282;
+    border: none;
+}
+
+.status-cancelled {
+    background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+    color: #742a2a;
+    border: none;
+}
+
+/* Count badge */
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 16px;
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.count-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 50px;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 80px 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.empty-icon {
+    font-size: 80px;
+    margin-bottom: 30px;
+    opacity: 0.3;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.empty-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-bottom: 16px;
+}
+
+.empty-text {
+    font-size: 16px;
+    color: var(--gray-color);
+    max-width: 400px;
+    margin: 0 auto 32px;
+}
+
+.empty-action {
+    display: inline-flex;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    padding: 16px 32px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+}
+
+.empty-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    color: white;
+}
+
+/* Responsive dizayn */
+@media (max-width: 1200px) {
+    .stats-dashboard {
+        padding: 20px;
+    }
+
+    .dashboard-header,
+    .filters-section,
+    .stats-cards {
+        padding: 30px;
+    }
+
+    .header-text h1 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+    }
+
+    .header-left {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .filter-btn,
+    .clear-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 16px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-dashboard {
+        padding: 16px;
+    }
+
+    .dashboard-header,
+    .filters-section,
+    .stats-cards {
+        padding: 24px;
+    }
+
+    .header-text h1 {
+        font-size: 24px;
+    }
+
+    .export-button,
+    .filter-btn,
+    .clear-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Yuklanish animatsiyasi */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer-loading 1.5s infinite;
+    border-radius: 12px;
+}
+
+@keyframes shimmer-loading {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
 }
 </style>
+{% endblock %}
 
-<div class="stats-page">
-<div class="stats-wrapper">
+{% block content %}
+<div class="stats-dashboard">
+    <div class="dashboard-card">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="header-icon">📊</div>
+                    <div class="header-text">
+                        <h1>Hisobotlar statistikasi</h1>
+                        <p>Tashkilotlar bo'yicha hisobotlar statistikasi va monitoringi</p>
+                    </div>
+                </div>
 
-    <div class="stats-header">
-        <h1>📊 Hisobotlar statistikasi</h1>
+                <a href="export/?{{ request.GET.urlencode }}" class="export-button">
+                    <span>📥</span>
+                    <span>Excelga yuklab olish</span>
+                </a>
+            </div>
+        </div>
 
-        <!-- Excel keeps filters -->
-        <a href="export/?{{ request.GET.urlencode }}" class="export-btn">
-            📥 Excelga yuklab olish
-        </a>
+        <!-- Filterlar bo'limi -->
+        <div class="filters-section">
+            <form method="get" id="statsFilter">
+                <div class="filters-grid">
+                    <div class="filter-item">
+                        <div class="filter-label">
+                            <div class="filter-label-icon">🏢</div>
+                            Organization
+                        </div>
+                        <select name="organization" id="organization" class="filter-select">
+                            <option value="">Hammasi</option>
+                            {% for o in organizations %}
+                                <option value="{{ o.id }}"
+                                    {% if filters.organization == o.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ o.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <div class="filter-label">
+                            <div class="filter-label-icon">📄</div>
+                            Statement
+                        </div>
+                        <select name="statement" id="statement" class="filter-select">
+                            <option value="">Hammasi</option>
+                            {% for s in statements %}
+                                <option value="{{ s.id }}"
+                                    {% if filters.statement == s.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ s.name_uz|default:s.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <div class="filter-label">
+                            <div class="filter-label-icon">✅</div>
+                            Status
+                        </div>
+                        <select name="status" id="status" class="filter-select">
+                            <option value="">Hammasi</option>
+                            {% for key,label in statuses %}
+                                <option value="{{ key }}"
+                                    {% if filters.status == key %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <div class="filter-label">
+                            <div class="filter-label-icon">📅</div>
+                            Deadline
+                        </div>
+                        <select name="deadline" id="deadline" class="filter-select">
+                            <option value="">Hammasi</option>
+                            {% for d in deadlines %}
+                                <option value="{{ d.id }}"
+                                    {% if filters.deadline == d.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ d.name|default:d.submit_at }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="filter-btn">
+                        <span>🔍</span>
+                        <span>Filterlash</span>
+                    </button>
+
+                    <a href="." class="clear-btn">
+                        <span>♻️</span>
+                        <span>Tozalash</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Statistik kartochkalar -->
+        <div class="stats-cards">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats|length }}</div>
+                    <div class="stat-label">Jami Hisobotlar</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        {% with sorted_stats=stats|dictsortreversed:"total" %}
+                            {% if sorted_stats %}
+                                {{ sorted_stats.0.total }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="stat-label">Eng Ko'p Hisobot</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        {% with orgs=stats|dictsort:"organization__name" %}
+                            {% for org in orgs %}
+                                {% ifchanged org.organization__name %}
+                                    <!-- Bu yerda unique organizatsiyalar -->
+                                {% endifchanged %}
+                            {% endfor %}
+                            {{ orgs|length }}
+                        {% endwith %}
+                    </div>
+                    <div class="stat-label">Tashkilotlar</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        {% with stmts=stats|dictsort:"statement__name_uz" %}
+                            {% for stmt in stmts %}
+                                {% ifchanged stmt.statement__name_uz %}
+                                    <!-- Bu yerda unique statementlar -->
+                                {% endifchanged %}
+                            {% endfor %}
+                            {{ stmts|length }}
+                        {% endwith %}
+                    </div>
+                    <div class="stat-label">Statementlar</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jadval bo'limi -->
+        <div class="table-section">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Organization</th>
+                        <th>Statement</th>
+                        <th>Status</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in stats %}
+                    <tr>
+                        <td>
+                            <strong style="font-size: 16px; color: var(--dark-color);">
+                                {{ row.organization__name|default:"—" }}
+                            </strong>
+                        </td>
+                        <td style="font-weight: 500; color: #4a5568;">
+                            {{ row.statement__name_uz }}
+                        </td>
+                        <td>
+                            {% if row.status == 'saved' %}
+                                <span class="status-indicator status-saved">
+                                    ● {{ row.status|upper }}
+                                </span>
+                            {% elif row.status == 'accepted' %}
+                                <span class="status-indicator status-accepted">
+                                    ● {{ row.status|upper }}
+                                </span>
+                            {% elif row.status == 'sent' %}
+                                <span class="status-indicator status-sent">
+                                    ● {{ row.status|upper }}
+                                </span>
+                            {% elif row.status == 'cancelled' %}
+                                <span class="status-indicator status-cancelled">
+                                    ● {{ row.status|upper }}
+                                </span>
+                            {% else %}
+                                <span class="status-indicator">
+                                    ● {{ row.status|upper }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="count-badge">{{ row.total }}</span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <h3 class="empty-title">Ma'lumot topilmadi</h3>
+                                <p class="empty-text">Filterlarni o'zgartirib ko'ring yoki yangi hisobot qo'shing</p>
+                                <a href="." class="empty-action">
+                                    <span>♻️</span>
+                                    <span>Filterlarni tozalash</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <!-- FILTERS -->
-    <form method="get" class="filter-bar">
-
-        <select name="organization">
-            <option value="">🏢 Organization (hammasi)</option>
-            {% for o in organizations %}
-                <option value="{{ o.id }}"
-                    {% if filters.organization == o.id|stringformat:"s" %}selected{% endif %}>
-                    {{ o.name }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <select name="statement">
-            <option value="">📄 Statement (hammasi)</option>
-            {% for s in statements %}
-                <option value="{{ s.id }}"
-                    {% if filters.statement == s.id|stringformat:"s" %}selected{% endif %}>
-                    {{ s.name_uz|default:s.name }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <select name="status">
-            <option value="">✅ Status (hammasi)</option>
-            {% for key,label in statuses %}
-                <option value="{{ key }}"
-                    {% if filters.status == key %}selected{% endif %}>
-                    {{ label }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <button type="submit" class="filter-btn">
-            🔎 Filterlash
-        </button>
-
-        <a href="." class="clear-btn">
-            ♻️ Tozalash
-        </a>
-
-    </form>
-
-    <!-- TABLE -->
-    <table class="stats-table">
-        <thead>
-            <tr>
-                <th>Organization</th>
-                <th>Statement</th>
-                <th>Status</th>
-                <th style="width:120px;">Count</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for row in stats %}
-            <tr>
-                <td>{{ row.organization__name|default:"—" }}</td>
-                <td>{{ row.statement__name_uz }}</td>
-                <td>{{ row.status|capfirst }}</td>
-                <td><span class="count-badge">{{ row.total }}</span></td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="4" style="text-align:center;color:#888;padding:26px;">
-                    Ma’lumot topilmadi
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
 </div>
-</div>
+
+<script>
+// Filter formini submit qilganda yuklanishni ko'rsatish
+document.getElementById('statsFilter').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('.filter-btn');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<span>⏳</span><span>Yuklanmoqda...</span>';
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.8';
+
+        // Jadvalga yuklanish effekti
+        const tableBody = document.querySelector('.data-table tbody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4">
+                        <div style="padding: 60px; text-align: center;">
+                            <div class="loading-shimmer" style="width: 100px; height: 100px; margin: 0 auto 20px; border-radius: 50%;"></div>
+                            <div class="loading-shimmer" style="width: 200px; height: 20px; margin: 10px auto; border-radius: 10px;"></div>
+                            <div class="loading-shimmer" style="width: 150px; height: 20px; margin: 10px auto; border-radius: 10px;"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+});
+
+// Select elementlariga hover effekti
+document.querySelectorAll('.filter-select').forEach(select => {
+    select.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'translateY(-2px)';
+    });
+
+    select.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'translateY(0)';
+    });
+});
+
+// Jadval qatorlariga hover effekti
+document.querySelectorAll('.data-table tbody tr').forEach(row => {
+    row.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateX(4px)';
+    });
+
+    row.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateX(0)';
+    });
+});
+
+// Export tugmasi animatsiyasi
+document.querySelector('.export-button').addEventListener('click', function(e) {
+    const btn = this;
+    btn.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+        btn.style.transform = 'scale(1)';
+    }, 150);
+});
+
+// Statistik kartochkalarga hover effekti
+document.querySelectorAll('.stat-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+    });
+
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+    });
+});
+</script>
 {% endblock %}
