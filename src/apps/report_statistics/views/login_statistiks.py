@@ -62,25 +62,48 @@ class ReportLoginSummaryAPIView(APIView):
                 continue
             print("✅ STATEMENT ID:", statement.id, "| name:", statement.name)
 
-            # 2️⃣ DEADLINE - FIXED: Filter logic based on period type
+            # 2️⃣ DEADLINE - FIXED: Filter based on submit_at format
             deadline_qs = Deadline.objects.filter(statement=statement)
 
             # Apply period filter based on config and query params
+            # Period detection from submit_at format:
+            # - Yillik: "2025" (4 characters, only digits)
+            # - Oylik: "2025-01" (7 characters, YYYY-MM format)
+            # - Choraklik: "2025-CHORAK_1" (contains CHORAK)
+
             if cfg["period"] == "monthly":
                 if monthly:
-                    deadline_qs = deadline_qs.filter(submit_at=monthly, period="Oylik")
+                    # Filter by exact monthly submit_at (format: YYYY-MM)
+                    deadline_qs = deadline_qs.filter(submit_at=monthly)
                     print(f"APPLY MONTHLY FILTER: {monthly}")
                 else:
-                    # If no monthly param but config is monthly, get latest monthly deadline
-                    deadline_qs = deadline_qs.filter(period="Oylik").order_by("-created_at")
+                    # Get latest monthly deadline (submit_at format: YYYY-MM)
+                    # Filter by length=7 and contains '-' but not 'CHORAK'
+                    from django.db.models import Length
+                    deadline_qs = deadline_qs.annotate(
+                        submit_at_length=Length('submit_at')
+                    ).filter(
+                        submit_at_length=7,
+                        submit_at__contains='-'
+                    ).exclude(
+                        submit_at__contains='CHORAK'
+                    ).order_by("-created_at")
                     print("FALLBACK → LAST MONTHLY DEADLINE")
+
             elif cfg["period"] == "yearly":
                 if yearly:
-                    deadline_qs = deadline_qs.filter(submit_at=yearly, period="Yillik")
+                    # Filter by exact yearly submit_at (format: YYYY)
+                    deadline_qs = deadline_qs.filter(submit_at=yearly)
                     print(f"APPLY YEARLY FILTER: {yearly}")
                 else:
-                    # If no yearly param but config is yearly, get latest yearly deadline
-                    deadline_qs = deadline_qs.filter(period="Yillik").order_by("-created_at")
+                    # Get latest yearly deadline (submit_at format: YYYY - 4 digits only)
+                    # Filter by length=4 and all digits
+                    from django.db.models import Length
+                    deadline_qs = deadline_qs.annotate(
+                        submit_at_length=Length('submit_at')
+                    ).filter(
+                        submit_at_length=4
+                    ).order_by("-created_at")
                     print("FALLBACK → LAST YEARLY DEADLINE")
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
@@ -96,7 +119,7 @@ class ReportLoginSummaryAPIView(APIView):
                     "actual": Decimal("0"),
                 })
                 continue
-            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at, "| period:", deadline.period)
+            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at)
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
@@ -118,7 +141,7 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # FIXED: Helper function to properly extract values from nested structure
+            # Helper function to properly extract values from nested structure
             def get_total_value(column_id, reports_qs):
                 total = Decimal("0")
 
@@ -128,15 +151,15 @@ class ReportLoginSummaryAPIView(APIView):
                 report_items = ReportItem.objects.filter(
                     report__in=reports_qs,
                     statement_column_id=column_id
-                ).prefetch_related('report_item_inners')
+                ).prefetch_related('inners')
 
                 print(f"    📊 Found ReportItems: {report_items.count()}")
 
                 for item in report_items:
                     print(f"    📄 Processing ReportItem ID: {item.id}")
 
-                    # Check for inner values first
-                    inner_values = item.report_item_inners.all()
+                    # Check for inner values first (ReportItemInner)
+                    inner_values = item.inners.all()
 
                     if inner_values.exists():
                         print(f"       Found {inner_values.count()} inner values")
@@ -153,7 +176,7 @@ class ReportLoginSummaryAPIView(APIView):
                             except (InvalidOperation, ValueError, TypeError) as e:
                                 print(f"       ⚠️ Invalid inner value: '{inner.value}' - {e}")
                     else:
-                        # No inner values, use direct value
+                        # No inner values, use direct value from ReportItem
                         try:
                             if item.value and str(item.value).strip() and str(item.value).strip() not in ['', 'None',
                                                                                                           'null']:
