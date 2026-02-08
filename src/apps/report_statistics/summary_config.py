@@ -2,7 +2,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "O'rmon bilan qoplangan yer maydonlari",
         "unit": "gektar",
-        "statement_name": "O'rmon bilan qoplangan yerlar",
+        "statement_name": "O'rmon bilan qoplangan yerlar",  # Rasmdan: Name [uz] = O'rmon bilan qoplangan yerlar
         "period": "yearly",
         "plan": None,
         "actual": {
@@ -12,7 +12,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "O'rmon yerlarini o'zlashtirib, foydalanishga kiritish",
         "unit": "gektar",
-        "statement_name": "Yer o'zlashtirish",
+        "statement_name": "Yer o'zlashtirish",  # Bu nom database da yo'q - tekshirish kerak
         "period": "yearly",
         "plan": {
             "column_id": "b0397d0b-5cfe-4325-8e1e-391b955c195f",
@@ -24,7 +24,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "Dorivor o'simliklar plantatsiyalarini barpo etish",
         "unit": "gektar",
-        "statement_name": "Dorivor yetishtirish",
+        "statement_name": "Dorivor yetishtirish",  # ✅ Log: Name UZ: Dorivor yetishtirish
         "period": "monthly",
         "plan": {
             "column_id": "bb660080-02c3-439c-b1ca-aa7b5d317540",
@@ -36,7 +36,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "Dorivor o'simliklar xomashyosini tayyorlash",
         "unit": "tonna",
-        "statement_name": "Dorivor yetishtirish",
+        "statement_name": "Dorivor yetishtirish",  # ✅ Log: Name UZ: Dorivor yetishtirish
         "period": "monthly",
         "plan": {
             "column_id": "09a4a0ee-de86-4a5f-a868-abc78b3ab527",
@@ -47,8 +47,8 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Cho'l, tog'li va tog'oldi hududlarida himoya o'rmonzorlari (ihota) barpo etish",
-        "unit": "gektor",
-        "statement_name": "O'rmon barpo qilish bo'limi",
+        "unit": "gektar",
+        "statement_name": "O'rmon barpo qilish bo'limi",  # ✅ Log: Name UZ: O'rmon barpo qilish bo'limi
         "period": "monthly",
         "plan": {
             "column_id": "c4f486c9-7d07-4aac-abd9-7bdbdfe0ea9c",
@@ -58,9 +58,9 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Niholxona va ko'chatchonalar tashkil etish (gektar)",
+        "column_name": "Niholxona va ko'chatchonalar tashkil etish",
         "unit": "mln dona",
-        "statement_name": "Ko'chatxona va Niholxona Jami",
+        "statement_name": "Ko'chatxona va Niholxona Jami",  # ✅ Log: Name UZ: Ko'chatxona va Niholxona Jami
         "period": "monthly",
         "plan": {
             "column_id": "c58868c3-927d-4ec0-8e3c-279d3fe59046",
@@ -72,7 +72,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
         "unit": "ming gektar",
-        "statement_name": "O'rmon barpo qilish bo'limi",
+        "statement_name": "O'rmon barpo qilish bo'limi",  # ✅ Log: Name UZ: O'rmon barpo qilish bo'limi
         "period": "monthly",
         "plan": {
             "column_id": "97332716-b82f-4c3c-9a68-16b6690d4115",
@@ -84,7 +84,7 @@ SUMMARY_CONFIG = [
     {
         "column_name": "Jumladan, tut ko'chatlari yetishtirish",
         "unit": "mln dona",
-        "statement_name": "Tut Ko'chat va Tut Nihol",
+        "statement_name": "Tut Ko'chat va Tut Nihol",  # ✅ Log: Name UZ: Tut Ko'chat va Tut Nihol
         "period": "monthly",
         "plan": {
             "column_id": "da520dc4-e753-43bf-bf56-49155bc14310",
