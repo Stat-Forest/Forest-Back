@@ -26,7 +26,7 @@ class PersonalInfoInline(admin.StackedInline):
 
 
 # ================================
-# CUSTOM FILTER (LOGIN STATUS) - TUZATILGAN
+# CUSTOM FILTER (LOGIN STATUS) - TO'LIQ TUZATILGAN
 # ================================
 class LoginStatusFilter(admin.SimpleListFilter):
     title = _("Login holati")
@@ -47,14 +47,25 @@ class LoginStatusFilter(admin.SimpleListFilter):
         now = timezone.now()
 
         if self.value() == "never":
-            # Hech qachon login qilmagan userlar
-            user_ids_with_login = HistoryActionJournal.objects.filter(
-                action='login'
-            ).values_list('user_id', flat=True).distinct()
+            # VARIANT 1: Hech qachon login yoki add action bo'lmagan userlar
+            # Bu usul: HistoryActionJournal da user_id mavjud bo'lmagan userlarni topadi
 
-            return queryset.exclude(id__in=user_ids_with_login)
+            # Barcha user_id'larni olish (login yoki add action bilan)
+            user_ids_with_login_or_add = set(
+                HistoryActionJournal.objects.filter(
+                    Q(action='login') | Q(action='add'),
+                    user__isnull=False  # Faqat user bilan bog'langan actionlar
+                ).values_list('user_id', flat=True)
+            )
 
-        # Vaqt chegaralarini aniqlash
+            # Agar user_id'lar topilmasa, barcha userlarni qaytaramiz
+            if not user_ids_with_login_or_add:
+                return queryset  # Barcha userlar hech qachon kirmagan
+
+            # User_id'lar ro'yxatida bo'lmagan userlarni qaytarish
+            return queryset.exclude(id__in=user_ids_with_login_or_add)
+
+        # Vaqt chegaralarini aniqlash (7d, 1m, 3m)
         if self.value() == "7d":
             date_threshold = now - timedelta(days=7)
         elif self.value() == "1m":
@@ -64,20 +75,20 @@ class LoginStatusFilter(admin.SimpleListFilter):
         else:
             return queryset
 
-        # Har bir user uchun eng oxirgi login vaqtini topish
-        latest_login_per_user = HistoryActionJournal.objects.filter(
+        # Har bir user uchun eng oxirgi login yoki add vaqtini topish
+        latest_activity_subquery = HistoryActionJournal.objects.filter(
             user_id=OuterRef('pk'),
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').values('created_at')[:1]
 
-        # Oxirgi login vaqti threshold dan oldingi yoki hech qachon login qilmagan userlar
-        user_ids = queryset.annotate(
-            last_login_time=Subquery(latest_login_per_user)
+        # Annotate qilib, filtrlaymiz
+        filtered_users = queryset.annotate(
+            last_activity_time=Subquery(latest_activity_subquery)
         ).filter(
-            Q(last_login_time__lt=date_threshold) | Q(last_login_time__isnull=True)
-        ).values_list('id', flat=True)
+            Q(last_activity_time__lt=date_threshold) | Q(last_activity_time__isnull=True)
+        )
 
-        return queryset.filter(id__in=user_ids)
+        return filtered_users
 
 
 # ================================
@@ -197,9 +208,10 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     # ================================
     def get_last_login_display(self, obj):
         """List display uchun oxirgi login"""
+        # Login yoki Add actionni topamiz (E-imzo uchun ham)
         last_login = HistoryActionJournal.objects.filter(
             user=obj,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if last_login:
@@ -227,7 +239,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         """Foydalanuvchining oxirgi login vaqti"""
         last_login = HistoryActionJournal.objects.filter(
             user=user,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if last_login:
@@ -238,7 +250,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         """Login holatini aniqlash"""
         last_login = HistoryActionJournal.objects.filter(
             user=user,
-            action='login'
+            action__in=['login', 'add']
         ).order_by('-created_at').first()
 
         if not last_login:
