@@ -62,15 +62,26 @@ class ReportLoginSummaryAPIView(APIView):
                 continue
             print("✅ STATEMENT ID:", statement.id, "| name:", statement.name)
 
-            # 2️⃣ DEADLINE
+            # 2️⃣ DEADLINE - FIXED: Filter logic based on period type
             deadline_qs = Deadline.objects.filter(statement=statement)
 
-            if cfg["period"] == "monthly" and monthly:
-                deadline_qs = deadline_qs.filter(submit_at=monthly)
-                print("APPLY MONTHLY FILTER:", monthly)
-            elif cfg["period"] == "yearly" and yearly:
-                deadline_qs = deadline_qs.filter(submit_at=yearly)
-                print("APPLY YEARLY FILTER:", yearly)
+            # Apply period filter based on config and query params
+            if cfg["period"] == "monthly":
+                if monthly:
+                    deadline_qs = deadline_qs.filter(submit_at=monthly, period="Oylik")
+                    print(f"APPLY MONTHLY FILTER: {monthly}")
+                else:
+                    # If no monthly param but config is monthly, get latest monthly deadline
+                    deadline_qs = deadline_qs.filter(period="Oylik").order_by("-created_at")
+                    print("FALLBACK → LAST MONTHLY DEADLINE")
+            elif cfg["period"] == "yearly":
+                if yearly:
+                    deadline_qs = deadline_qs.filter(submit_at=yearly, period="Yillik")
+                    print(f"APPLY YEARLY FILTER: {yearly}")
+                else:
+                    # If no yearly param but config is yearly, get latest yearly deadline
+                    deadline_qs = deadline_qs.filter(period="Yillik").order_by("-created_at")
+                    print("FALLBACK → LAST YEARLY DEADLINE")
             else:
                 deadline_qs = deadline_qs.order_by("-created_at")
                 print("FALLBACK → LAST CREATED DEADLINE")
@@ -85,14 +96,13 @@ class ReportLoginSummaryAPIView(APIView):
                     "actual": Decimal("0"),
                 })
                 continue
-            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at)
+            print("✅ DEADLINE:", deadline.id, "| submit_at:", deadline.submit_at, "| period:", deadline.period)
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
                 statement=statement,
                 deadline=deadline,
                 status=Report.StatusChoices.ACCEPTED,
-                is_report=True,
             )
 
             print("REPORT COUNT:", reports.count())
@@ -108,47 +118,46 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # Helper function to get value from ReportItem or ReportItemInner
+            # FIXED: Helper function to properly extract values from nested structure
             def get_total_value(column_id, reports_qs):
                 total = Decimal("0")
 
                 print(f"\n    🔍 Searching for column_id: {column_id}")
 
-                # ReportItem'lardan qidirish
-                items = ReportItem.objects.filter(
+                # Get all ReportItems for this column across all reports
+                report_items = ReportItem.objects.filter(
                     report__in=reports_qs,
                     statement_column_id=column_id
-                )
+                ).prefetch_related('report_item_inners')
 
-                print(f"    📊 Found ReportItems: {items.count()}")
+                print(f"    📊 Found ReportItems: {report_items.count()}")
 
-                for item in items:
+                for item in report_items:
                     print(f"    📄 Processing ReportItem ID: {item.id}")
-                    print(f"       Direct value: {item.value}")
 
-                    # Avval ReportItemInner mavjudligini tekshirish
-                    inner_values = ReportItemInner.objects.filter(
-                        report_item=item
-                    )
-
-                    print(f"       Found {inner_values.count()} inner values")
+                    # Check for inner values first
+                    inner_values = item.report_item_inners.all()
 
                     if inner_values.exists():
-                        # Agar inner values bo'lsa, ularni yig'ish
+                        print(f"       Found {inner_values.count()} inner values")
+                        # Sum all inner values
                         for inner in inner_values:
                             try:
-                                if inner.value and inner.value.strip() and inner.value.strip() not in ['', 'None',
-                                                                                                       'null']:
-                                    val = Decimal(inner.value.strip())
+                                if inner.value and str(inner.value).strip() and str(inner.value).strip() not in ['',
+                                                                                                                 'None',
+                                                                                                                 'null']:
+                                    # Handle both string and numeric values
+                                    val = Decimal(str(inner.value).strip())
                                     total += val
                                     print(f"       ✅ Added inner value: {val} (total now: {total})")
                             except (InvalidOperation, ValueError, TypeError) as e:
                                 print(f"       ⚠️ Invalid inner value: '{inner.value}' - {e}")
                     else:
-                        # Agar inner yo'q bo'lsa, direct value ishlatish
+                        # No inner values, use direct value
                         try:
-                            if item.value and item.value.strip() and item.value.strip() not in ['', 'None', 'null']:
-                                val = Decimal(item.value.strip())
+                            if item.value and str(item.value).strip() and str(item.value).strip() not in ['', 'None',
+                                                                                                          'null']:
+                                val = Decimal(str(item.value).strip())
                                 total += val
                                 print(f"       ✅ Added direct value: {val} (total now: {total})")
                         except (InvalidOperation, ValueError, TypeError) as e:
@@ -198,7 +207,8 @@ class ReportLoginSummaryAPIView(APIView):
             })
 
         print("\n===== FINAL RESULT =====")
-        print(result)
+        for item in result:
+            print(f"{item['column_name']}: plan={item['plan']}, actual={item['actual']}")
         print("========================")
 
         serializer = ReportSummarySerializer(result, many=True)
