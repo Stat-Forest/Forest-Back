@@ -3,6 +3,8 @@ from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 from django.db import connection
 from django.core.cache import cache
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -272,6 +274,40 @@ class ForestMonitoringAPIView(APIView):
     # MAIN METHOD WITH PLAN PRIORITY LOGIC
     # =========================================================
 
+    @extend_schema(
+        summary="Forest monitoring – analytical aggregation",
+        description="""
+        Region va organization bo‘yicha o‘rmon monitoring ma’lumotlarini chiqaradi.
+
+        📌 Agar region berilsa → faqat shu hudud va uning tashkilotlari chiqadi -> not yet :) 
+        📌 Agar organization berilsa → faqat respublika i viloyat i o`sha organization ni chiqaradi  
+        📌 Agar hech nima berilmasa → Respublika → Regionlar → Tashkilotlar chiqadi
+        """,
+        parameters=[
+            # OpenApiParameter(
+            #     name="region",
+            #     type=OpenApiTypes.STR,
+            #     location=OpenApiParameter.QUERY,
+            #     required=False,
+            #     description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
+            # ),
+            OpenApiParameter(
+                name="organization",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Organization ID bo‘yicha filter"
+            ),
+            OpenApiParameter(
+                name="lang",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Til (uz yoki ru)"
+            ),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def get(self, request):
         """Asosiy GET endpoint - PLAN PRIORITY LOGIC bilan"""
         start_time = time.time()
@@ -296,19 +332,36 @@ class ForestMonitoringAPIView(APIView):
         # 2. Organizations
         print(f"[2/9] Loading organizations...")
         try:
-            organizations = list(
-                Organization.objects.only("id", "region", "name", "name_uz", "name_ru")
+            org_qs = Organization.objects.only(
+                "id", "region", "name", "name_uz", "name_ru"
             )
+
+            # 🔍 Query params
+            region_filter = request.query_params.get("region")
+            organization_filter = request.query_params.get("organization")
+
+            # 🗺 Region bo‘yicha filter
+            if region_filter:
+                org_qs = org_qs.filter(region=region_filter)
+
+            # 🏢 Organization bo‘yicha filter
+            if organization_filter:
+                org_qs = org_qs.filter(id=organization_filter)
+
+            organizations = list(org_qs)
+
         except Exception as e:
             print(f"Error loading organizations: {e}")
             return self._build_empty_response(lang, skeleton)
 
         if not organizations:
-            print("No organizations found, returning empty response")
+            print("No organizations found after filters, returning empty response")
             return self._build_empty_response(lang, skeleton)
 
+        # 🚀 IDs — tezkor ishlash uchun
         org_ids = [o.id for o in organizations]
-        print(f"   Found {len(organizations)} organizations")
+
+        print(f"   Found {len(organizations)} organizations (after filters)")
 
         # 3. Source statements
         print(f"[3/9] Loading source statements...")

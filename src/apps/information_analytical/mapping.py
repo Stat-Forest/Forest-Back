@@ -7,20 +7,20 @@ MAPPING_RULES = [
     dict(target="1.1.3.2", source_statement_name_uz="Yer o'zlashtirish", source="1.1.3"),  # Amalda
 
     # 3) O‘rmonlar (yashil qoplamalar) barpo etish va qayta tiklash (ga)
-    dict(target="1.1.4.1", source_statement_name_uz="O'rmon barpo qilish", source="1.1.3.1"),
-    dict(target="1.1.4.2", source_statement_name_uz="O'rmon barpo qilish", source="1.1.3.2"),
+    dict(target="1.1.4.1", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.3.1"),
+    dict(target="1.1.4.2", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.3.2"),
 
     # 4) Orolbo‘yi mintaqasida yashil qoplama (ming ga)
-    dict(target="1.1.5.1", source_statement_name_uz="O'rmon barpo qilish", source="1.1.5.1"),
-    dict(target="1.1.5.2", source_statement_name_uz="O'rmon barpo qilish", source="1.1.5.2"),
+    dict(target="1.1.5.1", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.5.1"),
+    dict(target="1.1.5.2", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.5.2"),
 
     # 5) Orol dengizining qurigan tubida (ga)
-    dict(target="1.1.6.1", source_statement_name_uz="O'rmon barpo qilish", source="1.1.6.1"),
-    dict(target="1.1.6.2", source_statement_name_uz="O'rmon barpo qilish", source="1.1.6.2"),
+    dict(target="1.1.6.1", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.6.1"),
+    dict(target="1.1.6.2", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.6.2"),
 
     # 6) Ihota (ga)
-    dict(target="1.1.7.1", source_statement_name_uz="O'rmon barpo qilish", source="1.1.4.1"),
-    dict(target="1.1.7.2", source_statement_name_uz="O'rmon barpo qilish", source="1.1.4.2"),
+    dict(target="1.1.7.1", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.4.1"),
+    dict(target="1.1.7.2", source_statement_name_uz="O'rmon barpo qilish bo'limi", source="1.1.4.2"),
 
     # 7) Terassa (ga)
     dict(target="1.1.8.1", source_statement_name_uz="Terassa", source="1.1.3"),
@@ -59,8 +59,8 @@ MAPPING_RULES = [
     dict(target="1.1.15.2", source_statement_name_uz="Sog'liqni saqlash", source="1.1.3.2.1"),
 
     # 16) Xalq ta’limi (tup)
-    dict(target="1.1.16.1", source_statement_name_uz="Ta'lim muassasalariga yetkazib berilgan ko'chatlar", source="1.1.3.1.1"),
-    dict(target="1.1.16.2", source_statement_name_uz="Ta'lim muassasalariga yetkazib berilgan ko'chatlar", source="1.1.3.2.1"),
+    dict(target="1.1.16.1", source_statement_name_uz="Talim muassasalariga yetkazib berilgan ko'chatlar", source="1.1.3.1.1"),
+    dict(target="1.1.16.2", source_statement_name_uz="Talim muassasalariga yetkazib berilgan ko'chatlar", source="1.1.3.2.1"),
 
     # 17) Dorivor plantatsiya (ga)
     dict(target="1.1.17.1", source_statement_name_uz="Dorivor yetishtirish", source="1.1.2.1"),
