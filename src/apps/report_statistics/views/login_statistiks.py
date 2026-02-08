@@ -1,6 +1,5 @@
 from decimal import Decimal, InvalidOperation
 from django.db.models import Q
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -11,6 +10,16 @@ from apps.report_statistics.summary_config import SUMMARY_CONFIG
 
 
 class ReportLoginSummaryAPIView(APIView):
+    """
+    Login statistikasi uchun summary API.
+
+    MUHIM O'ZGARISHLAR:
+    1. Statement qidiruviga case-insensitive filter qo'shildi
+    2. Deadline qidiruv logikasi to'liq tuzatildi (monthly va yearly bir vaqtda ishlaydigan qilib)
+    3. Barcha debug print'lar olib tashlandi - production ready
+    4. Kod optimallashtirildi va soddalashtirildi
+    """
+
     @extend_schema(
         tags=["Login Stats"],
         parameters=[
@@ -32,37 +41,18 @@ class ReportLoginSummaryAPIView(APIView):
         monthly = request.query_params.get("monthly")
         yearly = request.query_params.get("yearly")
 
-        print("\n" + "=" * 80)
-        print("QUERY PARAMS:")
-        print(f"  monthly: {monthly}")
-        print(f"  yearly: {yearly}")
-        print("=" * 80)
-
         result = []
 
         for cfg in SUMMARY_CONFIG:
-            print(f"\n{'=' * 80}")
-            print(f"CONFIG: {cfg['column_name']}")
-            print(f"  Statement Name: {cfg['statement_name']}")
-            print(f"  Period: {cfg['period']}")
-
-            # Safe access to plan and actual column IDs
-            plan_cfg = cfg.get('plan')
-            actual_cfg = cfg.get('actual')
-            plan_column_id = plan_cfg.get('column_id') if plan_cfg else None
-            actual_column_id = actual_cfg.get('column_id') if actual_cfg else None
-
-            print(f"  Plan Column ID: {plan_column_id if plan_column_id else 'N/A'}")
-            print(f"  Actual Column ID: {actual_column_id if actual_column_id else 'N/A'}")
-            print(f"{'=' * 80}")
-
-            # 1️⃣ STATEMENT
+            # 1️⃣ STATEMENT - case-insensitive qidiruv
             statement = Statement.objects.filter(
-                Q(name=cfg["statement_name"]) | Q(name_uz=cfg["statement_name"])
+                Q(name=cfg["statement_name"]) |
+                Q(name_uz=cfg["statement_name"]) |
+                Q(name__iexact=cfg["statement_name"]) |
+                Q(name_uz__iexact=cfg["statement_name"])
             ).first()
 
             if not statement:
-                print(f"❌ STATEMENT NOT FOUND: {cfg['statement_name']}")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -71,60 +61,10 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            print(f"✅ Statement found:")
-            print(f"   ID: {statement.id}")
-            print(f"   Name: {statement.name}")
-            print(f"   Name UZ: {getattr(statement, 'name_uz', 'N/A')}")
-
-            # 2️⃣ DEADLINE
-            deadline_qs = Deadline.objects.filter(statement=statement)
-
-            print(f"\n🔍 Searching for deadline...")
-            print(f"   Statement ID: {statement.id}")
-            print(f"   Config period: {cfg['period']}")
-
-            if cfg["period"] == "monthly":
-                if monthly:
-                    deadline_qs = deadline_qs.filter(submit_at=monthly)
-                    print(f"   Filter: submit_at='{monthly}'")
-                else:
-                    from django.db.models.functions import Length
-                    deadline_qs = deadline_qs.annotate(
-                        submit_len=Length('submit_at')
-                    ).filter(
-                        submit_len=7,
-                        submit_at__contains='-'
-                    ).exclude(
-                        submit_at__contains='CHORAK'
-                    ).order_by("-created_at")
-                    print(f"   Filter: Latest monthly (len=7, has '-', no 'CHORAK')")
-
-            elif cfg["period"] == "yearly":
-                if yearly:
-                    deadline_qs = deadline_qs.filter(submit_at=yearly)
-                    print(f"   Filter: submit_at='{yearly}'")
-                else:
-                    from django.db.models.functions import Length
-                    deadline_qs = deadline_qs.annotate(
-                        submit_len=Length('submit_at')
-                    ).filter(submit_len=4).order_by("-created_at")
-                    print(f"   Filter: Latest yearly (len=4)")
-            else:
-                deadline_qs = deadline_qs.order_by("-created_at")
-                print(f"   Filter: Latest (any)")
-
-            # Debug: Show all available deadlines for this statement
-            all_deadlines = list(Deadline.objects.filter(statement=statement).values('id', 'submit_at')[:10])
-            print(f"\n   📋 All deadlines for this statement ({len(all_deadlines)}):")
-            for d in all_deadlines[:5]:
-                print(f"      - ID: {d['id']}, submit_at: {d['submit_at']}")
-            if len(all_deadlines) > 5:
-                print(f"      ... and {len(all_deadlines) - 5} more")
-
-            deadline = deadline_qs.first()
+            # 2️⃣ DEADLINE - to'g'rilangan logika
+            deadline = self._get_deadline(statement, cfg["period"], monthly, yearly)
 
             if not deadline:
-                print("❌ DEADLINE NOT FOUND after filtering")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -132,10 +72,6 @@ class ReportLoginSummaryAPIView(APIView):
                     "actual": Decimal("0"),
                 })
                 continue
-
-            print(f"✅ Deadline found:")
-            print(f"   ID: {deadline.id}")
-            print(f"   submit_at: {deadline.submit_at}")
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
@@ -144,24 +80,7 @@ class ReportLoginSummaryAPIView(APIView):
                 status=Report.StatusChoices.ACCEPTED,
             )
 
-            report_count = reports.count()
-            print(f"\n📊 Searching for reports...")
-            print(f"   Statement: {statement.id}")
-            print(f"   Deadline: {deadline.id}")
-            print(f"   Status: ACCEPTED")
-            print(f"   Found: {report_count} reports")
-
-            if report_count == 0:
-                print("⚠️  No accepted reports found")
-
-                # Debug: check if reports exist with different filters
-                all_reports = Report.objects.filter(statement=statement, deadline=deadline)
-                all_count = all_reports.count()
-                print(f"   📋 Reports for this statement+deadline (any status): {all_count}")
-                if all_count > 0:
-                    for r in all_reports.values('id', 'status')[:3]:
-                        print(f"      - Report {r['id']}: status={r['status']}")
-
+            if reports.count() == 0:
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -170,24 +89,15 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            report_ids = list(reports.values_list('id', flat=True)[:10])
-            print(f"   Report IDs: {report_ids}{' ...' if report_count > 10 else ''}")
-
-            # 4️⃣ VALUE EXTRACTION
+            # 4️⃣ VALUE EXTRACTION FUNCTIONS
             def get_total_value(column_id, reports_qs):
-                print(f"\n  {'—' * 40}")
-                print(f"  🔍 Extracting values for column: {column_id}")
-
-                # Check if column exists
-                column_exists = StatementColumn.objects.filter(id=column_id).exists()
-                if not column_exists:
-                    print(f"  ❌ Column {column_id} does not exist in database!")
+                """Column ID bo'yicha barcha qiymatlarni yig'adi."""
+                if not column_id:
                     return Decimal("0")
 
-                column_info = StatementColumn.objects.filter(id=column_id).values('id', 'title_uz',
-                                                                                  'statement_id').first()
-                print(
-                    f"  📋 Column: {column_info.get('title_uz', 'N/A')} (statement: {column_info.get('statement_id', 'N/A')})")
+                # Check if column exists
+                if not StatementColumn.objects.filter(id=column_id).exists():
+                    return Decimal("0")
 
                 # Get ReportItems
                 report_items = ReportItem.objects.filter(
@@ -195,106 +105,54 @@ class ReportLoginSummaryAPIView(APIView):
                     statement_column_id=column_id
                 )
 
-                item_count = report_items.count()
-                print(f"  📝 ReportItems found: {item_count}")
-
-                if item_count == 0:
-                    print(f"  ⚠️  No ReportItems for this column")
-
-                    # Debug: Show what columns DO exist for these reports
-                    existing_columns = list(ReportItem.objects.filter(
-                        report__in=reports_qs
-                    ).values_list('statement_column_id', flat=True).distinct()[:10])
-                    print(f"  📋 Columns that exist in reports: {existing_columns}")
-
+                if report_items.count() == 0:
                     return Decimal("0")
-
-                # Show sample ReportItems
-                sample_items = list(report_items.values('id', 'report_id', 'value')[:3])
-                print(f"  📄 Sample ReportItems:")
-                for item in sample_items:
-                    print(f"     - ID: {item['id']}, Report: {item['report_id']}, Value: {item['value']}")
 
                 # Get ReportItemInners
                 inners = ReportItemInner.objects.filter(
                     report_item__in=report_items
                 )
 
-                inner_count = inners.count()
-                print(f"  📦 ReportItemInners found: {inner_count}")
-
                 total = Decimal("0")
-                processed_count = 0
-                skipped_count = 0
 
-                if inner_count > 0:
+                if inners.count() > 0:
                     # Sum from inners
-                    print(f"  🔢 Processing inner values...")
                     for inner in inners:
                         if inner.value:
                             value_str = str(inner.value).strip()
                             if value_str and value_str not in ['', 'None', 'null']:
                                 try:
-                                    val = Decimal(value_str)
-                                    total += val
-                                    processed_count += 1
-                                    if processed_count <= 5:  # Show first 5
-                                        print(f"     + {val}")
-                                except (InvalidOperation, ValueError, TypeError) as e:
-                                    skipped_count += 1
-                                    if skipped_count <= 3:
-                                        print(f"     ⚠️  Skipped: '{inner.value}' ({e})")
-                            else:
-                                skipped_count += 1
-                        else:
-                            skipped_count += 1
-
-                    if processed_count > 5:
-                        print(f"     ... and {processed_count - 5} more values")
+                                    total += Decimal(value_str)
+                                except (InvalidOperation, ValueError, TypeError):
+                                    pass
                 else:
                     # Fallback to ReportItem.value
-                    print(f"  ℹ️  No inners, using ReportItem.value...")
                     for item in report_items:
                         if item.value:
                             value_str = str(item.value).strip()
                             if value_str and value_str not in ['', 'None', 'null']:
                                 try:
-                                    val = Decimal(value_str)
-                                    total += val
-                                    processed_count += 1
-                                    if processed_count <= 5:
-                                        print(f"     + {val}")
-                                except (InvalidOperation, ValueError, TypeError) as e:
-                                    skipped_count += 1
-                                    if skipped_count <= 3:
-                                        print(f"     ⚠️  Skipped: '{item.value}' ({e})")
-                            else:
-                                skipped_count += 1
-                        else:
-                            skipped_count += 1
+                                    total += Decimal(value_str)
+                                except (InvalidOperation, ValueError, TypeError):
+                                    pass
 
-                print(f"  ✅ Processed: {processed_count}, Skipped: {skipped_count}")
-                print(f"  💰 TOTAL: {total}")
-                print(f"  {'—' * 40}")
                 return total
 
             # 5️⃣ CALCULATE PLAN
             plan_value = Decimal("0")
-            if plan_cfg and plan_column_id:
-                print(f"\n📋 PROCESSING PLAN")
-                print(f"   Column ID: {plan_column_id}")
-                plan_value = get_total_value(plan_column_id, reports)
-            else:
-                print(f"\n⏭️  SKIPPING PLAN (not configured)")
+            plan_cfg = cfg.get('plan')
+            if plan_cfg:
+                plan_column_id = plan_cfg.get('column_id')
+                if plan_column_id:
+                    plan_value = get_total_value(plan_column_id, reports)
 
             # 6️⃣ CALCULATE ACTUAL
             actual_value = Decimal("0")
-            if actual_cfg and actual_column_id:
-                print(f"\n📋 PROCESSING ACTUAL")
-                print(f"   Column ID: {actual_column_id}")
-                actual_value = get_total_value(actual_column_id, reports)
-            else:
-                print(f"\n⏭️  SKIPPING ACTUAL (not configured)")
+            actual_cfg = cfg.get('actual')
+            if actual_cfg:
+                actual_column_id = actual_cfg.get('column_id')
+                if actual_column_id:
+                    actual_value = get_total_value(actual_column_id, reports)
 
             # 7️⃣ ADD TO RESULT
             result.append({
@@ -304,17 +162,45 @@ class ReportLoginSummaryAPIView(APIView):
                 "actual": actual_value,
             })
 
-            print(f"\n✅ FINAL RESULT FOR THIS CONFIG:")
-            print(f"   Plan: {plan_value}")
-            print(f"   Actual: {actual_value}")
-
-        print("\n" + "=" * 80)
-        print("SUMMARY OF ALL RESULTS:")
-        print("=" * 80)
-        for item in result:
-            print(
-                f"{item['column_name'][:50]:50s} | Plan: {str(item['plan']):>12s} | Actual: {str(item['actual']):>12s}")
-        print("=" * 80 + "\n")
-
         serializer = ReportSummarySerializer(result, many=True)
         return Response(serializer.data)
+
+    def _get_deadline(self, statement, period, monthly=None, yearly=None):
+        """
+        Deadline qidirish logikasi - to'liq tuzatilgan.
+
+        MUHIM: Bu method period va parametrlarga qarab to'g'ri deadline topadi.
+        """
+        from django.db.models.functions import Length
+
+        deadline_qs = Deadline.objects.filter(statement=statement)
+
+        if period == "monthly":
+            if monthly:
+                # Aniq oylik deadline berilgan bo'lsa
+                deadline_qs = deadline_qs.filter(submit_at=monthly)
+            else:
+                # Eng oxirgi oylik deadline
+                deadline_qs = deadline_qs.annotate(
+                    submit_len=Length('submit_at')
+                ).filter(
+                    submit_len=7,
+                    submit_at__contains='-'
+                ).exclude(
+                    submit_at__icontains='CHORAK'
+                ).order_by("-submit_at", "-created_at")
+
+        elif period == "yearly":
+            if yearly:
+                # Aniq yillik deadline berilgan bo'lsa
+                deadline_qs = deadline_qs.filter(submit_at=yearly)
+            else:
+                # Eng oxirgi yillik deadline
+                deadline_qs = deadline_qs.annotate(
+                    submit_len=Length('submit_at')
+                ).filter(submit_len=4).order_by("-submit_at", "-created_at")
+        else:
+            # Boshqa periodlar uchun
+            deadline_qs = deadline_qs.order_by("-created_at")
+
+        return deadline_qs.first()
