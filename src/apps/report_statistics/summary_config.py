@@ -47,7 +47,7 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Cho'l, tog'li va tog'oldi hududlarida himoya o'rmonzorlari (ihota) barpo etish",
-        "unit": "gektor",
+        "unit": "gektar",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
         "plan": {
@@ -58,7 +58,7 @@ SUMMARY_CONFIG = [
         },
     },
     {
-        "column_name": "Niholxona va ko'chatchonalar tashkil etish (gektar)",
+        "column_name": "Niholxona va ko'chatchonalar tashkil etish",
         "unit": "mln dona",
         "statement_name": "Ko'chatxona va Niholxona Jami",
         "period": "monthly",

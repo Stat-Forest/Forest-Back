@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from django.db.models import Q
+from django.db.models.functions import Length
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -33,9 +34,7 @@ class ReportLoginSummaryAPIView(APIView):
         yearly = request.query_params.get("yearly")
 
         print("\n" + "=" * 80)
-        print("QUERY PARAMS:")
-        print(f"  monthly: {monthly}")
-        print(f"  yearly: {yearly}")
+        print(f"REQUEST PARAMS: monthly={monthly}, yearly={yearly}")
         print("=" * 80)
 
         result = []
@@ -43,26 +42,19 @@ class ReportLoginSummaryAPIView(APIView):
         for cfg in SUMMARY_CONFIG:
             print(f"\n{'=' * 80}")
             print(f"CONFIG: {cfg['column_name']}")
-            print(f"  Statement Name: {cfg['statement_name']}")
-            print(f"  Period: {cfg['period']}")
-
-            # Safe access to plan and actual column IDs
-            plan_cfg = cfg.get('plan')
-            actual_cfg = cfg.get('actual')
-            plan_column_id = plan_cfg.get('column_id') if plan_cfg else None
-            actual_column_id = actual_cfg.get('column_id') if actual_cfg else None
-
-            print(f"  Plan Column ID: {plan_column_id if plan_column_id else 'N/A'}")
-            print(f"  Actual Column ID: {actual_column_id if actual_column_id else 'N/A'}")
-            print(f"{'=' * 80}")
+            print(f"  statement_name: {cfg['statement_name']}")
+            print(f"  period: {cfg['period']}")
 
             # 1️⃣ STATEMENT
             statement = Statement.objects.filter(
-                Q(name=cfg["statement_name"]) | Q(name_uz=cfg["statement_name"])
+                Q(name=cfg["statement_name"]) |
+                Q(name_uz=cfg["statement_name"]) |
+                Q(name__iexact=cfg["statement_name"]) |
+                Q(name_uz__iexact=cfg["statement_name"])
             ).first()
 
             if not statement:
-                print(f"❌ STATEMENT NOT FOUND: {cfg['statement_name']}")
+                print(f"  ❌ STATEMENT NOT FOUND")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -71,60 +63,51 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            print(f"✅ Statement found:")
-            print(f"   ID: {statement.id}")
-            print(f"   Name: {statement.name}")
-            print(f"   Name UZ: {getattr(statement, 'name_uz', 'N/A')}")
+            print(
+                f"  ✅ STATEMENT FOUND: id={statement.id}, name={statement.name}, name_uz={getattr(statement, 'name_uz', 'N/A')}")
 
             # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(statement=statement)
 
-            print(f"\n🔍 Searching for deadline...")
-            print(f"   Statement ID: {statement.id}")
-            print(f"   Config period: {cfg['period']}")
+            config_period = cfg["period"]
+            print(f"  🔍 Searching deadline for period: {config_period}")
 
-            if cfg["period"] == "monthly":
+            if config_period == "monthly":
                 if monthly:
+                    print(f"     Using monthly parameter: {monthly}")
                     deadline_qs = deadline_qs.filter(submit_at=monthly)
-                    print(f"   Filter: submit_at='{monthly}'")
                 else:
-                    from django.db.models.functions import Length
+                    print(f"     Using latest monthly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
                     ).filter(
                         submit_len=7,
                         submit_at__contains='-'
                     ).exclude(
-                        submit_at__contains='CHORAK'
-                    ).order_by("-created_at")
-                    print(f"   Filter: Latest monthly (len=7, has '-', no 'CHORAK')")
+                        submit_at__icontains='CHORAK'
+                    ).order_by("-submit_at", "-created_at")
 
-            elif cfg["period"] == "yearly":
+            elif config_period == "yearly":
                 if yearly:
+                    print(f"     Using yearly parameter: {yearly}")
                     deadline_qs = deadline_qs.filter(submit_at=yearly)
-                    print(f"   Filter: submit_at='{yearly}'")
                 else:
-                    from django.db.models.functions import Length
+                    print(f"     Using latest yearly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
-                    ).filter(submit_len=4).order_by("-created_at")
-                    print(f"   Filter: Latest yearly (len=4)")
+                    ).filter(submit_len=4).order_by("-submit_at", "-created_at")
             else:
+                print(f"     Using latest deadline (any period)")
                 deadline_qs = deadline_qs.order_by("-created_at")
-                print(f"   Filter: Latest (any)")
 
-            # Debug: Show all available deadlines for this statement
+            # Show available deadlines
             all_deadlines = list(Deadline.objects.filter(statement=statement).values('id', 'submit_at')[:10])
-            print(f"\n   📋 All deadlines for this statement ({len(all_deadlines)}):")
-            for d in all_deadlines[:5]:
-                print(f"      - ID: {d['id']}, submit_at: {d['submit_at']}")
-            if len(all_deadlines) > 5:
-                print(f"      ... and {len(all_deadlines) - 5} more")
+            print(f"     Available deadlines: {[d['submit_at'] for d in all_deadlines]}")
 
             deadline = deadline_qs.first()
 
             if not deadline:
-                print("❌ DEADLINE NOT FOUND after filtering")
+                print(f"  ❌ DEADLINE NOT FOUND")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -133,9 +116,7 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            print(f"✅ Deadline found:")
-            print(f"   ID: {deadline.id}")
-            print(f"   submit_at: {deadline.submit_at}")
+            print(f"  ✅ DEADLINE FOUND: id={deadline.id}, submit_at={deadline.submit_at}")
 
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
@@ -145,23 +126,20 @@ class ReportLoginSummaryAPIView(APIView):
             )
 
             report_count = reports.count()
-            print(f"\n📊 Searching for reports...")
-            print(f"   Statement: {statement.id}")
-            print(f"   Deadline: {deadline.id}")
-            print(f"   Status: ACCEPTED")
-            print(f"   Found: {report_count} reports")
+            print(f"  📊 REPORTS: {report_count} accepted reports found")
+
+            if report_count > 0:
+                print(f"     Report IDs: {list(reports.values_list('id', flat=True)[:5])}")
+            else:
+                # Debug: check other statuses
+                all_status_reports = Report.objects.filter(
+                    statement=statement,
+                    deadline=deadline
+                ).values('id', 'status')[:5]
+                print(f"     All status reports: {list(all_status_reports)}")
 
             if report_count == 0:
-                print("⚠️  No accepted reports found")
-
-                # Debug: check if reports exist with different filters
-                all_reports = Report.objects.filter(statement=statement, deadline=deadline)
-                all_count = all_reports.count()
-                print(f"   📋 Reports for this statement+deadline (any status): {all_count}")
-                if all_count > 0:
-                    for r in all_reports.values('id', 'status')[:3]:
-                        print(f"      - Report {r['id']}: status={r['status']}")
-
+                print(f"  ⚠️  No accepted reports, returning 0")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -170,24 +148,23 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            report_ids = list(reports.values_list('id', flat=True)[:10])
-            print(f"   Report IDs: {report_ids}{' ...' if report_count > 10 else ''}")
-
             # 4️⃣ VALUE EXTRACTION
-            def get_total_value(column_id, reports_qs):
-                print(f"\n  {'—' * 40}")
-                print(f"  🔍 Extracting values for column: {column_id}")
+            def get_total_value(column_id, reports_qs, label):
+                print(f"  🔢 {label}: column_id={column_id}")
 
-                # Check if column exists
-                column_exists = StatementColumn.objects.filter(id=column_id).exists()
-                if not column_exists:
-                    print(f"  ❌ Column {column_id} does not exist in database!")
+                if not column_id:
+                    print(f"     ⚠️  No column_id provided")
                     return Decimal("0")
 
-                column_info = StatementColumn.objects.filter(id=column_id).values('id', 'title_uz',
-                                                                                  'statement_id').first()
+                # Check if column exists
+                col_exists = StatementColumn.objects.filter(id=column_id).exists()
+                if not col_exists:
+                    print(f"     ❌ Column does not exist")
+                    return Decimal("0")
+
+                col_info = StatementColumn.objects.filter(id=column_id).values('statement_id', 'title_uz').first()
                 print(
-                    f"  📋 Column: {column_info.get('title_uz', 'N/A')} (statement: {column_info.get('statement_id', 'N/A')})")
+                    f"     Column: {col_info.get('title_uz', 'N/A')} (statement: {col_info.get('statement_id', 'N/A')})")
 
                 # Get ReportItems
                 report_items = ReportItem.objects.filter(
@@ -196,24 +173,15 @@ class ReportLoginSummaryAPIView(APIView):
                 )
 
                 item_count = report_items.count()
-                print(f"  📝 ReportItems found: {item_count}")
+                print(f"     ReportItems: {item_count}")
 
                 if item_count == 0:
-                    print(f"  ⚠️  No ReportItems for this column")
-
-                    # Debug: Show what columns DO exist for these reports
-                    existing_columns = list(ReportItem.objects.filter(
+                    # Debug: show available columns
+                    available_cols = list(ReportItem.objects.filter(
                         report__in=reports_qs
                     ).values_list('statement_column_id', flat=True).distinct()[:10])
-                    print(f"  📋 Columns that exist in reports: {existing_columns}")
-
+                    print(f"     Available columns in reports: {available_cols}")
                     return Decimal("0")
-
-                # Show sample ReportItems
-                sample_items = list(report_items.values('id', 'report_id', 'value')[:3])
-                print(f"  📄 Sample ReportItems:")
-                for item in sample_items:
-                    print(f"     - ID: {item['id']}, Report: {item['report_id']}, Value: {item['value']}")
 
                 # Get ReportItemInners
                 inners = ReportItemInner.objects.filter(
@@ -221,15 +189,12 @@ class ReportLoginSummaryAPIView(APIView):
                 )
 
                 inner_count = inners.count()
-                print(f"  📦 ReportItemInners found: {inner_count}")
+                print(f"     ReportItemInners: {inner_count}")
 
                 total = Decimal("0")
-                processed_count = 0
-                skipped_count = 0
+                processed = 0
 
                 if inner_count > 0:
-                    # Sum from inners
-                    print(f"  🔢 Processing inner values...")
                     for inner in inners:
                         if inner.value:
                             value_str = str(inner.value).strip()
@@ -237,23 +202,12 @@ class ReportLoginSummaryAPIView(APIView):
                                 try:
                                     val = Decimal(value_str)
                                     total += val
-                                    processed_count += 1
-                                    if processed_count <= 5:  # Show first 5
-                                        print(f"     + {val}")
-                                except (InvalidOperation, ValueError, TypeError) as e:
-                                    skipped_count += 1
-                                    if skipped_count <= 3:
-                                        print(f"     ⚠️  Skipped: '{inner.value}' ({e})")
-                            else:
-                                skipped_count += 1
-                        else:
-                            skipped_count += 1
-
-                    if processed_count > 5:
-                        print(f"     ... and {processed_count - 5} more values")
+                                    processed += 1
+                                    if processed <= 3:
+                                        print(f"        + {val}")
+                                except (InvalidOperation, ValueError, TypeError):
+                                    pass
                 else:
-                    # Fallback to ReportItem.value
-                    print(f"  ℹ️  No inners, using ReportItem.value...")
                     for item in report_items:
                         if item.value:
                             value_str = str(item.value).strip()
@@ -261,40 +215,30 @@ class ReportLoginSummaryAPIView(APIView):
                                 try:
                                     val = Decimal(value_str)
                                     total += val
-                                    processed_count += 1
-                                    if processed_count <= 5:
-                                        print(f"     + {val}")
-                                except (InvalidOperation, ValueError, TypeError) as e:
-                                    skipped_count += 1
-                                    if skipped_count <= 3:
-                                        print(f"     ⚠️  Skipped: '{item.value}' ({e})")
-                            else:
-                                skipped_count += 1
-                        else:
-                            skipped_count += 1
+                                    processed += 1
+                                    if processed <= 3:
+                                        print(f"        + {val}")
+                                except (InvalidOperation, ValueError, TypeError):
+                                    pass
 
-                print(f"  ✅ Processed: {processed_count}, Skipped: {skipped_count}")
-                print(f"  💰 TOTAL: {total}")
-                print(f"  {'—' * 40}")
+                print(f"     Total: {total} (from {processed} values)")
                 return total
 
             # 5️⃣ CALCULATE PLAN
             plan_value = Decimal("0")
-            if plan_cfg and plan_column_id:
-                print(f"\n📋 PROCESSING PLAN")
-                print(f"   Column ID: {plan_column_id}")
-                plan_value = get_total_value(plan_column_id, reports)
-            else:
-                print(f"\n⏭️  SKIPPING PLAN (not configured)")
+            plan_cfg = cfg.get('plan')
+            if plan_cfg:
+                plan_column_id = plan_cfg.get('column_id')
+                if plan_column_id:
+                    plan_value = get_total_value(plan_column_id, reports, "PLAN")
 
             # 6️⃣ CALCULATE ACTUAL
             actual_value = Decimal("0")
-            if actual_cfg and actual_column_id:
-                print(f"\n📋 PROCESSING ACTUAL")
-                print(f"   Column ID: {actual_column_id}")
-                actual_value = get_total_value(actual_column_id, reports)
-            else:
-                print(f"\n⏭️  SKIPPING ACTUAL (not configured)")
+            actual_cfg = cfg.get('actual')
+            if actual_cfg:
+                actual_column_id = actual_cfg.get('column_id')
+                if actual_column_id:
+                    actual_value = get_total_value(actual_column_id, reports, "ACTUAL")
 
             # 7️⃣ ADD TO RESULT
             result.append({
@@ -304,16 +248,12 @@ class ReportLoginSummaryAPIView(APIView):
                 "actual": actual_value,
             })
 
-            print(f"\n✅ FINAL RESULT FOR THIS CONFIG:")
-            print(f"   Plan: {plan_value}")
-            print(f"   Actual: {actual_value}")
+            print(f"  ✅ RESULT: plan={plan_value}, actual={actual_value}")
 
         print("\n" + "=" * 80)
-        print("SUMMARY OF ALL RESULTS:")
-        print("=" * 80)
+        print("FINAL SUMMARY:")
         for item in result:
-            print(
-                f"{item['column_name'][:50]:50s} | Plan: {str(item['plan']):>12s} | Actual: {str(item['actual']):>12s}")
+            print(f"  {item['column_name'][:50]:50s} | {str(item['plan']):>10s} | {str(item['actual']):>10s}")
         print("=" * 80 + "\n")
 
         serializer = ReportSummarySerializer(result, many=True)
