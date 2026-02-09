@@ -12,13 +12,6 @@ from apps.report_statistics.summary_config import SUMMARY_CONFIG
 
 
 class ReportLoginSummaryAPIView(APIView):
-    """
-    Login statistikasi uchun hisobot summary API.
-
-    CRITICAL FIX: Agar monthly va yearly ikkalasi ham berilgan bo'lsa,
-    config period bo'yicha to'g'risini tanlaydi.
-    """
-
     @extend_schema(
         tags=["Login Stats"],
         parameters=[
@@ -40,10 +33,19 @@ class ReportLoginSummaryAPIView(APIView):
         monthly = request.query_params.get("monthly")
         yearly = request.query_params.get("yearly")
 
+        print("\n" + "=" * 80)
+        print(f"REQUEST PARAMS: monthly={monthly}, yearly={yearly}")
+        print("=" * 80)
+
         result = []
 
         for cfg in SUMMARY_CONFIG:
-            # 1️⃣ STATEMENT - case-insensitive qidiruv
+            print(f"\n{'=' * 80}")
+            print(f"CONFIG: {cfg['column_name']}")
+            print(f"  statement_name: {cfg['statement_name']}")
+            print(f"  period: {cfg['period']}")
+
+            # 1️⃣ STATEMENT
             statement = Statement.objects.filter(
                 Q(name=cfg["statement_name"]) |
                 Q(name_uz=cfg["statement_name"]) |
@@ -52,6 +54,7 @@ class ReportLoginSummaryAPIView(APIView):
             ).first()
 
             if not statement:
+                print(f"  ❌ STATEMENT NOT FOUND")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -60,17 +63,21 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # 2️⃣ DEADLINE - CRITICAL FIX: Period bo'yicha to'g'ri parametrni tanlash
+            print(
+                f"  ✅ STATEMENT FOUND: id={statement.id}, name={statement.name}, name_uz={getattr(statement, 'name_uz', 'N/A')}")
+
+            # 2️⃣ DEADLINE
             deadline_qs = Deadline.objects.filter(statement=statement)
 
             config_period = cfg["period"]
+            print(f"  🔍 Searching deadline for period: {config_period}")
 
             if config_period == "monthly":
-                # Faqat monthly parametrni ishlatish
                 if monthly:
+                    print(f"     Using monthly parameter: {monthly}")
                     deadline_qs = deadline_qs.filter(submit_at=monthly)
                 else:
-                    # Eng oxirgi oylik deadline
+                    print(f"     Using latest monthly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
                     ).filter(
@@ -81,21 +88,26 @@ class ReportLoginSummaryAPIView(APIView):
                     ).order_by("-submit_at", "-created_at")
 
             elif config_period == "yearly":
-                # Faqat yearly parametrni ishlatish
                 if yearly:
+                    print(f"     Using yearly parameter: {yearly}")
                     deadline_qs = deadline_qs.filter(submit_at=yearly)
                 else:
-                    # Eng oxirgi yillik deadline
+                    print(f"     Using latest yearly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
                     ).filter(submit_len=4).order_by("-submit_at", "-created_at")
             else:
-                # Boshqa periodlar
+                print(f"     Using latest deadline (any period)")
                 deadline_qs = deadline_qs.order_by("-created_at")
+
+            # Show available deadlines
+            all_deadlines = list(Deadline.objects.filter(statement=statement).values('id', 'submit_at')[:10])
+            print(f"     Available deadlines: {[d['submit_at'] for d in all_deadlines]}")
 
             deadline = deadline_qs.first()
 
             if not deadline:
+                print(f"  ❌ DEADLINE NOT FOUND")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -104,6 +116,8 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
+            print(f"  ✅ DEADLINE FOUND: id={deadline.id}, submit_at={deadline.submit_at}")
+
             # 3️⃣ REPORTS
             reports = Report.objects.filter(
                 statement=statement,
@@ -111,7 +125,21 @@ class ReportLoginSummaryAPIView(APIView):
                 status=Report.StatusChoices.ACCEPTED,
             )
 
-            if reports.count() == 0:
+            report_count = reports.count()
+            print(f"  📊 REPORTS: {report_count} accepted reports found")
+
+            if report_count > 0:
+                print(f"     Report IDs: {list(reports.values_list('id', flat=True)[:5])}")
+            else:
+                # Debug: check other statuses
+                all_status_reports = Report.objects.filter(
+                    statement=statement,
+                    deadline=deadline
+                ).values('id', 'status')[:5]
+                print(f"     All status reports: {list(all_status_reports)}")
+
+            if report_count == 0:
+                print(f"  ⚠️  No accepted reports, returning 0")
                 result.append({
                     "column_name": cfg["column_name"],
                     "unit": cfg["unit"],
@@ -121,14 +149,22 @@ class ReportLoginSummaryAPIView(APIView):
                 continue
 
             # 4️⃣ VALUE EXTRACTION
-            def get_total_value(column_id, reports_qs):
-                """Column ID bo'yicha barcha qiymatlarni yig'adi."""
+            def get_total_value(column_id, reports_qs, label):
+                print(f"  🔢 {label}: column_id={column_id}")
+
                 if not column_id:
+                    print(f"     ⚠️  No column_id provided")
                     return Decimal("0")
 
                 # Check if column exists
-                if not StatementColumn.objects.filter(id=column_id).exists():
+                col_exists = StatementColumn.objects.filter(id=column_id).exists()
+                if not col_exists:
+                    print(f"     ❌ Column does not exist")
                     return Decimal("0")
+
+                col_info = StatementColumn.objects.filter(id=column_id).values('statement_id', 'title_uz').first()
+                print(
+                    f"     Column: {col_info.get('title_uz', 'N/A')} (statement: {col_info.get('statement_id', 'N/A')})")
 
                 # Get ReportItems
                 report_items = ReportItem.objects.filter(
@@ -136,7 +172,15 @@ class ReportLoginSummaryAPIView(APIView):
                     statement_column_id=column_id
                 )
 
-                if report_items.count() == 0:
+                item_count = report_items.count()
+                print(f"     ReportItems: {item_count}")
+
+                if item_count == 0:
+                    # Debug: show available columns
+                    available_cols = list(ReportItem.objects.filter(
+                        report__in=reports_qs
+                    ).values_list('statement_column_id', flat=True).distinct()[:10])
+                    print(f"     Available columns in reports: {available_cols}")
                     return Decimal("0")
 
                 # Get ReportItemInners
@@ -144,29 +188,40 @@ class ReportLoginSummaryAPIView(APIView):
                     report_item__in=report_items
                 )
 
-                total = Decimal("0")
+                inner_count = inners.count()
+                print(f"     ReportItemInners: {inner_count}")
 
-                if inners.count() > 0:
-                    # Sum from inners
+                total = Decimal("0")
+                processed = 0
+
+                if inner_count > 0:
                     for inner in inners:
                         if inner.value:
                             value_str = str(inner.value).strip()
                             if value_str and value_str not in ['', 'None', 'null']:
                                 try:
-                                    total += Decimal(value_str)
+                                    val = Decimal(value_str)
+                                    total += val
+                                    processed += 1
+                                    if processed <= 3:
+                                        print(f"        + {val}")
                                 except (InvalidOperation, ValueError, TypeError):
                                     pass
                 else:
-                    # Fallback to ReportItem.value
                     for item in report_items:
                         if item.value:
                             value_str = str(item.value).strip()
                             if value_str and value_str not in ['', 'None', 'null']:
                                 try:
-                                    total += Decimal(value_str)
+                                    val = Decimal(value_str)
+                                    total += val
+                                    processed += 1
+                                    if processed <= 3:
+                                        print(f"        + {val}")
                                 except (InvalidOperation, ValueError, TypeError):
                                     pass
 
+                print(f"     Total: {total} (from {processed} values)")
                 return total
 
             # 5️⃣ CALCULATE PLAN
@@ -175,7 +230,7 @@ class ReportLoginSummaryAPIView(APIView):
             if plan_cfg:
                 plan_column_id = plan_cfg.get('column_id')
                 if plan_column_id:
-                    plan_value = get_total_value(plan_column_id, reports)
+                    plan_value = get_total_value(plan_column_id, reports, "PLAN")
 
             # 6️⃣ CALCULATE ACTUAL
             actual_value = Decimal("0")
@@ -183,7 +238,7 @@ class ReportLoginSummaryAPIView(APIView):
             if actual_cfg:
                 actual_column_id = actual_cfg.get('column_id')
                 if actual_column_id:
-                    actual_value = get_total_value(actual_column_id, reports)
+                    actual_value = get_total_value(actual_column_id, reports, "ACTUAL")
 
             # 7️⃣ ADD TO RESULT
             result.append({
@@ -192,6 +247,14 @@ class ReportLoginSummaryAPIView(APIView):
                 "plan": plan_value,
                 "actual": actual_value,
             })
+
+            print(f"  ✅ RESULT: plan={plan_value}, actual={actual_value}")
+
+        print("\n" + "=" * 80)
+        print("FINAL SUMMARY:")
+        for item in result:
+            print(f"  {item['column_name'][:50]:50s} | {str(item['plan']):>10s} | {str(item['actual']):>10s}")
+        print("=" * 80 + "\n")
 
         serializer = ReportSummarySerializer(result, many=True)
         return Response(serializer.data)
