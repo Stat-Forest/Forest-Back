@@ -1,5 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from django.db.models import Q
+from django.db.models.functions import Length
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -11,13 +13,10 @@ from apps.report_statistics.summary_config import SUMMARY_CONFIG
 
 class ReportLoginSummaryAPIView(APIView):
     """
-    Login statistikasi uchun summary API.
+    Login statistikasi uchun hisobot summary API.
 
-    MUHIM O'ZGARISHLAR:
-    1. Statement qidiruviga case-insensitive filter qo'shildi
-    2. Deadline qidiruv logikasi to'liq tuzatildi (monthly va yearly bir vaqtda ishlaydigan qilib)
-    3. Barcha debug print'lar olib tashlandi - production ready
-    4. Kod optimallashtirildi va soddalashtirildi
+    CRITICAL FIX: Agar monthly va yearly ikkalasi ham berilgan bo'lsa,
+    config period bo'yicha to'g'risini tanlaydi.
     """
 
     @extend_schema(
@@ -61,8 +60,40 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # 2️⃣ DEADLINE - to'g'rilangan logika
-            deadline = self._get_deadline(statement, cfg["period"], monthly, yearly)
+            # 2️⃣ DEADLINE - CRITICAL FIX: Period bo'yicha to'g'ri parametrni tanlash
+            deadline_qs = Deadline.objects.filter(statement=statement)
+
+            config_period = cfg["period"]
+
+            if config_period == "monthly":
+                # Faqat monthly parametrni ishlatish
+                if monthly:
+                    deadline_qs = deadline_qs.filter(submit_at=monthly)
+                else:
+                    # Eng oxirgi oylik deadline
+                    deadline_qs = deadline_qs.annotate(
+                        submit_len=Length('submit_at')
+                    ).filter(
+                        submit_len=7,
+                        submit_at__contains='-'
+                    ).exclude(
+                        submit_at__icontains='CHORAK'
+                    ).order_by("-submit_at", "-created_at")
+
+            elif config_period == "yearly":
+                # Faqat yearly parametrni ishlatish
+                if yearly:
+                    deadline_qs = deadline_qs.filter(submit_at=yearly)
+                else:
+                    # Eng oxirgi yillik deadline
+                    deadline_qs = deadline_qs.annotate(
+                        submit_len=Length('submit_at')
+                    ).filter(submit_len=4).order_by("-submit_at", "-created_at")
+            else:
+                # Boshqa periodlar
+                deadline_qs = deadline_qs.order_by("-created_at")
+
+            deadline = deadline_qs.first()
 
             if not deadline:
                 result.append({
@@ -89,7 +120,7 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            # 4️⃣ VALUE EXTRACTION FUNCTIONS
+            # 4️⃣ VALUE EXTRACTION
             def get_total_value(column_id, reports_qs):
                 """Column ID bo'yicha barcha qiymatlarni yig'adi."""
                 if not column_id:
@@ -164,43 +195,3 @@ class ReportLoginSummaryAPIView(APIView):
 
         serializer = ReportSummarySerializer(result, many=True)
         return Response(serializer.data)
-
-    def _get_deadline(self, statement, period, monthly=None, yearly=None):
-        """
-        Deadline qidirish logikasi - to'liq tuzatilgan.
-
-        MUHIM: Bu method period va parametrlarga qarab to'g'ri deadline topadi.
-        """
-        from django.db.models.functions import Length
-
-        deadline_qs = Deadline.objects.filter(statement=statement)
-
-        if period == "monthly":
-            if monthly:
-                # Aniq oylik deadline berilgan bo'lsa
-                deadline_qs = deadline_qs.filter(submit_at=monthly)
-            else:
-                # Eng oxirgi oylik deadline
-                deadline_qs = deadline_qs.annotate(
-                    submit_len=Length('submit_at')
-                ).filter(
-                    submit_len=7,
-                    submit_at__contains='-'
-                ).exclude(
-                    submit_at__icontains='CHORAK'
-                ).order_by("-submit_at", "-created_at")
-
-        elif period == "yearly":
-            if yearly:
-                # Aniq yillik deadline berilgan bo'lsa
-                deadline_qs = deadline_qs.filter(submit_at=yearly)
-            else:
-                # Eng oxirgi yillik deadline
-                deadline_qs = deadline_qs.annotate(
-                    submit_len=Length('submit_at')
-                ).filter(submit_len=4).order_by("-submit_at", "-created_at")
-        else:
-            # Boshqa periodlar uchun
-            deadline_qs = deadline_qs.order_by("-created_at")
-
-        return deadline_qs.first()
