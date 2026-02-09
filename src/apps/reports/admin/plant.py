@@ -12,10 +12,3 @@ class PlantAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         query_set = super().get_queryset(request)
         return query_set.select_related("parent", "statement")
-
-
-@admin.register(ColumnPlant)
-class ColumnPlantAdmin(admin.ModelAdmin):
-    list_display = ("column", "plant", "ordering")
-    list_display_links = ("column", "plant")
-    list_filter = ("column__statement", "plant__parent")
