@@ -2,8 +2,6 @@ SUMMARY_CONFIG = [
     {
         "column_name": "O'rmon bilan qoplangan yer maydonlari",
         "unit": "gektar",
-        # ✅ FIXED: Rasmdan olingan to'g'ri nom
-        # Name [uz]: O'rmon bilan qoplangan yerlar
         "statement_name": "O'rmon bilan qoplangan yerlar",
         "period": "yearly",
         "plan": None,
@@ -14,10 +12,6 @@ SUMMARY_CONFIG = [
     {
         "column_name": "O'rmon yerlarini o'zlashtirib, foydalanishga kiritish",
         "unit": "gektar",
-        # ✅ CONFIRMED: Console outputdan tasdiqlangan
-        # Statement name: Yer o'zlashtirish
-        # Statement name_uz: Yer o'zlashtirish
-        # 17-hujjatda ham "statement_name": "Yer o'zlashtirish"
         "statement_name": "Yer o'zlashtirish",
         "period": "yearly",
         "plan": {
