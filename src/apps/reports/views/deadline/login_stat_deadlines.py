@@ -66,9 +66,3 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         qs = qs.annotate(has_report=Exists(report_exists_qs)).filter(has_report=True)
 
         return qs.order_by("-created_at")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["lang"] = self.request.query_params.get("lang", "uz")
-        context["user"] = self.request.user
-        return context
