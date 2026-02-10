@@ -41,6 +41,13 @@ class ReportLoginSummaryAPIView(APIView):
                 description="Yillik davr: YYYY (agar berilmasa, oxirgi yillik deadline)"
             ),
             OpenApiParameter(
+                name="statement_status",
+                type=OpenApiTypes.STR,
+                required=False,
+                description="Statement turi: year yoki month (default: hammasi)",
+                enum=["year", "month"]
+            ),
+            OpenApiParameter(
                 name="lang",
                 type=OpenApiTypes.STR,
                 required=False,
@@ -52,15 +59,26 @@ class ReportLoginSummaryAPIView(APIView):
     def get(self, request):
         monthly = request.query_params.get("monthly")
         yearly = request.query_params.get("yearly")
+        statement_status = request.query_params.get("statement_status")
         lang = request.query_params.get("lang", "uz")
 
         print("\n" + "=" * 80)
-        print(f"REQUEST PARAMS: monthly={monthly}, yearly={yearly}, lang={lang}")
+        print(f"REQUEST PARAMS: monthly={monthly}, yearly={yearly}, statement_status={statement_status}, lang={lang}")
         print("=" * 80)
 
         result = []
 
-        for cfg in SUMMARY_CONFIG:
+        # Config'ni filter qilish
+        filtered_config = SUMMARY_CONFIG
+        if statement_status:
+            if statement_status == "year":
+                filtered_config = [cfg for cfg in SUMMARY_CONFIG if cfg["period"] == "yearly"]
+                print(f"📋 Filtering: Only YEARLY statements ({len(filtered_config)} items)")
+            elif statement_status == "month":
+                filtered_config = [cfg for cfg in SUMMARY_CONFIG if cfg["period"] == "monthly"]
+                print(f"📋 Filtering: Only MONTHLY statements ({len(filtered_config)} items)")
+
+        for cfg in filtered_config:
             print(f"\n{'=' * 80}")
             print(f"CONFIG: {cfg['column_name']}")
             print(f"  statement_name: {cfg['statement_name']}")
