@@ -1,8 +1,8 @@
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from apps.reports.models import Deadline, Report, Statement
+from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineReportListSerializer
 
 # Statement name constants
@@ -49,11 +49,9 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         period_type = self.request.query_params.get("period_type")
 
         if period_type == "monthly":
-            # Filter by name_uz field
             qs = qs.filter(statement__name_uz__in=MONTHLY_STATEMENTS)
 
         elif period_type == "yearly":
-            # Filter by name_uz field
             qs = qs.filter(statement__name_uz__in=YEARLY_STATEMENTS)
 
         # ================= FILTER: Only deadlines with accepted reports =================
