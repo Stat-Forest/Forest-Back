@@ -12,9 +12,10 @@ class LandManagementItemSerializer(serializers.ModelSerializer):
         fields = ('name', 'area')
 
     def get_name(self, obj):
-        lang = get_lang_code(self.context)
+        # Agar context'da lang bo'lsa, uni ishlatamiz
+        lang = self.context.get("lang") or get_lang_code(self.context)
         return get_translated_field(obj, "name", lang) or obj.name
 
     def get_area(self, obj):
-        # 3.050 -> 3.05, 881.000 -> 881
         return float(obj.area.normalize())
+
