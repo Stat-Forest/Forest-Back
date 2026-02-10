@@ -31,17 +31,16 @@ class LandManagementSummaryAPIView(APIView):
     )
     def get(self, request):
         queryset = LandManagement.objects.all()
-
         total = queryset.aggregate(total=Sum('area'))['total'] or 0
         total = float(total.normalize()) if total else 0
+
+        lang = request.GET.get("lang", "uz")
 
         serializer = LandManagementItemSerializer(
             queryset,
             many=True,
-            context={"request": request}
+            context={"request": request, "lang": lang}  # <-- bu yerda uzatyapmiz
         )
-
-        lang = request.GET.get("lang", "uz")
 
         title_map = {
             "uz": f"Jami {total} mln ga",
@@ -54,3 +53,4 @@ class LandManagementSummaryAPIView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
