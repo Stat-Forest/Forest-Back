@@ -5,3 +5,4 @@ from .organization import *
 from .announcements import *
 from .notification import *
 from .land_document import *
+from .lang_management import *
