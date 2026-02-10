@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from apps.reports.models import Deadline, Report
-from apps.general.models import Organization
-from apps.users.models import CustomUser
 
 
 class DeadlineReportListSerializer(serializers.ModelSerializer):
@@ -34,39 +32,15 @@ class DeadlineReportListSerializer(serializers.ModelSerializer):
 
     def get_total_organizations(self, obj):
         """Umumiy organizatsiyalar soni"""
-        user = self.context.get('user')
-
-        if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-            # Faqat user regionidagi organizatsiyalar
-            return obj.organizations.filter(
-                id__in=user.region_user_orgs.all()
-            ).count()
-        elif user.organization:
-            # Faqat o'z organizatsiyasi
-            return obj.organizations.filter(id=user.organization.id).count()
-
         return obj.organizations.count()
 
     def get_submitted_organizations(self, obj):
         """Hisobot yuborgan organizatsiyalar soni"""
-        user = self.context.get('user')
-
-        submitted_reports = Report.objects.filter(
+        return Report.objects.filter(
             deadline=obj,
             status=Report.StatusChoices.ACCEPTED,
             is_report=True,
-        )
-
-        if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-            submitted_reports = submitted_reports.filter(
-                organization__in=user.region_user_orgs.all()
-            )
-        elif user.organization:
-            submitted_reports = submitted_reports.filter(
-                organization=user.organization
-            )
-
-        return submitted_reports.values('organization').distinct().count()
+        ).values('organization').distinct().count()
 
     def get_pending_organizations(self, obj):
         """Hisobot yubormaganlar soni"""
