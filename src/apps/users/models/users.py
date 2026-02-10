@@ -186,6 +186,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         max_length=14,
         blank=True,
         null=True,
+        unique=True,
         help_text="Foydalanuvchining PINFL raqami"
     )
     tin = models.CharField(
