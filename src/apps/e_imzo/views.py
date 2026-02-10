@@ -32,13 +32,19 @@ class EimzoJWTLoginView(APIView):
             )
 
         full_name = vo.get("CN", "")
-        uid = vo.get("UID") or str(random.randint(100000, 999999))
         pinfl = vo.get("PINFL", "")
         legal_stir = vo.get("TIN", "")
 
-        first_name, last_name, father_name = split_full_name(full_name)
-        email = f"{uid}@example.com"
+        # PINFL majburiy bo'lishi kerak
+        if not pinfl:
+            return Response(
+                {"detail": "PINFL ma'lumoti topilmadi"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        first_name, last_name, father_name = split_full_name(full_name)
+
+        # Tashkilotni topish
         organization = Organization.objects.filter(stir=legal_stir).first()
         if not organization:
             return Response(
@@ -46,28 +52,53 @@ class EimzoJWTLoginView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Foydalanuvchini yaratish yoki yangilash
-        user, created = User.objects.update_or_create(
-            email=email,
-            defaults={
-                "tin": legal_stir,
-                "full_name": full_name,
-                "first_name": first_name,
-                "last_name": last_name,
-                "father_name": father_name,
-                "pinfl": pinfl,
-                "organization": organization,
-                "is_active": True,
-                "role": CustomUser.Role.TASHKILOT_RAHBARI,
-            }
-        )
+        # MUHIM: PINFL bo'yicha user mavjudligini tekshirish
+        # Agar mavjud bo'lsa - yangilaymiz, yo'q bo'lsa - yaratamiz
+        try:
+            # Avval PINFL bo'yicha qidiramiz
+            user = User.objects.get(pinfl=pinfl)
+            created = False
 
+            # Mavjud userni yangilaymiz
+            user.tin = legal_stir
+            user.full_name = full_name
+            user.first_name = first_name
+            user.last_name = last_name
+            user.father_name = father_name
+            user.organization = organization
+            user.is_active = True
+
+            # Agar role hali berilmagan bo'lsa, beramiz
+            if not user.role:
+                user.role = CustomUser.Role.TASHKILOT_RAHBARI
+
+        except User.DoesNotExist:
+            # Yangi user yaratamiz
+            created = True
+
+            # Email uchun noyob qiymat yaratish (PINFL asosida)
+            # Bu email hech qachon o'zgarmasligi kerak
+            email = f"eimzo_{pinfl}@example.com"
+
+            user = User(
+                email=email,
+                pinfl=pinfl,
+                tin=legal_stir,
+                full_name=full_name,
+                first_name=first_name,
+                last_name=last_name,
+                father_name=father_name,
+                organization=organization,
+                is_active=True,
+                role=CustomUser.Role.TASHKILOT_RAHBARI,
+            )
+
+        # UID dan password sifatida foydalanamiz
+        uid = vo.get("UID") or str(random.randint(100000, 999999))
         user.set_password(uid)
         user.save()
 
         # HistoryActionJournal ga yozuv qo'shish
-        # MUHIM: Yangi yaratilgan user uchun ham 'login' yozamiz
-        # Chunki filter 'login' va 'add' ni birga tekshiradi
         if created:
             # User yaratildi - 'add' action
             HistoryActionJournal.objects.create(
@@ -79,7 +110,7 @@ class EimzoJWTLoginView(APIView):
                 change_message="User created via E-imzo"
             )
 
-        # Login action har doim yoziladi (created=True bo'lsa ham)
+        # Login action har doim yoziladi
         HistoryActionJournal.objects.create(
             user=user,
             action="login",
@@ -95,7 +126,7 @@ class EimzoJWTLoginView(APIView):
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
-                "email": email,
+                "email": user.email,
                 "role": user.role,
                 "user_id": user.id,
             },
