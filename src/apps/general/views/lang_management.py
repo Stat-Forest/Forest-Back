@@ -1,3 +1,5 @@
+# apps/general/views/land_management.py
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,26 +10,28 @@ from apps.general.serializers.land_management import LandManagementItemSerialize
 
 
 class LandManagementSummaryAPIView(APIView):
-    """
-    Response:
-    {
-      "title": "Жами 7,1 млн га",
-      "items": [
-        {"name": "...", "area": 42.9},
-        ...
-      ]
-    }
-    """
 
     def get(self, request):
         queryset = LandManagement.objects.all()
 
         total = queryset.aggregate(total=Sum('area'))['total'] or 0
+        total = float(total.normalize()) if total else 0
 
-        serializer = LandManagementItemSerializer(queryset, many=True)
+        serializer = LandManagementItemSerializer(
+            queryset,
+            many=True,
+            context={"request": request}  #
+        )
+
+        lang = request.GET.get("lang", "uz")
+
+        title_map = {
+            "uz": f"Jami {total} mln ga",
+            "ru": f"Итого {total} млн га"
+        }
 
         data = {
-            "title": f"Jami {total} mln ga",
+            "title": title_map.get(lang, title_map["uz"]),
             "items": serializer.data
         }
 
