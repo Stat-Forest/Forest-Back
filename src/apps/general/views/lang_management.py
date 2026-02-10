@@ -5,12 +5,30 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Sum
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 from apps.general.models import LandManagement
 from apps.general.serializers.land_management import LandManagementItemSerializer
 
 
 class LandManagementSummaryAPIView(APIView):
 
+    @extend_schema(
+        summary="Yer maydonlari statistikasi",
+        description="Yer turlari bo‘yicha umumiy maydon va ro‘yxat",
+        parameters=[
+            OpenApiParameter(
+                name="lang",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Til: uz yoki ru",
+                enum=["uz", "ru"]
+            )
+        ],
+        responses={200: dict}
+    )
     def get(self, request):
         queryset = LandManagement.objects.all()
 
@@ -20,7 +38,7 @@ class LandManagementSummaryAPIView(APIView):
         serializer = LandManagementItemSerializer(
             queryset,
             many=True,
-            context={"request": request}  #
+            context={"request": request}
         )
 
         lang = request.GET.get("lang", "uz")
