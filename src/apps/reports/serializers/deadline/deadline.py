@@ -41,8 +41,15 @@ class StatementLightSerializer(serializers.ModelSerializer):
 class DeadlineSerializer(serializers.ModelSerializer):
     organizations = OrganizationSerializer(many=True, read_only=True)
     statement = StatementLightSerializer(read_only=True)
+    year = serializers.SerializerMethodField()
 
     class Meta:
         model = Deadline
-        fields = ("id", "organizations", "statement", "submit_at","deadline_at")
+        fields = ("id", "organizations", "statement", "submit_at", "deadline_at", "year")
+
+    def get_year(self, obj):
+        if obj.submit_at:
+            return obj.submit_at[:4]
+        return None
+
 
