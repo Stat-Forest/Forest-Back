@@ -5,6 +5,8 @@ from apps.general.views.announcement import AnnouncementListAPIView
 from apps.general.views.notification  import NotificationListCreateAPIView
 from apps.general.views.land_document import LandDocumentListCreateView
 from apps.general.views.handbook import HandbookListCreateView
+from apps.general.views.lang_management import LandManagementSummaryAPIView
+
 
 
 urlpatterns = [
@@ -13,4 +15,5 @@ urlpatterns = [
     path("notifications/", NotificationListCreateAPIView.as_view(), name="notification-list"),
     path("land-documents/", LandDocumentListCreateView.as_view(), name="land-document-list-create"),
     path("handbooks/", HandbookListCreateView.as_view(), name="land-document-list-create"),
+    path("lands/", LandManagementSummaryAPIView.as_view(), name="land-management-list-create"),
 ]

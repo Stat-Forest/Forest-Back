@@ -32,3 +32,6 @@ class AnnouncementListAPIView(generics.ListAPIView):
         context = super().get_serializer_context()
         context['lang'] = self.request.query_params.get('lang', 'uz')
         return context
+
+
+    

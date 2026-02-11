@@ -39,9 +39,6 @@ class CanCancelReport(BasePermission):
 
         # 3️⃣ Bo‘lim admin
         if role == CustomUser.Role.BOLIM_ADMIN:
-            return (
-                obj.status == "sent"
-                and obj.statement_parent_id == user.statement_id
-            )
+            return obj.status == "sent"
 
         return False
