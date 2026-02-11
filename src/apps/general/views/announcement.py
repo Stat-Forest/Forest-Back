@@ -34,3 +34,4 @@ class AnnouncementListAPIView(generics.ListAPIView):
         return context
 
 
+    
