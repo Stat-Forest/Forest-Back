@@ -71,9 +71,9 @@ class ReportListAPIView(CustomListAPIView):
 
         # HUDUDIY_BOSHQARMA
         if user.role == 'hududiy_boshqarma':
-            orgs = user.region_user_orgs.all()
-            if orgs.exists():
-                return qs.filter(organization__in=orgs)
+            org_regions = list(user.region_user_orgs.values_list('region', flat=True).distinct())
+            if org_regions:
+                return qs.filter(organization__region__in=org_regions)
             return qs.none()
 
         return Report.objects.none()
