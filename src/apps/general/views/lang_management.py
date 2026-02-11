@@ -29,22 +29,38 @@ class LandManagementSummaryAPIView(APIView):
         ],
         responses={200: dict}
     )
+    def format_total(self, total, lang="uz"):
+        from decimal import Decimal
+
+        total = Decimal(total)
+
+        if total >= Decimal("1000000"):
+            result = total / Decimal("1000000")
+            return f"{result.normalize()} {'mln' if lang == 'uz' else 'млн'}"
+
+        elif total >= Decimal("1000"):
+            result = total / Decimal("1000")
+            return f"{result.normalize()} {'ming' if lang == 'uz' else 'тыс'}"
+
+        return f"{total.normalize()}"
+
     def get(self, request):
         queryset = LandManagement.objects.all()
         total = queryset.aggregate(total=Sum('area'))['total'] or 0
-        total = float(total.normalize()) if total else 0
 
         lang = request.GET.get("lang", "uz")
 
         serializer = LandManagementItemSerializer(
             queryset,
             many=True,
-            context={"request": request, "lang": lang}  # <-- bu yerda uzatyapmiz
+            context={"request": request, "lang": lang}
         )
 
+        formatted_total = self.format_total(total, lang)
+
         title_map = {
-            "uz": f"Jami {total} mln ga",
-            "ru": f"Итого {total} млн га"
+            "uz": f"Jami {formatted_total} ga",
+            "ru": f"Итого {formatted_total} га"
         }
 
         data = {

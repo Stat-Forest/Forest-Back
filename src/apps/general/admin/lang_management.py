@@ -1,12 +1,14 @@
 from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language
 
 from apps.general.models import LandManagement
 
 
 @admin.register(LandManagement)
 class LandManagementAdmin(TranslationAdmin):
+
     list_display = ('name_uz', 'name_ru', 'area_pretty', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('name_uz', 'name_ru', 'comment')
@@ -28,7 +30,12 @@ class LandManagementAdmin(TranslationAdmin):
     readonly_fields = ('created_at',)
 
     def area_pretty(self, obj):
-        # 3.050 -> 3.05, 881.000 -> 881
-        return obj.area.normalize()
+        """
+        Admin panelda avtomatik:
+        8000000 -> 8 mln
+        8000 -> 8 ming
+        """
+        lang = get_language() or "uz"
+        return obj.format_area(lang)
 
-    area_pretty.short_description = _("Area (mln ga)")
+    area_pretty.short_description = _("Area")
