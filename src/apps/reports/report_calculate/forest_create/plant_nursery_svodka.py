@@ -1,5 +1,6 @@
 import uuid
 from decimal import Decimal, InvalidOperation
+from django.db.models import Prefetch
 from apps.reports.models import Report, ReportItem, ReportItemInner, StatementColumn
 from apps.reports.services.get_two_numbers_in_percent import round_decimal
 
@@ -27,101 +28,141 @@ def calculate_kochat_nursery(report: Report):
         return
 
     # ===============================
-    # 1. CACHE: STATEMENT COLUMNS
+    # 1. BARCHA KERAKLI COLUMNLARNI BIR QUERYDA OLISH (ID BO'YICHA CACHE)
     # ===============================
-    columns = {
-        c.ordering: c
-        for c in StatementColumn.objects.filter(
-            statement=report.statement
-        )
+    # Avval statementdagi barcha columnlarni olamiz
+    all_columns = StatementColumn.objects.filter(statement=report.statement)
+
+    # Ordering bo'yicha ham cache qilamiz (keyingi ishlatish uchun)
+    columns_by_ordering = {c.ordering: c for c in all_columns}
+
+    # Kerakli orderinglar
+    needed_orderings = {
+        "3.1.7.1.2.1", "3.1.7.1.2.2",  # source orderings
+        "1.1.3.1.2", "1.1.3.2.2", "1.1.3.1.1", "1.1.3.1.3",
+        "1.1.3.2.1", "1.1.3.2.3", "1.1.2.1", "1.1.2.2", "1.1.2.3"
     }
 
+    # Faqat kerakli columnlarni olish
+    columns = {ordering: columns_by_ordering.get(ordering) for ordering in needed_orderings}
+
     # ===============================
-    # 2. CACHE: REPORT ITEMS + INNERS (no .first())
+    # 2. TARGET REPORT ITEMLARINI BIR QUERYDA OLISH (inners bilan)
     # ===============================
-    report_items = (
-        ReportItem.objects
-        .filter(report=report)
-        .select_related("statement_column")
-        .prefetch_related("inners")
+    # Avval report items va ularning innerlarini bitta complex queryda olamiz
+    report_items_qs = ReportItem.objects.filter(
+        report=report
+    ).select_related('statement_column').prefetch_related(
+        Prefetch('inners', queryset=ReportItemInner.objects.all(), to_attr='inner_list')
     )
 
-    items = {i.statement_column.ordering: i for i in report_items}
-    # Build a map to the first inner using prefetched list to avoid extra SELECTs
-    inners = {}
-    for i in report_items:
-        cached_list = list(i.inners.all())  # uses prefetch cache
-        inners[i.statement_column.ordering] = cached_list[0] if cached_list else None
+    # Dictionarylarni tayyorlaymiz
+    items_by_ordering = {}
+    inners_by_ordering = {}
 
-    new_items = {}
-    new_inners = {}
-    update_inners = []
+    # StatementColumn ID larini orderinglarga aylantiramiz
+    for item in report_items_qs:
+        if item.statement_column:
+            ordering = item.statement_column.ordering
+            items_by_ordering[ordering] = item
 
-    def get_val(ordering: str) -> Decimal:
-        inner = inners.get(ordering)
-        return D(inner.value) if inner else Decimal("0")
-
-    def set_val(ordering: str, value: Decimal):
-        column = columns.get(ordering)
-        if not column:
-            return
-
-        item = items.get(ordering)
-        if not item:
-            # Pre-assign a UUID to avoid any need to read PKs back later
-            item = ReportItem(id=uuid.uuid4(), report=report, statement_column=column)
-            items[ordering] = item
-            new_items[ordering] = item
-            new_inners[ordering] = ReportItemInner(
-                id=uuid.uuid4(),
-                report_item=item,
-                value=str(value)
-            )
-            return
-
-        inner = inners.get(ordering)
-        if inner:
-            if D(inner.value) != value:
-                inner.value = str(value)
-                update_inners.append(inner)
-        else:
-            new_inners[ordering] = ReportItemInner(
-                id=uuid.uuid4(),
-                report_item=item,
-                value=str(value)
-            )
-            # keep the cache in sync to avoid later lookups
-            inners[ordering] = new_inners[ordering]
+            if hasattr(item, 'inner_list') and item.inner_list:
+                inners_by_ordering[ordering] = item.inner_list[0]
+            else:
+                inners_by_ordering[ordering] = None
 
     # ===============================
-    # 3. IMPORT AMALDA (FROM SOURCE)
+    # 3. SOURCE REPORT ITEMLARINI BIR QUERYDA OLISH (optimized)
     # ===============================
     SOURCE_TO_TARGET = {
         "3.1.7.1.2.1": "1.1.3.1.2",
         "3.1.7.1.2.2": "1.1.3.2.2",
     }
 
-    source_inners = (
-        ReportItemInner.objects
-        .filter(
-            report_item__report=source_report,
-            report_item__statement_column__ordering__in=SOURCE_TO_TARGET
-        )
-        .select_related("report_item", "report_item__statement_column")
+    source_orderings = list(SOURCE_TO_TARGET.keys())
+
+    # Source report uchun ham bitta query
+    source_items_qs = ReportItem.objects.filter(
+        report=source_report,
+        statement_column__ordering__in=source_orderings
+    ).select_related('statement_column').prefetch_related(
+        Prefetch('inners', queryset=ReportItemInner.objects.all(), to_attr='inner_list')
     )
 
-    for inner in source_inners:
-        tgt = SOURCE_TO_TARGET.get(
-            inner.report_item.statement_column.ordering
-        )
-        if tgt:
-            set_val(tgt, D(inner.value))
+    source_inners_map = {}
+    for item in source_items_qs:
+        if item.statement_column:
+            ordering = item.statement_column.ordering
+            if hasattr(item, 'inner_list') and item.inner_list:
+                source_inners_map[ordering] = item.inner_list[0]
 
     # ===============================
-    # 4. FORMULALAR
+    # 4. NEW/UPDATE OBJECTS COLLECTORS
     # ===============================
+    new_items = {}
+    new_inners = {}
+    update_inners = []
 
-    # Niholxona %
+    def get_val(ordering):
+        inner = inners_by_ordering.get(ordering)
+        return D(inner.value) if inner else Decimal("0")
+
+    def set_val(ordering, value):
+        column = columns.get(ordering)
+        if not column:
+            print(f"⚠️ Column not found for ordering: {ordering}")
+            return
+
+        item = items_by_ordering.get(ordering)
+
+        if not item:
+            # Yangi item yaratish
+            item = ReportItem(
+                id=uuid.uuid4(),
+                report=report,
+                statement_column=column
+            )
+            items_by_ordering[ordering] = item
+            new_items[ordering] = item
+
+            # Yangi inner yaratish
+            inner = ReportItemInner(
+                id=uuid.uuid4(),
+                report_item=item,
+                value=str(value)
+            )
+            new_inners[ordering] = inner
+            inners_by_ordering[ordering] = inner
+        else:
+            # Mavjud itemni yangilash
+            inner = inners_by_ordering.get(ordering)
+
+            if inner:
+                # Agar inner mavjud bo'lsa, qiymatni tekshirib yangilash
+                if D(inner.value) != value:
+                    inner.value = str(value)
+                    update_inners.append(inner)
+            else:
+                # Yangi inner yaratish
+                inner = ReportItemInner(
+                    id=uuid.uuid4(),
+                    report_item=item,
+                    value=str(value)
+                )
+                new_inners[ordering] = inner
+                inners_by_ordering[ordering] = inner
+
+    # ===============================
+    # 5. SOURCE → TARGET IMPORT
+    # ===============================
+    for src_ordering, target_ordering in SOURCE_TO_TARGET.items():
+        if src_ordering in source_inners_map:
+            set_val(target_ordering, D(source_inners_map[src_ordering].value))
+
+    # ===============================
+    # 6. CALCULATIONS
+    # ===============================
+    # 1.1.3.1.3 = (1.1.3.1.2 / 1.1.3.1.1) * 100
     set_val(
         "1.1.3.1.3",
         safe_percent(
@@ -130,7 +171,7 @@ def calculate_kochat_nursery(report: Report):
         )
     )
 
-    # Ko‘chatxona %
+    # 1.1.3.2.3 = (1.1.3.2.2 / 1.1.3.2.1) * 100
     set_val(
         "1.1.3.2.3",
         safe_percent(
@@ -139,14 +180,14 @@ def calculate_kochat_nursery(report: Report):
         )
     )
 
-    # Jami amalda
+    # 1.1.2.2 = 1.1.3.1.2 + 1.1.3.2.2
     jami_amalda = (
-        get_val("1.1.3.1.2") +
-        get_val("1.1.3.2.2")
+            get_val("1.1.3.1.2") +
+            get_val("1.1.3.2.2")
     )
     set_val("1.1.2.2", jami_amalda)
 
-    # Jami %
+    # 1.1.2.3 = (1.1.2.2 / 1.1.2.1) * 100
     set_val(
         "1.1.2.3",
         safe_percent(
@@ -156,15 +197,28 @@ def calculate_kochat_nursery(report: Report):
     )
 
     # ===============================
-    # 5. BULK SAVE
+    # 7. BULK SAVE (optimized)
     # ===============================
     if new_items:
-        ReportItem.objects.bulk_create(new_items.values(), batch_size=1000)
+        ReportItem.objects.bulk_create(
+            new_items.values(),
+            batch_size=100
+        )
+        print(f"✅ Created {len(new_items)} new ReportItems")
 
     if new_inners:
-        ReportItemInner.objects.bulk_create(new_inners.values(), batch_size=2000)
+        ReportItemInner.objects.bulk_create(
+            new_inners.values(),
+            batch_size=100
+        )
+        print(f"✅ Created {len(new_inners)} new ReportItemInners")
 
     if update_inners:
-        ReportItemInner.objects.bulk_update(update_inners, ["value"], batch_size=2000)
+        ReportItemInner.objects.bulk_update(
+            update_inners,
+            ["value"],
+            batch_size=100
+        )
+        print(f"✅ Updated {len(update_inners)} ReportItemInners")
 
-    print("✅ calculate_kochat_nursery FINISHED (OPTIMIZED)")
+    print(f"✅ calculate_kochat_nursery FINISHED — {len(new_items)} new, {len(update_inners)} updated")
