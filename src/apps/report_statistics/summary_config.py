@@ -1,7 +1,11 @@
 SUMMARY_CONFIG = [
     {
         "column_name": "O'rmon bilan qoplangan yer maydonlari",
+        "column_name_uz": "O'rmon bilan qoplangan yer maydonlari",
+        "column_name_ru": "Земли, покрытые лесом",
         "unit": "gektar",
+        "unit_uz": "gektar",
+        "unit_ru": "гектар",
         "statement_name": "O'rmon bilan qoplangan yerlar",
         "period": "yearly",
         "plan": None,
@@ -11,7 +15,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "O'rmon yerlarini o'zlashtirib, foydalanishga kiritish",
+        "column_name_uz": "O'rmon yerlarini o'zlashtirib, foydalanishga kiritish",
+        "column_name_ru": "Освоение лесных земель",
         "unit": "gektar",
+        "unit_uz": "gektar",
+        "unit_ru": "гектар",
         "statement_name": "Yer o'zlashtirish",
         "period": "yearly",
         "plan": {
@@ -23,7 +31,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Dorivor o'simliklar plantatsiyalarini barpo etish",
+        "column_name_uz": "Dorivor o'simliklar plantatsiyalarini barpo etish",
+        "column_name_ru": "Создание плантаций лекарственных растений",
         "unit": "gektar",
+        "unit_uz": "gektar",
+        "unit_ru": "гектар",
         "statement_name": "Dorivor yetishtirish",
         "period": "monthly",
         "plan": {
@@ -35,7 +47,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Dorivor o'simliklar xomashyosini tayyorlash",
+        "column_name_uz": "Dorivor o'simliklar xomashyosini tayyorlash",
+        "column_name_ru": "Подготовка сырья лекарственных растений",
         "unit": "tonna",
+        "unit_uz": "tonna",
+        "unit_ru": "тонна",
         "statement_name": "Dorivor yetishtirish",
         "period": "monthly",
         "plan": {
@@ -47,7 +63,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Cho'l, tog'li va tog'oldi hududlarida himoya o'rmonzorlari (ihota) barpo etish",
+        "column_name_uz": "Cho'l, tog'li va tog'oldi hududlarida himoya o'rmonzorlari (ihota) barpo etish",
+        "column_name_ru": "Создание защитных лесопосадок в пустынных и горных районах",
         "unit": "gektar",
+        "unit_uz": "gektar",
+        "unit_ru": "гектар",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
         "plan": {
@@ -59,7 +79,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Niholxona va ko'chatchonalar tashkil etish",
+        "column_name_uz": "Niholxona va ko'chatchonalar tashkil etish",
+        "column_name_ru": "Создание питомников и рассадников",
         "unit": "mln dona",
+        "unit_uz": "mln dona",
+        "unit_ru": "млн штук",
         "statement_name": "Ko'chatxona va Niholxona Jami",
         "period": "monthly",
         "plan": {
@@ -71,7 +95,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
+        "column_name_uz": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
+        "column_name_ru": "Создание зелёного покрытия в Приаральском и других пустынных районах",
         "unit": "ming gektar",
+        "unit_uz": "ming gektar",
+        "unit_ru": "тыс. гектаров",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
         "plan": {
@@ -83,7 +111,11 @@ SUMMARY_CONFIG = [
     },
     {
         "column_name": "Jumladan, tut ko'chatlari yetishtirish",
+        "column_name_uz": "Jumladan, tut ko'chatlari yetishtirish",
+        "column_name_ru": "В том числе выращивание шелковичных саженцев",
         "unit": "mln dona",
+        "unit_uz": "mln dona",
+        "unit_ru": "млн штук",
         "statement_name": "Tut Ko'chat va Tut Nihol",
         "period": "monthly",
         "plan": {

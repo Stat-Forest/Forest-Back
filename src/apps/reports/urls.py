@@ -24,7 +24,8 @@ from apps.reports.views.plan import (
 
 from apps.reports.views.deadline import (
     DeadlineListAPIView,
-    DeadlineExpiredListAPIView
+    DeadlineExpiredListAPIView,
+    DeadlineLoginStatListAPIView
 )
 from apps.reports.views.dashboard import (
     DashboardStatListView,
@@ -66,6 +67,7 @@ urlpatterns = [
     # ====================  DEADLINE URL    ====================
     path('deadlines/', DeadlineListAPIView.as_view(), name='deadline-list'),
     path('expired-deadlines/', DeadlineExpiredListAPIView.as_view(), name='expired-deadlines'),
+    path('login-stat-deadlines/', DeadlineLoginStatListAPIView.as_view(), name='login-deadlines'),
 
     # ====================  STATEMENT COLUMN URL    ====================
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
