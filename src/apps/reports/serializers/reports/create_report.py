@@ -61,43 +61,65 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         is_svodka_stmt = stmt_name_uz == "Ko'chat va Nihol Yetishtirish Jami"
         resolved_org = user_org
         source_report_obj = None
+
         if is_svodka_stmt:
+
             source_report_id = attrs.get("source_report")
             if not source_report_id:
-                raise ValidationError({"source_report": _("Svodka uchun manba report (source_report) majburiy")})
+                raise ValidationError({
+                    "source_report": _("Svodka uchun manba report majburiy.")
+                })
 
-            # Fetch and validate source report
             try:
-                source_report_obj = Report.objects.select_related("statement", "organization", "deadline").get(id=source_report_id)
+                source_report_obj = (
+                    Report.objects
+                    .select_related("statement", "organization", "deadline")
+                    .get(
+                        id=source_report_id,
+                        organization=user_org.id
+                    )
+                )
             except Report.DoesNotExist:
-                raise ValidationError({"source_report": _("Manba report topilmadi")})
+                raise ValidationError({
+                    "source_report": _(
+                        "Faqat o‘zingizning tashkilotingizga tegishli 'Ko‘chat va Nihol' report tanlanishi mumkin.")
+                })
 
-            base_name_uz = (getattr(source_report_obj.statement, "name_uz", "") or "").strip()
-            if base_name_uz != "Ko‘chat va Nihol":
-                raise ValidationError({"source_report": _("Manba report 'Ko‘chat va Nihol' bo‘lishi shart")})
+            base_stmt_name = (
+                getattr(source_report_obj.statement, "name_uz", "")
+                .replace("'", "‘")
+                .strip()
+            )
+            if base_stmt_name != "Ko‘chat va Nihol":
+                raise ValidationError({
+                    "source_report": _("Manba report faqat 'Ko‘chat va Nihol' bo‘lishi shart.")
+                })
 
-            if source_report_obj.organization_id != user_org.id:
-                raise ValidationError({"source_report": _("Manba report boshqa tashkilotga tegishli")})
+            if source_report_obj.status != Report.StatusChoices.ACCEPTED:
+                raise ValidationError({
+                    "source_report": _(
+                        "Svodka faqat ACCEPT qilingan 'Ko‘chat va Nihol' report asosida yaratiladi."
+                    )
+                })
 
-            # Compare years of submit_at
-            def _extract_year(submit_at_val: str) -> int:
-                if not submit_at_val:
-                    return 0
-                s = str(submit_at_val)
+            def extract_year(val):
                 try:
-                    return int(s.split("-")[0])
+                    return int(str(val).split("-")[0])
                 except Exception:
                     try:
-                        return int(s)
+                        return int(val)
                     except Exception:
-                        return 0
+                        return None
 
-            src_year = _extract_year(getattr(source_report_obj.deadline, "submit_at", ""))
-            tgt_year = _extract_year(getattr(deadline, "submit_at", ""))
+            src_year = extract_year(source_report_obj.deadline.submit_at)
+            tgt_year = extract_year(deadline.submit_at)
+
             if src_year and tgt_year and src_year != tgt_year:
-                raise ValidationError({"source_report": _("Manba report yili bilan svodka yili bir xil bo‘lishi kerak")})
+                raise ValidationError({
+                    "source_report": _("Manba report yili bilan svodka yili bir xil bo‘lishi kerak.")
+                })
 
-            resolved_org = source_report_obj.organization
+            resolved_org = user_org
 
         # 1. Duplicated reportni tekshir
         if not is_individual_general:
