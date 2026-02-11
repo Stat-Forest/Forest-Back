@@ -1,7 +1,7 @@
-from decimal import Decimal
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
 
 class LandManagement(models.Model):
     name = models.CharField(_("Land Name"), max_length=255)
@@ -32,21 +32,3 @@ class LandManagement(models.Model):
 
         if self.area <= 0:
             raise ValidationError({"area": _("Maydon hajmi musbat bo‘lishi kerak.")})
-
-    def format_area(self, lang="uz"):
-        """
-        8000000 -> 8 mln
-        8000 -> 8 ming
-        500 -> 500
-        """
-        value = self.area
-
-        if value >= Decimal("1000000"):
-            result = value / Decimal("1000000")
-            return f"{result.normalize()} {'mln' if lang == 'uz' else 'млн'}"
-
-        elif value >= Decimal("1000"):
-            result = value / Decimal("1000")
-            return f"{result.normalize()} {'ming' if lang == 'uz' else 'тыс'}"
-
-        return f"{value.normalize()}"
