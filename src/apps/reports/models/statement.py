@@ -1,5 +1,4 @@
 from django.db import models
-
 from apps.utils.services import PeriodChoices
 from apps.base.models import AbstractBaseModel
 
@@ -7,6 +6,18 @@ from apps.base.models import AbstractBaseModel
 class StatementManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
+    def get_active_parents(self):
+        """Get active parent statements with optimized query"""
+        return self.filter(
+            parent__isnull=True,
+            is_used=True
+        ).select_related().prefetch_related(
+            models.Prefetch(
+                'children',
+                queryset=Statement.objects.filter(is_used=True).order_by('name')
+            )
+        ).order_by('name')
 
 
 class Statement(AbstractBaseModel):
@@ -18,7 +29,7 @@ class Statement(AbstractBaseModel):
         blank=True,
         null=True,
     )
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, db_index=True)
     period = models.CharField(
         max_length=100,
         choices=PeriodChoices.choices,
@@ -31,7 +42,7 @@ class Statement(AbstractBaseModel):
         null=True,
     )
     use_plant_plan = models.BooleanField(default=False)
-    is_used=models.BooleanField(default=True)
+    is_used = models.BooleanField(default=True, db_index=True)
 
     calculate_expression = models.TextField(
         blank=True,
@@ -62,6 +73,11 @@ class Statement(AbstractBaseModel):
     class Meta:
         verbose_name = "Hisobot formasi"
         verbose_name_plural = "Hisobot formalari"
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_used', 'parent']),
+            models.Index(fields=['name']),
+        ]
 
     def __str__(self):
-            return getattr(self, "name_uz", self.name)
+        return getattr(self, "name_uz", self.name)
