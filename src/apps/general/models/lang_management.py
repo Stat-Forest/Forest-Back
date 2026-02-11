@@ -9,7 +9,7 @@ class LandManagement(models.Model):
     area = models.DecimalField(
         _("Area (ga)"),
         max_digits=20,
-        decimal_places=3,
+        decimal_places=5,
         help_text=_("Maydon hajmi gektar bilan")
     )
 
