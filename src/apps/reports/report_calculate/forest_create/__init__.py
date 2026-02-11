@@ -20,6 +20,7 @@ calculators = {
     "Yopiq ildiz yirik hajmli": calculate_large_volume,
     "Закрытый корень крупногабаритный": calculate_large_volume,
     "O'rmon barpo qilish bo'limi": calculate_forest_statement,
+    "Отдел создания леса": calculate_forest_statement,
     "Urug' harakati": calculate_seed_movement,
     "Движение семян": calculate_seed_movement,
     "Urug' xarakati Reja": calculate_seed_movement_plan,
