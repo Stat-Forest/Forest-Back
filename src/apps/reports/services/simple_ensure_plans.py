@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db.models import Q
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.reports.models import Plan, PlanItem, StatementColumn, PlantPlanItem, PlantPlan
@@ -82,77 +83,92 @@ from apps.reports.models import (
 
 def ensure_plant_plans_exist(*, organization, statement):
     """
-    Plant-based reportlar uchun reja validatsiyasi.
+    Universal reja validatsiyasi:
 
-    MUHIM QOIDA:
-    Agar statementda status_plan mavjud bo‘lgan column bo‘lmasa —
-    umuman plan tekshirilmaydi (SKIP).
+    ✔ Oddiy reja mavjudmi
+    ✔ Plantlik reja kerakmi yoki yo‘qmi aniqlaydi
+    ✔ Kerak bo‘lsa plant bo‘yicha tekshiradi
     """
 
     # ===============================
-    # 0️⃣ REJA TALAB QILINADIMI?
+    # 1️⃣ BU STATEMENT REJA TALAB QILADIMI?
     # ===============================
     plan_columns = StatementColumn.objects.filter(
         statement=statement,
         status_plan__isnull=False,
         is_user_input=True,
-    ).only("id")
+    )
 
-    # ✅ Agar umuman rejalik ustun bo‘lmasa — tekshirish shart emas
+    # Agar umuman rejalik column bo‘lmasa → hech narsa tekshirilmaydi
     if not plan_columns.exists():
         return
 
     # ===============================
-    # 1️⃣ PLAN BORLIGINI TEKSHIR
+    # 2️⃣ ODDIY PLAN BORLIGI
     # ===============================
     plans = Plan.objects.filter(
         organization=organization,
         statement=statement,
-    ).only("id")
+    )
 
     if not plans.exists():
         raise serializers.ValidationError({
-            "non_field_errors": [
-                "Bu hisobot uchun reja (plan) yaratilmagan."
-            ]
+            "non_field_errors": ["Bu hisobot uchun reja (plan) yaratilmagan."]
         })
 
     # ===============================
-    # 2️⃣ PLANTPLAN BORLIGI
+    # 3️⃣ BU STATEMENT PLANTLIKMI?
     # ===============================
-    plant_plans = PlantPlan.objects.filter(
+    has_plant_plans = PlantPlan.objects.filter(
         plan__in=plans
-    ).only("id")
-
-    if not plant_plans.exists():
-        raise serializers.ValidationError({
-            "non_field_errors": [
-                "Bu hisobot uchun o‘simliklar (plant) bo‘yicha reja yaratilmagan."
-            ]
-        })
+    ).exists()
 
     # ===============================
-    # 3️⃣ PLANTPLANITEM BORLIGI
+    # 🌱 AGAR PLANTLIK REJA BOR BO‘LSA
     # ===============================
-    plant_plan_items = PlantPlanItem.objects.filter(
-        plant_plan__in=plant_plans,
+    if has_plant_plans:
+
+        plant_plan_items = PlantPlanItem.objects.filter(
+            plant_plan__plan__in=plans,
+            column__in=plan_columns
+        )
+
+        if not plant_plan_items.exists():
+            raise serializers.ValidationError({
+                "non_field_errors": [
+                    "Bu hisobot uchun plant bo‘yicha reja qiymatlari kiritilmagan."
+                ]
+            })
+
+        if not plant_plan_items.filter(plan_value__gt=Decimal("0")).exists():
+            raise serializers.ValidationError({
+                "non_field_errors": [
+                    "Plant bo‘yicha reja qiymatlari 0 dan katta emas."
+                ]
+            })
+
+        return   # ✅ plantlik bo‘lsa shu yerda tugaydi
+
+    # ===============================
+    # 📄 AKS HOLDA — ODDIY PLANITEM
+    # ===============================
+
+    plan_items = PlanItem.objects.filter(
+        plan__in=plans,
         column__in=plan_columns
-    ).only("id", "plan_value")
+    )
 
-    if not plant_plan_items.exists():
+    if not plan_items.exists():
         raise serializers.ValidationError({
             "non_field_errors": [
-                "Bu hisobot uchun plant bo‘yicha reja ustunlari to‘ldirilmagan."
+                "Bu hisobot uchun reja ustunlari to‘ldirilmagan."
             ]
         })
 
-    # ===============================
-    # 4️⃣ KAMIDA BITTA > 0 QIYMAT
-    # ===============================
-    if not plant_plan_items.filter(plan_value__gt=Decimal("0")).exists():
+    if not plan_items.filter(plan_value__gt=Decimal("0")).exists():
         raise serializers.ValidationError({
             "non_field_errors": [
-                "Bu hisobot uchun plant bo‘yicha reja qiymatlari 0 dan katta emas."
+                "Reja qiymatlari 0 dan katta emas."
             ]
         })
 
