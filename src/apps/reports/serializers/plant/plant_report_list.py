@@ -102,6 +102,8 @@ class PlantReportListSerializer(ReportListSerializer):
                 statement_columns.append({
                     "statement_column_id": str(column.id),
                     "statement_column_name": self.get_full_column_path(column, lang, column_map),
+                    "is_organization": column.is_organization,
+                    "status_plan": column.status_plan if column.status_plan else None,
                     "inners": inner_values
                 })
 
