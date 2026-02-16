@@ -15,7 +15,7 @@ from apps.reports.models import Statement, StatementColumn
 from apps.utils.translation import get_translated_field
 
 
-CACHE_TIMEOUT = 60 
+CACHE_TIMEOUT = 60 * 60 * 24
 
 
 class StatementColumnFilter(django_filters.FilterSet):
