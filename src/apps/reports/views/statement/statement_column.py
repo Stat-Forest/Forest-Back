@@ -15,8 +15,7 @@ from apps.reports.models import Statement, StatementColumn
 from apps.utils.translation import get_translated_field
 
 
-CACHE_TIMEOUT = 60
-
+CACHE_TIMEOUT = 60 * 60 * 24
 
 class StatementColumnFilter(django_filters.FilterSet):
     statement = django_filters.ModelChoiceFilter(
@@ -77,9 +76,9 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         )
 
         # 🔍 Cache ni tekshiramiz
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return Response(cached_data)
+        # cached_data = cache.get(cache_key)
+        # if cached_data:
+        #     return Response(cached_data)
 
         # ❌ Cache bo‘lmasa hisoblaymiz
         queryset = self.filter_queryset(self.get_queryset())
@@ -121,7 +120,7 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         serializer = self.get_serializer(tree, many=True)
         data = serializer.data
 
-        # 💾 Cache ga 24 soat saqlaymiz
+
         cache.set(cache_key, data, timeout=CACHE_TIMEOUT)
 
         return Response(data)
