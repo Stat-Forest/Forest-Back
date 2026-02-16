@@ -114,7 +114,7 @@ class DeadlineAdminForm(forms.ModelForm):
 
         elif period == "monthly":
 
-            pattern = r"^\d{4}_(0[1-9]|1[0-2])$"
+            pattern = r"^\d{4}-(0[1-9]|1[0-2])$"
 
             if not re.match(pattern, submit_at):
                 raise forms.ValidationError(
