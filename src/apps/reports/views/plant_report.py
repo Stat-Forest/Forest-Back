@@ -1,11 +1,13 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from apps.reports.models import Report, Plant, StatementColumn
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
-from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer
+from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer, \
+    PlantReportUpdateReadSerializer
 from apps.reports.serializers.plant.plant_report_delete import PlantReportDeleteSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
@@ -73,9 +75,14 @@ class PlantListReportAPIView(CustomListAPIView):
 
 
 @extend_schema(tags=["Plant-Reports"])
-class PlantUpdateReportAPIView(DRFHistoryMixin, CustomUpdateAPIView):
-    serializer_class = PlantReportUpdateSerializer
+class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
+    # serializer_class = PlantReportUpdateSerializer
     queryset = Report.objects.filter(is_plant_based=True, is_report=True)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return PlantReportUpdateReadSerializer
+        return PlantReportUpdateSerializer
 
 
 @extend_schema(tags=["Plant-Reports"])
