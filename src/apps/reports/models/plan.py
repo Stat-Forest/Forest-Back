@@ -42,6 +42,8 @@ class Plan(AbstractBaseModel):
                 name="uniq_plan_without_season",
             ),
         ]
+        verbose_name = "Reja"
+        verbose_name_plural = "Rejalar"
 
     def __str__(self):
         return (

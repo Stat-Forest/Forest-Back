@@ -1,0 +1,524 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+
+{% block content_title %} {% trans 'Dashboard' %} {% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    <!-- Dashboard Header with Animation -->
+    <div class="section-header fade-in-up d-flex justify-content-between align-items-center">
+        <div class="header-left">
+            <h2 class="dashboard-title">
+                <i class="fas fa-tachometer-alt text-primary"></i>
+                Dashboard
+            </h2>
+            <p class="dashboard-subtitle">
+                <i class="fas fa-user-circle mr-2 text-primary"></i>
+                Xush kelibsiz! <strong>{{ request.user.get_full_name|default:request.user.email }}</strong>
+            </p>
+        </div>
+        <div class="dashboard-time text-primary">
+            <i class="far fa-calendar-alt mr-2"></i>
+            {{ now|date:"d-m-Y H:i" }}
+        </div>
+    </div>
+
+
+    <!-- Stats Cards Row with Icons -->
+    <div class="row">
+        <!-- Hisobotlar Card -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card fade-in-up" style="animation-delay: 0.1s">
+                <div class="card-icon">
+                    <i class="fas fa-file-alt text-primary"></i>
+                </div>
+                <div class="card-title">
+                    <i class="fas fa-chart-line mr-2 text-primary"></i>
+                    Jami hisobotlar
+                </div>
+                <div class="card-value text-primary">{{ total_reports|default:0 }}</div>
+                <!-- ... -->
+            </div>
+        </div>
+
+        <!-- Foydalanuvchilar Card -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card fade-in-up" style="animation-delay: 0.2s">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-title">
+                    <i class="fas fa-user-friends mr-2 text-info"></i>
+                    Foydalanuvchilar
+                </div>
+                <div class="card-value">{{ total_users|default:0 }}</div>
+                <div class="mt-3">
+                    <span class="stats-badge active mr-2">
+                        <i class="fas fa-circle"></i> Faol: {{ active_users|default:0 }}
+                    </span>
+                    <span class="stats-badge new">
+                        <i class="fas fa-clock"></i> Yangi: {{ new_users_today|default:0 }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tashkilotlar Card -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card fade-in-up" style="animation-delay: 0.3s">
+                <div class="card-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="card-title">
+                    <i class="fas fa-city mr-2 text-warning"></i>
+                    Tashkilotlar
+                </div>
+                <div class="card-value">{{ total_organizations|default:0 }}</div>
+                <div class="mt-3">
+                    <span class="stats-badge forms">
+                        <i class="fas fa-file-alt"></i> Formal: {{ total_statements|default:0 }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Muddatlar Card -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card fade-in-up" style="animation-delay: 0.4s">
+                <div class="card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-title">
+                    <i class="fas fa-hourglass-half mr-2 text-danger"></i>
+                    Muddatlar
+                </div>
+                <div class="card-value">{{ active_deadlines|default:0 }}</div>
+                <div class="mt-3">
+                    <span class="stats-badge expired">
+                        <i class="fas fa-exclamation-circle"></i> Kechikkan: {{ expired_deadlines|default:0 }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Charts Row -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="dashboard-card fade-in-up slide-in-left">
+                <div class="card-title d-flex align-items-center">
+                    <i class="fas fa-chart-pie mr-2 text-primary"></i>
+                    <h5 class="mb-0">HISOBOT STATUSLARI</h5>
+                </div>
+                <div class="progress-status mt-3">
+                    <!-- Qabul qilingan -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                <i class="fas fa-check-circle text-success mr-1"></i>
+                                <strong>Qabul qilingan</strong>
+                            </span>
+                            <span class="font-weight-bold text-success">
+                                {{ accepted_reports|default:0 }} ({{ accepted_percent|default:0 }}%)
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ accepted_percent|default:0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Yuborilgan -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                <i class="fas fa-paper-plane text-info mr-1"></i>
+                                <strong>Yuborilgan</strong>
+                            </span>
+                            <span class="font-weight-bold text-info">
+                                {{ sent_reports|default:0 }} ({{ sent_percent|default:0 }}%)
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-info"
+                                 style="width: {{ sent_percent|default:0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Saqlangan -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                <i class="fas fa-save text-warning mr-1"></i>
+                                <strong>Saqlangan</strong>
+                            </span>
+                            <span class="font-weight-bold text-warning">
+                                {{ saved_reports|default:0 }} ({{ saved_percent|default:0 }}%)
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning"
+                                 style="width: {{ saved_percent|default:0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Bekor qilingan -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                <i class="fas fa-times-circle text-danger mr-1"></i>
+                                <strong>Bekor qilingan</strong>
+                            </span>
+                            <span class="font-weight-bold text-danger">
+                                {{ cancelled_reports|default:0 }} ({{ cancelled_percent|default:0 }}%)
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger"
+                                 style="width: {{ cancelled_percent|default:0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jami hisobotlar summary -->
+                <div class="mt-3 pt-2 border-top text-center">
+                    <span class="badge badge-primary p-3">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        Jami hisobotlar: <strong>{{ total_reports|default:0 }}</strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="dashboard-card fade-in-up slide-in-right">
+                <div class="card-title">
+                    <i class="fas fa-users-cog mr-2 text-primary"></i>
+                    <h5 class="mb-0 d-inline-block">FOYDALANUVCHILAR ROLI BO'YICHA</h5>
+                </div>
+                <div class="table-responsive mt-3">
+                    <table class="table table-borderless">
+                        <tbody>
+                        {% for role, count in user_roles.items %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-user-circle mr-2 text-primary"></i>
+                                {{ role }}
+                            </td>
+                            <td class="text-right">
+                                <span class="badge badge-purple">{{ count }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Ma'lumot mavjud emas
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Cards Row -->
+    <div class="row mt-4">
+        <!-- Users Section -->
+        <div class="col-md-4">
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title">
+                    <i class="fas fa-users mr-2 text-primary"></i>
+                    Foydalanuvchilar
+                </div>
+                <div class="nav flex-column">
+                    <a href="{% url 'admin:users_customuser_changelist' %}" class="nav-link">
+                        <i class="fas fa-user"></i>
+                        Foydalanuvchilar
+                        <span class="badge badge-primary">{{ total_users|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_statementcolumn_changelist' %}" class="nav-link">
+                        <i class="fas fa-columns"></i>
+                        Hisobot forma ustunlari
+                        <span class="badge badge-info">{{ total_statement_columns|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_statement_changelist' %}" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        Hisobot formalari
+                        <span class="badge badge-info">{{ total_statements|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_report_changelist' %}" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        Hisobotlar
+                        <span class="badge badge-success">{{ total_reports_count|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_deadline_changelist' %}" class="nav-link">
+                        <i class="fas fa-calendar"></i>
+                        Muddatlar
+                        <span class="badge badge-warning">{{ total_deadlines_count|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_plant_changelist' %}" class="nav-link">
+                        <i class="fas fa-leaf"></i>
+                        O'simlik turi va nomlari
+                        <span class="badge badge-success">{{ total_plants|default:0 }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div class="col-md-4">
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title">
+                    <i class="fas fa-file-alt mr-2 text-info"></i>
+                    Hisobotlar
+                </div>
+                <div class="nav flex-column">
+                    <a href="{% url 'admin:reports_statementcolumn_changelist' %}" class="nav-link">
+                        <i class="fas fa-columns"></i>
+                        Hisobot forma ustunlari
+                        <span class="badge badge-info">{{ total_statement_columns|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_statement_changelist' %}" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        Hisobot formalari
+                        <span class="badge badge-info">{{ total_statements|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_report_changelist' %}" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        Hisobotlar
+                        <span class="badge badge-success">{{ total_reports_count|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_deadline_changelist' %}" class="nav-link">
+                        <i class="fas fa-calendar"></i>
+                        Muddatlar
+                        <span class="badge badge-warning">{{ total_deadlines_count|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_plant_changelist' %}" class="nav-link">
+                        <i class="fas fa-leaf"></i>
+                        O'simlik turi va nomlari
+                        <span class="badge badge-success">{{ total_plants|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:reports_plan_changelist' %}" class="nav-link">
+                        <i class="fas fa-tasks"></i>
+                        Rejalar
+                        <span class="badge badge-primary">{{ total_plans_count|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:report-statistics' %}" class="nav-link">
+                        <i class="fas fa-chart-pie"></i>
+                        Hisobotlar statistikasi
+                        <span class="badge badge-info"><i class="fas fa-chart-line"></i></span>
+                    </a>
+                    <a href="{% url 'admin:report_admin_stat_statementstatistics_changelist' %}" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        Statement statistikasi
+                        <span class="badge badge-info"><i class="fas fa-chart-line"></i></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- General Section -->
+        <div class="col-md-4">
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title">
+                    <i class="fas fa-cog mr-2 text-warning"></i>
+                    Umumiy
+                </div>
+                <div class="nav flex-column">
+                    <a href="{% url 'admin:general_notification_changelist' %}" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        Bildirishnomalar
+                        <span class="badge badge-info">{{ total_notifications|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:general_announcement_changelist' %}" class="nav-link">
+                        <i class="fas fa-bullhorn"></i>
+                        E'lonlar
+                        <span class="badge badge-warning">{{ total_announcements|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:general_organization_changelist' %}" class="nav-link">
+                        <i class="fas fa-building"></i>
+                        Tashkilotlar
+                        <span class="badge badge-primary">{{ total_organizations|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:general_landdocument_changelist' %}" class="nav-link">
+                        <i class="fas fa-file-pdf"></i>
+                        Yer hujjatlari
+                        <span class="badge badge-danger">{{ total_land_documents|default:0 }}</span>
+                    </a>
+                    <a href="{% url 'admin:general_landmanagement_changelist' %}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        Yer maydonlari kiritish
+                        <span class="badge badge-success">{{ total_land_management|default:0 }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities Section -->
+    <div class="row mt-4">
+        <!-- Recent Activities -->
+        <div class="col-md-7">
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-history mr-2 text-info"></i>
+                        SO'NGI HARAKATLAR:&nbsp;
+                    </div>
+                    <span class="badge badge-info">{{ recent_actions|length }} ta</span>
+                </div>
+
+                <div class="activity-list" style="max-height: 500px; overflow-y: auto;">
+                    {% for action in recent_actions %}
+                    <div class="activity-item d-flex">
+                        <div class="activity-avatar mr-3">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="activity-user">{{ action.user.fullname }}</span>
+                                    {% if action.user.role %}
+                                    <span class="badge badge-light ml-2">{{ action.user.role }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="activity-time">
+                                    <i class="far fa-clock mr-1"></i>{{ action.time }}
+                                </span>
+                            </div>
+                            <div class="mt-1">
+                                <span class="activity-action {{ action.action.type|lower }}">
+                                    <i class="fas {{ action.action.icon }} mr-1"></i>
+                                    {{ action.action.type }}:
+                                </span>
+                                <span class="activity-object">{{ action.action.object }}</span>
+                            </div>
+                            <div class="mt-2">
+                                <span class="activity-model">{{ action.model.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Hozircha hech qanday harakat mavjud emas</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="/admin/admin/logentry/" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-list mr-1"></i>Barcha harakatlarni ko'rish
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-5">
+            <!-- Recent Reports -->
+            <div class="dashboard-card fade-in-up mb-4">
+                <div class="card-title">
+                    <i class="fas fa-file-alt mr-2 text-success"></i>
+                    SO'NGI HISOBOTLAR:&nbsp;
+                </div>
+
+                {% for report in recent_reports %}
+                <div class="report-item">
+                    <div>
+                        <span class="report-name">{{ report.organization.name|truncatechars:20 }}</span>
+                        <small class="report-statement">{{ report.statement.name_uz }}</small>
+                    </div>
+                    <div class="text-right">
+                        <span class="report-status status-{{ report.status }}">
+                            {{ report.get_status_display }}
+                        </span>
+                        <small class="report-time">{{ report.created_at|timesince }} oldin</small>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <p>Hisobotlar mavjud emas</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Recent Logins -->
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title">
+                    <i class="fas fa-sign-in-alt mr-2 text-primary"></i>
+                    OXIRGI KIRGANLAR
+                </div>
+
+                {% for user in recent_logins %}
+                <div class="login-item">
+                    <div class="login-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <span class="login-name">{{ user.get_full_name|default:user.email }}</span>
+                        <small class="login-time">{{ user.last_login|timesince }} oldin</small>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-user"></i>
+                    <p>Kirishlar mavjud emas</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="dashboard-card fade-in-up">
+                <div class="card-title">
+                    <i class="fas fa-bolt mr-2"></i>
+                    Tezkor amallar:
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'admin:users_customuser_add' %}" class="btn btn-outline-success btn-block">
+                            <i class="fas fa-user-plus mr-2"></i>Yangi foydalanuvchi
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'admin:general_announcement_add' %}" class="btn btn-outline-info btn-block">
+                            <i class="fas fa-bullhorn mr-2"></i>Yangi e'lon
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'admin:reports_deadline_add' %}" class="btn btn-outline-warning btn-block">
+                            <i class="fas fa-clock mr-2"></i>Yangi muddat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer text-center">
+    <div class="container">
+        <p class="text-muted mb-0">
+            <i class="fas fa-tree text-primary mr-2"></i>
+            O'rmon Xo'jaligi - Boshqaruv Paneli v1.0 | {{ now|date:"Y" }}
+        </p>
+    </div>
+</div>
+
+<!-- Auto-refresh script (har 5 daqiqada) -->
+<script>
+    setTimeout(function () {
+        location.reload();
+    }, 300000);
+</script>
+{% endblock %}
