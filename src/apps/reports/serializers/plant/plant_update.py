@@ -137,6 +137,34 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
         return instance
 
 
+class PlantReportUpdateReadSerializer(CustomModelSerializer):
+    report_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Report
+        fields = ["id", "deadline", "report_items"]
+
+    def get_report_items(self, obj):
+        items = []
+
+        for item in obj.report_items.select_related("statement_column").prefetch_related("inners"):
+            # organization columnlarni tashlaymiz
+            if item.statement_column.is_organization:
+                continue
+
+            items.append({
+                "statement_column": str(item.statement_column_id),
+                "inners": [
+                    {
+                        "plant": str(inner.plant_id),
+                        "value": inner.value
+                    }
+                    for inner in item.inners.all()
+                ]
+            })
+
+        return items
+
 
 
 
