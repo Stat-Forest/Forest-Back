@@ -121,45 +121,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # ===============================
-# 🎨 JAZZMIN SETTINGS
-# ===============================
-JAZZMIN_SETTINGS = {
-    "site_title": "Forest Admin",
-    "site_header": "Admin Panel",
-    "site_brand": "Forest",
-    "welcome_sign": "Stat-Urmon boshqaruv tizimi",
-    "copyright": "© 2025 Stat-Urmon",
-    "site_logo": None,
-
-    "order_with_respect_to": [
-        "auth",
-        "users",
-        "reports",
-        "general",
-        "sum",
-        "report_statistics",
-        "e_imzo",
-        "logs",
-    ],
-
-    "icons": {
-        "auth": "fas fa-user-shield",
-        "users": "fas fa-users",
-        "reports": "fas fa-file-alt",
-        "general": "fas fa-database",
-        "sum": "fas fa-layer-group",
-        "report_statistics": "fas fa-chart-bar",
-        "e_imzo": "fas fa-signature",
-        "logs": "fas fa-history",
-    },
-
-    "hide_models": ["auth.Group"],
-
-    # ✅ Til tanlash menyusini yashirish
-    "language_chooser": False,
-}
-
-# ===============================
 # 🧱 DATABASES & AUTH
 # ===============================
 AUTH_USER_MODEL = "users.CustomUser"
