@@ -1,0 +1,146 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Forest Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/custom.css' %}">
+<style>
+    :root {
+        --primary-color: #2ecc71;
+        --secondary-color: #27ae60;
+        --dark-color: #2c3e50;
+        --light-color: #ecf0f1;
+        --danger-color: #e74c3c;
+        --warning-color: #f39c12;
+        --info-color: #3498db;
+    }
+
+    /* Body background - IMPORTANT bilan */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #11998e 100%) !important;
+        min-height: 100vh !important;
+        position: relative !important;
+    }
+
+    /* Navbar styling */
+    .navbar {
+        background: linear-gradient(to right, #2c3e50, #3498db) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    /* Sidebar styling */
+    .nav-sidebar {
+        background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 152, 219, 0.95)) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 0 20px 20px 0;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+    }
+
+    .nav-sidebar .nav-link {
+        color: white !important;
+        padding: 12px 20px;
+        margin: 5px 10px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-sidebar .nav-link:hover {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+        color: white;
+        transform: translateX(5px);
+    }
+
+    .nav-sidebar .nav-link.active {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+        color: white;
+    }
+
+    /* Dashboard cards */
+    .dashboard-card {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* Section headers */
+    .section-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95)) !important;
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white !important;
+    }
+
+    .section-header h2 i {
+        margin-right: 10px;
+        color: rgba(255,255,255,0.8);
+    }
+
+    /* Activity items */
+    .activity-item {
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(5px);
+        padding: 15px;
+        border-bottom: 1px solid var(--light-color);
+        transition: all 0.3s ease;
+    }
+
+    /* Footer */
+    .footer {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        padding: 20px 0;
+        margin-top: 50px;
+        border-top: 1px solid var(--light-color);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-card {
+            margin: 10px 0;
+        }
+        
+        .dashboard-card .card-value {
+            font-size: 2rem;
+        }
+    }
+    
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease;
+    }
+</style>
+{% endblock %}
+
+{% block blockbots %}
+{{ block.super }}
+<script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+{% endblock %}

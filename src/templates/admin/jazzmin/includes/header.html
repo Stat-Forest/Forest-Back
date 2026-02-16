@@ -1,0 +1,70 @@
+{% load i18n jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <!-- Sidebar Toggle -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Brand -->
+        <a class="navbar-brand" href="{% url 'admin:index' %}">
+            <i class="fas fa-tree mr-2"></i>
+            Forest Admin
+        </a>
+
+        <!-- Right navbar links -->
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ml-auto">
+                <!-- Notifications -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge badge-warning navbar-badge">3</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <span class="dropdown-header">3 ta bildirishnoma</span>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-file-alt mr-2"></i> Yangi hisobot qo'shildi
+                            <span class="float-right text-muted text-sm">3 min</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user mr-2"></i> Yangi foydalanuvchi ro'yxatdan o'tdi
+                            <span class="float-right text-muted text-sm">12 min</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-clock mr-2"></i> Muddat yaqinlashmoqda
+                            <span class="float-right text-muted text-sm">2 soat</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item dropdown-footer">Barchasini ko'rish</a>
+                    </div>
+                </li>
+
+                <!-- User Menu -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ request.user.get_short_name|default:request.user.email }}</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user mr-2"></i> Profil
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-cog mr-2"></i> Sozlamalar
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{% url 'admin:logout' %}" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Chiqish
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

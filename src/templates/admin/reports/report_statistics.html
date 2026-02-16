@@ -1,10 +1,10 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
+{% load i18n static %}
 
 {% block extrahead %}
+{{ block.super }}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Asosiy o'zgaruvchilar */
 :root {
     --primary-color: #4361ee;
     --primary-light: #4895ef;
@@ -20,7 +20,6 @@
     --hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* Asosiy container */
 .stats-dashboard {
     padding: 30px;
     min-height: 100vh;
@@ -28,7 +27,6 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Kartochka */
 .dashboard-card {
     background: white;
     border-radius: 20px;
@@ -39,31 +37,12 @@
     backdrop-filter: blur(10px);
 }
 
-/* Dashboard header */
 .dashboard-header {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     padding: 30px 40px;
     color: white;
     position: relative;
     overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.2;
-    animation: float 20s linear infinite;
-}
-
-@keyframes float {
-    0% { transform: translate(0, 0) rotate(0deg); }
-    100% { transform: translate(-50px, -50px) rotate(360deg); }
 }
 
 .header-content {
@@ -98,7 +77,6 @@
     font-weight: 800;
     margin: 0 0 8px 0;
     color: white;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .header-text p {
@@ -108,7 +86,6 @@
     font-weight: 400;
 }
 
-/* Export tugmasi */
 .export-button {
     background: rgba(255, 255, 255, 0.2);
     color: white;
@@ -120,10 +97,8 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
 }
 
 .export-button:hover {
@@ -134,7 +109,6 @@
     color: white;
 }
 
-/* Filterlar bo'limi */
 .filters-section {
     padding: 35px 40px;
     background: var(--light-color);
@@ -177,7 +151,6 @@
 .filter-select {
     width: 100%;
     padding: 16px 20px;
-    padding-right: 50px;
     border: 2px solid #e0e6ed;
     border-radius: 12px;
     background: white;
@@ -186,19 +159,12 @@
     color: var(--dark-color);
     cursor: pointer;
     transition: all 0.3s ease;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234361ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 20px center;
-    background-size: 18px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
 }
 
 .filter-select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
-    transform: translateY(-2px);
 }
 
 .filter-actions {
@@ -249,7 +215,6 @@
     color: var(--dark-color);
 }
 
-/* Stats cards */
 .stats-cards {
     padding: 30px 40px;
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -269,19 +234,6 @@
     box-shadow: var(--card-shadow);
     text-align: center;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
 }
 
 .stat-card:hover {
@@ -306,7 +258,6 @@
     letter-spacing: 1px;
 }
 
-/* Jadval bo'limi */
 .table-section {
     padding: 0;
     overflow-x: auto;
@@ -316,7 +267,7 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    min-width: 1000px;
+    min-width: 800px;
 }
 
 .data-table thead {
@@ -336,22 +287,6 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     white-space: nowrap;
-    position: relative;
-}
-
-.data-table th::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
-    transition: width 0.3s ease;
-}
-
-.data-table th:hover::after {
-    width: 100%;
 }
 
 .data-table td {
@@ -360,143 +295,89 @@
     color: #4a5568;
     font-size: 15px;
     font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.data-table tbody tr {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .data-table tbody tr:hover {
     background: linear-gradient(90deg, rgba(67, 97, 238, 0.05) 0%, rgba(63, 55, 201, 0.05) 100%);
-    transform: translateX(4px);
-    box-shadow: -4px 0 0 var(--primary-color);
 }
 
-/* Status badge'lar */
 .status-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
+    gap: 8px;
+    padding: 8px 16px;
     border-radius: 50px;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    position: relative;
-    overflow: hidden;
-}
-
-.status-indicator::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-    border-radius: 50px;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
 }
 
 .status-saved {
     background: linear-gradient(135deg, #f6e05e 0%, #d69e2e 100%);
     color: #744210;
-    border: none;
 }
 
 .status-accepted {
     background: linear-gradient(135deg, #68d391 0%, #38a169 100%);
     color: #22543d;
-    border: none;
 }
 
 .status-sent {
     background: linear-gradient(135deg, #63b3ed 0%, #3182ce 100%);
     color: #2c5282;
-    border: none;
 }
 
 .status-cancelled {
     background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
     color: #742a2a;
-    border: none;
 }
 
-/* Count badge */
 .count-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 70px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
     color: white;
     border-radius: 50px;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 16px;
     box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-    position: relative;
-    overflow: hidden;
 }
 
-.count-badge::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-    border-radius: 50px;
-}
-
-/* Empty state */
 .empty-state {
-    padding: 80px 40px;
+    padding: 60px 40px;
     text-align: center;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .empty-icon {
-    font-size: 80px;
-    margin-bottom: 30px;
-    opacity: 0.3;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
+    font-size: 60px;
+    margin-bottom: 20px;
+    opacity: 0.5;
 }
 
 .empty-title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--dark-color);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .empty-text {
     font-size: 16px;
     color: var(--gray-color);
-    max-width: 400px;
-    margin: 0 auto 32px;
+    margin-bottom: 24px;
 }
 
 .empty-action {
     display: inline-flex;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
     color: white;
-    padding: 16px 32px;
+    padding: 12px 24px;
     border-radius: 50px;
     text-decoration: none;
     font-weight: 600;
@@ -510,37 +391,25 @@
     color: white;
 }
 
-/* Responsive dizayn */
-@media (max-width: 1200px) {
+@media (max-width: 768px) {
     .stats-dashboard {
-        padding: 20px;
+        padding: 16px;
     }
 
     .dashboard-header,
     .filters-section,
     .stats-cards {
-        padding: 30px;
+        padding: 20px;
     }
 
-    .header-text h1 {
-        font-size: 28px;
-    }
-}
-
-@media (max-width: 768px) {
     .header-content {
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
         text-align: center;
     }
 
     .header-left {
         flex-direction: column;
-        text-align: center;
-    }
-
-    .filters-grid {
-        grid-template-columns: 1fr;
     }
 
     .filter-actions {
@@ -552,51 +421,6 @@
         width: 100%;
         justify-content: center;
     }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .data-table th,
-    .data-table td {
-        padding: 16px 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .stats-dashboard {
-        padding: 16px;
-    }
-
-    .dashboard-header,
-    .filters-section,
-    .stats-cards {
-        padding: 24px;
-    }
-
-    .header-text h1 {
-        font-size: 24px;
-    }
-
-    .export-button,
-    .filter-btn,
-    .clear-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-/* Yuklanish animatsiyasi */
-.loading-shimmer {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer-loading 1.5s infinite;
-    border-radius: 12px;
-}
-
-@keyframes shimmer-loading {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
 }
 </style>
 {% endblock %}
@@ -615,10 +439,12 @@
                     </div>
                 </div>
 
+                {% if stats %}
                 <a href="export/?{{ request.GET.urlencode }}" class="export-button">
                     <span>📥</span>
                     <span>Excelga yuklab olish</span>
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -629,14 +455,13 @@
                     <div class="filter-item">
                         <div class="filter-label">
                             <div class="filter-label-icon">🏢</div>
-                            Organization
+                            Tashkilot
                         </div>
-                        <select name="organization" id="organization" class="filter-select">
-                            <option value="">Hammasi</option>
-                            {% for o in organizations %}
-                                <option value="{{ o.id }}"
-                                    {% if filters.organization == o.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ o.name }}
+                        <select name="organization" class="filter-select">
+                            <option value="">Barchasi</option>
+                            {% for org in organizations %}
+                                <option value="{{ org.id }}" {% if filters.organization == org.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ org.name }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -645,14 +470,13 @@
                     <div class="filter-item">
                         <div class="filter-label">
                             <div class="filter-label-icon">📄</div>
-                            Statement
+                            Hisobot formasi
                         </div>
-                        <select name="statement" id="statement" class="filter-select">
-                            <option value="">Hammasi</option>
-                            {% for s in statements %}
-                                <option value="{{ s.id }}"
-                                    {% if filters.statement == s.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ s.name_uz|default:s.name }}
+                        <select name="statement" class="filter-select">
+                            <option value="">Barchasi</option>
+                            {% for stmt in statements %}
+                                <option value="{{ stmt.id }}" {% if filters.statement == stmt.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ stmt.name_uz|default:stmt.name }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -663,11 +487,10 @@
                             <div class="filter-label-icon">✅</div>
                             Status
                         </div>
-                        <select name="status" id="status" class="filter-select">
-                            <option value="">Hammasi</option>
-                            {% for key,label in statuses %}
-                                <option value="{{ key }}"
-                                    {% if filters.status == key %}selected{% endif %}>
+                        <select name="status" class="filter-select">
+                            <option value="">Barchasi</option>
+                            {% for key, label in statuses %}
+                                <option value="{{ key }}" {% if filters.status == key %}selected{% endif %}>
                                     {{ label }}
                                 </option>
                             {% endfor %}
@@ -677,14 +500,13 @@
                     <div class="filter-item">
                         <div class="filter-label">
                             <div class="filter-label-icon">📅</div>
-                            Deadline
+                            Muddat
                         </div>
-                        <select name="deadline" id="deadline" class="filter-select">
-                            <option value="">Hammasi</option>
-                            {% for d in deadlines %}
-                                <option value="{{ d.id }}"
-                                    {% if filters.deadline == d.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ d.name|default:d.submit_at }}
+                        <select name="deadline" class="filter-select">
+                            <option value="">Barchasi</option>
+                            {% for deadline in deadlines %}
+                                <option value="{{ deadline.id }}" {% if filters.deadline == deadline.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ deadline.statement.name_uz|default:deadline.submit_at }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -709,45 +531,19 @@
         <div class="stats-cards">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">{{ stats|length }}</div>
+                    <div class="stat-value">{{ total_count|default:0 }}</div>
                     <div class="stat-label">Jami Hisobotlar</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        {% with sorted_stats=stats|dictsortreversed:"total" %}
-                            {% if sorted_stats %}
-                                {{ sorted_stats.0.total }}
-                            {% else %}
-                                0
-                            {% endif %}
-                        {% endwith %}
-                    </div>
+                    <div class="stat-value">{{ max_report|default:0 }}</div>
                     <div class="stat-label">Eng Ko'p Hisobot</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        {% with orgs=stats|dictsort:"organization__name" %}
-                            {% for org in orgs %}
-                                {% ifchanged org.organization__name %}
-                                    <!-- Bu yerda unique organizatsiyalar -->
-                                {% endifchanged %}
-                            {% endfor %}
-                            {{ orgs|length }}
-                        {% endwith %}
-                    </div>
+                    <div class="stat-value">{{ unique_orgs_count|default:0 }}</div>
                     <div class="stat-label">Tashkilotlar</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        {% with stmts=stats|dictsort:"statement__name_uz" %}
-                            {% for stmt in stmts %}
-                                {% ifchanged stmt.statement__name_uz %}
-                                    <!-- Bu yerda unique statementlar -->
-                                {% endifchanged %}
-                            {% endfor %}
-                            {{ stmts|length }}
-                        {% endwith %}
-                    </div>
+                    <div class="stat-value">{{ unique_stmts_count|default:0 }}</div>
                     <div class="stat-label">Statementlar</div>
                 </div>
             </div>
@@ -758,44 +554,33 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Organization</th>
-                        <th>Statement</th>
+                        <th>Tashkilot</th>
+                        <th>Hisobot formasi</th>
                         <th>Status</th>
-                        <th>Count</th>
+                        <th>Soni</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for row in stats %}
                     <tr>
                         <td>
-                            <strong style="font-size: 16px; color: var(--dark-color);">
-                                {{ row.organization__name|default:"—" }}
-                            </strong>
+                            <strong>{{ row.organization__name|default:"—" }}</strong>
                         </td>
-                        <td style="font-weight: 500; color: #4a5568;">
-                            {{ row.statement__name_uz }}
+                        <td>
+                            {# statement__name_uz ni ishlatamiz, statement__name ni emas! #}
+                            {{ row.statement__name_uz|default:"—" }}
                         </td>
                         <td>
                             {% if row.status == 'saved' %}
-                                <span class="status-indicator status-saved">
-                                    ● {{ row.status|upper }}
-                                </span>
+                                <span class="status-indicator status-saved">● Saqlangan</span>
                             {% elif row.status == 'accepted' %}
-                                <span class="status-indicator status-accepted">
-                                    ● {{ row.status|upper }}
-                                </span>
+                                <span class="status-indicator status-accepted">● Qabul qilingan</span>
                             {% elif row.status == 'sent' %}
-                                <span class="status-indicator status-sent">
-                                    ● {{ row.status|upper }}
-                                </span>
+                                <span class="status-indicator status-sent">● Yuborilgan</span>
                             {% elif row.status == 'cancelled' %}
-                                <span class="status-indicator status-cancelled">
-                                    ● {{ row.status|upper }}
-                                </span>
+                                <span class="status-indicator status-cancelled">● Bekor qilingan</span>
                             {% else %}
-                                <span class="status-indicator">
-                                    ● {{ row.status|upper }}
-                                </span>
+                                <span class="status-indicator">{{ row.status|default:"—" }}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -824,72 +609,11 @@
 </div>
 
 <script>
-// Filter formini submit qilganda yuklanishni ko'rsatish
-document.getElementById('statsFilter').addEventListener('submit', function(e) {
+document.getElementById('statsFilter')?.addEventListener('submit', function(e) {
     const submitBtn = this.querySelector('.filter-btn');
     if (submitBtn) {
         submitBtn.innerHTML = '<span>⏳</span><span>Yuklanmoqda...</span>';
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.8';
-
-        // Jadvalga yuklanish effekti
-        const tableBody = document.querySelector('.data-table tbody');
-        if (tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="4">
-                        <div style="padding: 60px; text-align: center;">
-                            <div class="loading-shimmer" style="width: 100px; height: 100px; margin: 0 auto 20px; border-radius: 50%;"></div>
-                            <div class="loading-shimmer" style="width: 200px; height: 20px; margin: 10px auto; border-radius: 10px;"></div>
-                            <div class="loading-shimmer" style="width: 150px; height: 20px; margin: 10px auto; border-radius: 10px;"></div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
     }
-});
-
-// Select elementlariga hover effekti
-document.querySelectorAll('.filter-select').forEach(select => {
-    select.addEventListener('focus', function() {
-        this.parentElement.style.transform = 'translateY(-2px)';
-    });
-
-    select.addEventListener('blur', function() {
-        this.parentElement.style.transform = 'translateY(0)';
-    });
-});
-
-// Jadval qatorlariga hover effekti
-document.querySelectorAll('.data-table tbody tr').forEach(row => {
-    row.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateX(4px)';
-    });
-
-    row.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateX(0)';
-    });
-});
-
-// Export tugmasi animatsiyasi
-document.querySelector('.export-button').addEventListener('click', function(e) {
-    const btn = this;
-    btn.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        btn.style.transform = 'scale(1)';
-    }, 150);
-});
-
-// Statistik kartochkalarga hover effekti
-document.querySelectorAll('.stat-card').forEach(card => {
-    card.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-5px)';
-    });
-
-    card.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-    });
 });
 </script>
 {% endblock %}
