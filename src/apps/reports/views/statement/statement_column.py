@@ -76,9 +76,9 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         )
 
         # 🔍 Cache ni tekshiramiz
-        # cached_data = cache.get(cache_key)
-        # if cached_data:
-        #     return Response(cached_data)
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data)
 
         # ❌ Cache bo‘lmasa hisoblaymiz
         queryset = self.filter_queryset(self.get_queryset())
