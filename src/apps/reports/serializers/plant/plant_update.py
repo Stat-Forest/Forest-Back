@@ -14,12 +14,27 @@ from apps.reports.services.report_calculate_expressions import calculate_by_expr
 from uuid import UUID
 
 
-def validate_uuid(value, field_name="id"):
+def validate_uuid(value, field):
     try:
         UUID(str(value))
     except Exception:
-        raise ValidationError({field_name: f"{value} to‘g‘ri UUID emas"})
+        raise ValidationError({field: f"{value} — to‘g‘ri UUID emas"})
 
+
+def is_calculated_column(column: StatementColumn):
+    """
+    Svodka / formulali / backend hisoblaydigan columnlar
+    """
+    if getattr(column, "calculate_expression", None):
+        return True
+    if getattr(column, "is_user_input", True) is False:
+        return True
+    return False
+
+
+# ================================
+# SERIALIZER
+# ================================
 
 class PlantReportUpdateSerializer(CustomModelSerializer):
     report_items = serializers.ListField(write_only=True)
@@ -30,13 +45,22 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
 
     def update(self, instance, validated_data):
 
+        # 🚫 svodka report qo‘lda tahrirlanmaydi
+        if instance.source_report:
+            raise ValidationError(
+                "Svodka (hisoblangan) hisobotni qo‘lda tahrirlab bo‘lmaydi"
+            )
+
         raw_items = validated_data.pop("report_items", [])
 
-        # =====================================================
-        # 🛡 DEFENSIVE CLEANING (frontend xatolaridan himoya)
-        # =====================================================
-        items_data = []
+        if not raw_items:
+            raise ValidationError("report_items bo‘sh yuborildi")
 
+        # ----------------------------
+        # 1️⃣ UUID validation
+        # ----------------------------
+
+        column_ids = []
         for item in raw_items:
             col = item.get("statement_column")
 
@@ -44,56 +68,53 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 raise ValidationError({"statement_column": "Majburiy maydon"})
 
             validate_uuid(col, "statement_column")
+            column_ids.append(col)
 
-            items_data.append(item)
+        # ----------------------------
+        # 2️⃣ Load columns
+        # ----------------------------
 
-        if not items_data:
-            raise ValidationError("report_items bo‘sh yoki noto‘g‘ri yuborildi.")
+        columns = StatementColumn.objects.filter(id__in=column_ids)
+        columns_map = {str(c.id): c for c in columns}
 
-        # =====================================================
-        # 1️⃣ Column mapping
-        # =====================================================
-        column_ids = []
-        for item in items_data:
-            try:
-                column_ids.append(item["statement_column"])
-            except KeyError:
-                raise ValidationError("statement_column majburiy maydon")
+        if len(columns_map) != len(set(column_ids)):
+            raise ValidationError("Baʼzi statement_column topilmadi")
 
-        columns = (
-            StatementColumn.objects
-            .filter(id__in=column_ids)
-            .select_related("statement")
-        )
+        # ----------------------------
+        # TRANSACTION
+        # ----------------------------
 
-        columns_map = {str(col.id): col for col in columns}
-
-        if not columns_map:
-            raise ValidationError("Berilgan statement_column lar topilmadi.")
-
-        # =====================================================
-        # 2️⃣ TRANSACTION
-        # =====================================================
         with transaction.atomic():
 
-            # ---- Status reset ----
+            # ---- status reset ----
             if instance.status == Report.StatusChoices.CANCELLED:
                 instance.status = Report.StatusChoices.SAVED
                 instance.cancel_reason = None
                 instance.cancelled_at = None
                 instance.save(update_fields=["status", "cancel_reason", "cancelled_at"])
 
-            # =================================================
-            # 3️⃣ Item loop
-            # =================================================
-            for item in items_data:
-                col_id = str(item["statement_column"])
-                column = columns_map.get(col_id)
+            # ----------------------------
+            # 3️⃣ Process each column
+            # ----------------------------
 
-                if not column:
-                    continue
+            for item in raw_items:
+                column = columns_map[str(item["statement_column"])]
 
                 inners_data = item.get("inners") or []
+
+                # ==========================
+                # ⛔ CALCULATED COLUMN
+                # ==========================
+                if is_calculated_column(column):
+                    if inners_data:
+                        raise ValidationError(
+                            f"{column.id} — hisoblangan ustun. Frontdan yuborilmasligi kerak"
+                        )
+                    continue
+
+                # ==========================
+                # 🌱 PLANT BASED COLUMN
+                # ==========================
 
                 report_item, _ = ReportItem.objects.get_or_create(
                     report=instance,
@@ -109,14 +130,15 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 to_update = []
                 to_create = []
 
-                # =============================
-                # 4️⃣ Inner loop
-                # =============================
                 for inner in inners_data:
                     plant_id = inner.get("plant")
 
-                    if not plant_id:
-                        continue   # None plant ham serverni yiqitmasin
+                    if plant_id is None:
+                        raise ValidationError(
+                            f"{column.id} ustun uchun plant majburiy"
+                        )
+
+                    validate_uuid(plant_id, "plant")
 
                     value = inner.get("value")
                     plant_id = str(plant_id)
@@ -143,9 +165,6 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 if to_create:
                     ReportItemInner.objects.bulk_create(to_create)
 
-                # =============================
-                # 5️⃣ Delete removed inners
-                # =============================
                 to_delete = set(existing.keys()) - received_ids
                 if to_delete:
                     ReportItemInner.objects.filter(
@@ -153,9 +172,10 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                         plant_id__in=to_delete
                     ).delete()
 
-            # =================================================
-            # 6️⃣ Clear calculated columns
-            # =================================================
+            # ----------------------------
+            # 4️⃣ Clear calculated columns
+            # ----------------------------
+
             from apps.reports.calculate_orderings.calculated_columns import CALCULATED_COLUMNS
 
             statement_name = instance.statement.name_uz
@@ -166,24 +186,21 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                     statement=instance.statement,
                     ordering__in=calculated_orderings
                 )
-
                 ReportItem.objects.filter(
                     report=instance,
                     statement_column__in=calc_cols
                 ).delete()
 
-            # =================================================
-            # 7️⃣ Recalculate
-            # =================================================
+            # ----------------------------
+            # 5️⃣ Recalculate
+            # ----------------------------
+
             calculate_fn = ALL_CALCULATORS.get(statement_name)
             if calculate_fn:
                 calculate_fn(instance)
             elif instance.statement.calculate_expression:
                 calculate_by_expressions(instance)
 
-            # =================================================
-            # 8️⃣ Individual jami
-            # =================================================
             aggregate_individual_report(instance)
 
         return instance
