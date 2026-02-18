@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 ("gilos", "черешня"),
                 ("qizil do‘lana", "боярышник красный"),
                 ("tut", "шелковица"),
-                ("jiyda", "лох"),
+                ("jiyda", "джида"),
                 ("uzum", "виноград"),
                 ("bag‘ryannik", "багрянник"),
                 ("dub", "дуб"),
@@ -71,6 +71,9 @@ class Command(BaseCommand):
                 ("atirgul", "роза"),
                 ("lavanda", "лаванда"),
                 ("xrizantema", "хризантема"),
+                ("safora", "сафора"),
+                ("shaftoli", "персик"),
+                ("eman", "дуб"),
             ]
 
             created_count = 0
