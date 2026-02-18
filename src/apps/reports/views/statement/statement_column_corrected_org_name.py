@@ -16,6 +16,7 @@ from apps.utils.translation import get_translated_field
 
 
 CACHE_TIMEOUT = 60 * 60 * 24
+CACHE_KEY_PREFIX = "statement_column_tree:"  # ✅ prefix ajratildi
 
 
 class StatementColumnFilter(django_filters.FilterSet):
@@ -46,6 +47,13 @@ class StatementColumnFilter(django_filters.FilterSet):
         )
 
 
+def _register_cache_key(cache_key: str):  # ✅ registry funksiyasi
+    registry_key = f"{CACHE_KEY_PREFIX}__registry__"
+    all_keys: set = cache.get(registry_key) or set()
+    all_keys.add(cache_key)
+    cache.set(registry_key, all_keys, timeout=CACHE_TIMEOUT)
+
+
 @extend_schema(
     tags=["Statements"],
     parameters=[
@@ -64,25 +72,21 @@ class CorrectedStatementColumnTreeAPIView(generics.ListAPIView):
     filterset_class = StatementColumnFilter
 
     def list(self, request, *args, **kwargs):
-        # 🔑 Cache key yasaymiz (lang + filter paramlar bilan)
         lang = request.query_params.get("lang", "uz")
-
         statement_id = request.query_params.get("statement", "")
         is_user_input = request.query_params.get("is_user_input", "")
 
         cache_key = (
-            f"statement_column_tree:"
+            f"{CACHE_KEY_PREFIX}"  # ✅ prefix dan foydalanamiz
             f"lang={lang}:"
             f"statement={statement_id}:"
             f"is_user_input={is_user_input}"
         )
 
-        # 🔍 Cache tekshiramiz
         cached_data = cache.get(cache_key)
-        if cached_data:
+        if cached_data is not None:  # ✅ if cached_data emas, None tekshiruvi
             return Response(cached_data)
 
-        # ❌ Cache bo‘lmasa hisoblaymiz
         queryset = self.filter_queryset(self.get_queryset())
         all_columns = list(queryset)
 
@@ -122,8 +126,8 @@ class CorrectedStatementColumnTreeAPIView(generics.ListAPIView):
         serializer = self.get_serializer(tree, many=True)
         data = serializer.data
 
-        # 💾 Cache ga saqlaymiz (24 soat)
         cache.set(cache_key, data, timeout=CACHE_TIMEOUT)
+        _register_cache_key(cache_key)  # ✅ kalitni registry-ga qo'shamiz
 
         return Response(data)
 
