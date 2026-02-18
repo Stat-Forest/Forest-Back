@@ -22,9 +22,9 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
     def get_title(self, obj):
         lang = self.context.get("lang", "uz")
         translated = get_translated_field(obj, "title", lang)
-        return translated or obj.title
+        return translated if translated else obj.title
 
     def get_desc(self, obj):
         lang = self.context.get("lang", "uz")
         translated = get_translated_field(obj, "desc", lang)
-        return translated or obj.desc
+        return translated if translated else obj.desc
