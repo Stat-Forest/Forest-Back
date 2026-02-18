@@ -89,8 +89,6 @@ MIDDLEWARE = [
     #CustomMiddleWare for Enter Admin
     "django.contrib.auth.middleware.AuthenticationMiddleware",
 
-    "apps.users.middleware.ActiveUserMiddleware",
-
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.logs.middleware.CurrentUserMiddleware",
