@@ -16,6 +16,8 @@ from apps.utils.translation import get_translated_field
 
 
 CACHE_TIMEOUT = 60 * 60 * 24
+CACHE_KEY_PREFIX = "statement_column_tree_v1:"
+
 
 class StatementColumnFilter(django_filters.FilterSet):
     statement = django_filters.ModelChoiceFilter(
@@ -45,6 +47,17 @@ class StatementColumnFilter(django_filters.FilterSet):
         )
 
 
+def _register_cache_key(cache_key: str):
+    """
+    Yangi cache kalitini markaziy registry-ga qo'shamiz.
+    Signal bu ro'yxat orqali barcha kalitlarni topadi va tozalaydi.
+    """
+    registry_key = f"{CACHE_KEY_PREFIX}__registry__"
+    all_keys: set = cache.get(registry_key) or set()
+    all_keys.add(cache_key)
+    cache.set(registry_key, all_keys, timeout=CACHE_TIMEOUT)
+
+
 @extend_schema(
     tags=["Statements"],
     parameters=[
@@ -63,24 +76,21 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
     filterset_class = StatementColumnFilter
 
     def list(self, request, *args, **kwargs):
-        # 🔑 Cache key yaratamiz
         lang = request.query_params.get("lang", "uz")
         statement_id = request.query_params.get("statement", "")
         is_user_input = request.query_params.get("is_user_input", "")
 
         cache_key = (
-            f"statement_column_tree_v1:"
+            f"{CACHE_KEY_PREFIX}"
             f"lang={lang}:"
             f"statement={statement_id}:"
             f"is_user_input={is_user_input}"
         )
 
-        # 🔍 Cache ni tekshiramiz
         cached_data = cache.get(cache_key)
-        if cached_data:
+        if cached_data is not None:
             return Response(cached_data)
 
-        # ❌ Cache bo‘lmasa hisoblaymiz
         queryset = self.filter_queryset(self.get_queryset())
         all_columns = list(queryset)
 
@@ -118,10 +128,10 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         tree = sort_tree_recursive(tree)
 
         serializer = self.get_serializer(tree, many=True)
-        data = serializer.data
-
+        data = list(serializer.data)  # ✅ ReturnList → oddiy list (cache uchun)
 
         cache.set(cache_key, data, timeout=CACHE_TIMEOUT)
+        _register_cache_key(cache_key)
 
         return Response(data)
 
