@@ -1,5 +1,5 @@
 """
-apps/reports/signals/statement_column.py
+apps/reports/signals/statement_column_cache.py
 
 StatementColumn qo'shilsa, o'chirilsa yoki o'zgartirilsa
 barcha bog'liq cache kalitlari avtomatik tozalanadi.
@@ -24,12 +24,13 @@ def _clear_statement_column_cache(statement_id=None):
         all_keys: set = cache.get(registry_key) or set()
 
         if statement_id:
-            keys_to_delete = {k for k in all_keys if f"statement={statement_id}:" in k}
+            sid = str(statement_id)  # ✅ UUID → str, type mismatch yo'q
+            keys_to_delete = {k for k in all_keys if f"statement={sid}:" in k}
         else:
-            keys_to_delete = all_keys
+            keys_to_delete = set(all_keys)  # ✅ copy olamiz
 
         if keys_to_delete:
-            cache.delete_many(keys_to_delete)
+            cache.delete_many(list(keys_to_delete))  # ✅ list ga o'tkazamiz
             all_keys -= keys_to_delete
             if all_keys:
                 cache.set(registry_key, all_keys, timeout=60 * 60 * 24)
