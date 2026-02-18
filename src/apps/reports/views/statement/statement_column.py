@@ -87,12 +87,10 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
             f"is_user_input={is_user_input}"
         )
 
-        # Cache mavjudmi tekshiramiz
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return Response(cached_data)
 
-        # Cache yo'q — hisoblash
         queryset = self.filter_queryset(self.get_queryset())
         all_columns = list(queryset)
 
@@ -130,9 +128,8 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         tree = sort_tree_recursive(tree)
 
         serializer = self.get_serializer(tree, many=True)
-        data = serializer.data
+        data = list(serializer.data)  # ✅ ReturnList → oddiy list (cache uchun)
 
-        # Cache-ga yozamiz va kalitni registry-ga qo'shamiz
         cache.set(cache_key, data, timeout=CACHE_TIMEOUT)
         _register_cache_key(cache_key)
 

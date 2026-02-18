@@ -16,7 +16,7 @@ from apps.utils.translation import get_translated_field
 
 
 CACHE_TIMEOUT = 60 * 60 * 24
-CACHE_KEY_PREFIX = "statement_column_tree:"  # ✅ prefix ajratildi
+CACHE_KEY_PREFIX = "statement_column_tree:"
 
 
 class StatementColumnFilter(django_filters.FilterSet):
@@ -47,7 +47,7 @@ class StatementColumnFilter(django_filters.FilterSet):
         )
 
 
-def _register_cache_key(cache_key: str):  # ✅ registry funksiyasi
+def _register_cache_key(cache_key: str):
     registry_key = f"{CACHE_KEY_PREFIX}__registry__"
     all_keys: set = cache.get(registry_key) or set()
     all_keys.add(cache_key)
@@ -77,14 +77,14 @@ class CorrectedStatementColumnTreeAPIView(generics.ListAPIView):
         is_user_input = request.query_params.get("is_user_input", "")
 
         cache_key = (
-            f"{CACHE_KEY_PREFIX}"  # ✅ prefix dan foydalanamiz
+            f"{CACHE_KEY_PREFIX}"
             f"lang={lang}:"
             f"statement={statement_id}:"
             f"is_user_input={is_user_input}"
         )
 
         cached_data = cache.get(cache_key)
-        if cached_data is not None:  # ✅ if cached_data emas, None tekshiruvi
+        if cached_data is not None:
             return Response(cached_data)
 
         queryset = self.filter_queryset(self.get_queryset())
@@ -124,10 +124,10 @@ class CorrectedStatementColumnTreeAPIView(generics.ListAPIView):
         tree = sort_tree_recursive(tree)
 
         serializer = self.get_serializer(tree, many=True)
-        data = serializer.data
+        data = list(serializer.data)  # ✅ ReturnList → oddiy list (cache uchun)
 
         cache.set(cache_key, data, timeout=CACHE_TIMEOUT)
-        _register_cache_key(cache_key)  # ✅ kalitni registry-ga qo'shamiz
+        _register_cache_key(cache_key)
 
         return Response(data)
 
