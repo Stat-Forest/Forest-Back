@@ -11,6 +11,16 @@ from apps.reports.services.individual_general_report import aggregate_individual
 from apps.reports.services.report_calculate_expressions import calculate_by_expressions
 
 
+from uuid import UUID
+
+
+def validate_uuid(value, field_name="id"):
+    try:
+        UUID(str(value))
+    except Exception:
+        raise ValidationError({field_name: f"{value} to‘g‘ri UUID emas"})
+
+
 class PlantReportUpdateSerializer(CustomModelSerializer):
     report_items = serializers.ListField(write_only=True)
 
@@ -26,11 +36,14 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
         # 🛡 DEFENSIVE CLEANING (frontend xatolaridan himoya)
         # =====================================================
         items_data = []
+
         for item in raw_items:
             col = item.get("statement_column")
 
-            if not col or col in ("None", "null"):
-                continue   # yomon rowlarni tashlab yuboramiz
+            if col is None:
+                raise ValidationError({"statement_column": "Majburiy maydon"})
+
+            validate_uuid(col, "statement_column")
 
             items_data.append(item)
 
@@ -186,20 +199,22 @@ class PlantReportUpdateReadSerializer(CustomModelSerializer):
     def get_report_items(self, obj):
         items = []
 
-        for item in obj.report_items.select_related("statement_column").prefetch_related("inners"):
-            # organization columnlarni tashlaymiz
+        for item in obj.report_items.all():
             if item.statement_column.is_organization:
                 continue
 
+            # ✅ inners ham prefetch qilingan
+            inners_data = [
+                {
+                    "plant": str(inner.plant_id) if inner.plant_id else None,
+                    "value": inner.value
+                }
+                for inner in item.inners.all()
+            ]
+
             items.append({
                 "statement_column": str(item.statement_column_id),
-                "inners": [
-                    {
-                        "plant": str(inner.plant_id),
-                        "value": inner.value
-                    }
-                    for inner in item.inners.all()
-                ]
+                "inners": inners_data
             })
 
         return items
