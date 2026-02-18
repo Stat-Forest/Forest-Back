@@ -1,10 +1,11 @@
+from django.db.models import Prefetch
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from apps.reports.models import Report, Plant, StatementColumn
+from apps.reports.models import Report, Plant, StatementColumn, ReportItem, ReportItemInner
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer, \
     PlantReportUpdateReadSerializer
@@ -76,8 +77,34 @@ class PlantListReportAPIView(CustomListAPIView):
 
 @extend_schema(tags=["Plant-Reports"])
 class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
-    # serializer_class = PlantReportUpdateSerializer
-    queryset = Report.objects.filter(is_plant_based=True, is_report=True)
+    queryset = (
+        Report.objects
+        .filter(is_plant_based=True, is_report=True)
+        .select_related(
+            "statement",
+            "deadline",
+            "organization",
+            "statement__parent",    
+        )
+        .prefetch_related(
+            Prefetch(
+                "report_items",
+                queryset=ReportItem.objects
+                .select_related(
+                    "statement_column",
+                    "statement_column__statement",
+                    "statement_column__parent",
+                )
+                .prefetch_related(
+                    Prefetch(
+                        "inners",
+                        queryset=ReportItemInner.objects
+                        .select_related("plant")
+                    )
+                )
+            )
+        )
+    )
 
     def get_serializer_class(self):
         if self.request.method == "GET":
