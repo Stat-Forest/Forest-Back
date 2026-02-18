@@ -11,7 +11,8 @@ CATEGORY_STRUCTURE = {
         ("Virgin archasi", "Вирджинская можжевельник"),
         ("Kompakt tuya", "Компактный туя"),
         ("Sharq tuya", "Восточный туя"),
-        ("Kiparis", "Кипарис")
+        ("Kiparis", "Кипарис"),
+        ("Tog‘ archasi", "Горный можжевельник"),
     ],
     "Yaproqbarglilar": [
         ("Katalpa", "Катальпа"),
@@ -38,7 +39,20 @@ CATEGORY_STRUCTURE = {
         ("Oqqayin", "Тополь белый"),
         ("Ginkgo biloba", "Гинкго билоба"),
         ("Kanada bundugi", "Канадский бундук"),
-        ("Aylant", "Айлант")
+        ("Aylant", "Айлант"),
+        ("Xilo katalpa", "Гибридная катальпа"),
+        ("Oq qayin", "Берёза белая"),
+        ("Terak", "Тополь"),
+        ("Tol", "Ива"),
+        ("Majnuntol", "Плакучая ива"),
+        ("Pavlovniya", "Павловния"),
+        ("Savattol", "Корзиночная ива"),
+    ],
+    "Tez o'suvchilar": [
+        ("Terak", "Тополь"),
+        ("Tol", "Ива"),
+        ("Majnuntol", "Плакучая ива"),
+        ("Pavlovniya", "Павловния"),
     ],
     "Mevalilar": [
         ("O‘rik", "Абрикос"),
@@ -53,7 +67,14 @@ CATEGORY_STRUCTURE = {
         ("Magalepka olcha", "Магалебская вишня"),
         ("Jiyda", "Джида"),
         ("Chilonjiyda", "Зизифус"),
-        ("Qizil do‘lona", "Боярышник красный")
+        ("Qizil do‘lona", "Боярышник красный"),
+        ("Uzum", "Виноград"),
+        ("Anor", "Гранат"),
+        ("Anjir", "Инжир"),
+        ("Chappa tut", "Белая шелковица"),
+        ("Non jiyda", "Лох съедобный"),
+        ("Palma", "Пальма"),
+        ("Limon", "Лимон"),
     ],
     "Yong`oq Mevalilar": [
         ("Shirin bodom", "Сладкий миндаль"),
@@ -61,7 +82,8 @@ CATEGORY_STRUCTURE = {
         ("Funduk", "Фундук"),
         ("Pekan (amerik. Yong‘oq)", "Пекан"),
         ("Xandon pista", "Фисташка настоящая"),
-        ("Yong‘oq", "Грецкий орех")
+        ("Yong‘oq", "Грецкий орех"),
+        ("Achchiq bodom", "Горький миндаль"),
     ],
     "Cho'l o'simliklari": [
         ("Saxsavul", "Саксаул"),
@@ -82,9 +104,23 @@ CATEGORY_STRUCTURE = {
         ("Ispan droki", "Испанский дрок"),
         ("Tog‘ muruch", "Горный перец"),
         ("Uchqat (jimolost)", "Жимолость"),
-        ("Zirk", "Барбарис")
+        ("Zirk", "Барбарис"),
+        ("Ligustrum", "Бирючина"),
+        ("Beresklet", "Бересклет"),
+        ("Forsiziya", "Форзиция"),
+        ("Hind sireni", "Индийская сирень"),
+        ("Atirgul", "Роза"),
+        ("Cizalpinia", "Цезальпиния"),
+        ("Chakanda", "Облепиха"),
+        ("Sumax", "Сумах"),
+        ("Yukka", "Юкка"),
+        ("Smorodina", "Смородина"),
+        ("Arxideya", "Орхидея"),
+        ("Ryabina", "Рябина"),
+        ("Lavanda", "Лаванда"),
     ]
 }
+
 
 class Command(BaseCommand):
     help = "Ko'chatxona va Niholxona Jami uchun o'simlik turlari va nomlarini yaratish"
