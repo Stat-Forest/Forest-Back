@@ -1,6 +1,5 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.core.cache import cache
 
@@ -35,7 +34,6 @@ class AnnouncementListAPIView(generics.ListAPIView):
     """
 
     serializer_class = AnnouncementListSerializer
-    permission_classes = [IsAuthenticated]
     filterset_fields = ['title']
 
     # Cache lifetime (1 hour)
