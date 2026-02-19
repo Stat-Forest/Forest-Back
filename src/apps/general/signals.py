@@ -2,7 +2,11 @@ from django.dispatch import receiver
 from django.core.cache import caches
 from django.db.models.signals import post_save, post_delete
 
-from apps.general.models import LandManagement, Organization, Announcement, Handbook, LandDocument
+from apps.general.models import (
+    LandManagement, Organization,
+    Announcement, Handbook,
+    LandDocument,Notification
+)
 
 # ======================================================
 # Use default Redis cache backend
@@ -60,3 +64,16 @@ def clear_land_management_cache(sender, instance, **kwargs):
     Clears LandManagement summary cache when any LandManagement item changes.
     """
     redis_cache.delete_pattern("land_management_summary:*")
+
+
+# ======================================================
+# Clears Notification cache when data changes
+# ======================================================
+@receiver([post_save, post_delete], sender=Notification)
+def clear_notification_cache(sender, instance, **kwargs):
+    """
+    Clears cached notification list whenever any Notification
+    object is created, updated, or deleted.
+    Cache is language-specific in the view, so we delete all variations.
+    """
+    redis_cache.delete_pattern("notifications:*")
