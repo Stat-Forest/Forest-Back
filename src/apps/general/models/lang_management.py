@@ -1,18 +1,23 @@
+# ==============================
+# models.py
+# ==============================
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 
 class LandManagement(models.Model):
-    name = models.CharField(_("Land Name"), max_length=255)
+    """
+    Stores information about land plots with area and optional comment.
+    """
 
+    name = models.CharField(_("Land Name"), max_length=255)
     area = models.DecimalField(
         _("Area (ga)"),
         max_digits=20,
         decimal_places=5,
         help_text=_("Maydon hajmi gektar bilan")
     )
-
     comment = models.TextField(_("Comment"), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -24,6 +29,10 @@ class LandManagement(models.Model):
     def __str__(self):
         return self.name
 
+    # ======================================================
+    # Model-level validation
+    # Ensures area is positive and not empty
+    # ======================================================
     def clean(self):
         super().clean()
 
