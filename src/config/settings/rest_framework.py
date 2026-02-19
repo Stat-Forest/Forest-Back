@@ -158,7 +158,7 @@ REST_FRAMEWORK = {
     'UNICODE_JSON': True,
     'COMPACT_JSON': True,
     'STRICT_JSON': True,
-    'COERCE_DECIMAL_TO_STRING': True,   # CHANGED: True prevents Decimal precision bugs
+    'COERCE_DECIMAL_TO_STRING': True,
     'UPLOADED_FILES_USE_URL': True,
 
     # -------------------------------------------------------------------------
