@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.db.models.functions import Length
 
 from rest_framework.views import APIView
+from rest_framework import permissions
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
@@ -25,6 +26,7 @@ YEARLY_STATEMENTS = [
 
 
 class ReportLoginSummaryAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
     @extend_schema(
         tags=["Login Stats"],
         parameters=[
