@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
@@ -16,6 +18,11 @@ class PeriodRange:
     kind: str  # "year" | "quarter"
     year: int
     quarter: int | None = None
+
+
+def make_virtual_report_id(*parts) -> str:
+    base = "|".join(str(p) for p in parts if p is not None)
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
 
 
 def parse_period(period: str) -> PeriodRange:
@@ -76,6 +83,37 @@ def filter_reports_by_period(statement, deadline_id):
     )
 
     return qs
+
+
+def get_db_general_report_id(statement_id: str, deadline_id: str, region_key: str) -> str | None:
+    return (
+        Report.objects
+        .filter(
+            statement_id=statement_id,
+            is_general=True,
+            organization__isnull=True,
+            region=region_key,
+        )
+        .filter(deadline_id=deadline_id)
+        .order_by("-created_at")
+        .values_list("id", flat=True)
+        .first()
+    )
+
+
+def get_db_republic_report_id(statement_id: str, deadline_id: str) -> str | None:
+    return (
+        Report.objects
+        .filter(
+            statement_id=statement_id,
+            is_republic=True,
+            organization__isnull=True,
+        )
+        .filter(deadline_id=deadline_id)
+        .order_by("-created_at")
+        .values_list("id", flat=True)
+        .first()
+    )
 
 
 
@@ -350,7 +388,7 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
     # Build region -> reports mapping
     by_region: Dict[str, List[Report]] = defaultdict(list)
     for rep in reports:
-        key = str(getattr(rep, "region", ""))
+        key = str(getattr(rep.organization, "region", ""))
         by_region[key].append(rep)
 
     # Preload statement columns once for full-path naming
@@ -369,7 +407,8 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
             for inn in it.inners.all():
                 if inn.plant_id:
                     plant_ids_all.add(str(inn.plant_id))
-    plant_map_all = {str(pid): name for pid, name in Plant.objects.filter(id__in=plant_ids_all).values_list("id", "name")}
+    plant_map_all = {str(pid): name for pid, name in
+                     Plant.objects.filter(id__in=plant_ids_all).values_list("id", "name")}
 
     def serialize_individual(rep: Report) -> Dict:
         # Aggregate per column and plant for a single organization
@@ -454,11 +493,14 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
 
     # Transform regions to match the regional endpoint format
     results = []
-    
+
+
     # Add regions with their organizations as children
     for region_data in regions_payload:
+        db_id = get_db_general_report_id(str(statement.id), deadline_id, region_data["region"])
+
         region_item = {
-            "id": f"general_{region_data['region']}",
+            "id": db_id,
             "organization_name": region_data['general']['organization_name'],
             "report_items": region_data['general']['report_items'],
             "children_reports": [
@@ -474,15 +516,17 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
             ]
         }
         results.append(region_item)
-    
+
+    rep_db_id = get_db_republic_report_id(str(statement.id), deadline_id)
+
     # Add republic as a separate item in results
     results.append({
-        "id": "republic",
+        "id": rep_db_id,
         "organization_name": republic_snapshot["organization_name"],
         "report_items": republic_snapshot["report_items"],
         "children_reports": []
     })
-    
+
     return {
         "count": len(results),
         "next": None,
