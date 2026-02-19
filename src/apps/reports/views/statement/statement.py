@@ -1,5 +1,4 @@
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.core.cache import cache
@@ -24,7 +23,6 @@ from apps.reports.views.statement.cache_keys import get_statement_list_cache_key
     description="Get list of statements with alphabetical ordering and caching"
 )
 class StatementListAPIView(ListAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = StatementSerializer
 
     def get_queryset(self):
