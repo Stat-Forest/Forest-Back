@@ -1,6 +1,8 @@
 from django.db.models import Prefetch
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -77,30 +79,24 @@ class PlantListReportAPIView(CustomListAPIView):
 
 @extend_schema(tags=["Plant-Reports"])
 class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
-    queryset = (
-        Report.objects
-        .filter(is_plant_based=True, is_report=True)
-        .select_related(
-            "statement",
-            "deadline",
-            "organization",
-            "statement__parent",    
-        )
-        .prefetch_related(
-            Prefetch(
-                "report_items",
-                queryset=ReportItem.objects
-                .select_related(
-                    "statement_column",
-                    "statement_column__statement",
-                    "statement_column__parent",
-                )
-                .prefetch_related(
-                    Prefetch(
-                        "inners",
-                        queryset=ReportItemInner.objects
-                        .select_related("plant")
-                    )
+    """
+    API endpoint for plant-based reports
+    """
+    queryset = Report.objects.filter(
+        is_plant_based=True
+    ).select_related(
+        'statement',
+        'deadline',
+        'organization'
+    ).prefetch_related(
+        Prefetch(
+            'report_items',
+            queryset=ReportItem.objects.select_related(
+                'statement_column'
+            ).prefetch_related(
+                Prefetch(
+                    'inners',
+                    queryset=ReportItemInner.objects.select_related('plant')
                 )
             )
         )
