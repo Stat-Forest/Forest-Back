@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, filters
+from rest_framework import generics,filters
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -29,7 +29,6 @@ class LandDocumentListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     """
 
     serializer_class = LandDocumentSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     filter_backends = [
         DjangoFilterBackend,
@@ -41,7 +40,7 @@ class LandDocumentListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     filterset_fields = ["organization"]
     ordering_fields = ["date", "created_at"]
 
-    CACHE_TIMEOUT = 60 * 60  # 1 hour
+    CACHE_TIMEOUT = 60 * 60
 
     def get_queryset(self):
         """

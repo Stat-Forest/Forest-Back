@@ -32,7 +32,7 @@ class LandManagementSummaryAPIView(APIView):
         - Accessible for all authenticated users (can add permission_classes if needed)
     """
     permission_classes = [permissions.AllowAny]
-    CACHE_TIMEOUT = 60 * 60  # 1 hour
+    CACHE_TIMEOUT = 60 * 60
 
     @extend_schema(
         summary="Yer maydonlari statistikasi",
