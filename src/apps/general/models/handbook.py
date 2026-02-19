@@ -4,19 +4,37 @@ from datetime import datetime
 
 
 def handbook_upload_path(instance, filename):
+    """
+    Generates dynamic upload path based on current date.
+
+    Structure:
+        handbooks/DD/MM/YYYY/filename
+
+    This helps:
+    - organize files
+    - avoid directory overload
+    """
     today = datetime.now()
     return f"handbooks/{today.strftime('%d/%m/%Y')}/{filename}"
 
 
 class Handbook(models.Model):
+    """
+    Stores handbook documents available for authenticated users.
+    """
+
     name = models.CharField(_("Handbook Name"), max_length=255)
+
     file = models.FileField(
         _("Attached File"),
         upload_to=handbook_upload_path,
         blank=True,
         null=True
     )
+
+    # Controls visibility of handbook in API
     is_seen = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
