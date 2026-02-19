@@ -3,6 +3,8 @@
 # ==============================
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import permissions
+
 from rest_framework import status
 from django.db.models import Sum
 from django.core.cache import cache
@@ -13,8 +15,11 @@ from drf_spectacular.types import OpenApiTypes
 from apps.general.models import LandManagement
 from apps.general.serializers.land_management import LandManagementItemSerializer
 
+
+
 @extend_schema(tags=["Land management"])
 class LandManagementSummaryAPIView(APIView):
+
     """
     API endpoint to return land management summary with caching.
 
@@ -26,7 +31,7 @@ class LandManagementSummaryAPIView(APIView):
     Security:
         - Accessible for all authenticated users (can add permission_classes if needed)
     """
-
+    permission_classes = [permissions.AllowAny]
     CACHE_TIMEOUT = 60 * 60  # 1 hour
 
     @extend_schema(
