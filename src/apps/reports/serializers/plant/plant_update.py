@@ -45,34 +45,31 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
 
     def update(self, instance, validated_data):
 
-        # 🚫 svodka report qo‘lda tahrirlanmaydi
         if instance.source_report:
             raise ValidationError(
                 "Svodka (hisoblangan) hisobotni qo‘lda tahrirlab bo‘lmaydi"
             )
 
         raw_items = validated_data.pop("report_items", [])
-
         if not raw_items:
             raise ValidationError("report_items bo‘sh yuborildi")
 
-        # ----------------------------
-        # 1️⃣ UUID validation
-        # ----------------------------
+        # ----------------------------------
+        # 1️⃣ Collect column ids
+        # ----------------------------------
 
         column_ids = []
         for item in raw_items:
-            col = item.get("statement_column")
+            col_id = item.get("statement_column")
+            if not col_id:
+                raise ValidationError("statement_column majburiy")
 
-            if col is None:
-                raise ValidationError({"statement_column": "Majburiy maydon"})
+            validate_uuid(col_id, "statement_column")
+            column_ids.append(col_id)
 
-            validate_uuid(col, "statement_column")
-            column_ids.append(col)
-
-        # ----------------------------
-        # 2️⃣ Load columns
-        # ----------------------------
+        # ----------------------------------
+        # 2️⃣ Load columns once
+        # ----------------------------------
 
         columns = StatementColumn.objects.filter(id__in=column_ids)
         columns_map = {str(c.id): c for c in columns}
@@ -80,47 +77,65 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
         if len(columns_map) != len(set(column_ids)):
             raise ValidationError("Baʼzi statement_column topilmadi")
 
-        # ----------------------------
+        # ----------------------------------
+        # 3️⃣ Load ReportItems + Inners ONCE
+        # ----------------------------------
+
+        report_items = (
+            ReportItem.objects
+            .filter(
+                report=instance,
+                statement_column_id__in=column_ids
+            )
+            .select_related("statement_column")
+            .prefetch_related("inners")
+        )
+
+        item_map = {
+            str(i.statement_column_id): i
+            for i in report_items
+        }
+
+        # ----------------------------------
         # TRANSACTION
-        # ----------------------------
+        # ----------------------------------
 
         with transaction.atomic():
 
-            # ---- status reset ----
+            # Status reset
             if instance.status == Report.StatusChoices.CANCELLED:
                 instance.status = Report.StatusChoices.SAVED
                 instance.cancel_reason = None
                 instance.cancelled_at = None
                 instance.save(update_fields=["status", "cancel_reason", "cancelled_at"])
 
-            # ----------------------------
-            # 3️⃣ Process each column
-            # ----------------------------
+            # ----------------------------------
+            # 4️⃣ Process columns
+            # ----------------------------------
 
             for item in raw_items:
-                column = columns_map[str(item["statement_column"])]
 
+                column = columns_map[str(item["statement_column"])]
                 inners_data = item.get("inners") or []
 
-                # ==========================
-                # ⛔ CALCULATED COLUMN
-                # ==========================
+                # Skip calculated columns
                 if is_calculated_column(column):
                     if inners_data:
                         raise ValidationError(
-                            f"{column.id} — hisoblangan ustun. Frontdan yuborilmasligi kerak"
+                            f"{column.id} — hisoblangan ustun yuborilmasligi kerak"
                         )
                     continue
 
-                # ==========================
-                # 🌱 PLANT BASED COLUMN
-                # ==========================
+                report_item = item_map.get(str(column.id))
 
-                report_item, _ = ReportItem.objects.get_or_create(
-                    report=instance,
-                    statement_column=column,
-                )
+                if not report_item:
+                    report_item = ReportItem.objects.create(
+                        report=instance,
+                        statement_column=column
+                    )
+                    item_map[str(column.id)] = report_item
 
+                # 🔥 RAMdan existing inners (no DB hit)
                 existing = {
                     str(inner.plant_id): inner
                     for inner in report_item.inners.all()
@@ -133,16 +148,15 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 for inner in inners_data:
                     plant_id = inner.get("plant")
 
-                    if plant_id is None:
+                    if not plant_id:
                         raise ValidationError(
                             f"{column.id} ustun uchun plant majburiy"
                         )
 
                     validate_uuid(plant_id, "plant")
-
-                    value = inner.get("value")
                     plant_id = str(plant_id)
 
+                    value = inner.get("value")
                     received_ids.add(plant_id)
 
                     if plant_id in existing:
@@ -165,6 +179,7 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 if to_create:
                     ReportItemInner.objects.bulk_create(to_create)
 
+                # Delete removed
                 to_delete = set(existing.keys()) - received_ids
                 if to_delete:
                     ReportItemInner.objects.filter(
@@ -172,9 +187,9 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                         plant_id__in=to_delete
                     ).delete()
 
-            # ----------------------------
-            # 4️⃣ Clear calculated columns
-            # ----------------------------
+            # ----------------------------------
+            # 5️⃣ Clear calculated columns
+            # ----------------------------------
 
             from apps.reports.calculate_orderings.calculated_columns import CALCULATED_COLUMNS
 
@@ -191,9 +206,9 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                     statement_column__in=calc_cols
                 ).delete()
 
-            # ----------------------------
-            # 5️⃣ Recalculate
-            # ----------------------------
+            # ----------------------------------
+            # 6️⃣ Recalculate
+            # ----------------------------------
 
             calculate_fn = ALL_CALCULATORS.get(statement_name)
             if calculate_fn:
