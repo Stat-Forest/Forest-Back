@@ -11,11 +11,19 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
+
 DEBUG = False
 
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://forest.yutori.uz",
+    "https://www.forest.yutori.uz",
+    "https://stat-urmon.uz",
+    "https://www.stat-urmon.uz",
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
 
 # files will be installed here
 EXPORT_ROOT = os.path.join(BASE_DIR, "exports")
@@ -30,11 +38,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://forest.yutori.uz",
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://localhost:5173",
-    "https://localhost:5174",
-    "http://stat-urmon.uz",
     "https://stat-urmon.uz",
-    "http://localhost:8000"
 ]
 
 # ===============================
