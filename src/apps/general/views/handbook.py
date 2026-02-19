@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, filters
+from rest_framework import generics,filters
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -28,8 +28,6 @@ class HandbookListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     """
 
     serializer_class = HandBookSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

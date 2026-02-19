@@ -1,9 +1,22 @@
+# ==============================
+# models.py
+# ==============================
 from django.db import models
 from apps.base.models import AbstractBaseModel
 
+
 class Notification(AbstractBaseModel):
-    date = models.DateField()
-    text = models.TextField(max_length=1000)
+    """
+    Stores notifications with date and text content.
+    """
+
+    date = models.DateField(
+        help_text="The date when the notification is active"
+    )
+    text = models.TextField(
+        max_length=1000,
+        help_text="Notification text"
+    )
 
     class Meta:
         verbose_name = "Bildirishnoma"
@@ -11,4 +24,5 @@ class Notification(AbstractBaseModel):
         ordering = ["-date"]
 
     def __str__(self):
+        # Display first 50 characters for admin or str representation
         return self.text[:50]
