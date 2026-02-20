@@ -20,11 +20,6 @@ class PeriodRange:
     quarter: int | None = None
 
 
-def make_virtual_report_id(*parts) -> str:
-    base = "|".join(str(p) for p in parts if p is not None)
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
-
-
 def parse_period(period: str) -> PeriodRange:
     """
     Accepts formats:
