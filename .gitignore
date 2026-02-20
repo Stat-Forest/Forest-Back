@@ -40,7 +40,7 @@ downloads/
 eggs/
 lib/
 lib64/
-!e-imzo-server/lib/ 
+!e-imzo-server/lib/
 parts/
 sdist/
 var/
