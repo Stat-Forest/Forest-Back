@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from modeltranslation.utils import build_localized_fieldname
 
 from apps.reports.models import Plant, Statement
@@ -59,7 +60,9 @@ PLANTS_STRUCTURE = {
         ("qog‘oz daraxt", "қогоз дарахт"),
         ("sovun daraxti", "совун дарахти"),
         ("magnoliya", "магнолия"),
-        ("lola daraxti", "лола дарахти")
+        ("lola daraxti", "лола дарахти"),
+        ("ginkgo biloba", "Гинкго билоба"),
+        ("kanada bundugi", "Канада бундуги"),
     ],
     "Tez o‘suvchilar": [
         ("terak", "терак"),
@@ -100,7 +103,11 @@ PLANTS_STRUCTURE = {
         ("limon", "лимон")
     ],
     "Cho'l o'simliklari": [
-        ("Saksovul", "Саксаул")
+        ("Saksovul", "Саксаул"),
+        ("Cherkez", "Черкез"),
+        ("Yulg‘un", "Юлғун"),
+        ("Qoraburoq", "Қорабуроқ"),
+        ("Qandim", "Қандим"),
     ],
     "Ignabarglilar": [
         ("tyanshan qora qarag‘ayi", "тяншан қора қарағайи"),
@@ -143,10 +150,11 @@ PLANTS_STRUCTURE = {
 
 
 class Command(BaseCommand):
-    help = "Create Plants and assign them to 'Ko‘chat va Nihol' statement"
+    help = "Safe plant sync for Ko‘chat va Nihol (no duplicates, only new added)"
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write("🚀 Creating Plants for Ko‘chat va Nihol...")
+        self.stdout.write("🚀 Syncing Plants for Ko‘chat va Nihol...")
 
         try:
             statement = Statement.objects.get(name_uz="Ko‘chat va Nihol")
@@ -154,33 +162,97 @@ class Command(BaseCommand):
             self.stderr.write("❌ Statement 'Ko‘chat va Nihol' not found.")
             return
 
-        total_created = 0
+        created = 0
+        updated = 0
 
-        for parent_name, children in PLANTS_STRUCTURE.items():
-            parent_translations = PARENT_NAMES.get(parent_name, {})
-            parent, _ = Plant.objects.get_or_create(
-                name=parent_name,
-                parent=None,
-                defaults={"statement": statement}
+        # ======================
+        # PARENTS
+        # ======================
+
+        for parent_key, children in PLANTS_STRUCTURE.items():
+
+            parent_data = PARENT_NAMES[parent_key]
+            parent_uz = parent_data["uz"]
+            parent_ru = parent_data["ru"]
+
+            parent = (
+                Plant.objects
+                .filter(parent__isnull=True, statement=statement)
+                .filter(name__iexact=parent_uz)
+                .first()
             )
-            parent.statement = statement
-            setattr(parent, build_localized_fieldname("name", "uz"), parent_translations.get("uz", parent_name))
-            setattr(parent, build_localized_fieldname("name", "ru"), parent_translations.get("ru", parent_name))
-            parent.save()
 
-            for name_uz, name_ru in children:
-                child, created = Plant.objects.get_or_create(
-                    name=name_uz,
-                    parent=parent,
-                    defaults={"statement": statement}
+            if not parent:
+                parent = Plant.objects.create(
+                    name=parent_uz,
+                    parent=None,
+                    statement=statement
                 )
-                child.statement = statement
-                setattr(child, build_localized_fieldname("name", "uz"), name_uz)
-                setattr(child, build_localized_fieldname("name", "ru"), name_ru)
-                child.save()
+                created += 1
+                self.stdout.write(f"➕ Parent created: {parent_uz}")
 
-                if created:
-                    total_created += 1
-                    self.stdout.write(f"  ➕ Created plant: {name_uz}")
+            changed = False
 
-        self.stdout.write(self.style.SUCCESS(f"✅ Total new plants created: {total_created}"))
+            if getattr(parent, build_localized_fieldname("name", "uz")) != parent_uz:
+                setattr(parent, build_localized_fieldname("name", "uz"), parent_uz)
+                changed = True
+
+            if getattr(parent, build_localized_fieldname("name", "ru")) != parent_ru:
+                setattr(parent, build_localized_fieldname("name", "ru"), parent_ru)
+                changed = True
+
+            if parent.statement_id != statement.id:
+                parent.statement = statement
+                changed = True
+
+            if changed:
+                parent.save()
+                updated += 1
+                self.stdout.write(f"🔁 Parent updated: {parent_uz}")
+
+            # ======================
+            # CHILDREN
+            # ======================
+
+            for uz_name, ru_name in children:
+
+                child = (
+                    Plant.objects
+                    .filter(parent=parent, statement=statement)
+                    .filter(name__iexact=uz_name)
+                    .first()
+                )
+
+                if not child:
+                    child = Plant.objects.create(
+                        name=uz_name,
+                        parent=parent,
+                        statement=statement
+                    )
+                    created += 1
+                    self.stdout.write(f"   ➕ Created: {uz_name}")
+
+                changed = False
+
+                if getattr(child, build_localized_fieldname("name", "uz")) != uz_name:
+                    setattr(child, build_localized_fieldname("name", "uz"), uz_name)
+                    changed = True
+
+                if getattr(child, build_localized_fieldname("name", "ru")) != ru_name:
+                    setattr(child, build_localized_fieldname("name", "ru"), ru_name)
+                    changed = True
+
+                if child.statement_id != statement.id:
+                    child.statement = statement
+                    changed = True
+
+                if changed:
+                    child.save()
+                    updated += 1
+                    self.stdout.write(f"   🔁 Updated: {uz_name}")
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"✅ Done | Created: {created} | Updated: {updated}"
+            )
+        )
