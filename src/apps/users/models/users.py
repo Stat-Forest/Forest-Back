@@ -256,8 +256,11 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = "Foydalanuvchilar"
     
     def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.strip().lower()
         if self.is_superuser:
             self.role = self.Role.SUPER_ADMIN
+
         if not self.user_number:
             while True:
                 rand_num = str(random.randint(100000, 999999))

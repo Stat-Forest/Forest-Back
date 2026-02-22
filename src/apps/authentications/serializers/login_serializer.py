@@ -34,7 +34,9 @@ class LoginSerializer(CustomSerializer):
         attempts = cache.get(attempt_key, 0)
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.filter(email__iexact=email).first()
+            if not user:
+                raise User.DoesNotExist
         except User.DoesNotExist:
             cache.set(attempt_key, attempts + 1, timeout=60)
             self._check_attempts_limit(email, attempts + 1)
