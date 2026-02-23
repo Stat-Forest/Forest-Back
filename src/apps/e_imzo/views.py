@@ -41,17 +41,22 @@ class EimzoLoginView(views.APIView):
         if not ok:
             raise exceptions.ValidationError({"success": False, "err_msg": data})
 
-        # 2. subjectName olish — bo'sh bo'lsa pkcs7/info dan olamiz
+        # 2. subjectName olish
         subject_name = data.get("subjectName", {})
         logger.warning(f"=== SUBJECT NAME (auth dan) === {subject_name}")
 
+        # OCSP ishlamasa subjectName bo'sh keladi — pkcs7/info dan olamiz
         if not subject_name:
             logger.warning("=== subjectName bo'sh — pkcs7/info ga murojaat ===")
             info_status, info_resp = eimzo_api.pkcs7_info(pkcs7, request)
-            logger.warning(f"=== PKCS7 INFO === status={info_status}, data={info_resp.text}")
+            logger.warning(f"=== PKCS7 INFO status={info_status} ===")
             if info_status == 200:
-                subject_name = info_resp.json().get("subjectName", {})
-                logger.warning(f"=== SUBJECT NAME (info dan) === {subject_name}")
+                try:
+                    info_data = info_resp.json()
+                    subject_name = info_data["signers"][0]["certificate"][0]["subjectInfo"]
+                    logger.warning(f"=== SUBJECT NAME (info dan) === {subject_name}")
+                except (KeyError, IndexError) as e:
+                    logger.warning(f"=== subjectInfo olishda xato === {e}")
 
         pinfl = subject_name.get("1.2.860.3.16.1.2")
         tin = subject_name.get("1.2.860.3.16.1.1")
