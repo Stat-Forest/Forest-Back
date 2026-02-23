@@ -1,4 +1,3 @@
-# src/apps/e_imzo/services.py
 import requests
 from rest_framework.request import Request
 
@@ -10,6 +9,7 @@ class EimzoServiceApi:
         self.TIME_STAMP_URL = "http://e_imzo_server:8080/frontend/timestamp/pkcs7"
         self.CHALLENGE_URL = "http://e_imzo_server:8080/frontend/challenge"
         self.BACKEND_AUTH_URL = "http://e_imzo_server:8080/backend/auth"
+        self.PKCS7_INFO_URL = "http://e_imzo_server:8080/backend/pkcs7/info"
 
     @staticmethod
     def get_user_ip(request: Request) -> str:
@@ -29,6 +29,10 @@ class EimzoServiceApi:
     def pkcs7_join(self, pkcs7_data_1: str, pkcs7_data_2: str, request: Request):
         data = f"{pkcs7_data_1}|{pkcs7_data_2}"
         res = requests.post(self.JOIN_URL, data=data, headers=self.get_headers(request))
+        return res.status_code, res
+
+    def pkcs7_info(self, pkcs7: str, request: Request):
+        res = requests.post(self.PKCS7_INFO_URL, data=pkcs7, headers=self.get_headers(request))
         return res.status_code, res
 
     def eri_challenge(self, request: Request):
