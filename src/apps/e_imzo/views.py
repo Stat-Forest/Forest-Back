@@ -1,11 +1,9 @@
-# src/apps/e_imzo/views.py
 import logging
 from rest_framework import views, permissions, exceptions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
-from apps.general.models import Organization
 from .services import EimzoServiceApi
 from drf_spectacular.utils import extend_schema
 
@@ -38,16 +36,22 @@ class EimzoLoginView(views.APIView):
 
         # 1. E-Imzo server orqali auth
         ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
-        logger.warning(f"=== BACKEND AUTH === ok={ok}, status={status_code}")
-        logger.warning(f"=== BACKEND AUTH DATA === {data}")
+        logger.warning(f"=== BACKEND AUTH === ok={ok}, status={status_code}, data={data}")
 
         if not ok:
-            logger.warning(f"=== AUTH FAILED === {data}")
             raise exceptions.ValidationError({"success": False, "err_msg": data})
 
-        # 2. Sertifikat ma'lumotlari
+        # 2. subjectName olish — bo'sh bo'lsa pkcs7/info dan olamiz
         subject_name = data.get("subjectName", {})
-        logger.warning(f"=== SUBJECT NAME === {subject_name}")
+        logger.warning(f"=== SUBJECT NAME (auth dan) === {subject_name}")
+
+        if not subject_name:
+            logger.warning("=== subjectName bo'sh — pkcs7/info ga murojaat ===")
+            info_status, info_resp = eimzo_api.pkcs7_info(pkcs7, request)
+            logger.warning(f"=== PKCS7 INFO === status={info_status}, data={info_resp.text}")
+            if info_status == 200:
+                subject_name = info_resp.json().get("subjectName", {})
+                logger.warning(f"=== SUBJECT NAME (info dan) === {subject_name}")
 
         pinfl = subject_name.get("1.2.860.3.16.1.2")
         tin = subject_name.get("1.2.860.3.16.1.1")
@@ -67,14 +71,12 @@ class EimzoLoginView(views.APIView):
         logger.warning(f"=== FINAL USER === {user}")
 
         if user is None:
-            logger.warning("=== USER TOPILMADI ===")
             raise exceptions.AuthenticationFailed({
                 "success": False,
                 "err_msg": "Bu sertifikat bilan ro'yxatdan o'tgan foydalanuvchi topilmadi."
             })
 
         if not user.is_active:
-            logger.warning(f"=== USER BLOKLANGAN === {user.email}")
             raise exceptions.AuthenticationFailed({
                 "success": False,
                 "err_msg": "Foydalanuvchi bloklangan."
@@ -84,7 +86,6 @@ class EimzoLoginView(views.APIView):
         if cn and not user.full_name:
             user.full_name = cn
             user.save(update_fields=["full_name"])
-            logger.warning(f"=== FULL NAME YANGILANDI === {cn}")
 
         # 5. JWT
         refresh = RefreshToken.for_user(user)

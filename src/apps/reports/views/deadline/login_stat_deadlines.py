@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineReportListSerializer
+from rest_framework.permissions import AllowAny
 
 # Statement name constants
 MONTHLY_STATEMENTS = [
@@ -36,6 +37,7 @@ YEARLY_STATEMENTS = [
 )
 class DeadlineLoginStatListAPIView(generics.ListAPIView):
     serializer_class = DeadlineReportListSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         qs = (
