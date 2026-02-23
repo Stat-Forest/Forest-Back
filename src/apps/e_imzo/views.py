@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
+from apps.logs.models import HistoryActionJournal
 from .services import EimzoServiceApi
 from drf_spectacular.utils import extend_schema
 
@@ -63,8 +64,16 @@ class EimzoLoginView(views.APIView):
         cn = subject_name.get("CN", "")
         logger.warning(f"=== PINFL={pinfl}, TIN={tin}, CN={cn} ===")
 
-        # 3. Userni topish
+        if not pinfl and not tin:
+            raise exceptions.AuthenticationFailed({
+                "success": False,
+                "err_msg": "Sertifikatda PINFL yoki TIN mavjud emas."
+            })
+
+        # 3. Userni topish — PINFL ustunlik qiladi, keyin TIN
         user = None
+        created = False
+
         if pinfl:
             user = CustomUser.objects.filter(pinfl=pinfl).first()
             logger.warning(f"=== PINFL bo'yicha user === {user}")
@@ -73,13 +82,23 @@ class EimzoLoginView(views.APIView):
             user = CustomUser.objects.filter(tin=tin).first()
             logger.warning(f"=== TIN bo'yicha user === {user}")
 
-        logger.warning(f"=== FINAL USER === {user}")
-
+        # 4. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
         if user is None:
-            raise exceptions.AuthenticationFailed({
-                "success": False,
-                "err_msg": "Bu sertifikat bilan ro'yxatdan o'tgan foydalanuvchi topilmadi."
-            })
+            logger.warning("=== User topilmadi — yangi yaratilmoqda ===")
+            lookup = {"pinfl": pinfl} if pinfl else {"tin": tin}
+            user, created = CustomUser.objects.get_or_create(
+                **lookup,
+                defaults={
+                    "username": pinfl or tin,
+                    "full_name": cn,
+                    "pinfl": pinfl,
+                    "tin": tin,
+                    "is_active": True,
+                }
+            )
+            logger.warning(f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}")
+
+        logger.warning(f"=== FINAL USER === {user}")
 
         if not user.is_active:
             raise exceptions.AuthenticationFailed({
@@ -87,14 +106,36 @@ class EimzoLoginView(views.APIView):
                 "err_msg": "Foydalanuvchi bloklangan."
             })
 
-        # 4. full_name yangilash
+        # 5. full_name yangilash (agar bo'sh bo'lsa)
         if cn and not user.full_name:
             user.full_name = cn
             user.save(update_fields=["full_name"])
 
-        # 5. JWT
+        # 6. PINFL yoki TIN yangilash (agar bitta bo'lib ikkinchisi bo'sh bo'lsa)
+        update_fields = []
+        if pinfl and not user.pinfl:
+            user.pinfl = pinfl
+            update_fields.append("pinfl")
+        if tin and not user.tin:
+            user.tin = tin
+            update_fields.append("tin")
+        if update_fields:
+            user.save(update_fields=update_fields)
+
+        # 7. JWT
         refresh = RefreshToken.for_user(user)
         organization_name = user.organization.name if user.organization else ""
+
+        # 8. Journal
+        HistoryActionJournal.objects.create(
+            user=user,
+            action='add' if created else 'login',
+            model_name='CustomUser',
+            object_repr=str(user),
+            object_id=str(user.id),
+            change_message="E-imzo orqali ro'yxatdan o'tdi" if created else "E-imzo orqali tizimga kirdi"
+        )
+
         logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
 
         return Response(
@@ -106,6 +147,7 @@ class EimzoLoginView(views.APIView):
                 "user_id": user.id,
                 "full_name": user.full_name or cn,
                 "organization": organization_name,
+                "is_new_user": created,  # frontend uchun foydali
             },
             status=status.HTTP_200_OK
         )
