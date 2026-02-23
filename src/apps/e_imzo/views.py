@@ -1,4 +1,5 @@
 # src/apps/e_imzo/views.py
+import logging
 from rest_framework import views, permissions, exceptions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -6,103 +7,89 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import CustomUser
 from apps.general.models import Organization
 from .services import EimzoServiceApi
-
-eimzo_api = EimzoServiceApi()
-
 from drf_spectacular.utils import extend_schema
 
+logger = logging.getLogger(__name__)
+eimzo_api = EimzoServiceApi()
 
 
-@extend_schema(
-    tags=["E-imzo"]
-)
+@extend_schema(tags=["E-imzo"])
 class EimzoChallengeView(views.APIView):
-    """
-    Frontend shu endpoint orqali challenge oladi,
-    keyin uni E-Imzo kutubxonasi bilan imzolaydi.
-    """
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
         ok, status_code, data = eimzo_api.eri_challenge(request)
+        logger.warning(f"=== CHALLENGE === ok={ok}, status={status_code}, data={data}")
         if not ok:
-            raise exceptions.ValidationError({
-                "success": False,
-                "err_msg": data
-            })
+            raise exceptions.ValidationError({"success": False, "err_msg": data})
         return Response({"success": True, "challenge": data.get("challenge")})
 
 
-@extend_schema(
-    tags=["E-imzo"]
-)
+@extend_schema(tags=["E-imzo"])
 class EimzoLoginView(views.APIView):
-    """
-    Frontend imzolangan pkcs7 ni shu yerga yuboradi.
-    Backend auth qiladi, user topadi, JWT qaytaradi.
-    """
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         pkcs7 = request.data.get("pkcs7")
+        logger.warning(f"=== LOGIN START === pkcs7 keldi: {bool(pkcs7)}")
+
         if not pkcs7:
-            raise exceptions.ValidationError({
-                "success": False,
-                "err_msg": "pkcs7 field is required"
-            })
+            raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7 field is required"})
 
         # 1. E-Imzo server orqali auth
         ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
+        logger.warning(f"=== BACKEND AUTH === ok={ok}, status={status_code}")
+        logger.warning(f"=== BACKEND AUTH DATA === {data}")
+
         if not ok:
-            raise exceptions.ValidationError({
-                "success": False,
-                "err_msg": data
-            })
+            logger.warning(f"=== AUTH FAILED === {data}")
+            raise exceptions.ValidationError({"success": False, "err_msg": data})
 
-        # 2. Sertifikat ma'lumotlarini olish
-        # subjectName ichida PINFL yoki TIN bo'ladi
+        # 2. Sertifikat ma'lumotlari
         subject_name = data.get("subjectName", {})
-        pkcs7_info = data.get("pkcs7Info", {})
+        logger.warning(f"=== SUBJECT NAME === {subject_name}")
 
-        # PINFL (jismoniy shaxs): 1.2.860.3.16.1.2
-        # TIN   (yuridik shaxs):  1.2.860.3.16.1.1
         pinfl = subject_name.get("1.2.860.3.16.1.2")
         tin = subject_name.get("1.2.860.3.16.1.1")
-        cn = subject_name.get("CN", "")  # To'liq FISh
+        cn = subject_name.get("CN", "")
+        logger.warning(f"=== PINFL={pinfl}, TIN={tin}, CN={cn} ===")
 
         # 3. Userni topish
         user = None
-
         if pinfl:
             user = CustomUser.objects.filter(pinfl=pinfl).first()
+            logger.warning(f"=== PINFL bo'yicha user === {user}")
 
         if user is None and tin:
             user = CustomUser.objects.filter(tin=tin).first()
+            logger.warning(f"=== TIN bo'yicha user === {user}")
+
+        logger.warning(f"=== FINAL USER === {user}")
 
         if user is None:
+            logger.warning("=== USER TOPILMADI ===")
             raise exceptions.AuthenticationFailed({
                 "success": False,
                 "err_msg": "Bu sertifikat bilan ro'yxatdan o'tgan foydalanuvchi topilmadi."
             })
 
         if not user.is_active:
+            logger.warning(f"=== USER BLOKLANGAN === {user.email}")
             raise exceptions.AuthenticationFailed({
                 "success": False,
                 "err_msg": "Foydalanuvchi bloklangan."
             })
 
-        # 4. full_name ni yangilash (ixtiyoriy)
+        # 4. full_name yangilash
         if cn and not user.full_name:
             user.full_name = cn
             user.save(update_fields=["full_name"])
+            logger.warning(f"=== FULL NAME YANGILANDI === {cn}")
 
-        # 5. JWT tokenlar yaratish
+        # 5. JWT
         refresh = RefreshToken.for_user(user)
-
-        # 6. Organization nomi
-        organization_name = ""
-        if user.organization:
-            organization_name = user.organization.name
+        organization_name = user.organization.name if user.organization else ""
+        logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
 
         return Response(
             {
@@ -118,10 +105,7 @@ class EimzoLoginView(views.APIView):
         )
 
 
-# ---- Mavjud view lar ----
-@extend_schema(
-    tags=["E-imzo"]
-)
+@extend_schema(tags=["E-imzo"])
 class SavePkcsView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -140,9 +124,8 @@ class SavePkcsView(views.APIView):
 
         return Response({"success": True, "pkcs7b64": pkcs7b64})
 
-@extend_schema(
-    tags=["E-imzo"]
-)
+
+@extend_schema(tags=["E-imzo"])
 class PkcsVerify(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
