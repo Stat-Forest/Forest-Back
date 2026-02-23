@@ -42,15 +42,19 @@ class EimzoServiceApi:
         if res.status_code != 200:
             return False, res.status_code, res.text
         data = res.json()
-        if data.get("status") != 1:
+        success_status = data.get("status")
+
+        # 1  = to'liq muvaffaqiyat (OCSP ishladi)
+        # -1 = OCSP ishlamadi, lekin imzo va sertifikat VERIFIED — qabul qilamiz
+        if success_status not in (1, -1):
             err_messages = {
-                -1: "Sertifikat statusini tekshirib bo'lmadi.",
                 -5: "Imzo vaqti noto'g'ri. Kompyuter vaqtini tekshiring.",
                 -10: "ERI noto'g'ri.",
                 -11: "Sertifikat noto'g'ri.",
                 -12: "Sertifikat imzo sanasida noto'g'ri.",
                 -20: "Challenge topilmadi yoki muddati o'tdi. Qaytadan urinib ko'ring.",
             }
-            msg = err_messages.get(data.get("status"), "Noma'lum xatolik.")
+            msg = err_messages.get(success_status, "Noma'lum xatolik.")
             return False, res.status_code, msg
+
         return True, res.status_code, data
