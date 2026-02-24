@@ -99,6 +99,18 @@ class DashboardStatService:
     def _get_expired_deadlines_count(self, deadlines_qs):
         user = self.user
 
+        if user.role == CustomUser.Role.SUPER_ADMIN:
+            base_report_qs = Report.objects.filter(
+                deadline=OuterRef("pk"),
+                is_report=True,
+                status=Report.StatusChoices.ACCEPTED,  
+            )
+            return deadlines_qs.filter(
+                deadline_at__lt=date.today()
+            ).annotate(
+                has_report=Exists(base_report_qs)
+            ).filter(has_report=False).count()
+        
         # ORGANIZATION USER
         if user.role in {
             CustomUser.Role.TASHKILOT_RAHBARI,
