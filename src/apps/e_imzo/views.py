@@ -1,153 +1,142 @@
-import random
-
-from django.contrib.auth import get_user_model
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
+import logging
+from rest_framework import views, permissions, exceptions, status
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db import transaction
 
-from apps.general.models import Organization
 from apps.users.models import CustomUser
-from apps.e_imzo.serializers import EimzoLoginSerializer
-from apps.e_imzo.services import verify_pkcs7
-from apps.e_imzo.utils import split_full_name
 from apps.logs.models import HistoryActionJournal
+from .services import EimzoServiceApi
+from drf_spectacular.utils import extend_schema
 
-User = get_user_model()
+logger = logging.getLogger(__name__)
+eimzo_api = EimzoServiceApi()
 
 
-class EimzoJWTLoginView(APIView):
-    """
-    E-imzo orqali kirish - PINFL asosida dublikat yaratilmaydi.
-    """
-    permission_classes = [AllowAny]
+@extend_schema(tags=["E-imzo"])
+class EimzoChallengeView(views.APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        ok, status_code, data = eimzo_api.eri_challenge(request)
+        logger.warning(f"=== CHALLENGE === ok={ok}, status={status_code}, data={data}")
+        if not ok:
+            raise exceptions.ValidationError({"success": False, "err_msg": data})
+        return Response({"success": True, "challenge": data.get("challenge")})
+
+
+@extend_schema(tags=["E-imzo"])
+class EimzoLoginView(views.APIView):
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = EimzoLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        pkcs7 = request.data.get("pkcs7")
+        logger.warning(f"=== LOGIN START === pkcs7 keldi: {bool(pkcs7)}")
 
-        vo = serializer.validated_data.get("vo") or {}
-        pkcs7 = serializer.validated_data["pkcs7"]
+        if not pkcs7:
+            raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7 field is required"})
 
-        # Imzoni tekshirish
-        if not verify_pkcs7(pkcs7, vo):
-            return Response(
-                {"detail": "Imzo noto'g'ri yoki noto'liq."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # 1. E-Imzo server orqali auth
+        ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
+        logger.warning(f"=== BACKEND AUTH === ok={ok}, status={status_code}, data={data}")
 
-        # E-imzodan ma'lumotlar
-        full_name = vo.get("CN", "")
-        pinfl = vo.get("PINFL", "")
-        legal_stir = vo.get("TIN", "")
-        uid = vo.get("UID") or str(random.randint(100000, 999999))
+        if not ok:
+            raise exceptions.ValidationError({"success": False, "err_msg": data})
 
-        # PINFL majburiy
-        if not pinfl:
-            return Response(
-                {"detail": "PINFL ma'lumoti topilmadi"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # 2. subjectName olish
+        subject_name = data.get("subjectName", {})
+        logger.warning(f"=== SUBJECT NAME (auth dan) === {subject_name}")
 
-        # Ism ajratish
-        first_name, last_name, father_name = split_full_name(full_name)
-
-        # Tashkilot topish
-        organization = Organization.objects.filter(stir=legal_stir).first()
-        if not organization:
-            return Response(
-                {"detail": f"STIR {legal_stir} bo'yicha tashkilot topilmadi"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # ========================================================================
-        # ASOSIY LOGIKA: PINFL bo'yicha qidirish - DUBLIKAT YARATILMAYDI
-        # ========================================================================
-        with transaction.atomic():
-            user = User.objects.filter(pinfl=pinfl).first()
-
-            if user:
-                # ============================================================
-                # MAVJUD USER - faqat yangilaymiz
-                # ============================================================
-                created = False
-
-                user.tin = legal_stir
-                user.full_name = full_name
-                user.first_name = first_name
-                user.last_name = last_name
-                if father_name:
-                    user.father_name = father_name
-                user.organization = organization
-                user.is_active = True
-
-                # Role yangilash (faqat agar hozirgi role past darajali bo'lsa)
-                if user.role == CustomUser.Role.TASHKILOT_HODIMI or not user.role:
-                    user.role = CustomUser.Role.TASHKILOT_RAHBARI
-
-            else:
-                # ============================================================
-                # YANGI USER - yaratamiz
-                # ============================================================
-                created = True
-
-                # Noyob email
-                email = f"eimzo_{pinfl}@system.uz"
-
-                # Majburiy fieldlar uchun default qiymatlar
-                user_data = {
-                    'email': email,
-                    'pinfl': pinfl,
-                    'tin': legal_stir,
-                    'full_name': full_name,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'father_name': father_name or '',
-                    'organization': organization,
-                    'is_active': True,
-                    'role': CustomUser.Role.TASHKILOT_RAHBARI,
-                    # Majburiy fieldlar
-                    'passport_number': 'AA0000000',  # Placeholder
-                    'date_of_place': '',
-                    'address': '',
-                }
-
-                # Agar gender majburiy bo'lsa
+        # OCSP ishlamasa subjectName bo'sh keladi — pkcs7/info dan olamiz
+        if not subject_name:
+            logger.warning("=== subjectName bo'sh — pkcs7/info ga murojaat ===")
+            info_status, info_resp = eimzo_api.pkcs7_info(pkcs7, request)
+            logger.warning(f"=== PKCS7 INFO status={info_status} ===")
+            if info_status == 200:
                 try:
-                    user = User(**user_data)
-                except Exception as e:
-                    # Gender yoki boshqa field majburiy bo'lsa
-                    user_data['gender'] = CustomUser.Gender.MALE
-                    user = User(**user_data)
+                    info_data = info_resp.json()
+                    subject_name = info_data["signers"][0]["certificate"][0]["subjectInfo"]
+                    logger.warning(f"=== SUBJECT NAME (info dan) === {subject_name}")
+                except (KeyError, IndexError) as e:
+                    logger.warning(f"=== subjectInfo olishda xato === {e}")
 
-            # Parol o'rnatish
-            user.set_password(uid)
-            user.save()
+        pinfl = subject_name.get("1.2.860.3.16.1.2")
+        tin = subject_name.get("1.2.860.3.16.1.1")
+        cn = subject_name.get("CN", "")
+        logger.warning(f"=== PINFL={pinfl}, TIN={tin}, CN={cn} ===")
 
-        # Log yozish
-        if created:
-            HistoryActionJournal.objects.create(
-                user=user,
-                action="add",
-                model_name="CustomUser",
-                object_repr=str(user),
-                object_id=str(user.id),
-                change_message=f"E-imzo: yangi user. PINFL: {pinfl}"
+        if not pinfl and not tin:
+            raise exceptions.AuthenticationFailed({
+                "success": False,
+                "err_msg": "Sertifikatda PINFL yoki TIN mavjud emas."
+            })
+
+        # 3. Userni topish — PINFL ustunlik qiladi, keyin TIN
+        user = None
+        created = False
+
+        if pinfl:
+            user = CustomUser.objects.filter(pinfl=pinfl).first()
+            logger.warning(f"=== PINFL bo'yicha user === {user}")
+
+        if user is None and tin:
+            user = CustomUser.objects.filter(tin=tin).first()
+            logger.warning(f"=== TIN bo'yicha user === {user}")
+
+        # 4. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
+        if user is None:
+            logger.warning("=== User topilmadi — yangi yaratilmoqda ===")
+            lookup = {"pinfl": pinfl} if pinfl else {"tin": tin}
+            user, created = CustomUser.objects.get_or_create(
+                **lookup,
+                defaults={
+                    "username": pinfl or tin,
+                    "full_name": cn,
+                    "pinfl": pinfl,
+                    "tin": tin,
+                    "is_active": True,
+                }
             )
+            logger.warning(f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}")
 
+        logger.warning(f"=== FINAL USER === {user}")
+
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed({
+                "success": False,
+                "err_msg": "Foydalanuvchi bloklangan."
+            })
+
+        # 5. full_name yangilash (agar bo'sh bo'lsa)
+        if cn and not user.full_name:
+            user.full_name = cn
+            user.save(update_fields=["full_name"])
+
+        # 6. PINFL yoki TIN yangilash (agar bitta bo'lib ikkinchisi bo'sh bo'lsa)
+        update_fields = []
+        if pinfl and not user.pinfl:
+            user.pinfl = pinfl
+            update_fields.append("pinfl")
+        if tin and not user.tin:
+            user.tin = tin
+            update_fields.append("tin")
+        if update_fields:
+            user.save(update_fields=update_fields)
+
+        # 7. JWT
+        refresh = RefreshToken.for_user(user)
+        organization_name = user.organization.name if user.organization else ""
+
+        # 8. Journal
         HistoryActionJournal.objects.create(
             user=user,
-            action="login",
-            model_name="CustomUser",
+            action='add' if created else 'login',
+            model_name='CustomUser',
             object_repr=str(user),
             object_id=str(user.id),
-            change_message=f"E-imzo login {'(birinchi marta)' if created else ''}"
+            change_message="E-imzo orqali ro'yxatdan o'tdi" if created else "E-imzo orqali tizimga kirdi"
         )
 
-        # JWT token
-        refresh = RefreshToken.for_user(user)
+        logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
 
         return Response(
             {
@@ -156,9 +145,45 @@ class EimzoJWTLoginView(APIView):
                 "email": user.email,
                 "role": user.role,
                 "user_id": user.id,
-                "full_name": user.full_name,
-                "organization": organization.name,
-                "first_login": created,
+                "full_name": user.full_name or cn,
+                "organization": organization_name,
+                "is_new_user": created,  # frontend uchun foydali
             },
             status=status.HTTP_200_OK
         )
+
+
+@extend_schema(tags=["E-imzo"])
+class SavePkcsView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        pkcs7 = request.data.get("pkcs7b64")
+        if not pkcs7:
+            raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7b64 field is required"})
+
+        status_code, resp = eimzo_api.timestamp_pkcs7(pkcs7, request)
+        if status_code != 200:
+            raise exceptions.ValidationError({"success": False, "err_msg": resp.text})
+
+        pkcs7b64 = resp.json().get("pkcs7b64")
+        if not pkcs7b64:
+            return Response({"success": False, "err_msg": resp.json()}, status=406)
+
+        return Response({"success": True, "pkcs7b64": pkcs7b64})
+
+
+@extend_schema(tags=["E-imzo"])
+class PkcsVerify(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        pkcs7b64 = request.data.get("pkcs7b64")
+        if not pkcs7b64:
+            raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7b64 field is required"})
+
+        status_code, resp = eimzo_api.eimzo_verify(pkcs7b64, request)
+        if status_code != 200:
+            raise exceptions.ValidationError({"success": False, "err_msg": resp.text})
+
+        return Response(resp.json())

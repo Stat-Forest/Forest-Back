@@ -19,6 +19,8 @@ urlpatterns = [
 
     path("api/v1/authentications/", include("apps.authentications.urls")),
     path("api/v1/users/", include("apps.users.urls")),
+    path("api/v1/e_imzo/", include("apps.e_imzo.urls")),
+
 
 ]
 
