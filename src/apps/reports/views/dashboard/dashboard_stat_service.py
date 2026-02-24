@@ -102,7 +102,8 @@ class DashboardStatService:
         if user.role == CustomUser.Role.SUPER_ADMIN:
             base_report_qs = Report.objects.filter(
                 deadline=OuterRef("pk"),
-                is_report=True
+                is_report=True,
+                status=Report.StatusChoices.ACCEPTED,  
             )
             return deadlines_qs.filter(
                 deadline_at__lt=date.today()
