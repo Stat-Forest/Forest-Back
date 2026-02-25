@@ -5,9 +5,6 @@ from apps.reports.models import Report
 from apps.reports.serializers.source_serializers import SourceReportSerializer
 
 
-KOCHAT_NIHOL_STATEMENT_ID = "64c0e3ea-6d69-4334-b511-2c12e31ef4f2"
-
-
 @extend_schema(
     tags=["Source-Report"],
     parameters=[
@@ -32,7 +29,7 @@ class AcceptedKochatNiholSourceReportsAPIView(ListAPIView):
         .select_related("organization", "statement", "deadline")
         .filter(
             status=Report.StatusChoices.ACCEPTED,
-            statement_id=KOCHAT_NIHOL_STATEMENT_ID
+            statement__name_uz="Ko‘chat va Nihol"
         )
         .order_by("-created_at")
     )
