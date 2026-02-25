@@ -33,6 +33,7 @@ from apps.reports.views.dashboard import (
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
     PlantDetailReportAPIView, PlantUpdateReportAPIView, PlantReportDeleteAPIView
 from apps.reports.views.plant_svodka import PlantSvodkaAPIView
+from apps.reports.views.source_view import AcceptedKochatNiholSourceReportsAPIView
 
 from apps.reports.views.statement.statement import StatementListAPIView
 
@@ -40,7 +41,6 @@ from apps.reports.views.statement.statement_column import StatementColumnTreeAPI
 
 from apps.reports.views.statement.statement_column_corrected_org_name import CorrectedStatementColumnTreeAPIView
 from apps.reports.views.statement.appendices import StatementAppendicesAPIView
-
 
 from apps.reports.views.users import (
     UserListAPIView,
@@ -72,7 +72,8 @@ urlpatterns = [
     # ====================  STATEMENT COLUMN URL    ====================
     path('statements/', StatementListAPIView.as_view(), name='report-list'),
     path('statement-columns/', StatementColumnTreeAPIView.as_view(), name='statement-columns-list'),
-    path('statement-columns-corrected-org-name/', CorrectedStatementColumnTreeAPIView.as_view(), name='statement-columns-corrected-org-name-list'),
+    path('statement-columns-corrected-org-name/', CorrectedStatementColumnTreeAPIView.as_view(),
+         name='statement-columns-corrected-org-name-list'),
     path('statement-appendices/', StatementAppendicesAPIView.as_view(), name='statement-appendices'),
 
     # ====================  REPORT URL    ====================
@@ -131,5 +132,9 @@ urlpatterns = [
     # ====================  EXPORT URL =================
     path("export-excel/", ReportExcelExportAPIView.as_view(), name="export-excel"),
     path("export-excel/download/", ReportExcelDownloadAPIView.as_view(), name="export-excel-download"),
-]
 
+    # ====================  SOURCE SVODKA ========================
+    path("source-reports/kochat-nihol/", AcceptedKochatNiholSourceReportsAPIView.as_view(),
+         name="accepted-kochat-nihol-sources",
+    ),
+]
