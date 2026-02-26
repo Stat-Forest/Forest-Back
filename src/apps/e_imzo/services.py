@@ -1,7 +1,6 @@
 import requests
 from rest_framework.request import Request
 
-
 class EimzoServiceApi:
     def __init__(self):
         self.VERIFY_URL = "http://e_imzo_server:8080/backend/pkcs7/verify"
