@@ -83,8 +83,20 @@ class EimzoLoginView(views.APIView):
             logger.warning(f"=== TIN bo'yicha user === {user}")
 
         # 4. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
+        # 4. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
         if user is None:
             logger.warning("=== User topilmadi — yangi yaratilmoqda ===")
+
+            # TIN = STIR, Organization.stir orqali topish
+            organization = None
+            if tin:
+                try:
+                    from apps.general.models import Organization
+                    organization = Organization.objects.filter(stir=int(tin)).first()
+                    logger.warning(f"=== TIN={tin} bo'yicha Organization === {organization}")
+                except (ValueError, Exception) as e:
+                    logger.warning(f"=== Organization qidirishda xato === {e}")
+
             lookup = {"pinfl": pinfl} if pinfl else {"tin": tin}
             user, created = CustomUser.objects.get_or_create(
                 **lookup,
@@ -94,6 +106,8 @@ class EimzoLoginView(views.APIView):
                     "pinfl": pinfl,
                     "tin": tin,
                     "is_active": True,
+                    "role": CustomUser.Role.TASHKILOT_RAHBARI,
+                    "organization": organization,
                 }
             )
             logger.warning(f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}")
@@ -147,7 +161,7 @@ class EimzoLoginView(views.APIView):
                 "user_id": user.id,
                 "full_name": user.full_name or cn,
                 "organization": organization_name,
-                "is_new_user": created,  # frontend uchun foydali
+                "is_new_user": created,
             },
             status=status.HTTP_200_OK
         )
