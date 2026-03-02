@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
 from apps.base.views import CustomListAPIView
-from apps.reports.services.filtered_aggregation import parse_period, build_filtered_payload
+from apps.reports.services.filtered_aggregation import build_filtered_payload
 
 
 @extend_schema(

@@ -29,6 +29,10 @@ class Plant(AbstractBaseModel):
         if self.parent and self.parent_id == self.id:
             raise ValidationError(_("Plant cannot be parent of itself."))
 
+        if self.parent and self.statement_id and self.parent.statement_id:
+            if self.parent.statement_id != self.statement_id:
+                raise ValidationError(_("Parent plant must belong to the same statement."))
+
     def __str__(self):
         return self.name
 
