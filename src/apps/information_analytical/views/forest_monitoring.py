@@ -1,24 +1,30 @@
 import time
+
 from collections import defaultdict
+
 from decimal import Decimal, InvalidOperation
+
 from django.db import connection
 from django.core.cache import cache
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from apps.general.models import Organization
-from apps.information_analytical.serializers.aggregation import aggregate_target_maps
-from apps.reports.models import Statement, StatementColumn, Report
-from apps.information_analytical.mapping import MAPPING_RULES, FORMULA_BLOCKS
-from apps.information_analytical.services.plan_loader import load_plan_maps
-from apps.reports.services.get_two_numbers_in_percent import round_decimal
-from apps.utils.translation import get_lang_code
 from apps.utils.services import RegionChoices
+from apps.utils.translation import get_lang_code
+from apps.reports.models import Statement, StatementColumn, Report
+from apps.reports.services.get_two_numbers_in_percent import round_decimal
+from apps.information_analytical.services.plan_loader import load_plan_maps
+from apps.information_analytical.mapping import MAPPING_RULES, FORMULA_BLOCKS
+from apps.information_analytical.serializers.aggregation import aggregate_target_maps
 
 
+@extend_schema(tags=["Information-Analytics"])
 class ForestMonitoringAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -284,13 +290,13 @@ class ForestMonitoringAPIView(APIView):
         📌 Agar hech nima berilmasa → Respublika → Regionlar → Tashkilotlar chiqadi
         """,
         parameters=[
-            # OpenApiParameter(
-            #     name="region",
-            #     type=OpenApiTypes.STR,
-            #     location=OpenApiParameter.QUERY,
-            #     required=False,
-            #     description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
-            # ),
+            OpenApiParameter(
+                name="region",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
+            ),
             OpenApiParameter(
                 name="organization",
                 type=OpenApiTypes.UUID,
@@ -342,6 +348,15 @@ class ForestMonitoringAPIView(APIView):
 
             # 🗺 Region bo‘yicha filter
             if region_filter:
+                region_filter = region_filter.strip().lower()
+
+                valid_regions = [choice[0] for choice in RegionChoices.choices]
+                if region_filter not in valid_regions:
+                    return Response(
+                        {"detail": f"Invalid region: {region_filter}"},
+                        status=400
+                    )
+
                 org_qs = org_qs.filter(region=region_filter)
 
             # 🏢 Organization bo‘yicha filter
@@ -356,6 +371,15 @@ class ForestMonitoringAPIView(APIView):
 
         if not organizations:
             print("No organizations found after filters, returning empty response")
+            if region_filter:
+                region_name = dict(RegionChoices.choices).get(region_filter, region_filter)
+                return Response({
+                    "level": "REGION",
+                    "hudud": region_name,
+                    "result": skeleton,
+                    "children": []
+                })
+
             return self._build_empty_response(lang, skeleton)
 
         # 🚀 IDs — tezkor ishlash uchun
@@ -392,6 +416,15 @@ class ForestMonitoringAPIView(APIView):
 
         if not latest_report_ids:
             print("No latest reports found, returning empty response")
+            if region_filter:
+                region_name = dict(RegionChoices.choices).get(region_filter, region_filter)
+                return Response({
+                    "level": "REGION",
+                    "hudud": region_name,
+                    "result": skeleton,
+                    "children": []
+                })
+
             return self._build_empty_response(lang, skeleton)
 
         print(f"   Found {len(latest_report_ids)} latest reports")
@@ -669,12 +702,17 @@ class ForestMonitoringAPIView(APIView):
             print(f"Error materializing republic result: {e}")
             republic_result = skeleton
 
-        payload = {
-            "level": "REPUBLIC",
-            "hudud": republic_title,
-            "result": republic_result,
-            "children": regions_payload,
-        }
+        if region_filter:
+            if not regions_payload:
+                region_name = dict(RegionChoices.choices).get(region_filter, region_filter)
+                return Response({
+                    "level": "REGION",
+                    "hudud": region_name,
+                    "result": skeleton,
+                    "children": []
+                })
+
+            return Response(regions_payload[0])
 
         # Performance stats
         total_time = time.time() - start_time
@@ -690,10 +728,10 @@ class ForestMonitoringAPIView(APIView):
         print(f"   Regions: {len(region_map)}")
         print(f"   Plan map entries: {len(plan_map)}")
         print(f"   Plant plan map entries: {len(plant_plan_map)}")
-        print(f"   Response size: ~{len(str(payload)) // 1024} KB")
+        print(f"   Response size: ~{len(str(regions_payload)) // 1024} KB")
         print(f"{'=' * 60}")
 
-        return Response(payload)
+        return Response(regions_payload)
 
     def _build_empty_response(self, lang, skeleton):
         """Bo'sh response"""
