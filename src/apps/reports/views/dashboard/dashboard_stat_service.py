@@ -5,7 +5,7 @@ from django.db.models import Exists, OuterRef
 from apps.reports.models import Report, Deadline, Plan
 from apps.users.models import CustomUser
 
-DASHBOARD_CACHE_TTL = 10  # seconds
+DASHBOARD_CACHE_TTL = 10
 
 
 class DashboardStatService:
