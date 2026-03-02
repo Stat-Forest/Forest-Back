@@ -1,6 +1,9 @@
 from decimal import Decimal, InvalidOperation
 from django.db.models import Q
 from django.db.models.functions import Length
+from django.core.cache import cache
+import hashlib
+import json
 
 from rest_framework.views import APIView
 from rest_framework import permissions
@@ -10,6 +13,9 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from apps.reports.models import Report, ReportItem, ReportItemInner, Statement, StatementColumn, Deadline
 from apps.report_statistics.serializers import ReportSummarySerializer
 from apps.report_statistics.summary_config import SUMMARY_CONFIG
+
+
+CACHE_TIMEOUT = 60 * 60
 
 # Statement constants
 MONTHLY_STATEMENTS = [
@@ -27,6 +33,19 @@ YEARLY_STATEMENTS = [
 
 class ReportLoginSummaryAPIView(APIView):
     permission_classes = [permissions.AllowAny]
+
+    def _make_cache_key(self, monthly, yearly, statement_status, lang):
+        """Cache key generatsiya qilish"""
+        params = {
+            "monthly": monthly or "",
+            "yearly": yearly or "",
+            "statement_status": statement_status or "",
+            "lang": lang or "uz",
+        }
+        raw_key = json.dumps(params, sort_keys=True)
+        hashed = hashlib.md5(raw_key.encode()).hexdigest()
+        return f"report_login_summary:{hashed}"
+
     @extend_schema(
         tags=["Login Stats"],
         parameters=[
@@ -64,6 +83,16 @@ class ReportLoginSummaryAPIView(APIView):
         statement_status = request.query_params.get("statement_status")
         lang = request.query_params.get("lang", "uz")
 
+        # ✅ Cache key yaratish
+        cache_key = self._make_cache_key(monthly, yearly, statement_status, lang)
+
+        # ✅ Cache'dan olishga urinish
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            print(f" CACHE HIT: {cache_key}")
+            return Response(cached_data)
+
+        print(f" CACHE MISS: {cache_key}")
         print("\n" + "=" * 80)
         print(f"REQUEST PARAMS: monthly={monthly}, yearly={yearly}, statement_status={statement_status}, lang={lang}")
         print("=" * 80)
@@ -75,10 +104,10 @@ class ReportLoginSummaryAPIView(APIView):
         if statement_status:
             if statement_status == "year":
                 filtered_config = [cfg for cfg in SUMMARY_CONFIG if cfg["period"] == "yearly"]
-                print(f"📋 Filtering: Only YEARLY statements ({len(filtered_config)} items)")
+                print(f" Filtering: Only YEARLY statements ({len(filtered_config)} items)")
             elif statement_status == "month":
                 filtered_config = [cfg for cfg in SUMMARY_CONFIG if cfg["period"] == "monthly"]
-                print(f"📋 Filtering: Only MONTHLY statements ({len(filtered_config)} items)")
+                print(f" Filtering: Only MONTHLY statements ({len(filtered_config)} items)")
 
         for cfg in filtered_config:
             print(f"\n{'=' * 80}")
@@ -105,30 +134,27 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            print(f"  ✅ STATEMENT FOUND: id={statement.id}, name_uz={statement.name_uz}")
+            print(f"   STATEMENT FOUND: id={statement.id}, name_uz={statement.name_uz}")
 
             # 2️⃣ DEADLINE (period bo'yicha avtomatik aniqlash)
             config_period = cfg["period"]
 
-            # Statementni period bo'yicha tekshirish
             is_monthly_statement = statement.name_uz in MONTHLY_STATEMENTS
             is_yearly_statement = statement.name_uz in YEARLY_STATEMENTS
 
-            print(f"  🔍 Statement type: monthly={is_monthly_statement}, yearly={is_yearly_statement}")
+            print(f" Statement type: monthly={is_monthly_statement}, yearly={is_yearly_statement}")
 
             deadline_qs = Deadline.objects.filter(statement=statement)
 
-            # Agar parametr berilgan bo'lsa, uni ishlatish
             if monthly and is_monthly_statement:
-                print(f"  📅 Using monthly parameter: {monthly}")
+                print(f" Using monthly parameter: {monthly}")
                 deadline_qs = deadline_qs.filter(submit_at=monthly)
             elif yearly and is_yearly_statement:
-                print(f"  📅 Using yearly parameter: {yearly}")
+                print(f" Using yearly parameter: {yearly}")
                 deadline_qs = deadline_qs.filter(submit_at=yearly)
             else:
-                # Parametr yo'q - oxirgi deadlineni olish
                 if is_monthly_statement or config_period == "monthly":
-                    print(f"  📅 Using latest monthly deadline")
+                    print(f" Using latest monthly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
                     ).filter(
@@ -139,22 +165,21 @@ class ReportLoginSummaryAPIView(APIView):
                     ).order_by("-submit_at", "-created_at")
 
                 elif is_yearly_statement or config_period == "yearly":
-                    print(f"  📅 Using latest yearly deadline")
+                    print(f" Using latest yearly deadline")
                     deadline_qs = deadline_qs.annotate(
                         submit_len=Length('submit_at')
                     ).filter(submit_len=4).order_by("-submit_at", "-created_at")
                 else:
-                    print(f"  📅 Using latest deadline (any period)")
+                    print(f" Using latest deadline (any period)")
                     deadline_qs = deadline_qs.order_by("-created_at")
 
-            # Available deadlines
             all_deadlines = list(Deadline.objects.filter(statement=statement).values('id', 'submit_at')[:10])
-            print(f"  📋 Available deadlines: {[d['submit_at'] for d in all_deadlines]}")
+            print(f" Available deadlines: {[d['submit_at'] for d in all_deadlines]}")
 
             deadline = deadline_qs.first()
 
             if not deadline:
-                print(f"  ❌ DEADLINE NOT FOUND")
+                print(f"  DEADLINE NOT FOUND")
                 result.append({
                     "column_name": self._get_translated_text(cfg.get('column_name_uz'), cfg.get('column_name_ru'), lang,
                                                              cfg['column_name']),
@@ -166,7 +191,7 @@ class ReportLoginSummaryAPIView(APIView):
                 })
                 continue
 
-            print(f"  ✅ DEADLINE FOUND: id={deadline.id}, submit_at={deadline.submit_at}")
+            print(f" DEADLINE FOUND: id={deadline.id}, submit_at={deadline.submit_at}")
 
             # 3️⃣ REPORTS (faqat ACCEPTED)
             reports = Report.objects.filter(
@@ -177,10 +202,10 @@ class ReportLoginSummaryAPIView(APIView):
             )
 
             report_count = reports.count()
-            print(f"  📊 REPORTS: {report_count} accepted reports found")
+            print(f" REPORTS: {report_count} accepted reports found")
 
             if report_count == 0:
-                print(f"  ⚠️  No accepted reports, returning 0")
+                print(f" No accepted reports, returning 0")
                 result.append({
                     "column_name": self._get_translated_text(cfg.get('column_name_uz'), cfg.get('column_name_ru'), lang,
                                                              cfg['column_name']),
@@ -194,13 +219,12 @@ class ReportLoginSummaryAPIView(APIView):
 
             # 4️⃣ VALUE EXTRACTION
             def get_total_value(column_id, reports_qs, label):
-                print(f"  🔢 {label}: column_id={column_id}")
+                print(f" {label}: column_id={column_id}")
 
                 if not column_id:
-                    print(f"     ⚠️  No column_id provided")
+                    print(f" No column_id provided")
                     return Decimal("0")
 
-                # Check if column exists
                 col_exists = StatementColumn.objects.filter(id=column_id).exists()
                 if not col_exists:
                     print(f"     ❌ Column does not exist")
@@ -209,7 +233,6 @@ class ReportLoginSummaryAPIView(APIView):
                 col_info = StatementColumn.objects.filter(id=column_id).values('statement_id', 'title_uz').first()
                 print(f"     Column: {col_info.get('title_uz', 'N/A')}")
 
-                # Get ReportItems
                 report_items = ReportItem.objects.filter(
                     report__in=reports_qs,
                     statement_column_id=column_id
@@ -221,11 +244,7 @@ class ReportLoginSummaryAPIView(APIView):
                 if item_count == 0:
                     return Decimal("0")
 
-                # Get ReportItemInners
-                inners = ReportItemInner.objects.filter(
-                    report_item__in=report_items
-                )
-
+                inners = ReportItemInner.objects.filter(report_item__in=report_items)
                 inner_count = inners.count()
                 print(f"     ReportItemInners: {inner_count}")
 
@@ -285,7 +304,6 @@ class ReportLoginSummaryAPIView(APIView):
                 else:
                     status = self._get_translated_text("Bajarilmadi", "Не выполнено", lang)
             elif actual_value > 0:
-                # Plan yo'q lekin actual bor
                 percentage = Decimal("100")
                 status = self._get_translated_text("Bajarildi", "Выполнено", lang)
 
@@ -310,7 +328,13 @@ class ReportLoginSummaryAPIView(APIView):
         print("=" * 80 + "\n")
 
         serializer = ReportSummarySerializer(result, many=True)
-        return Response(serializer.data)
+        serialized_data = serializer.data
+
+        # ✅ Natijani cache'ga saqlash (1 soat)
+        cache.set(cache_key, serialized_data, CACHE_TIMEOUT)
+        print(f"CACHE SET: {cache_key} (timeout: {CACHE_TIMEOUT}s)")
+
+        return Response(serialized_data)
 
     def _get_translated_text(self, uz_text, ru_text, lang, default=None):
         """Til bo'yicha tarjima qaytarish"""
