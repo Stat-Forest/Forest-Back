@@ -113,9 +113,9 @@ SUMMARY_CONFIG = [
         "column_name": "Jumladan, tut ko'chatlari yetishtirish",
         "column_name_uz": "Jumladan, tut ko'chatlari yetishtirish",
         "column_name_ru": "В том числе выращивание шелковичных саженцев",
-        "unit": "mln dona",
-        "unit_uz": "mln dona",
-        "unit_ru": "млн штук",
+        "unit": "dona",
+        "unit_uz": "dona",
+        "unit_ru": "штук",
         "statement_name": "Tut Ko'chat va Tut Nihol",
         "period": "monthly",
         "plan": {
