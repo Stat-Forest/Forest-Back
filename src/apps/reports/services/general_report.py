@@ -3,6 +3,38 @@ from apps.reports.services.report_calculate_expressions import calculate_by_expr
 from apps.reports.services.get_calculation_for_generals import calculate_general_report
 
 
+def is_calculated_column(col) -> bool:
+    """
+    Aggregation paytida SUM qilinmasligi kerak bo'lgan ustunlar:
+    - calculate_expression bor (formulali)
+    - is_user_input=False (avto-hisoblanadigan: %, qoldiq, jami, ratio)
+    - title ichida % / foiz / percent / процент bor (fallback)
+    """
+    if getattr(col, "calculate_expression", None):
+        return True
+
+    # sizning struktura bo'yicha eng ishonchli belgi
+    if getattr(col, "is_user_input", True) is False:
+        return True
+
+    # agar keyinchalik qo'shilsa
+    if getattr(col, "is_calculated", False):
+        return True
+
+    titles = [
+        getattr(col, "title", None),
+        getattr(col, "title_uz", None),
+        getattr(col, "title_ru", None),
+        getattr(col, "title_en", None),
+    ]
+    t = " ".join([x for x in titles if x]).lower()
+
+    if ("%" in t) or ("foiz" in t) or ("percent" in t) or ("процент" in t):
+        return True
+
+    return False
+
+
 def get_or_create_general_report(statement, deadline, region=None):
     """
     Regional (viloyat) jami reportini deadline-dan mustaqil tarzda bitta qilib yuritadi.
@@ -222,6 +254,8 @@ def aggregate_national_report(statement, deadline, region):
     # 5️⃣ column_id -> value list bo‘yicha yagona qiymatlarni hisoblaymiz
     grouped_values = defaultdict(list)
     for item in all_items:
+        if is_calculated_column(item.statement_column):
+            continue
         is_org_level = bool(getattr(item.statement_column, "is_organization", False))
         for inner in item.inners.all():
             if is_org_level:
@@ -376,6 +410,8 @@ def aggregate_general_report(statement, deadline, region):
     touched_column_ids = set()
 
     for item in all_items:
+        if is_calculated_column(item.statement_column):
+            continue
         col_id = item.statement_column_id
         touched_column_ids.add(col_id)
         # Reja (is_organization=True) ustunlarida faqat plant=None qiymatlarni qo'shamiz,
