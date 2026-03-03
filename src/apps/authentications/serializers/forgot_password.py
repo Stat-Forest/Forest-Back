@@ -17,7 +17,7 @@ class SendResetCodeSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         if not User.objects.filter(email=value).exists():
-            raise CustomExceptionError(code=404, detail="This email was not loginned before.")
+            raise CustomExceptionError(code=404, detail="Bu email avval tizimga kirmagan.")
         return value
 
     def save(self):
@@ -87,7 +87,7 @@ class NewPasswordSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data["password"] != data["confirm_password"]:
-            raise CustomExceptionError(code=404, detail="passwords was not equal.")
+            raise CustomExceptionError(code=404, detail="Parollar mos kelmadi!")
         return data
 
     def save(self):
