@@ -87,30 +87,67 @@ class EimzoLoginView(views.APIView):
         if user is None:
             logger.warning("=== User topilmadi — yangi yaratilmoqda ===")
 
-            # TIN = STIR, Organization.stir orqali topish
+            # ----------------------------
+            # 1. Organization topish
+            # ----------------------------
             organization = None
+
             if tin:
                 try:
                     from apps.general.models import Organization
-                    organization = Organization.objects.filter(stir=int(tin)).first()
-                    logger.warning(f"=== TIN={tin} bo'yicha Organization === {organization}")
-                except (ValueError, Exception) as e:
+
+                    # AGAR stir CharField bo‘lsa int() QILMANG
+                    organization = Organization.objects.filter(stir=tin.strip()).first()
+
+                    logger.warning(
+                        f"=== TIN={tin} bo'yicha Organization === {organization}"
+                    )
+                except Exception as e:
                     logger.warning(f"=== Organization qidirishda xato === {e}")
 
-            lookup = {"pinfl": pinfl} if pinfl else {"tin": tin}
+            # ----------------------------
+            # 2. Lookup tayyorlash
+            # ----------------------------
+            lookup = {}
+
+            if pinfl:
+                lookup["pinfl"] = pinfl.strip()
+            elif tin:
+                lookup["tin"] = tin.strip()
+            else:
+                raise ValueError("PINFL yoki TIN mavjud emas")
+
+            # ----------------------------
+            # 3. Email generatsiya (USERNAME_FIELD = email)
+            # ----------------------------
+            generated_email = f"{pinfl or tin}@eimzo.local"
+
+            # ----------------------------
+            # 4. get_or_create (majburiy fieldlar bilan)
+            # ----------------------------
             user, created = CustomUser.objects.get_or_create(
                 **lookup,
                 defaults={
-                    "username": pinfl or tin,
-                    "full_name": cn,
+                    "email": generated_email,
+                    "first_name": subject_name.get("Name", ""),
+                    "last_name": subject_name.get("SURNAME", ""),
+                    "father_name": "",
+                    "passport_number": "AA0000000",
+                    "date_of_place": "",
+                    "address": "",
+                    "gender": CustomUser.Gender.MALE,
+                    "role": CustomUser.Role.TASHKILOT_RAHBARI,
+                    "organization": organization,
                     "pinfl": pinfl,
                     "tin": tin,
                     "is_active": True,
-                    "role": CustomUser.Role.TASHKILOT_RAHBARI,
-                    "organization": organization,
-                }
+                    "full_name": cn,
+                },
             )
-            logger.warning(f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}")
+
+            logger.warning(
+                f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}"
+            )
 
         logger.warning(f"=== FINAL USER === {user}")
 
