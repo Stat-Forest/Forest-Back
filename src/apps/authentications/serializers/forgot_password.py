@@ -31,29 +31,54 @@ class VerifyResetCodeSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
 
+    MAX_ATTEMPTS = 3
+    BLOCK_TIMEOUT = 60 * 30
+
     def validate(self, data):
         email = data["email"]
         code = data["code"]
+
+        attempt_key = f"reset_code_attempts:{email}"
+        block_key = f"reset_code_blocked:{email}"
+
+        if cache.get(block_key):
+            raise CustomExceptionError(
+                code=429,
+                detail="Siz 3 marta xato kiritdingiz. 30 daqiqadan keyin qayta urinib ko'ring."
+            )
+
         cached_code = cache.get(f"reset_code:{email}")
 
         if cached_code is None or cached_code != code:
-            raise CustomExceptionError(code=404, detail="code was wrong or code was expired.")
+            attempts = cache.get(attempt_key, 0) + 1
+            cache.set(attempt_key, attempts, timeout=self.BLOCK_TIMEOUT)
+
+            remaining = self.MAX_ATTEMPTS - attempts
+
+            if attempts >= self.MAX_ATTEMPTS:
+                cache.set(block_key, True, timeout=self.BLOCK_TIMEOUT)
+                cache.delete(attempt_key)
+                cache.delete(f"reset_code:{email}")
+                raise CustomExceptionError(
+                    code=429,
+                    detail="Siz 3 marta xato kiritdingiz. 30 daqiqadan keyin qayta urinib ko'ring."
+                )
+
+            raise CustomExceptionError(
+                code=400,
+                detail=f"Kod xato yoki muddati o'tgan. Sizda yana {remaining} ta urinish qoldi."
+            )
+
+        cache.delete(attempt_key)
+        cache.delete(block_key)
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise CustomExceptionError(code=404, detail="User was not found.")
+            raise CustomExceptionError(code=404, detail="Foydalanuvchi topilmadi.")
 
         self.user = user
         return data
-
-    def create_tokens(self):
-        refresh = RefreshToken.for_user(self.user)
-        cache.set(f"reset_user_id:{self.user.email}", self.user.id, timeout=600)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token)
-        }
 
 
 class NewPasswordSerializer(serializers.Serializer):
