@@ -702,19 +702,35 @@ class ForestMonitoringAPIView(APIView):
             print(f"Error materializing republic result: {e}")
             republic_result = skeleton
 
+        # ==============================
+        # REGION ONLY MODE
+        # ==============================
         if region_filter:
             if not regions_payload:
                 region_name = dict(RegionChoices.choices).get(region_filter, region_filter)
-                return Response({
+                response = {
                     "level": "REGION",
                     "hudud": region_name,
                     "result": skeleton,
                     "children": []
-                })
+                }
+            else:
+                response = regions_payload[0]
 
-            return Response(regions_payload[0])
+        else:
+            # ==============================
+            # REPUBLIC MODE
+            # ==============================
+            response = {
+                "level": "REPUBLIC",
+                "hudud": republic_title,
+                "result": republic_result,
+                "children": regions_payload,
+            }
 
-        # Performance stats
+        # ==============================
+        # PERFORMANCE STATS
+        # ==============================
         total_time = time.time() - start_time
         total_queries = len(connection.queries)
 
@@ -728,10 +744,9 @@ class ForestMonitoringAPIView(APIView):
         print(f"   Regions: {len(region_map)}")
         print(f"   Plan map entries: {len(plan_map)}")
         print(f"   Plant plan map entries: {len(plant_plan_map)}")
-        print(f"   Response size: ~{len(str(regions_payload)) // 1024} KB")
         print(f"{'=' * 60}")
 
-        return Response(regions_payload)
+        return Response(response)
 
     def _build_empty_response(self, lang, skeleton):
         """Bo'sh response"""
