@@ -120,7 +120,7 @@ class ReportLoginSummaryAPIView(APIView):
                 Q(name_uz=cfg["statement_name"]) |
                 Q(name_uz__iexact=cfg["statement_name"])
             ).first()
-
+            
             if not statement:
                 print(f"  ❌ STATEMENT NOT FOUND")
                 result.append({
