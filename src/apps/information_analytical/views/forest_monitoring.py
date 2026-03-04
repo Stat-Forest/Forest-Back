@@ -192,23 +192,53 @@ class ForestMonitoringAPIView(APIView):
     # REPORT DATA FETCHING
     # =========================================================
 
-    def get_latest_report_ids_raw(self, org_ids, stmt_ids):
-        """Eng oxirgi report ID larini olish"""
+    def get_latest_report_ids_raw(self, org_ids, stmt_ids, period=None):
+        """
+        Eng oxirgi valid reportlarni olish
+        """
+
         if not org_ids or not stmt_ids:
             return []
 
         sql = """
-              SELECT DISTINCT \
-              ON (organization_id, statement_id) id
-              FROM reports_report
-              WHERE organization_id = ANY (%s)
-                AND statement_id = ANY (%s)
-                AND status = 'accepted'
-              ORDER BY organization_id, statement_id, created_at DESC
-              """
+            SELECT DISTINCT ON (r.organization_id, r.statement_id)
+                   r.id
+            FROM reports_report r
+            JOIN reports_deadline d ON d.id = r.deadline_id
+            WHERE r.organization_id = ANY (%s)
+              AND r.statement_id = ANY (%s)
+              AND r.status = 'accepted'
+              AND r.cancelled_at IS NULL
+        """
+
+        params = [org_ids, stmt_ids]
+
+        if period:
+
+            # 🔹 CHORAKLIK
+            if "_Q" in period:
+                year, quarter = period.split("_Q")
+                period = f"{year}-CHORAK_{quarter}"
+
+            # 🔹 YILLIK
+            elif len(period) == 4:
+                sql += " AND d.submit_at LIKE %s "
+                params.append(f"{period}%")
+
+            # 🔹 OYLIK
+            else:
+                pass
+
+            if len(period) != 4:
+                sql += " AND d.submit_at = %s "
+                params.append(period)
+
+        sql += """
+            ORDER BY r.organization_id, r.statement_id, r.created_at DESC
+        """
 
         with connection.cursor() as cursor:
-            cursor.execute(sql, [org_ids, stmt_ids])
+            cursor.execute(sql, params)
             return [row[0] for row in cursor.fetchall()]
 
     def get_report_values(self, report_ids):
@@ -319,9 +349,12 @@ class ForestMonitoringAPIView(APIView):
         start_time = time.time()
         lang = get_lang_code(request)
 
-        print(f"\n{'=' * 60}")
-        print(f"🚀 ForestMonitoringAPIView STARTED (PLAN PRIORITY)")
-        print(f"{'=' * 60}")
+        period = request.query_params.get("period")
+        print("PERIOD FILTER:", period)
+
+        # print(f"\n{'=' * 60}")
+        # print(f"🚀 ForestMonitoringAPIView STARTED (PLAN PRIORITY)")
+        # print(f"{'=' * 60}")
 
         connection.queries_log.clear()
 
@@ -408,14 +441,31 @@ class ForestMonitoringAPIView(APIView):
 
         # 4. Latest report IDs
         print(f"[4/9] Finding latest reports...")
+
         try:
-            latest_report_ids = self.get_latest_report_ids_raw(org_ids, statement_ids)
+            latest_report_ids = self.get_latest_report_ids_raw(
+                org_ids,
+                statement_ids,
+                period=period
+            )
         except Exception as e:
             print(f"Error finding latest reports: {e}")
             latest_report_ids = []
 
+        # =====================================================
+        # ✅ AGAR PERIOD BERILGAN BO'LSA VA HECH NIMA TOPILMASA
+        # =====================================================
+        if period:
+            if not latest_report_ids:
+                print(f"No reports found for period={period} → returning empty list")
+                return Response([], status=200)
+
+        # =====================================================
+        # DEFAULT (PERIOD YO'Q HOLAT)
+        # =====================================================
         if not latest_report_ids:
-            print("No latest reports found, returning empty response")
+            print("No latest reports found (no period filter)")
+
             if region_filter:
                 region_name = dict(RegionChoices.choices).get(region_filter, region_filter)
                 return Response({
