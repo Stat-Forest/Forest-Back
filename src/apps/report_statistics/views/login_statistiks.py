@@ -88,9 +88,9 @@ class ReportLoginSummaryAPIView(APIView):
 
         # ✅ Cache'dan olishga urinish
         cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            print(f" CACHE HIT: {cache_key}")
-            return Response(cached_data)
+        # if cached_data is not None:
+        #     print(f" CACHE HIT: {cache_key}")
+        #     return Response(cached_data)
 
         print(f" CACHE MISS: {cache_key}")
         print("\n" + "=" * 80)
