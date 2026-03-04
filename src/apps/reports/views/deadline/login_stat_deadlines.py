@@ -1,12 +1,13 @@
+# views.py
 from django.db.models import Exists, OuterRef
 from rest_framework import generics
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineReportListSerializer
 from rest_framework.permissions import AllowAny
 
-# Statement name constants
 MONTHLY_STATEMENTS = [
     "Dorivor yetishtirish",
     "O'rmon barpo qilish bo'limi",
@@ -28,8 +29,8 @@ YEARLY_STATEMENTS = [
             type=OpenApiTypes.STR,
             required=False,
             description=(
-                    "monthly → Oylik hisobotlar uchun\n"
-                    "yearly → Yillik hisobotlar uchun"
+                "monthly → Oylik hisobotlar uchun\n"
+                "yearly → Yillik hisobotlar uchun"
             ),
             enum=["monthly", "yearly"]
         )
@@ -47,22 +48,41 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
             .distinct()
         )
 
-        # ================= PERIOD TYPE FILTER (monthly/yearly) =================
         period_type = self.request.query_params.get("period_type")
 
         if period_type == "monthly":
             qs = qs.filter(statement__name_uz__in=MONTHLY_STATEMENTS)
-
         elif period_type == "yearly":
             qs = qs.filter(statement__name_uz__in=YEARLY_STATEMENTS)
 
-        # ================= FILTER: Only deadlines with accepted reports =================
         report_exists_qs = Report.objects.filter(
             deadline=OuterRef("pk"),
             status=Report.StatusChoices.ACCEPTED,
             is_report=True,
         )
-
         qs = qs.annotate(has_report=Exists(report_exists_qs)).filter(has_report=True)
 
-        return qs.order_by("-created_at")
+        return qs.order_by("-submit_at", "-created_at")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        period_type = request.query_params.get("period_type")
+
+        # submit_at bo'yicha dedupe
+        seen = set()
+        unique_deadlines = []
+        for deadline in queryset:
+            if deadline.submit_at not in seen:
+                seen.add(deadline.submit_at)
+                unique_deadlines.append(deadline)
+
+        serializer = self.get_serializer(
+            unique_deadlines,
+            many=True,
+            context={
+                **self.get_serializer_context(),
+                "period_type": period_type,
+                "all_deadlines": list(queryset),
+            }
+        )
+        return Response(serializer.data)
