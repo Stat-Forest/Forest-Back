@@ -81,9 +81,9 @@ SUMMARY_CONFIG = [
         "column_name": "Niholxona va ko'chatchonalar tashkil etish",
         "column_name_uz": "Niholxona va ko'chatchonalar tashkil etish",
         "column_name_ru": "Создание питомников и рассадников",
-        "unit": "mln dona",
-        "unit_uz": "mln dona",
-        "unit_ru": "млн штук",
+        "unit": "dona",
+        "unit_uz": "dona",
+        "unit_ru": "штук",
         "statement_name": "Ko'chatxona va Niholxona Jami",
         "period": "monthly",
         "plan": {
