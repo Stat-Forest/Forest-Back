@@ -96,22 +96,36 @@ class DashboardStatService:
         raise ValueError("Invalid user context")
 
     # ================= EXPIRED DEADLINES =================
-    def _get_expired_deadlines_count(self, deadlines_qs):
-        user = self.user
-
-        if user.role == CustomUser.Role.SUPER_ADMIN:
-            base_report_qs = Report.objects.filter(
-                deadline=OuterRef("pk"),
+    def _deadline_has_missing_report(self, deadline, orgs):
+        """
+        Berilgan deadline uchun orgs ichidan
+        kamida bittasi ACCEPTED report topshirmagan bo'lsa True qaytaradi.
+        """
+        for org in orgs:
+            report_exists = Report.objects.filter(
+                deadline=deadline,
+                organization=org,
                 is_report=True,
                 status=Report.StatusChoices.ACCEPTED,
-            )
-            return deadlines_qs.filter(
-                deadline_at__lt=date.today()
-            ).annotate(
-                has_report=Exists(base_report_qs)
-            ).filter(has_report=False).count()
-        
-        # ORGANIZATION USER
+            ).exists()
+            if not report_exists:
+                return True
+        return False
+
+    def _get_expired_deadlines_count(self, deadlines_qs):
+        user = self.user
+        expired_qs = deadlines_qs.filter(deadline_at__lt=date.today())
+
+        # SUPER_ADMIN — barcha orglar bo'yicha tekshiradi
+        if user.role == CustomUser.Role.SUPER_ADMIN:
+            expired_count = 0
+            for deadline in expired_qs.prefetch_related("organizations"):
+                orgs = deadline.organizations.all()
+                if self._deadline_has_missing_report(deadline, orgs):
+                    expired_count += 1
+            return expired_count
+
+        # ORGANIZATION USER — faqat o'z orgi bo'yicha
         if user.role in {
             CustomUser.Role.TASHKILOT_RAHBARI,
             CustomUser.Role.TASHKILOT_HODIMI
@@ -119,48 +133,34 @@ class DashboardStatService:
             base_report_qs = Report.objects.filter(
                 deadline=OuterRef("pk"),
                 organization=user.organization,
-                is_report=True
+                is_report=True,
+                status=Report.StatusChoices.ACCEPTED,
             )
-            expired = deadlines_qs.filter(
-                deadline_at__lt=date.today()
-            ).annotate(
+            return expired_qs.annotate(
                 has_report=Exists(base_report_qs)
-            ).filter(has_report=False)
-            return expired.count()
+            ).filter(has_report=False).count()
 
-        # HUDUDIY BOSHQARMA
+        # HUDUDIY BOSHQARMA — o'z mintaqasidagi orglar bo'yicha
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
             orgs = list(user.region_user_orgs.all())
             if not orgs:
                 return 0
 
             expired_count = 0
-            for deadline in deadlines_qs.filter(deadline_at__lt=date.today()).distinct():
-                # deadline har biri uchun org bo'yicha tekshiramiz
-                has_report_for_all_orgs = any(
-                    Report.objects.filter(
-                        deadline=deadline,
-                        organization=org,
-                        is_report=True
-                    ).exists()
-                    for org in orgs
-                )
-                if not has_report_for_all_orgs:
+            for deadline in expired_qs.distinct().prefetch_related("organizations"):
+                if self._deadline_has_missing_report(deadline, orgs):
                     expired_count += 1
-
             return expired_count
 
         # OTHER ROLES
         base_report_qs = Report.objects.filter(
             deadline=OuterRef("pk"),
-            is_report=True
+            is_report=True,
+            status=Report.StatusChoices.ACCEPTED,
         )
-        expired = deadlines_qs.filter(
-            deadline_at__lt=date.today()
-        ).annotate(
+        return expired_qs.annotate(
             has_report=Exists(base_report_qs)
-        ).filter(has_report=False)
-        return expired.count()
+        ).filter(has_report=False).count()
 
     # ================= MAIN CALCULATION =================
     def _calculate_stats(self):
