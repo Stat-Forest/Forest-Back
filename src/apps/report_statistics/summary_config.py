@@ -97,9 +97,9 @@ SUMMARY_CONFIG = [
         "column_name": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
         "column_name_uz": "Orolbo'yi mintaqasi va boshqa cho'l hududlarida yashil qoplama barpo etish",
         "column_name_ru": "Создание зелёного покрытия в Приаральском и других пустынных районах",
-        "unit": "ming gektar",
-        "unit_uz": "ming gektar",
-        "unit_ru": "тыс. гектаров",
+        "unit": "gektar",
+        "unit_uz": "gektar",
+        "unit_ru": "гектаров",
         "statement_name": "O'rmon barpo qilish bo'limi",
         "period": "monthly",
         "plan": {
