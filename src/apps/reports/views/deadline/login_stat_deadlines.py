@@ -68,7 +68,7 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         queryset = self.get_queryset()
         period_type = request.query_params.get("period_type")
 
-        # submit_at bo'yicha dedupe
+        # ✅ submit_at bo'yicha dedupe
         seen = set()
         unique_deadlines = []
         for deadline in queryset:
@@ -76,6 +76,21 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
                 seen.add(deadline.submit_at)
                 unique_deadlines.append(deadline)
 
+        # ✅ Pagination — count/next/previous saqlanadi
+        page = self.paginate_queryset(unique_deadlines)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context={
+                    **self.get_serializer_context(),
+                    "period_type": period_type,
+                    "all_deadlines": list(queryset),
+                }
+            )
+            return self.get_paginated_response(serializer.data)
+
+        # ✅ Pagination bo'lmasa oddiy response
         serializer = self.get_serializer(
             unique_deadlines,
             many=True,
