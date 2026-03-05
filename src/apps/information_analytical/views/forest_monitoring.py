@@ -328,6 +328,13 @@ class ForestMonitoringAPIView(APIView):
                 description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
             ),
             OpenApiParameter(
+                name="period",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
+            ),
+            OpenApiParameter(
                 name="organization",
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.QUERY,
