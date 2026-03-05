@@ -332,7 +332,16 @@ class ForestMonitoringAPIView(APIView):
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
                 required=False,
-                description="Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)"
+                description=(
+                        "Hisobot davri bo‘yicha filter.\n\n"
+                        "Formatlar:\n"
+                        "• Yillik: 2025\n"
+                        "• Oylik: 2025-01\n"
+                        "• Choraklik: 2025_Q1\n\n"
+                        "Agar period berilsa, faqat shu davrga tegishli "
+                        "accepted reportlar hisobga olinadi. "
+                        "Agar ma’lumot topilmasa — bo‘sh list qaytadi."
+                )
             ),
             OpenApiParameter(
                 name="organization",
