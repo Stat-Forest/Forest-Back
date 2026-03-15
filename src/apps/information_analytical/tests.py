@@ -1,127 +1,68 @@
 # import time
 # from collections import defaultdict
 # from decimal import Decimal, InvalidOperation
-# from django.db import connection
+#
 # from django.core.cache import cache
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
+# from django.db import connection
 # from rest_framework.permissions import IsAuthenticated
+# from rest_framework.response import Response
+# from rest_framework.views import APIView
 #
 # from apps.general.models import Organization
-# from apps.information_analytical.serializers.aggregation import aggregate_target_maps
-# from apps.reports.models import Statement, StatementColumn, Report
 # from apps.information_analytical.mapping import MAPPING_RULES, FORMULA_BLOCKS
+# from apps.information_analytical.serializers.aggregation import aggregate_target_maps
 # from apps.information_analytical.services.plan_loader import load_plan_maps
-# # ✅ Tuzatish: materialize_result_from_value_map ni to'g'ri import qilish
-# from apps.information_analytical.services.monitoring_engine import (
-#     materialize_result_from_value_map,
-#     safe_percent,
-#     safe_diff
-# )
-#
-# from apps.utils.translation import get_lang_code
+# from apps.reports.models import Statement, StatementColumn, Report
+# from apps.reports.services.get_two_numbers_in_percent import round_decimal
 # from apps.utils.services import RegionChoices
-#
-# # ✅ Qo'shimcha: set_by_path funksiyasini import qilish yoki yaratish
-# from apps.information_analytical.serializers.forest_monitoring import set_by_path
+# from apps.utils.translation import get_lang_code
 #
 #
 # class ForestMonitoringAPIView(APIView):
 #     permission_classes = [IsAuthenticated]
 #
 #     # =========================================================
-#     # CUSTOM materialize_result_from_value_map (agar import bo'lmasa)
-#     # =========================================================
-#
-#     def materialize_result_from_value_map(self, skeleton, leaf_paths, value_map):
-#         """
-#         skeleton: nested dict (titles)
-#         leaf_paths: ordering -> path_titles
-#         value_map: ordering -> value
-#         """
-#         import copy
-#         result = copy.deepcopy(skeleton)
-#
-#         # Faqat bo'sh bo'lmagan qiymatlarni qo'shish
-#         for ordering, path in leaf_paths.items():
-#             val = value_map.get(ordering)
-#             if val is not None and val != "":
-#                 # set_by_path funksiyasini chaqirish
-#                 self._set_by_path(result, path, val)
-#
-#         return result
-#
-#     def _set_by_path(self, root: dict, path: list[str], value):
-#         """Path bo'yicha nested dict ga qiymat qo'yish"""
-#         cur = root
-#         for key in path[:-1]:
-#             if key not in cur:
-#                 cur[key] = {}
-#             cur = cur[key]
-#         cur[path[-1]] = "" if value is None else value
-#
-#     # =========================================================
 #     # HELPER FUNCTIONS
 #     # =========================================================
 #
 #     def is_numeric_string(self, value):
-#         """String numeric ekanligini tekshirish"""
 #         if not value or not isinstance(value, str):
 #             return False
-#
-#         # Bo'sh string yoki faqat bo'shliq
 #         if value.strip() == "":
 #             return False
 #
-#         # Agar vergul yoki nuqta bilan raqam bo'lsa
-#         cleaned = value.replace(',', '.').replace(' ', '')
-#
-#         # Bir nechta nuqta borligini tekshirish
-#         if cleaned.count('.') > 1:
+#         cleaned = value.replace(",", ".").replace(" ", "")
+#         if cleaned.count(".") > 1:
 #             return False
 #
-#         # Raqamlar, nuqta va minus belgisi bo'lishi kerak
-#         if cleaned.replace('.', '', 1).replace('-', '', 1).isdigit():
-#             return True
-#
-#         return False
+#         # allow "-12.3"
+#         return cleaned.replace(".", "", 1).replace("-", "", 1).isdigit()
 #
 #     def safe_decimal(self, value):
-#         """Xavfsiz Decimal konvertatsiya"""
 #         if value in (None, "", " "):
-#             return Decimal('0')
-#
+#             return Decimal("0")
 #         try:
-#             # Agar string bo'lsa
 #             if isinstance(value, str):
-#                 # Agar numeric string bo'lmasa
 #                 if not self.is_numeric_string(value):
-#                     return Decimal('0')
-#
-#                 # Vergulni nuqtaga o'zgartirish
-#                 value = value.replace(',', '.')
-#
+#                     return Decimal("0")
+#                 value = value.replace(",", ".")
 #             return Decimal(str(value))
 #         except (InvalidOperation, ValueError, TypeError):
-#             return Decimal('0')
+#             return Decimal("0")
 #
 #     # =========================================================
 #     # STATEMENT & COLUMNS
 #     # =========================================================
 #
 #     def get_target_statement(self):
-#         """Target statement - cached"""
 #         cache_key = "forest_monitoring_target_statement"
 #         stmt = cache.get(cache_key)
 #         if not stmt:
-#             stmt = Statement.objects.only("id", "name_uz").get(
-#                 name_uz="O'rmonlar kesimida"
-#             )
+#             stmt = Statement.objects.only("id", "name_uz").get(name_uz="O'rmonlar kesimida")
 #             cache.set(cache_key, stmt, 3600)
 #         return stmt
 #
 #     def get_all_columns_data(self, statement_id):
-#         """Barcha column ma'lumotlari - cached"""
 #         cache_key = f"forest_monitoring_columns_{statement_id}"
 #         cached = cache.get(cache_key)
 #         if cached:
@@ -129,12 +70,16 @@
 #
 #         cols = list(
 #             StatementColumn.objects.filter(statement_id=statement_id).only(
-#                 "id", "ordering", "title", "title_uz", "title_ru",
-#                 "parent_id", "is_organization"
+#                 "id",
+#                 "ordering",
+#                 "title",
+#                 "title_uz",
+#                 "title_ru",
+#                 "parent_id",
+#                 "is_organization",
 #             )
 #         )
 #
-#         # Children dict yasash
 #         children = defaultdict(list)
 #         for c in cols:
 #             if c.parent_id:
@@ -145,12 +90,10 @@
 #             "columns_by_id": {str(c.id): c for c in cols},
 #             "children_dict": dict(children),
 #         }
-#
 #         cache.set(cache_key, data, 3600)
 #         return data
 #
 #     def get_title(self, col, lang):
-#         """Column title olish - no queries"""
 #         if not col:
 #             return ""
 #         if lang == "uz":
@@ -160,16 +103,13 @@
 #         return col.title
 #
 #     def build_tree_no_queries(self, data, lang):
-#         """Tree qurish - no database queries"""
 #         cols = data["columns"]
 #
-#         # Group by parent
 #         by_parent = defaultdict(list)
 #         for c in cols:
 #             if not c.is_organization:
 #                 by_parent[str(c.parent_id) if c.parent_id else None].append(c)
 #
-#         # Sort by ordering
 #         for parent_id in by_parent:
 #             by_parent[parent_id].sort(
 #                 key=lambda x: [int(n) for n in x.ordering.split(".") if n.isdigit()]
@@ -183,299 +123,257 @@
 #                 title = self.get_title(col, lang)
 #                 new_path = current_path + [title]
 #
-#                 # Check if has children
 #                 if str(col.id) in data["children_dict"]:
 #                     result[title] = build_node(str(col.id), new_path)
 #                 else:
 #                     result[title] = ""
 #                     leaf_paths[col.ordering] = new_path
-#
 #             return result
 #
 #         skeleton = build_node(None, [])
 #         return skeleton, leaf_paths
 #
 #     # =========================================================
-#     # REPORT DATA FETCHING (FIXED - handles text values)
+#     # MATERIALIZE FUNCTION
+#     # =========================================================
+#
+#     def materialize_result_from_value_map(self, skeleton, leaf_paths, value_map):
+#         import copy
+#
+#         result = copy.deepcopy(skeleton)
+#
+#         for ordering, path in leaf_paths.items():
+#             val = value_map.get(ordering)
+#             if val is not None and val != "":
+#                 self._set_by_path(result, path, val)
+#
+#         return result
+#
+#     def _set_by_path(self, root: dict, path: list[str], value):
+#         cur = root
+#         for key in path[:-1]:
+#             if key not in cur:
+#                 cur[key] = {}
+#             cur = cur[key]
+#         cur[path[-1]] = "" if value is None else value
+#
+#     # =========================================================
+#     # REPORT DATA FETCHING (RAW SQL)
 #     # =========================================================
 #
 #     def get_latest_report_ids_raw(self, org_ids, stmt_ids):
-#         """Eng oxirgi report ID larini olish"""
 #         if not org_ids or not stmt_ids:
 #             return []
 #
 #         sql = """
-#               SELECT DISTINCT \
-#               ON (organization_id, statement_id) id
-#               FROM reports_report
-#               WHERE organization_id = ANY (%s)
-#                 AND statement_id = ANY (%s)
-#                 AND status = 'accepted'
-#               ORDER BY organization_id, statement_id, created_at DESC \
-#               """
+#             SELECT DISTINCT ON (organization_id, statement_id) id
+#             FROM reports_report
+#             WHERE organization_id = ANY (%s)
+#               AND statement_id = ANY (%s)
+#               AND status = 'accepted'
+#             ORDER BY organization_id, statement_id, created_at DESC
+#         """
 #
 #         with connection.cursor() as cursor:
 #             cursor.execute(sql, [org_ids, stmt_ids])
 #             return [row[0] for row in cursor.fetchall()]
 #
 #     def get_report_values(self, report_ids):
-#         """ReportItem va ReportItemInner ma'lumotlarini olish - SAFE VERSION"""
 #         if not report_ids:
 #             return {}
 #
-#         # ✅ FIXED: Text qiymatlarni filter qilish
-#         # Avval faqat numeric qiymatlarni olish
 #         sql_numeric_items = """
-#                             SELECT ri.report_id, \
-#                                    sc.ordering, \
-#                                    ri.value
-#                             FROM reports_reportitem ri
-#                                      JOIN reports_statementcolumn sc ON sc.id = ri.statement_column_id
-#                             WHERE ri.report_id = ANY (%s)
-#                               AND ri.value IS NOT NULL
-#                               AND ri.value != ''
-#           AND ri.value ~ '^[-+]?[0-9]*[.,]?[0-9]+$'
-#           AND NOT EXISTS (
-#               SELECT 1 FROM reports_reportiteminner rii
-#               WHERE rii.report_item_id = ri.id
-#           ) \
-#                             """
+#             SELECT ri.report_id, sc.ordering, ri.value
+#             FROM reports_reportitem ri
+#             JOIN reports_statementcolumn sc ON sc.id = ri.statement_column_id
+#             WHERE ri.report_id = ANY (%s)
+#               AND ri.value IS NOT NULL
+#               AND ri.value != ''
+#               AND ri.value ~ '^[-+]?[0-9]*[.,]?[0-9]+$'
+#               AND NOT EXISTS (
+#                   SELECT 1 FROM reports_reportiteminner rii
+#                   WHERE rii.report_item_id = ri.id
+#               )
+#         """
 #
-#         # Inner bilan bog'liq itemlar
 #         sql_inner_items = """
-#                           SELECT ri.report_id, \
-#                                  sc.ordering, \
-#                                  SUM( \
-#                                          CASE \
-#                                              WHEN rii.value ~ '^[-+]?[0-9]*[.,]?[0-9]+$'
-#                     THEN CAST(replace(rii.value, ',', '.') AS DECIMAL) \
-#                                              ELSE 0 \
-#                                              END \
-#                                  ) as total_value
-#                           FROM reports_reportitem ri
-#                                    JOIN reports_statementcolumn sc ON sc.id = ri.statement_column_id
-#                                    JOIN reports_reportiteminner rii ON rii.report_item_id = ri.id
-#                           WHERE ri.report_id = ANY (%s)
-#                           GROUP BY ri.report_id, sc.ordering \
-#                           """
+#             SELECT
+#                 ri.report_id,
+#                 sc.ordering,
+#                 SUM(
+#                     CASE
+#                         WHEN rii.value ~ '^[-+]?[0-9]*[.,]?[0-9]+$'
+#                         THEN CAST(replace(rii.value, ',', '.') AS DECIMAL)
+#                         ELSE 0
+#                     END
+#                 ) as total_value
+#             FROM reports_reportitem ri
+#             JOIN reports_statementcolumn sc ON sc.id = ri.statement_column_id
+#             JOIN reports_reportiteminner rii ON rii.report_item_id = ri.id
+#             WHERE ri.report_id = ANY (%s)
+#             GROUP BY ri.report_id, sc.ordering
+#         """
 #
 #         result = defaultdict(dict)
 #
 #         with connection.cursor() as cursor:
-#             # 1. Faqat numeric qiymatli ReportItem lar
 #             cursor.execute(sql_numeric_items, [report_ids])
 #             for report_id, ordering, value in cursor.fetchall():
-#                 if value:
-#                     try:
-#                         dec_value = self.safe_decimal(value)
-#                         if dec_value != Decimal('0'):
-#                             result[report_id][ordering] = str(dec_value)
-#                     except:
-#                         pass
+#                 dec_value = self.safe_decimal(value)
+#                 if dec_value != Decimal("0"):
+#                     result[report_id][ordering] = str(dec_value)
 #
-#             # 2. Inner bilan bog'liq itemlar
 #             cursor.execute(sql_inner_items, [report_ids])
 #             for report_id, ordering, total_value in cursor.fetchall():
-#                 if total_value is not None:
-#                     try:
-#                         dec_value = Decimal(str(total_value))
-#                         if dec_value != Decimal('0'):
-#                             # Agar allaqachon qiymat bo'lsa, qo'shamiz
-#                             existing = result[report_id].get(ordering)
-#                             if existing:
-#                                 existing_dec = self.safe_decimal(existing)
-#                                 total_dec = existing_dec + dec_value
-#                                 result[report_id][ordering] = str(total_dec)
-#                             else:
-#                                 result[report_id][ordering] = str(dec_value)
-#                     except:
-#                         pass
+#                 if total_value is None:
+#                     continue
+#                 try:
+#                     dec_value = Decimal(str(total_value))
+#                 except Exception:
+#                     continue
+#
+#                 if dec_value == Decimal("0"):
+#                     continue
+#
+#                 existing = result[report_id].get(ordering)
+#                 if existing:
+#                     result[report_id][ordering] = str(self.safe_decimal(existing) + dec_value)
+#                 else:
+#                     result[report_id][ordering] = str(dec_value)
 #
 #         return dict(result)
 #
 #     # =========================================================
-#     # PLAN DATA FETCHING (SAFE VERSION)
+#     # FILTER HELPERS
 #     # =========================================================
 #
-#     def get_plant_plan_values_fixed(self, org_ids, stmt_ids):
-#         """PlantPlan va PlantPlanItem ma'lumotlarini olish - SAFE VERSION"""
-#         if not org_ids or not stmt_ids:
-#             return {}
+#     def _resolve_scope(self, *, region_filter, organization_filter):
+#         """
+#         Qaytaradigan scope:
+#         - ORGANIZATION: organization param bor
+#         - REGION: region param bor
+#         - REPUBLIC: hech narsa yo'q
+#         """
+#         if organization_filter:
+#             return "ORGANIZATION"
+#         if region_filter:
+#             return "REGION"
+#         return "REPUBLIC"
 #
-#         # ✅ FIXED: Faqat numeric qiymatlarni olish
-#         sql = """
-#               SELECT p.organization_id, \
-#                      p.statement_id, \
-#                      sc.ordering, \
-#                      SUM( \
-#                              CASE \
-#                                  WHEN ppi.plan_value ~ '^[-+]?[0-9]*[.,]?[0-9]+$'
-#                     THEN CAST(replace(ppi.plan_value, ',', '.') AS DECIMAL) \
-#                                  ELSE 0 \
-#                                  END \
-#                      ) as total_plan_value
-#               FROM reports_plantplanitem ppi
-#                        JOIN reports_plantplan pp ON pp.id = ppi.plant_plan_id
-#                        JOIN reports_plan p ON p.id = pp.plan_id
-#                        JOIN reports_statementcolumn sc ON sc.id = ppi.column_id
-#               WHERE p.organization_id = ANY (%s)
-#                 AND p.statement_id = ANY (%s)
-#                 AND ppi.plan_value IS NOT NULL
-#               GROUP BY p.organization_id, p.statement_id, sc.ordering \
-#               """
-#
-#         result = {}
-#
-#         with connection.cursor() as cursor:
-#             cursor.execute(sql, [org_ids, stmt_ids])
-#             for org_id, stmt_id, ordering, total_plan_value in cursor.fetchall():
-#                 if total_plan_value is not None and total_plan_value != 0:
-#                     key = (org_id, stmt_id)
-#                     if key not in result:
-#                         result[key] = {}
-#
-#                     try:
-#                         dec_value = Decimal(str(total_plan_value))
-#                         if dec_value != Decimal('0'):
-#                             result[key][ordering] = str(dec_value)
-#                     except:
-#                         pass
-#
-#         return result
+#     def _validate_region(self, region_code: str | None):
+#         if not region_code:
+#             return None
+#         region_code = region_code.strip()
+#         allowed = {c for c, _ in RegionChoices.choices}
+#         # Query param ANDIJON kelsa — RegionChoices ham ANDIJON bo‘lishi kerak
+#         if region_code not in allowed:
+#             return None
+#         return region_code
 #
 #     # =========================================================
-#     # MAIN METHOD (SAFE VERSION)
+#     # MAIN
 #     # =========================================================
 #
 #     def get(self, request):
-#         """Asosiy GET endpoint - FULLY WORKING with SAFE TYPE CONVERSION"""
 #         start_time = time.time()
 #         lang = get_lang_code(request)
 #
-#         print(f"\n{'=' * 60}")
-#         print(f"🚀 ForestMonitoringAPIView STARTED")
-#         print(f"{'=' * 60}")
+#         region_filter = self._validate_region(request.query_params.get("region"))
+#         organization_filter = request.query_params.get("organization")
 #
-#         # Reset query log
+#         scope = self._resolve_scope(region_filter=region_filter, organization_filter=organization_filter)
+#
 #         connection.queries_log.clear()
 #
-#         # 1. Target statement va columns
-#         print(f"[1/8] Loading target statement and columns...")
+#         # 1) Target statement & columns
 #         try:
 #             target_statement = self.get_target_statement()
 #             columns_data = self.get_all_columns_data(target_statement.id)
 #             skeleton, leaf_paths = self.build_tree_no_queries(columns_data, lang)
-#         except Exception as e:
-#             print(f"Error loading statement/columns: {e}")
+#         except Exception:
 #             return self._build_empty_response(lang, {})
 #
-#         # 2. Organizations
-#         print(f"[2/8] Loading organizations...")
+#         # 2) Organizations (EARLY FILTER)
 #         try:
-#             organizations = list(
-#                 Organization.objects.only("id", "region", "name", "name_uz", "name_ru")
-#             )
-#         except Exception as e:
-#             print(f"Error loading organizations: {e}")
+#             org_qs = Organization.objects.only("id", "region", "name", "name_uz", "name_ru")
+#
+#             if region_filter:
+#                 org_qs = org_qs.filter(region=region_filter)
+#
+#             if organization_filter:
+#                 org_qs = org_qs.filter(id=organization_filter)
+#
+#             organizations = list(org_qs)
+#         except Exception:
 #             return self._build_empty_response(lang, skeleton)
 #
 #         if not organizations:
-#             print("No organizations found, returning empty response")
+#             # region bo‘yicha filter bo‘lsa: REGION bo‘sh qaytishi kerak
+#             if scope == "REGION":
+#                 region_name = dict(RegionChoices.choices).get(region_filter, region_filter or "")
+#                 return Response({
+#                     "level": "REGION",
+#                     "hudud": region_name,
+#                     "result": skeleton,
+#                     "children": [],
+#                 })
+#
+#             # org bo‘lsa: ORG bo‘sh
+#             if scope == "ORGANIZATION":
+#                 return Response({
+#                     "level": "ORGANIZATION",
+#                     "hudud": "",
+#                     "result": skeleton,
+#                 })
+#
 #             return self._build_empty_response(lang, skeleton)
 #
 #         org_ids = [o.id for o in organizations]
-#         print(f"   Found {len(organizations)} organizations")
 #
-#         # 3. Source statements
-#         print(f"[3/8] Loading source statements...")
-#         try:
-#             source_statement_names = {r["source_statement_name_uz"] for r in MAPPING_RULES}
-#             source_statements = list(
-#                 Statement.objects.filter(name_uz__in=source_statement_names).only("id", "name_uz")
-#             )
-#             statement_by_name = {s.name_uz: s.id for s in source_statements}
-#             statement_ids = list(statement_by_name.values())
-#             print(f"   Found {len(source_statements)} source statements")
-#         except Exception as e:
-#             print(f"Error loading source statements: {e}")
-#             statement_by_name = {}
-#             statement_ids = []
+#         # 3) Source statements
+#         source_statement_names = {r["source_statement_name_uz"] for r in MAPPING_RULES}
+#         source_statements = list(
+#             Statement.objects.filter(name_uz__in=source_statement_names).only("id", "name_uz")
+#         )
+#         statement_by_name = {s.name_uz: s.id for s in source_statements}
+#         statement_ids = list(statement_by_name.values())
 #
 #         if not statement_ids:
-#             print("No source statements found, returning empty response")
-#             return self._build_empty_response(lang, skeleton)
+#             # structure bor, data yo‘q
+#             return self._build_scoped_empty(scope, lang, skeleton, region_filter)
 #
-#         # 4. Latest report IDs
-#         print(f"[4/8] Finding latest reports...")
-#         try:
-#             latest_report_ids = self.get_latest_report_ids_raw(org_ids, statement_ids)
-#         except Exception as e:
-#             print(f"Error finding latest reports: {e}")
-#             latest_report_ids = []
-#
-#         if not latest_report_ids:
-#             print("No latest reports found, returning empty response")
-#             return self._build_empty_response(lang, skeleton)
-#
-#         print(f"   Found {len(latest_report_ids)} latest reports")
-#
-#         # 5. Reports basic info
-#         print(f"[5/8] Loading reports basic info...")
-#         try:
-#             reports = list(
-#                 Report.objects.filter(id__in=latest_report_ids).only(
-#                     "id", "organization_id", "statement_id"
-#                 )
-#             )
-#         except Exception as e:
-#             print(f"Error loading reports: {e}")
-#             reports = []
-#
-#         # Report map: (org_id, stmt_id) -> report_id
+#         # 4) Latest report ids (accepted)
+#         latest_report_ids = self.get_latest_report_ids_raw(org_ids, statement_ids)
+#         # data topilmasa ham baribir skeleton qaytarish kerak — scopega qarab
+#         # (directorga structure kerak bo‘lishi mumkin)
+#         reports = []
 #         report_map = {}
-#         for report in reports:
-#             key = (report.organization_id, report.statement_id)
-#             report_map[key] = report.id
+#         if latest_report_ids:
+#             reports = list(Report.objects.filter(id__in=latest_report_ids).only("id", "organization_id", "statement_id"))
+#             report_map = {(r.organization_id, r.statement_id): r.id for r in reports}
 #
-#         print(f"   Mapped {len(report_map)} reports")
-#
-#         # 6. Plan data
-#         print(f"[6/8] Loading plan data...")
-#         plan_map = {}
-#         plant_plan_map = {}
+#         # 5) Plan maps
+#         plan_map, plant_plan_map = {}, {}
 #         try:
 #             plan_map, plant_plan_map = load_plan_maps(org_ids, statement_ids)
-#         except Exception as e:
-#             print(f"Error loading plan data: {e}")
+#         except Exception:
+#             plan_map, plant_plan_map = {}, {}
 #
-#         # 7. Report values
-#         print(f"[7/8] Loading report values...")
+#         # 6) Report values
 #         report_values = {}
 #         try:
 #             report_values = self.get_report_values(latest_report_ids)
-#         except Exception as e:
-#             print(f"Error loading report values: {e}")
+#         except Exception:
+#             report_values = {}
 #
-#         # 8. Plant plan values (aggregated)
-#         print(f"[8/8] Loading plant plan values...")
-#         plant_plan_values = {}
-#         try:
-#             plant_plan_values = self.get_plant_plan_values_fixed(org_ids, statement_ids)
-#         except Exception as e:
-#             print(f"Error loading plant plan values: {e}")
-#
-#         # 9. Group organizations by region
+#         # 7) Group organizations by region
 #         region_map = defaultdict(list)
 #         for org in organizations:
 #             region_map[org.region].append(org)
 #
-#         print(f"   Grouped into {len(region_map)} regions")
-#
-#         # 10. Build response with aggregation
-#         print(f"Building response with aggregation...")
+#         # 8) Build payloads
 #         regions_payload = []
 #         republic_maps = []
-#         org_counter = 0
 #
 #         for region_code, orgs in region_map.items():
 #             region_name = dict(RegionChoices.choices).get(region_code, region_code)
@@ -484,94 +382,78 @@
 #             region_target_maps = []
 #
 #             for org in orgs:
-#                 org_counter += 1
 #                 target_value_map = {}
 #
-#                 # Apply MAPPING_RULES
+#                 # fill map by rules with priority Plan -> PlantPlan(sum) -> Report
 #                 for rule in MAPPING_RULES:
-#                     statement_id = statement_by_name.get(rule["source_statement_name_uz"])
-#                     if not statement_id:
+#                     stmt_id = statement_by_name.get(rule["source_statement_name_uz"])
+#                     if not stmt_id:
 #                         target_value_map[rule["target"]] = ""
 #                         continue
 #
 #                     ordering = rule["source"]
-#                     key = (org.id, statement_id)
+#                     key = (org.id, stmt_id)
 #
-#                     # 1. Check plan map
-#                     try:
-#                         if ordering in plan_map.get(key, {}):
-#                             target_value_map[rule["target"]] = plan_map[key][ordering]
+#                     # 1) Plan
+#                     if key in plan_map and ordering in plan_map[key]:
+#                         target_value_map[rule["target"]] = plan_map[key][ordering]
+#                         continue
+#
+#                     # 2) PlantPlan sum
+#                     if key in plant_plan_map:
+#                         total = Decimal("0")
+#                         found = False
+#                         for plant_id, plant_map in plant_plan_map[key].items():
+#                             if ordering in plant_map:
+#                                 total += self.safe_decimal(plant_map[ordering])
+#                                 found = True
+#                         if found and total != Decimal("0"):
+#                             target_value_map[rule["target"]] = str(total)
 #                             continue
-#                     except:
-#                         pass
 #
-#                     # 2. Check plant plan map (aggregated)
-#                     try:
-#                         if ordering in plant_plan_values.get(key, {}):
-#                             target_value_map[rule["target"]] = plant_plan_values[key][ordering]
-#                             continue
-#                     except:
-#                         pass
-#
-#                     # 3. Check report
-#                     try:
-#                         report_id = report_map.get(key)
-#                         if report_id and ordering in report_values.get(report_id, {}):
-#                             target_value_map[rule["target"]] = report_values[report_id][ordering]
-#                         else:
-#                             target_value_map[rule["target"]] = ""
-#                     except:
+#                     # 3) Report value
+#                     report_id = report_map.get(key)
+#                     if report_id and ordering in report_values.get(report_id, {}):
+#                         target_value_map[rule["target"]] = report_values[report_id][ordering]
+#                     else:
 #                         target_value_map[rule["target"]] = ""
 #
-#                 # Apply FORMULA_BLOCKS
+#                 # formula blocks only calculate, never aggregate %
 #                 for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
 #                     reja_value = target_value_map.get(reja_ordering, "")
 #                     amalda_value = target_value_map.get(amalda_ordering, "")
 #
-#                     if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-#                         try:
-#                             # Qiymatlarni xavfsiz decimal ga o'tkazish
-#                             reja_dec = self.safe_decimal(reja_value)
-#                             amalda_dec = self.safe_decimal(amalda_value)
+#                     if reja_value != "" and amalda_value != "":
+#                         reja_dec = self.safe_decimal(reja_value)
+#                         amalda_dec = self.safe_decimal(amalda_value)
 #
-#                             if reja_dec != Decimal('0'):
-#                                 target_value_map[percent_ordering] = str(
-#                                     (amalda_dec / reja_dec) * Decimal('100')
-#                                 )
-#                             else:
-#                                 target_value_map[percent_ordering] = ""
-#
-#                             target_value_map[diff_ordering] = str(reja_dec - amalda_dec)
-#                         except:
+#                         if reja_dec != Decimal("0"):
+#                             target_value_map[percent_ordering] = str(
+#                                 round_decimal((amalda_dec / reja_dec) * Decimal("100"), 1)
+#                             )
+#                         else:
 #                             target_value_map[percent_ordering] = ""
-#                             target_value_map[diff_ordering] = ""
+#
+#                         target_value_map[diff_ordering] = str(reja_dec - amalda_dec)
 #                     else:
 #                         target_value_map[percent_ordering] = ""
 #                         target_value_map[diff_ordering] = ""
 #
-#                 # Save for region aggregation
 #                 region_target_maps.append(target_value_map)
 #
-#                 # Organization name
-#                 org_name = ""
-#                 try:
-#                     if lang == "uz":
-#                         org_name = getattr(org, "name_uz", None) or org.name
-#                     elif lang == "ru":
-#                         org_name = getattr(org, "name_ru", None) or getattr(org, "name_uz", None) or org.name
-#                     else:
-#                         org_name = org.name
-#                 except:
+#                 # org name
+#                 if lang == "uz":
+#                     org_name = getattr(org, "name_uz", None) or org.name
+#                 elif lang == "ru":
+#                     org_name = getattr(org, "name_ru", None) or getattr(org, "name_uz", None) or org.name
+#                 else:
 #                     org_name = org.name
 #
-#                 # ✅ FIXED: materialize_result_from_value_map ni to'g'ri chaqirish
-#                 try:
-#                     org_result = self.materialize_result_from_value_map(
-#                         skeleton, leaf_paths, target_value_map
-#                     )
-#                 except Exception as e:
-#                     print(f"Error materializing organization result: {e}")
-#                     org_result = skeleton
+#                 org_result = self.materialize_result_from_value_map(
+#                     skeleton=skeleton,
+#                     leaf_paths=leaf_paths,
+#                     value_map=target_value_map,
+#                 )
 #
 #                 org_nodes.append({
 #                     "level": "ORGANIZATION",
@@ -579,49 +461,39 @@
 #                     "result": org_result,
 #                 })
 #
-#             # REGION AGGREGATION
-#             region_aggregated = {}
-#             try:
-#                 region_aggregated = aggregate_target_maps(region_target_maps)
-#             except Exception as e:
-#                 print(f"Error aggregating region {region_name}: {e}")
+#             # region aggregate
+#             region_aggregated = aggregate_target_maps(region_target_maps) if region_target_maps else {}
 #
-#             # Recalculate formulas for region
+#             # region formula recalc
 #             for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
 #                 reja_value = region_aggregated.get(reja_ordering, "")
 #                 amalda_value = region_aggregated.get(amalda_ordering, "")
 #
-#                 if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-#                     try:
-#                         reja_dec = self.safe_decimal(reja_value)
-#                         amalda_dec = self.safe_decimal(amalda_value)
+#                 if reja_value != "" and amalda_value != "":
+#                     reja_dec = self.safe_decimal(reja_value)
+#                     amalda_dec = self.safe_decimal(amalda_value)
 #
-#                         if reja_dec != Decimal('0'):
-#                             region_aggregated[percent_ordering] = str(
-#                                 (amalda_dec / reja_dec) * Decimal('100')
-#                             )
-#                         else:
-#                             region_aggregated[percent_ordering] = ""
-#
-#                         region_aggregated[diff_ordering] = str(reja_dec - amalda_dec)
-#                     except:
+#                     if reja_dec != Decimal("0"):
+#                         region_aggregated[percent_ordering] = str(
+#                             round_decimal((amalda_dec / reja_dec) * Decimal("100"), 1)
+#                         )
+#                     else:
 #                         region_aggregated[percent_ordering] = ""
-#                         region_aggregated[diff_ordering] = ""
+#
+#                     region_aggregated[diff_ordering] = str(reja_dec - amalda_dec)
 #                 else:
 #                     region_aggregated[percent_ordering] = ""
 #                     region_aggregated[diff_ordering] = ""
 #
-#             # Save for republic aggregation
-#             republic_maps.append(region_aggregated)
+#             # add region to republic only if we are building republic
+#             if scope == "REPUBLIC":
+#                 republic_maps.append(region_aggregated)
 #
-#             # Region result
-#             region_result = {}
-#             try:
-#                 region_result = self.materialize_result_from_value_map(
-#                     skeleton, leaf_paths, region_aggregated
-#                 )
-#             except:
-#                 region_result = skeleton
+#             region_result = self.materialize_result_from_value_map(
+#                 skeleton=skeleton,
+#                 leaf_paths=leaf_paths,
+#                 value_map=region_aggregated,
+#             )
 #
 #             regions_payload.append({
 #                 "level": "REGION",
@@ -630,49 +502,64 @@
 #                 "children": org_nodes,
 #             })
 #
-#         # REPUBLIC AGGREGATION
-#         republic_aggregated = {}
-#         try:
-#             republic_aggregated = aggregate_target_maps(republic_maps)
-#         except Exception as e:
-#             print(f"Error aggregating republic: {e}")
+#         # =========================================================
+#         # ✅ SCOPE-BASED RETURN (MUHIM JOY!)
+#         # =========================================================
 #
-#         # Recalculate formulas for republic
+#         # 1) organization scope: faqat bitta org qaytar
+#         if scope == "ORGANIZATION":
+#             # biz filter qilganmiz, shuning uchun 1 ta bo‘lishi kerak
+#             # region_payload[0]['children'][0] eng ishonchli
+#             if regions_payload and regions_payload[0]["children"]:
+#                 return Response(regions_payload[0]["children"][0])
+#             return Response({
+#                 "level": "ORGANIZATION",
+#                 "hudud": "",
+#                 "result": skeleton,
+#             })
+#
+#         # 2) region scope: faqat bitta region (ANDIJON) qaytar
+#         if scope == "REGION":
+#             # regions_payload ichida faqat 1 ta region bo‘ladi (early filter sabab)
+#             if regions_payload:
+#                 return Response(regions_payload[0])
+#             region_name = dict(RegionChoices.choices).get(region_filter, region_filter or "")
+#             return Response({
+#                 "level": "REGION",
+#                 "hudud": region_name,
+#                 "result": skeleton,
+#                 "children": [],
+#             })
+#
+#         # 3) republic scope: to‘liq
+#         republic_aggregated = aggregate_target_maps(republic_maps) if republic_maps else {}
+#
 #         for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
 #             reja_value = republic_aggregated.get(reja_ordering, "")
 #             amalda_value = republic_aggregated.get(amalda_ordering, "")
 #
-#             if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-#                 try:
-#                     reja_dec = self.safe_decimal(reja_value)
-#                     amalda_dec = self.safe_decimal(amalda_value)
+#             if reja_value != "" and amalda_value != "":
+#                 reja_dec = self.safe_decimal(reja_value)
+#                 amalda_dec = self.safe_decimal(amalda_value)
 #
-#                     if reja_dec != Decimal('0'):
-#                         republic_aggregated[percent_ordering] = str(
-#                             (amalda_dec / reja_dec) * Decimal('100')
-#                         )
-#                     else:
-#                         republic_aggregated[percent_ordering] = ""
-#
-#                     republic_aggregated[diff_ordering] = str(reja_dec - amalda_dec)
-#                 except:
+#                 if reja_dec != Decimal("0"):
+#                     republic_aggregated[percent_ordering] = str(
+#                         round_decimal((amalda_dec / reja_dec) * Decimal("100"), 1)
+#                     )
+#                 else:
 #                     republic_aggregated[percent_ordering] = ""
-#                     republic_aggregated[diff_ordering] = ""
+#
+#                 republic_aggregated[diff_ordering] = str(reja_dec - amalda_dec)
 #             else:
 #                 republic_aggregated[percent_ordering] = ""
 #                 republic_aggregated[diff_ordering] = ""
 #
-#         # Final response
 #         republic_title = "Respublika Jami" if lang == "uz" else "Республиканский итог"
-#
-#         # Republic result
-#         republic_result = {}
-#         try:
-#             republic_result = self.materialize_result_from_value_map(
-#                 skeleton, leaf_paths, republic_aggregated
-#             )
-#         except:
-#             republic_result = skeleton
+#         republic_result = self.materialize_result_from_value_map(
+#             skeleton=skeleton,
+#             leaf_paths=leaf_paths,
+#             value_map=republic_aggregated,
+#         )
 #
 #         payload = {
 #             "level": "REPUBLIC",
@@ -681,30 +568,29 @@
 #             "children": regions_payload,
 #         }
 #
-#         # Performance stats
-#         total_time = time.time() - start_time
-#         total_queries = len(connection.queries)
-#
-#         print(f"\n{'=' * 60}")
-#         print(f"🎉 ForestMonitoringAPIView COMPLETED")
-#         print(f"{'=' * 60}")
-#         print(f"📊 PERFORMANCE STATS:")
-#         print(f"   Total time: {total_time:.3f}s")
-#         print(f"   Total queries: {total_queries}")
-#         print(f"   Organizations: {org_counter}")
-#         print(f"   Regions: {len(region_map)}")
-#         print(f"   Response size: ~{len(str(payload)) // 1024} KB")
-#         print(f"{'=' * 60}")
-#
+#         # optional perf log
+#         _ = time.time() - start_time
 #         return Response(payload)
 #
-#     def _build_empty_response(self, lang, skeleton):
-#         """Bo'sh response"""
-#         republic_title = "Respublika Jami" if lang == "uz" else "Республиканский итог"
+#     # =========================================================
+#     # EMPTY RESPONSE HELPERS
+#     # =========================================================
 #
+#     def _build_empty_response(self, lang, skeleton):
+#         republic_title = "Respublika Jami" if lang == "uz" else "Республиканский итог"
 #         return Response({
 #             "level": "REPUBLIC",
 #             "hudud": republic_title,
 #             "result": skeleton if skeleton else {},
 #             "children": [],
 #         })
+#
+#     def _build_scoped_empty(self, scope, lang, skeleton, region_filter):
+#         if scope == "ORGANIZATION":
+#             return Response({"level": "ORGANIZATION", "hudud": "", "result": skeleton})
+#
+#         if scope == "REGION":
+#             region_name = dict(RegionChoices.choices).get(region_filter, region_filter or "")
+#             return Response({"level": "REGION", "hudud": region_name, "result": skeleton, "children": []})
+#
+#         return self._build_empty_response(lang, skeleton)
