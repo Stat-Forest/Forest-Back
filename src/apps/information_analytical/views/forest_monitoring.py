@@ -218,39 +218,22 @@ class ForestMonitoringAPIView(APIView):
         params = [org_ids, stmt_ids]
 
         if period:
-            period_upper = period.upper()
+            period_upper = period.upper().strip()
 
-            # 🔹 CHORAKLIK: 2025-CHORAKLIK_1, 2025-CHORAKLIK_2, etc.
-            if "-CHORAKLIK_" in period_upper:
-                # "2025-CHORAKLIK_1" ni parse qilish
-                parts = period_upper.split("-CHORAKLIK_")
-                if len(parts) == 2:
-                    year = parts[0]
-                    quarter = parts[1]
+            # 🔹 YILLIK (exact 4 digit year)
+            if len(period_upper) == 4 and period_upper.isdigit():
+                sql += " AND d.submit_at = %s"
+                params.append(period_upper)
 
-                    # Chorak nomini aniqlash (spring/autumn)
-                    if quarter in ["1", "2"]:
-                        season = "spring"
-                    else:  # 3, 4
-                        season = "autumn"
+            # 🔹 CHORAKLIK (exact match)
+            elif "-CHORAK_" in period_upper or "-CHORAKLIK_" in period_upper:
+                sql += " AND d.submit_at = %s"
+                params.append(period_upper)
 
-                    # deadline submit_at LIKE '2025%' va season bo'yicha filter
-                    sql += " AND d.submit_at LIKE %s"
-                    params.append(f"{year}%")
-
-                    # season bo'yicha filter
-                    sql += " AND d.season = %s"
-                    params.append(season)
-
-            # 🔹 YILLIK: 2025
-            elif len(period) == 4 and period.isdigit():
-                sql += " AND d.submit_at LIKE %s "
-                params.append(f"{period}%")
-
-            # 🔹 OYLIK: 2025-01 (agar kerak bo'lsa)
-            else:
-                sql += " AND d.submit_at = %s "
-                params.append(period)
+            # 🔹 OYLIK (YYYY-MM)
+            elif len(period_upper) == 7 and period_upper[4] == "-":
+                sql += " AND d.submit_at = %s"
+                params.append(period_upper)
 
         sql += """
             ORDER BY r.organization_id, r.statement_id, r.created_at DESC
@@ -565,6 +548,17 @@ class ForestMonitoringAPIView(APIView):
         republic_maps = []
         org_counter = 0
 
+        region_report_map = {}
+        republic_report_id = None
+
+        for report in reports:
+            # Region reportlar (is_general=True va region field bor)
+            if hasattr(report, 'is_general') and report.is_general and hasattr(report, 'region') and report.region:
+                region_report_map[report.region] = report.id
+            # Republic report
+            if hasattr(report, 'is_republic') and report.is_republic:
+                republic_report_id = report.id
+
         for region_code, orgs in region_map.items():
             region_name = dict(RegionChoices.choices).get(region_code, region_code)
 
@@ -652,8 +646,6 @@ class ForestMonitoringAPIView(APIView):
                 # Region aggregation uchun saqlash
                 region_target_maps.append(target_value_map)
 
-                # Organization name
-                org_name = ""
                 try:
                     if lang == "uz":
                         org_name = getattr(org, "name_uz", None) or org.name
@@ -675,11 +667,8 @@ class ForestMonitoringAPIView(APIView):
                     print(f"Error materializing organization result: {e}")
                     org_result = skeleton
 
-                org_report_id = report_map.get((org.id, target_statement.id))
-
                 org_nodes.append({
                     "level": "ORGANIZATION",
-                    "id": str(org_report_id) if org_report_id else None,
                     "hudud": org_name,
                     "result": org_result,
                 })
@@ -735,21 +724,8 @@ class ForestMonitoringAPIView(APIView):
                 print(f"Error materializing region result: {e}")
                 region_result = skeleton
 
-            regional_reports = list(
-                Report.objects.filter(
-                    is_general=True,
-                    is_republic=False,
-                    statement=target_statement,
-                ).only("id", "region")
-            )
-
-            regional_report_map = {r.region: r.id for r in regional_reports}
-
-            region_report_id = regional_report_map.get(region_code)
-
             regions_payload.append({
                 "level": "REGION",
-                "id": str(region_report_id) if region_report_id else None,
                 "hudud": region_name,
                 "result": region_result,
                 "children": org_nodes,
@@ -830,7 +806,6 @@ class ForestMonitoringAPIView(APIView):
 
             response = {
                 "level": "REPUBLIC",
-                "id": str(republic_report.id) if republic_report else None,
                 "hudud": republic_title,
                 "result": republic_result,
                 "children": regions_payload,
