@@ -317,8 +317,8 @@ class ForestMonitoringAPIView(APIView):
         description="""
         Region va organization bo‘yicha o‘rmon monitoring ma’lumotlarini chiqaradi.
 
-        📌 Agar region berilsa → faqat shu hudud va uning tashkilotlari chiqadi -> not yet :) 
-        📌 Agar organization berilsa → faqat respublika i viloyat i o`sha organization ni chiqaradi  
+        📌 Agar region berilsa → faqat shu hudud va uning tashkilotlari chiqadi
+        📌 Agar organization berilsa → faqat shu tashkilot chiqadi  
         📌 Agar hech nima berilmasa → Respublika → Regionlar → Tashkilotlar chiqadi
         """,
         parameters=[
@@ -369,10 +369,6 @@ class ForestMonitoringAPIView(APIView):
 
         period = request.query_params.get("period")
         print("PERIOD FILTER:", period)
-
-        # print(f"\n{'=' * 60}")
-        # print(f"🚀 ForestMonitoringAPIView STARTED (PLAN PRIORITY)")
-        # print(f"{'=' * 60}")
 
         connection.queries_log.clear()
 
@@ -501,9 +497,7 @@ class ForestMonitoringAPIView(APIView):
         print(f"[5/9] Loading reports basic info...")
         try:
             reports = list(
-                Report.objects.filter(id__in=latest_report_ids).only(
-                    "id", "organization_id", "statement_id"
-                )
+                Report.objects.filter(id__in=latest_report_ids).select_related("statement", "organization")
             )
         except Exception as e:
             print(f"Error loading reports: {e}")
@@ -569,7 +563,7 @@ class ForestMonitoringAPIView(APIView):
                 org_counter += 1
                 target_value_map = {}
 
-                # ✅ YANGI: MAPPING_RULES uchun PLAN PRIORITY LOGIC
+                # ✅ MAPPING_RULES uchun PLAN PRIORITY LOGIC
                 for rule in MAPPING_RULES:
                     statement_id = statement_by_name.get(rule["source_statement_name_uz"])
                     if not statement_id:
@@ -580,15 +574,12 @@ class ForestMonitoringAPIView(APIView):
                     key = (org.id, statement_id)
 
                     # ✅ 1️⃣ PRIORITY: ODDIY PLAN (Plan map)
-                    # Agar Plan bo'lsa → doim Plan ishlaydi
                     if key in plan_map and ordering in plan_map[key]:
                         target_value_map[rule["target"]] = plan_map[key][ordering]
                         continue
 
                     # ✅ 2️⃣ PRIORITY: PLANT PLAN (har bir plant bo'yicha yig'indisi)
-                    # Agar Plan bo'lmasa → PlantPlan yig'indisi
                     if key in plant_plan_map:
-                        # Barcha plant qiymatlarini yig'ish
                         total_plant_value = Decimal('0')
                         plant_values_found = False
 
@@ -606,42 +597,48 @@ class ForestMonitoringAPIView(APIView):
                             continue
 
                     # ✅ 3️⃣ PRIORITY: REPORT VALUE
-                    # Agar ikkalasi bo'lmasa → Report value
                     report_id = report_map.get(key)
                     if report_id and ordering in report_values.get(report_id, {}):
                         target_value_map[rule["target"]] = report_values[report_id][ordering]
                     else:
                         target_value_map[rule["target"]] = ""
 
-                # ✅ FORMULA BLOCKS ni qo'llash (faqat Reja va Amalda uchun)
-                # % va (+,-) HECH QACHON yig'ilmasin — faqat qayta hisoblanadi
+                # ✅ TO'G'RILANGAN FORMULA BLOCKS (IF SHARTI O'CHIRILDI)
                 for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
                     reja_value = target_value_map.get(reja_ordering, "")
                     amalda_value = target_value_map.get(amalda_ordering, "")
 
-                    # ✅ Faqat Reja va Amalda qiymatlari mavjud bo'lsa hisobla
-                    if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-                        try:
+                    # Reja qiymatini Decimal ga o'tkazish
+                    try:
+                        if reja_value and reja_value != "":
                             reja_dec = self.safe_decimal(reja_value)
+                        else:
+                            reja_dec = Decimal('0')
+                    except:
+                        reja_dec = Decimal('0')
+
+                    # Amalda qiymatini Decimal ga o'tkazish (bo'sh bo'lsa 0)
+                    try:
+                        if amalda_value and amalda_value != "":
                             amalda_dec = self.safe_decimal(amalda_value)
+                        else:
+                            amalda_dec = Decimal('0')
+                    except:
+                        amalda_dec = Decimal('0')
 
-                            # % hisoblash
-                            if reja_dec != Decimal('0'):
-                                percent_value = round_decimal((amalda_dec / reja_dec) * Decimal('100'), 1)
-                                target_value_map[percent_ordering] = str(percent_value)
-                            else:
-                                target_value_map[percent_ordering] = ""
-
-                            # (+,-) hisoblash
-                            diff_value = reja_dec - amalda_dec
-                            target_value_map[diff_ordering] = str(diff_value)
-                        except Exception as e:
-                            print(f"Formula error for org {org.id}: {e}")
-                            target_value_map[percent_ordering] = ""
-                            target_value_map[diff_ordering] = ""
+                    # ✅ % hisoblash (faqat Reja > 0 bo'lsa)
+                    if reja_dec > Decimal('0'):
+                        percent_value = (amalda_dec / reja_dec) * Decimal('100')
+                        target_value_map[percent_ordering] = str(round_decimal(percent_value, 1))
                     else:
                         target_value_map[percent_ordering] = ""
-                        target_value_map[diff_ordering] = ""
+
+                    # ✅ (+,-) hisoblash (har doim hisoblanadi)
+                    diff_value = amalda_dec - reja_dec
+                    if diff_value == diff_value.to_integral():
+                        target_value_map[diff_ordering] = str(int(diff_value))
+                    else:
+                        target_value_map[diff_ordering] = str(diff_value)
 
                 # Region aggregation uchun saqlash
                 region_target_maps.append(target_value_map)
@@ -673,42 +670,49 @@ class ForestMonitoringAPIView(APIView):
                     "result": org_result,
                 })
 
-            # ✅ REGION AGGREGATION (faqat Reja va Amalda)
+            # ✅ REGION AGGREGATION
             region_aggregated = {}
             try:
                 region_aggregated = aggregate_target_maps(region_target_maps)
             except Exception as e:
                 print(f"Error aggregating region {region_name}: {e}")
 
-            # ✅ REGION uchun FORMULA BLOCKS ni qayta hisoblash
-            # Aggregation faqat Reja va Amalda bo'yicha bo'lsin
-            # % va (+,-) HECH QACHON yig'ilmasin — faqat qayta hisoblanadi
+            # ✅ REGION uchun FORMULA BLOCKS ni qayta hisoblash (IF SHARTI O'CHIRILDI)
             for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
                 reja_value = region_aggregated.get(reja_ordering, "")
                 amalda_value = region_aggregated.get(amalda_ordering, "")
 
-                if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-                    try:
+                # Reja qiymatini Decimal ga o'tkazish
+                try:
+                    if reja_value and reja_value != "":
                         reja_dec = self.safe_decimal(reja_value)
+                    else:
+                        reja_dec = Decimal('0')
+                except:
+                    reja_dec = Decimal('0')
+
+                # Amalda qiymatini Decimal ga o'tkazish (bo'sh bo'lsa 0)
+                try:
+                    if amalda_value and amalda_value != "":
                         amalda_dec = self.safe_decimal(amalda_value)
+                    else:
+                        amalda_dec = Decimal('0')
+                except:
+                    amalda_dec = Decimal('0')
 
-                        # % qayta hisoblash
-                        if reja_dec != Decimal('0'):
-                            percent_value = round_decimal((amalda_dec / reja_dec) * Decimal('100'), 1)
-                            region_aggregated[percent_ordering] = str(percent_value)
-                        else:
-                            region_aggregated[percent_ordering] = ""
-
-                        # (+,-) qayta hisoblash
-                        diff_value = reja_dec - amalda_dec
-                        region_aggregated[diff_ordering] = str(diff_value)
-                    except Exception as e:
-                        print(f"Region formula error for {region_name}: {e}")
-                        region_aggregated[percent_ordering] = ""
-                        region_aggregated[diff_ordering] = ""
+                # ✅ % hisoblash (faqat Reja > 0 bo'lsa)
+                if reja_dec > Decimal('0'):
+                    percent_value = (amalda_dec / reja_dec) * Decimal('100')
+                    region_aggregated[percent_ordering] = str(round_decimal(percent_value, 1))
                 else:
                     region_aggregated[percent_ordering] = ""
-                    region_aggregated[diff_ordering] = ""
+
+                # ✅ (+,-) hisoblash (har doim hisoblanadi)
+                diff_value = amalda_dec - reja_dec
+                if diff_value == diff_value.to_integral():
+                    region_aggregated[diff_ordering] = str(int(diff_value))
+                else:
+                    region_aggregated[diff_ordering] = str(diff_value)
 
             # Republic aggregation uchun saqlash
             republic_maps.append(region_aggregated)
@@ -731,40 +735,49 @@ class ForestMonitoringAPIView(APIView):
                 "children": org_nodes,
             })
 
-        # ✅ REPUBLIC AGGREGATION (faqat Reja va Amalda)
+        # ✅ REPUBLIC AGGREGATION
         republic_aggregated = {}
         try:
             republic_aggregated = aggregate_target_maps(republic_maps)
         except Exception as e:
             print(f"Error aggregating republic: {e}")
 
-        # ✅ REPUBLIC uchun FORMULA BLOCKS ni qayta hisoblash
+        # ✅ REPUBLIC uchun FORMULA BLOCKS ni qayta hisoblash (IF SHARTI O'CHIRILDI)
         for reja_ordering, amalda_ordering, percent_ordering, diff_ordering in FORMULA_BLOCKS:
             reja_value = republic_aggregated.get(reja_ordering, "")
             amalda_value = republic_aggregated.get(amalda_ordering, "")
 
-            if reja_value and reja_value != "" and amalda_value and amalda_value != "":
-                try:
+            # Reja qiymatini Decimal ga o'tkazish
+            try:
+                if reja_value and reja_value != "":
                     reja_dec = self.safe_decimal(reja_value)
+                else:
+                    reja_dec = Decimal('0')
+            except:
+                reja_dec = Decimal('0')
+
+            # Amalda qiymatini Decimal ga o'tkazish (bo'sh bo'lsa 0)
+            try:
+                if amalda_value and amalda_value != "":
                     amalda_dec = self.safe_decimal(amalda_value)
+                else:
+                    amalda_dec = Decimal('0')
+            except:
+                amalda_dec = Decimal('0')
 
-                    # % qayta hisoblash
-                    if reja_dec != Decimal('0'):
-                        percent_value = round_decimal((amalda_dec / reja_dec) * Decimal('100'), 1)
-                        republic_aggregated[percent_ordering] = str(percent_value)
-                    else:
-                        republic_aggregated[percent_ordering] = ""
-
-                    # (+,-) qayta hisoblash
-                    diff_value = reja_dec - amalda_dec
-                    republic_aggregated[diff_ordering] = str(diff_value)
-                except Exception as e:
-                    print(f"Republic formula error: {e}")
-                    republic_aggregated[percent_ordering] = ""
-                    republic_aggregated[diff_ordering] = ""
+            # ✅ % hisoblash (faqat Reja > 0 bo'lsa)
+            if reja_dec > Decimal('0'):
+                percent_value = (amalda_dec / reja_dec) * Decimal('100')
+                republic_aggregated[percent_ordering] = str(round_decimal(percent_value, 1))
             else:
                 republic_aggregated[percent_ordering] = ""
-                republic_aggregated[diff_ordering] = ""
+
+            # ✅ (+,-) hisoblash (har doim hisoblanadi)
+            diff_value = amalda_dec - reja_dec
+            if diff_value == diff_value.to_integral():
+                republic_aggregated[diff_ordering] = str(int(diff_value))
+            else:
+                republic_aggregated[diff_ordering] = str(diff_value)
 
         # Final response
         republic_title = "Respublika Jami" if lang == "uz" else "Республиканский итог"
@@ -798,11 +811,6 @@ class ForestMonitoringAPIView(APIView):
             # ==============================
             # REPUBLIC MODE
             # ==============================
-
-            republic_report = Report.objects.filter(
-                is_republic=True,
-                statement=target_statement,
-            ).only("id").first()
 
             response = {
                 "level": "REPUBLIC",
