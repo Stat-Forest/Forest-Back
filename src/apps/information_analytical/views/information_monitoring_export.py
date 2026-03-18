@@ -1,7 +1,6 @@
 from django.http import FileResponse
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from apps.information_analytical.serializers.forest_monitoring_export import MonitoringExportSerializer
