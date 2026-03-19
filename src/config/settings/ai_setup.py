@@ -1,0 +1,9 @@
+AI_ENABLED = True
+AI_BASE_URL = "http://forest_ollama:11434/api"
+AI_MODEL = "qwen2.5:3b"
+
+AI_TIMEOUT = 60
+AI_MAX_TOKENS = 300
+AI_TEMPERATURE = 0.05
+AI_NUM_CTX = 1024
+AI_TOP_P = 0.8
