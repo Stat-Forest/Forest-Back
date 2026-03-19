@@ -8,3 +8,4 @@ from .rest_framework import *
 from .database import *
 from .celery import *
 from .jazzmin import *
+from .ai_setup import *
