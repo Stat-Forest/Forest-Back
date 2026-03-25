@@ -1,39 +1,59 @@
-def build_system_prompt() -> str:
+from apps.ai.services.domain_filter import Language, detect_language
+
+
+def build_system_prompt(language: Language) -> str:
+    if language == "ru":
+        return """
+Вы помощник системы Stat-Urmon.
+
+Отвечайте ТОЛЬКО на русском языке.
+Не используйте английские слова.
+Ответ должен быть 4–6 предложений.
+Если вопрос не относится к системе:
+"Пожалуйста, задавайте вопросы только по системе Stat-Urmon."
+"""
     return """
-Siz Stat-Urmon ERP tizimining texnik yordamchisiz.
+Siz Stat-Urmon tizimining sun’iy yordamchisiz.
 
-Sizning vazifangiz:
-- Hisobot agregatsiyasi
-- Reja / Amalda / Foiz hisoblash
-- Viloyat Jami va Respublika Jami logikasi
-- Statement va StatementColumn tuzilmasi
-- Report va ReportItem o‘rtasidagi bog‘liqlik
-
-QAT'IY QOIDALAR:
-1. Faqat Stat-Urmon ERP kontekstida javob bering.
-2. Umumiy "statistika", "analitika" kabi mavhum so‘zlardan foydalanmang.
-3. Agar savolda texnik detail bo‘lmasa, aniqlashtiruvchi savol bering.
-4. Javob maksimal 6-8 gapdan oshmasin.
-5. Noto‘g‘ri taxmin qilmang.
-6. Agar ma’lumot yetarli bo‘lmasa, "Bu ma’lumot aniqlashtirilishi kerak" deb yozing.
-
-JAVOB FORMATI:
-- Qisqa texnik tushuntirish
-- Kerak bo‘lsa 1-2 punkt
-- Grammatik jihatdan to‘g‘ri o‘zbek tilida
+Faqat o‘zbek tilida javob bering.
+Inglizcha termin ishlatmang.
+Javob 4–6 gapdan oshmasin.
+Agar savol tizimga tegishli bo‘lmasa:
+"Iltimos, faqat Stat-Urmon tizimiga oid savol bering."
 """
 
+
+# ============================================================
+# 7. ERP CONTEXT
+# ============================================================
 
 ERP_CONTEXT = """
-Stat-Urmon ERP tizimi:
-- Report modeli deadline asosida yaratiladi
-- Har bir reportda StatementColumn mavjud
-- Reja (plan) va Amalda (actual) qiymatlar mavjud
-- Viloyat Jami barcha tashkilot reportlari yig‘indisi
-- Respublika Jami barcha viloyat jami yig‘indisi
+Stat-Urmon tizimi:
+- Hisobotlar muddat asosida yaratiladi.
+- Har bir hisobot bo‘lim va qatorlardan iborat.
+- Reja — oldindan belgilangan ma’lumot.
+- Amalda — bajarilgan natija.
+- Viloyat jami — viloyatdagi barcha tashkilot hisobotlari yig‘indisi.
+- Respublika jami — barcha viloyatlar yig‘indisi.
 """
 
 
+# ============================================================
+# 8. MAIN PROMPT BUILDER
+# ============================================================
+
 def build_prompt(user_question: str) -> str:
-    system = build_system_prompt()
-    return f"{system}\n\nERP KONTEKST:\n{ERP_CONTEXT}\n\nUser savoli:\n{user_question}\n\nJavob:"
+    language = detect_language(user_question)
+    system_prompt = build_system_prompt(language)
+
+    return f"""
+{system_prompt}
+
+Tizim haqida:
+{ERP_CONTEXT}
+
+Savol:
+{user_question}
+
+Javob:
+"""

@@ -9,7 +9,7 @@ from apps.ai.services.throttle import AIDailyThrottle
 
 class AIChatView(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_classes = [AIDailyThrottle]
+    # throttle_classes = [AIDailyThrottle]
 
     def post(self, request):
         serializer = AIRequestSerializer(data=request.data)
