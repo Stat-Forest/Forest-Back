@@ -10,6 +10,7 @@ Language = Literal["uz", "ru"]
 
 CYRILLIC_PATTERN = re.compile(r"[а-яА-ЯёЁ]")
 
+
 def detect_language(text: str) -> Language:
     """
     Tilni aniqlash:
@@ -51,6 +52,9 @@ GREETINGS = {
     "assalomu alaykum",
     "alaykum",
     "salomlar",
+    "привет",
+    "здравствуйте",
+    "здраствуйте",
 }
 
 META_QUESTIONS = {
@@ -113,6 +117,7 @@ def fuzzy_match(word: str, keyword: str) -> bool:
 # ============================================================
 
 Category = Literal["greeting", "meta", "domain", "off_topic"]
+
 
 def classify_question(question: str) -> Category:
     normalized = normalize_text(question)
