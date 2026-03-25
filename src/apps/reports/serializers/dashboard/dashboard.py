@@ -11,3 +11,7 @@ class DashboardStatSerializer(serializers.Serializer):
     on_time_reports = serializers.IntegerField()
     late_reports = serializers.IntegerField()
     expired_deadlines = serializers.IntegerField()
+    total_reports = serializers.IntegerField()
+    father_statements = serializers.IntegerField()
+    child_statements = serializers.IntegerField()
+

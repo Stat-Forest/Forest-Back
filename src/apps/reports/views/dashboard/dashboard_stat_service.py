@@ -2,7 +2,7 @@ from datetime import date
 from django.core.cache import cache
 from django.db.models import Exists, OuterRef
 
-from apps.reports.models import Report, Deadline, Plan
+from apps.reports.models import Report, Deadline, Plan,Statement
 from apps.users.models import CustomUser
 
 DASHBOARD_CACHE_TTL = 10
@@ -172,6 +172,7 @@ class DashboardStatService:
         plans = ctx["plans"]
 
         return {
+            "total_reports": reports.count(),
             "sent_reports": reports.filter(
                 status=Report.StatusChoices.SENT
             ).count(),
@@ -196,4 +197,6 @@ class DashboardStatService:
                 time_status=Report.TimeStatus.LATE
             ).count(),
             "expired_deadlines": self._get_expired_deadlines_count(deadlines),
+            "father_statements": Statement.objects.filter(parent__isnull=True).count(),
+            "child_statements": Statement.objects.filter(parent__isnull=False).count(),
         }
