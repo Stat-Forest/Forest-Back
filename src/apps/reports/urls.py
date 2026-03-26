@@ -56,7 +56,7 @@ from apps.reports.views.select_report import ReportAggregateSelectedAPIView
 
 from apps.reports.views.plant_column import PlantListAPIView
 
-from apps.report_admin_stat.views import StatementReportStatView, StatementReportExportView
+from apps.report_admin_stat.views import StatementReportStatView
 
 urlpatterns = [
 
@@ -66,7 +66,7 @@ urlpatterns = [
     # ====================  DASHBOARD URL   ====================
     path('dashboard/', DashboardStatListView.as_view(), name='dashboard'),
     path('dashboard/statement-stats/', StatementReportStatView.as_view(), name='statement-stats'),
-    path('dashboard/stats/export/', StatementReportExportView.as_view(), name='statement-stats-export'),
+
 
     # ====================  DEADLINE URL    ====================
     path('deadlines/', DeadlineListAPIView.as_view(), name='deadline-list'),

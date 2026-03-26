@@ -10,8 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from .services import StatementReportStatService
 from .serializers import StatementStatResponseSerializer
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Dashboards"])
@@ -31,22 +30,7 @@ class StatementReportStatView(APIView):
 
 
 @extend_schema(
-    tags=["Dashboards"],
-    parameters=[
-        OpenApiParameter(
-            name='format',
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            required=False,
-            default='excel',
-            enum=['excel', 'csv'],
-            description="Eksport formati: 'excel' (default) yoki 'csv'",
-        )
-    ],
-    responses={
-        200: OpenApiTypes.BINARY,
-    },
-    description="Statistikani Excel yoki CSV formatda yuklab olish",
+    tags=["Stats Export"],
 )
 class StatementReportExportView(APIView):
     permission_classes = [IsAuthenticated]
@@ -91,7 +75,7 @@ class StatementReportExportView(APIView):
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
         response['Content-Disposition'] = f'attachment; filename="statement_statistics_{timestamp}.csv"'
-        response.write('\ufeff')  # BOM for Excel UTF-8
+        response.write('\ufeff')
 
         writer = csv.writer(response)
         writer.writerow([
