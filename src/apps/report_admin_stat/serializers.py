@@ -3,8 +3,9 @@ from rest_framework import serializers
 
 
 class StatRowSerializer(serializers.Serializer):
-    id        = serializers.IntegerField()
+    id        = serializers.UUIDField()
     name      = serializers.CharField()
+    count     = serializers.IntegerField()
     saved     = serializers.IntegerField()
     sent      = serializers.IntegerField()
     cancelled = serializers.IntegerField()
@@ -17,6 +18,7 @@ class FatherStatementStatSerializer(StatRowSerializer):
 
 
 class TotalsSerializer(serializers.Serializer):
+    count     = serializers.IntegerField()
     saved     = serializers.IntegerField()
     sent      = serializers.IntegerField()
     cancelled = serializers.IntegerField()
