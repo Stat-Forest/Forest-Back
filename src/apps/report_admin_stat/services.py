@@ -40,7 +40,7 @@ class StatementReportStatService:
     def _get_all_children(self, statement):
         """Rekursiv barcha child statementlarni olish"""
         children = []
-        direct_children = Statement.objects.filter(parent=statement, is_used=True)
+        direct_children = Statement.objects.filter(parent=statement)
         for child in direct_children:
             children.append(child)
             children.extend(self._get_all_children(child))
