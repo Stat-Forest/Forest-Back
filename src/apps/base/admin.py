@@ -1,5 +1,3 @@
-# base/admin.py
-
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.utils import timezone
