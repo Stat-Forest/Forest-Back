@@ -51,6 +51,7 @@ JAZZMIN_SETTINGS = {
         # App with dropdown menu to all its models pages (Permissions checked against models)
         {"app": "reports"},
         {"app": "general"},
+        {"app": "ai"},
     ],
 
     #############
@@ -80,7 +81,7 @@ JAZZMIN_SETTINGS = {
     "hide_models": [],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
-    "order_with_respect_to": ["users", "reports", "report_admin_stat", "general"],
+    "order_with_respect_to": ["users", "reports", "report_admin_stat", "general", "ai"],
 
     # Custom links to append to app groups, keyed on app name
     "custom_links": {
@@ -117,6 +118,9 @@ JAZZMIN_SETTINGS = {
 
         "report_admin_stat.ReportStatistics": "fas fa-chart-pie",
         "report_admin_stat.StatementStatistics": "fas fa-chart-bar",
+
+        "ai.KnowledgeDocument": "fas fa-file-alt",
+        "ai.KnowledgeChunk": "fas fa-brain",
 
         "logs.HistoryActionJournal": "fas fa-history",
         "admin.LogEntry": "fas fa-history",
@@ -156,21 +160,21 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "horizontal_tabs",
     # override change forms on a per modeladmin basis
     "changeform_format_overrides": {
-    # Users app
-    "users.CustomUser": "horizontal_tabs",
-    "users.PersonalInfo": "collapsible",
+        # Users app
+        "users.CustomUser": "horizontal_tabs",
+        "users.PersonalInfo": "collapsible",
 
-    # Reports app
-    "reports.Report": "horizontal_tabs",
-    "reports.Statement": "horizontal_tabs",
-    "reports.Deadline": "horizontal_tabs",
-    "reports.Plan": "horizontal_tabs",
-    "reports.StatementColumn": "collapsible",
+        # Reports app
+        "reports.Report": "horizontal_tabs",
+        "reports.Statement": "horizontal_tabs",
+        "reports.Deadline": "horizontal_tabs",
+        "reports.Plan": "horizontal_tabs",
+        "reports.StatementColumn": "collapsible",
 
-    # General app
-    "general.Organization": "vertical_tabs",
-    "general.Announcement": "horizontal_tabs",
-},
+        # General app
+        "general.Organization": "vertical_tabs",
+        "general.Announcement": "horizontal_tabs",
+    },
 }
 
 JAZZMIN_UI_TWEAKS = {
