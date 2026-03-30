@@ -40,7 +40,7 @@ class StatementReportStatService:
     def _get_all_children(self, statement):
         """Rekursiv barcha child statementlarni olish"""
         children = []
-        direct_children = Statement.objects.filter(parent=statement, is_used=True)
+        direct_children = Statement.objects.filter(parent=statement)
         for child in direct_children:
             children.append(child)
             children.extend(self._get_all_children(child))
@@ -75,15 +75,18 @@ class StatementReportStatService:
             for child in children:
                 child_reports = base_qs.filter(statement_id=child.id)
                 child_stat = self._build_stat(child_reports)
+                child_children_count = Statement.objects.filter(parent=child, is_used=True).count()
                 children_data.append({
-                    "id":   child.id,
-                    "name": getattr(child, 'name_uz', child.name),
+                    "id":    child.id,
+                    "name":  getattr(child, 'name_uz', child.name),
+                    "count": child_children_count,
                     **child_stat,
                 })
 
             result.append({
                 "id":       parent.id,
                 "name":     getattr(parent, 'name_uz', parent.name),
+                "count":    len(children),
                 "children": children_data,
                 **parent_stat,
             })
@@ -93,6 +96,7 @@ class StatementReportStatService:
     def get_totals(self, statistics):
         """ЖАМИ qatorini hisoblash"""
         return {
+            "count":     sum(s["count"]     for s in statistics),
             "saved":     sum(s["saved"]     for s in statistics),
             "sent":      sum(s["sent"]      for s in statistics),
             "cancelled": sum(s["cancelled"] for s in statistics),
