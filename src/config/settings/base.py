@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-DEBUG = False
+DEBUG = True
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.logs.apps.LogsConfig",
     "apps.information_analytical.apps.InformationAnalyticalConfig",
     "apps.report_admin_stat.apps.ReportAdminStatConfig",
+    "apps.ai.apps.AiConfig",
 ]
 
 # ===============================
@@ -132,6 +133,9 @@ AUTH_USER_MODEL = "users.CustomUser"
 # ===============================
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

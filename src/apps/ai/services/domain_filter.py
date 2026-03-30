@@ -1,146 +1,84 @@
-import re
-import unicodedata
 from typing import Literal
 
-# ============================================================
-# 1. LANGUAGE DETECTION
-# ============================================================
+from apps.ai.services.terminology_normalizer import TerminologyNormalizer
 
 Language = Literal["uz", "ru"]
 
-CYRILLIC_PATTERN = re.compile(r"[а-яА-ЯёЁ]")
-
 
 def detect_language(text: str) -> Language:
-    """
-    Tilni aniqlash:
-    - Agar kirill harf bo‘lsa → ru
-    - Aks holda → uz
-    """
-    if CYRILLIC_PATTERN.search(text):
+    normalized = TerminologyNormalizer.normalize_text(text)
+    cyrillic_count = sum(1 for ch in normalized if "\u0400" <= ch <= "\u04FF")
+    if cyrillic_count > 3:
         return "ru"
     return "uz"
 
 
-# ============================================================
-# 2. NORMALIZATION
-# ============================================================
-
-def normalize_text(text: str) -> str:
-    """
-    Matnni:
-    - unicode normalize
-    - kichik harf
-    - o'/g' standartlashtirish
-    - punctuation olib tashlash
-    """
-    text = unicodedata.normalize("NFKD", text)
-    text = text.encode("ascii", "ignore").decode("ascii")
-    text = text.lower()
-    text = text.replace("o'", "o").replace("g'", "g")
-    text = re.sub(r"[^\w\s]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+def _contains_greeting(text: str) -> bool:
+    greetings = [
+        "salom",
+        "assalomu alaykum",
+        "привет",
+        "zdravstvuyte",
+    ]
+    return any(g in text for g in greetings)
 
 
-# ============================================================
-# 3. KEYWORD SETLAR
-# ============================================================
-
-GREETINGS = {
-    "salom",
-    "assalomu alaykum",
-    "alaykum",
-    "salomlar",
-    "привет",
-    "здравствуйте",
-    "здраствуйте",
-}
-
-META_QUESTIONS = {
-    "nima qila olasan",
-    "nimalarni bilasan",
-    "qanday savollarga javob berasan",
-    "kim san",
-    "kimsan",
-}
-
-STAT_URMON_KEYWORDS = {
-    "hisobot",
-    "reja",
-    "amalda",
-    "foiz",
-    "viloyat",
-    "respublika",
-    "tuman",
-    "ormon",
-    "kochat",
-    "nihol",
-    "muddat",
-    "jami",
-    "yigindi",
-    "tashkilot",
-    "bolim",
-    "qator",
-    "eimzo",
-    "imzo",
-    "kirish",
-    "tizim",
-}
+def _contains_meta(text: str) -> bool:
+    meta_patterns = [
+        "sen kimsan",
+        "siz kimsiz",
+        "nima yordam bera olasan",
+        "nimalarni bilasan",
+        "what can you do",
+        "who are you",
+        "что ты умеешь",
+    ]
+    return any(p in text for p in meta_patterns)
 
 
-# ============================================================
-# 4. FUZZY MATCH (YAXSHILANGAN)
-# ============================================================
-
-def fuzzy_match(word: str, keyword: str) -> bool:
-    if word == keyword:
-        return True
-
-    if word.startswith(keyword):
-        return True
-
-    if keyword in word:
-        return True
-
-    # kelishik qo‘shimchalari
-    if word.endswith(("ga", "da", "ni", "dan", "lar")):
-        base = word[:-2]
-        if base == keyword:
-            return True
-
-    return False
-
-
-# ============================================================
-# 5. CLASSIFICATION
-# ============================================================
-
-Category = Literal["greeting", "meta", "domain", "off_topic"]
-
-
-def classify_question(question: str) -> Category:
-    normalized = normalize_text(question)
+def classify_question(question: str) -> str:
+    normalized = TerminologyNormalizer.normalize_text(question)
 
     if not normalized:
         return "off_topic"
 
-    # Greeting
-    for greeting in GREETINGS:
-        if greeting in normalized:
-            return "greeting"
+    domain_signal = TerminologyNormalizer.is_domain_specific(normalized)
 
-    # Meta
-    for meta in META_QUESTIONS:
-        if meta in normalized:
-            return "meta"
+    # greeting faqat sof greeting bo'lsa ishlaydi
+    if _contains_greeting(normalized) and not domain_signal and len(normalized.split()) <= 3:
+        return "greeting"
 
-    # Domain
-    words = normalized.split()
+    if _contains_meta(normalized) and not domain_signal:
+        return "meta"
 
-    for word in words:
-        for keyword in STAT_URMON_KEYWORDS:
-            if fuzzy_match(word, keyword):
-                return "domain"
+    if domain_signal:
+        return "domain"
+
+    soft_domain_patterns = [
+        "qanday ishlaydi",
+        "qanday yaratiladi",
+        "qanday hisoblanadi",
+        "qanday yuboriladi",
+        "qachon yaratiladi",
+        "farqi nima",
+        "qabul qilingan",
+        "hisoboti",
+        "ustun",
+        "jadval",
+        "tashkilot",
+        "hisobot",
+        "muddat",
+        "reja",
+        "statement",
+        "deadline",
+        "plan",
+        "urug'",
+        "ko'chat",
+        "nihol",
+        "daromad",
+        "jamg'arma",
+    ]
+    if any(p in normalized for p in soft_domain_patterns):
+        return "domain"
 
     return "off_topic"
