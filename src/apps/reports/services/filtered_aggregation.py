@@ -47,19 +47,39 @@ def parse_period(period: str) -> PeriodRange:
 # ============================================================
 # Column rules with caching
 # ============================================================
-
 @lru_cache(maxsize=128)
-def _is_calculated_column_calc(col_data: tuple) -> bool:
-    """Cached version of is_calculated_column"""
-    is_user_input, title_uz, title_ru, title = col_data
-
-    if is_user_input is False:
+def is_calculated_column(col) -> bool:
+    if getattr(col, "calculate_expression", None):
         return True
 
-    titles = " ".join([x for x in [title_uz, title_ru, title] if x]).lower()
-    if ("%" in titles) or ("foiz" in titles) or ("percent" in titles) or ("процент" in titles):
+    if getattr(col, "is_user_input", True) is False:
         return True
+
+    titles = [
+        getattr(col, "title", None),
+        getattr(col, "title_uz", None),
+        getattr(col, "title_ru", None),
+    ]
+    t = " ".join([x for x in titles if x]).lower()
+
+    if ("%" in t) or ("foiz" in t) or ("percent" in t) or ("процент" in t):
+        return True
+
     return False
+
+
+# @lru_cache(maxsize=128)
+# def _is_calculated_column_calc(col_data: tuple) -> bool:
+#     """Cached version of is_calculated_column"""
+#     is_user_input, title_uz, title_ru, title = col_data
+#
+#     if is_user_input is False:
+#         return True
+#
+#     titles = " ".join([x for x in [title_uz, title_ru, title] if x]).lower()
+#     if ("%" in titles) or ("foiz" in titles) or ("percent" in titles) or ("процент" in titles):
+#         return True
+#     return False
 
 
 def is_calculated_column(col) -> bool:
@@ -225,10 +245,17 @@ class StatementDataCache:
         ))
 
     def is_aggregatable_from_cache(self, col_id: str) -> bool:
-        if col_id not in self.col_data_cache:
+        col = self.by_id.get(col_id)
+        if not col:
             return False
-        data = self.col_data_cache[col_id]
-        return not _is_calculated_column_calc(data[:4])
+
+        return not is_calculated_column(col)
+
+    # def is_aggregatable_from_cache(self, col_id: str) -> bool:
+    #     if col_id not in self.col_data_cache:
+    #         return False
+    #     data = self.col_data_cache[col_id]
+    #     return not _is_calculated_column_calc(data[:4])
 
     def get_column_path(self, col_id: str, lang: str) -> str:
         col = self.by_id.get(col_id)
@@ -538,6 +565,8 @@ def _create_report_items(report: Report, totals: Dict[str, Dict[str | None, Deci
     # Numeric columnlar uchun itemlar yaratish
     numeric_items = []
     for cid in totals.keys():
+        if cid in org_name_cols:
+            continue
         numeric_items.append(
             ReportItem(
                 report=report,
@@ -545,33 +574,47 @@ def _create_report_items(report: Report, totals: Dict[str, Dict[str | None, Deci
             )
         )
 
-    if numeric_items:
-        created_numeric_items = ReportItem.objects.bulk_create(numeric_items)
+    numeric_items = []
+    numeric_cids = []
 
-        # Har bir item uchun innerlar yaratish
-        for item, (cid, per_plant) in zip(created_numeric_items, totals.items()):
-            # Plantlar bo'yicha sort
-            plant_keys = sorted(
-                [k for k in per_plant.keys() if k],
-                key=lambda k: plant_map.get(k, "")
+    for cid, per_plant in totals.items():
+        if cid in org_name_cols:
+            continue
+
+        numeric_items.append(
+            ReportItem(
+                report=report,
+                statement_column_id=cid
+            )
+        )
+        numeric_cids.append(cid)
+
+    created_numeric_items = ReportItem.objects.bulk_create(numeric_items)
+
+    for item, cid in zip(created_numeric_items, numeric_cids):
+        per_plant = totals[cid]
+
+        plant_keys = sorted(
+            [k for k in per_plant.keys() if k],
+            key=lambda k: plant_map.get(k, "")
+        )
+
+        for pk in plant_keys:
+            inners_to_create.append(
+                ReportItemInner(
+                    report_item=item,
+                    plant_id=pk,
+                    value=str(per_plant[pk])
+                )
             )
 
-            for pk in plant_keys:
-                inners_to_create.append(
-                    ReportItemInner(
-                        report_item=item,
-                        plant_id=pk,
-                        value=str(per_plant[pk])
-                    )
+        if None in per_plant:
+            inners_to_create.append(
+                ReportItemInner(
+                    report_item=item,
+                    value=str(per_plant[None])
                 )
-
-            if None in per_plant:
-                inners_to_create.append(
-                    ReportItemInner(
-                        report_item=item,
-                        value=str(per_plant[None])
-                    )
-                )
+            )
 
     # Bulk create innerlar
     if inners_to_create:
@@ -611,6 +654,11 @@ def rebuild_general_for_deadline(statement, deadline_id: str, region_key: str,
         calculate_general_report(general)
     except Exception as e:
         logger.error(f"[FILTERED][GENERAL] calculate_general_report error: {e}")
+    try:
+        if getattr(general.statement, "calculate_expression", None):
+            calculate_by_expressions(general)
+    except Exception as e:
+        logger.error(f"[FILTERED][GENERAL] calculate_by_expressions error: {e}")
 
     return Report.objects.filter(id=general.id).prefetch_related(_prefetch_items_qs()).first()
 
@@ -655,6 +703,11 @@ def rebuild_republic_for_deadline(statement, deadline_id: str, general_reports: 
         calculate_general_report(rep)
     except Exception as e:
         logger.error(f"[FILTERED][REPUBLIC] calculate_general_report error: {e}")
+    try:
+        if getattr(rep.statement, "calculate_expression", None):
+            calculate_by_expressions(rep)
+    except Exception as e:
+        logger.error(f"[FILTERED][REPUBLIC] calculate_by_expressions error: {e}")
 
     return Report.objects.filter(id=rep.id).prefetch_related(_prefetch_items_qs()).first()
 
