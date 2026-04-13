@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 
@@ -36,8 +37,8 @@ def send_reset_password_email(email, code):
     email_message = EmailMultiAlternatives(
         subject=subject,
         body=text_content,
-        from_email="tolqinovoybek92@gmail.com",
-        to=[email]
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[email],
     )
     email_message.attach_alternative(html_content, "text/html")
     email_message.send()
