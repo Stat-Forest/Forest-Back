@@ -3,6 +3,8 @@ import socket
 from pathlib import Path
 from dotenv import load_dotenv
 
+from datetime import timedelta
+
 load_dotenv()
 
 # ===============================
@@ -12,9 +14,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-DEBUG = True
+PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
+
+DEBUG = False
 
 CORS_ALLOW_CREDENTIALS = True
+
+DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"
 
 CORS_ALLOWED_ORIGINS = [
     "https://forest.yutori.uz",
@@ -50,6 +56,7 @@ INSTALLED_APPS = [
     "jazzmin",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "drf_yasg",
     "django_filters",
     "corsheaders",
@@ -91,14 +98,13 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 
-    #CustomMiddleWare for Enter Admin
+    # CustomMiddleWare for Enter Admin
     "django.contrib.auth.middleware.AuthenticationMiddleware",
 
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.logs.middleware.CurrentUserMiddleware",
 ]
-
 
 ROOT_URLCONF = "config.urls"
 
@@ -127,6 +133,29 @@ WSGI_APPLICATION = "config.wsgi.application"
 # 🧱 DATABASES & AUTH
 # ===============================
 AUTH_USER_MODEL = "users.CustomUser"
+
+AUTHENTICATION_BACKENDS = [
+    "apps.authentications.backends.EmailBackend",
+]
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+    {
+        "NAME": "apps.authentications.service.password_validators.StrongPasswordValidator",
+    },
+]
 
 # ===============================
 # 🗂️ STATIC & MEDIA
@@ -185,4 +214,3 @@ INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]
 REDIS_HOST = "localhost"
 REDIS_PORT = 6379
 REDIS_DB = 0
-
