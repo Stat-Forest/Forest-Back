@@ -1,37 +1,48 @@
 from drf_spectacular.utils import extend_schema
-
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.exceptions import InvalidToken
 
-from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.authentications.serializers import (
+    SendResetCodeSerializer,
+    VerifyResetCodeSerializer,
+    NewPasswordSerializer,
+)
 from apps.base.views import CustomGenericAPIView
-from apps.authentications.serializers import (SendResetCodeSerializer,
-                                              VerifyResetCodeSerializer,
-                                              NewPasswordSerializer)
+from apps.base.exceptions.exception_files import CustomExceptionError
+from apps.authentications.service.throttles import ResetCodeIPThrottle
 
 
 @extend_schema(tags=["authentications"])
 class SendResetCodeAPIView(CustomGenericAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ResetCodeIPThrottle]
     serializer_class = SendResetCodeSerializer
 
     def post(self, request):
-        serializer = SendResetCodeSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"detail": "We sent verify code."})
+        return Response(
+            {"detail": "Agar email tizimda mavjud bo‘lsa, tasdiqlash kodi yuborildi."},
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["authentications"])
 class VerifyCodeAPIView(CustomGenericAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ResetCodeIPThrottle]
     serializer_class = VerifyResetCodeSerializer
 
     def post(self, request):
-        serializer = VerifyResetCodeSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tokens = serializer.create_tokens()
-        return Response(tokens)
+        return Response(tokens, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["authentications"])
@@ -40,15 +51,18 @@ class NewPasswordAPIView(CustomGenericAPIView):
     serializer_class = NewPasswordSerializer
 
     def post(self, request):
-        print(">>> Authorization:", request.headers.get("Authorization"))
-        print(">>> request.user =", request.user)
-        print(">>> is_authenticated =", request.user.is_authenticated)
+        validated_token = getattr(request, "auth", None)
+        if not validated_token:
+            raise CustomExceptionError(code=401, detail="Token topilmadi.")
 
-        user = request.user
-        if not user or not user.is_authenticated:
-            raise CustomExceptionError(code=401, detail="Token is missing or invalid.")
+        if not validated_token.get("pwd_reset"):
+            raise InvalidToken("Ushbu token parolni tiklash uchun yaroqsiz.")
 
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"detail": "Password was changed successfully."})
+
+        return Response(
+            {"detail": "Parol muvaffaqiyatli yangilandi."},
+            status=status.HTTP_200_OK,
+        )
