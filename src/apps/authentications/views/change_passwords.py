@@ -12,8 +12,10 @@ class ChangePasswordAPIView(CustomGenericAPIView):
     serializer_class = ChangePasswordSerializer
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"detail": "password was changed successfully!!!"})
-        return Response(serializer.errors, status=400)
+        serializer = self.get_serializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Parol muvaffaqiyatli o‘zgartirildi."},
+            status=200
+        )

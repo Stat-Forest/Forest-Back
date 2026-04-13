@@ -4,7 +4,7 @@ REST_FRAMEWORK = {
     # JWT-only authentication. Session auth is disabled to prevent CSRF risks.
     # -------------------------------------------------------------------------
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.authentications.service.authentication.CustomJWTAuthentication',
     ],
     # -------------------------------------------------------------------------
     # Permissions
@@ -33,9 +33,12 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '30/min',    # Unauthenticated: 30 requests per minute
-        'user': '120/min',   # Authenticated: 120 requests per minute
-        'burst': '10/min',   # Scope-based burst limit for sensitive endpoints (login, OTP, etc.)
+        'anon': '30/min',  # Unauthenticated: 30 requests per minute
+        'user': '120/min',  # Authenticated: 120 requests per minute
+        'burst': '10/min',  # Scope-based burst limit for sensitive endpoints (login, OTP, etc.)
+        'login_ip': '10/min',
+        'login_email': '5/min',
+        'reset_code_ip': '5/min',
     },
 
     # -------------------------------------------------------------------------
@@ -167,13 +170,13 @@ REST_FRAMEWORK = {
     'HTML_SELECT_CUTOFF_TEXT': "More than {count} items...",
 }
 
-
 # -------------------------------------------------------------------------
 # Enable BrowsableAPIRenderer only in DEBUG mode.
 # This prevents exposing the interactive API UI in production,
 # which could leak endpoint structure and facilitate manual probing.
 # -------------------------------------------------------------------------
 from django.conf import settings as django_settings  # noqa: E402
+
 if django_settings.DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append(
         'rest_framework.renderers.BrowsableAPIRenderer'
