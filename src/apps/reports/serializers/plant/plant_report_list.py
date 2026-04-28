@@ -1,12 +1,38 @@
 import re
 from uuid import UUID
-from apps.reports.models import StatementColumn
+
 from django.utils.translation import gettext_lazy as _
+
+from apps.reports.models import StatementColumn, Report
 from apps.reports.serializers.reports import ReportListSerializer
+from apps.reports.services.quarter_validator import DaromadQuarterService
 from apps.utils.translation import get_lang_code, get_translated_field
 
 
 class PlantReportListSerializer(ReportListSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if DaromadQuarterService.is_daromad_report(instance):
+            data["quarter"] = instance.quarter
+            data["current_quarter"] = instance.current_quarter
+            data["quarter_info"] = {
+                "quarter_1_status": instance.quarter_1_status,
+                "quarter_2_status": instance.quarter_2_status,
+                "quarter_3_status": instance.quarter_3_status,
+                "quarter_4_status": instance.quarter_4_status,
+                "quarter_1_dates": DaromadQuarterService.get_quarter_dates(instance, "q1"),
+                "quarter_2_dates": DaromadQuarterService.get_quarter_dates(instance, "q2"),
+                "quarter_3_dates": DaromadQuarterService.get_quarter_dates(instance, "q3"),
+                "quarter_4_dates": DaromadQuarterService.get_quarter_dates(instance, "q4"),
+            }
+        else:
+            data["quarter"] = None
+            data["current_quarter"] = None
+            data["quarter_info"] = None
+
+        return data
+
     def get_report_items(self, report):
         lang = get_lang_code(self.context)
 
@@ -26,12 +52,14 @@ class PlantReportListSerializer(ReportListSerializer):
             organization_name = _("Viloyat darajasidagi Jami")
         elif getattr(report, "is_individual_general", False):
             organization_id = "individual"
-            organization_name = f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
+            organization_name = (
+                f"{get_translated_field(report.organization, 'name', lang)} – {_('Tashkilot Jami')}"
+            )
         elif report.is_republic:
             organization_id = "republic"
             organization_name = {
                 "uz": "Respublika Jami",
-                "ru": "Республиканский итог"
+                "ru": "Республиканский итог",
             }.get(lang, "Respublika Jami")
         else:
             organization_id = str(report.organization.id) if report.organization else "unknown"
@@ -42,10 +70,11 @@ class PlantReportListSerializer(ReportListSerializer):
 
         items = list(report.report_items.all())
 
-        # is_user_input filter qo‘llanilyapti
         if is_user_input_filter is not None:
-            items = [i for i in items if
-                     i.statement_column and i.statement_column.is_user_input == is_user_input_filter]
+            items = [
+                i for i in items
+                if i.statement_column and i.statement_column.is_user_input == is_user_input_filter
+            ]
 
         def ordering_key(ordering: str):
             if not ordering:
@@ -54,8 +83,8 @@ class PlantReportListSerializer(ReportListSerializer):
 
         items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
-        all_columns = StatementColumn.objects.filter(statement=report.statement).select_related("parent")
-        column_map = {str(col.id): col for col in all_columns}
+        # Serializer contextdan ishlatamiz — har report uchun qayta query yo‘q
+        column_map = self.context.get("statement_columns", {})
 
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
@@ -70,7 +99,13 @@ class PlantReportListSerializer(ReportListSerializer):
 
         statement_columns = []
 
-        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
+        def ilova_sort_key(value: str):
+            try:
+                return int(value)
+            except Exception:
+                return value
+
+        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=ilova_sort_key):
             for item in grouped_by_ilova[ilova_ordering]:
                 column = item.statement_column
                 if column is None:
@@ -104,11 +139,11 @@ class PlantReportListSerializer(ReportListSerializer):
                     "statement_column_name": self.get_full_column_path(column, lang, column_map),
                     "is_organization": column.is_organization,
                     "status_plan": column.status_plan if column.status_plan else None,
-                    "inners": inner_values
+                    "inners": inner_values,
                 })
 
         return [{
             "organization_id": organization_id,
             "organization_name": organization_name,
-            "statement_columns": statement_columns
+            "statement_columns": statement_columns,
         }]

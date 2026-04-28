@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
+from apps.reports.services.quarter_validator import DaromadQuarterService
 
 
 class ReportSendSerializer(serializers.ModelSerializer):
@@ -18,23 +19,34 @@ class ReportSendSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instance: Report = self.instance
         if instance.status != Report.StatusChoices.SAVED:
-            raise CustomExceptionError(code=400, detail=_("Report must be in SAVED state to be sent."))
+            raise CustomExceptionError(
+                code=400,
+                detail=_("Report must be in SAVED state to be sent.")
+            )
         return attrs
 
     def save(self, **kwargs):
         instance: Report = self.instance
         user = self.context["request"].user
 
-        # 1. Asl reportni yuborish
         instance.status = Report.StatusChoices.SENT
         if not instance.sent_at:
             instance.sent_at = timezone.now()
         instance.sent_by = user
         instance.sent_by_org = getattr(user, "organization", None)
         instance.sent_by_role = getattr(user, "role", None)
-        instance.save(update_fields=["status", "sent_at", "sent_by", "sent_by_org", "sent_by_role"])
 
-        # 2. Tegishli viloyat jami (regional general) ham agar mavjud bo‘lsa va SAVED bo‘lsa SENT qilinadi
+        update_fields = ["status", "sent_at", "sent_by", "sent_by_org", "sent_by_role"]
+
+        if DaromadQuarterService.is_daromad_report(instance) and instance.current_quarter:
+            status_field = DaromadQuarterService.get_quarter_status_field(instance.current_quarter)
+            setattr(instance, status_field, Report.StatusChoices.SENT)
+            DaromadQuarterService.mark_quarter_sent(instance, instance.current_quarter)
+            update_fields.extend([status_field, "quarter_status_dates"])
+
+        instance.save(update_fields=list(dict.fromkeys(update_fields)))
+
+        # Eski logika saqlanadi: regional general report ham SAVED bo'lsa SENT qilinadi
         if instance.organization and instance.statement and instance.deadline:
             regional_general = Report.objects.filter(
                 organization=None,
@@ -43,6 +55,7 @@ class ReportSendSerializer(serializers.ModelSerializer):
                 statement=instance.statement,
                 deadline=instance.deadline
             ).first()
+
             if regional_general and regional_general.status == Report.StatusChoices.SAVED:
                 regional_general.status = Report.StatusChoices.SENT
                 if not regional_general.sent_at:
@@ -53,8 +66,5 @@ class ReportSendSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        if instance.sent_at:
-            rep["sent_at"] = instance.sent_at.strftime("%Y-%m-%d %H:%M")
-        else:
-            rep["sent_at"] = None
+        rep["sent_at"] = instance.sent_at.strftime("%Y-%m-%d %H:%M") if instance.sent_at else None
         return rep
