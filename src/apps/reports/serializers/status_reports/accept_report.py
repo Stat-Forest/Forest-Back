@@ -5,6 +5,7 @@ from rest_framework import serializers
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
 from apps.reports.services.general_report import aggregate_general_report
+from apps.reports.services.quarter_validator import DaromadQuarterService
 
 
 class ReportAcceptSerializer(serializers.Serializer):
@@ -24,11 +25,9 @@ class ReportAcceptSerializer(serializers.Serializer):
     def save(self, **kwargs):
         instance: Report = self.context["report_instance"]
 
-        # 1) STATUS → ACCEPTED
         instance.status = Report.StatusChoices.ACCEPTED
         instance.accepted_at = timezone.now()
 
-        # 2) TIME STATUS LOGIC
         deadline = instance.deadline
         if deadline and deadline.deadline_at:
             report_date = instance.created_at.date()
@@ -39,10 +38,16 @@ class ReportAcceptSerializer(serializers.Serializer):
             else:
                 instance.time_status = Report.TimeStatus.LATE
 
-        # 3) SAQLASH
-        instance.save(update_fields=["status", "accepted_at", "time_status"])
+        update_fields = ["status", "accepted_at", "time_status"]
 
-        # 4) GENERAL REPORT AGGREGATION
+        if DaromadQuarterService.is_daromad_report(instance) and instance.current_quarter:
+            status_field = DaromadQuarterService.get_quarter_status_field(instance.current_quarter)
+            setattr(instance, status_field, Report.StatusChoices.ACCEPTED)
+            DaromadQuarterService.mark_quarter_accepted(instance, instance.current_quarter)
+            update_fields.extend([status_field, "quarter_status_dates"])
+
+        instance.save(update_fields=list(dict.fromkeys(update_fields)))
+
         aggregate_general_report(
             instance.statement,
             instance.deadline,

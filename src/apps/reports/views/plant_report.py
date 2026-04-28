@@ -1,14 +1,12 @@
 from django.db.models import Prefetch
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from apps.reports.models import Report, Plant, StatementColumn, ReportItem, ReportItemInner
-from apps.base.views import CustomListAPIView, CustomRetrieveAPIView, CustomUpdateAPIView
+from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
 from apps.reports.serializers.plant import UniversalPlantReportCreateSerializer, PlantReportUpdateSerializer, \
     PlantReportUpdateReadSerializer
 from apps.reports.serializers.plant.plant_report_delete import PlantReportDeleteSerializer
@@ -52,12 +50,22 @@ class PlantListReportAPIView(CustomListAPIView):
     serializer_class = PlantReportListSerializer
 
     def get_queryset(self):
-        return Report.objects.filter(is_plant_based=True).select_related(
-            "organization", "statement", "deadline", "sent_by", "sent_by_org"
-        ).prefetch_related(
-            "report_items__statement_column__parent",
-            "report_items__inners__plant"
-        ).order_by("-created_at")
+        return (
+            Report.objects
+            .filter(is_plant_based=True)
+            .select_related(
+                "organization",
+                "statement",
+                "deadline",
+                "sent_by",
+                "sent_by_org",
+            )
+            .prefetch_related(
+                "report_items__statement_column__parent",
+                "report_items__inners__plant",
+            )
+            .order_by("-created_at")
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -65,14 +73,20 @@ class PlantListReportAPIView(CustomListAPIView):
         lang = self.request.query_params.get("lang", "uz").lower()
         context["lang"] = lang if lang in ("uz", "ru") else "uz"
 
-        # 🔥 BARCHA statement column’larni BIR MARTA
-        columns = (
-            StatementColumn.objects
-            .select_related("parent")
+        # Barcha statement columnlarni bir marta olib, serializerga uzatamiz
+        columns = StatementColumn.objects.select_related("parent").only(
+            "id",
+            "statement_id",
+            "parent_id",
+            "ordering",
+            "title",
+            "title_uz",
+            "title_ru",
+            "is_organization",
+            "status_plan",
+            "is_user_input",
         )
-        context["statement_columns"] = {
-            str(c.id): c for c in columns
-        }
+        context["statement_columns"] = {str(c.id): c for c in columns}
 
         return context
 
@@ -80,27 +94,39 @@ class PlantListReportAPIView(CustomListAPIView):
 @extend_schema(tags=["Plant-Reports"])
 class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
     """
-    API endpoint for plant-based reports
+    Plant-based reportlar uchun GET/UPDATE endpoint.
+    Daromad bo'lsa quarter workflow ishlaydi,
+    qolgan statementlar esa eski update oqimida qoladi.
     """
-    queryset = Report.objects.filter(
-        is_plant_based=True
-    ).select_related(
-        'statement',
-        'deadline',
-        'organization'
-    ).prefetch_related(
-        Prefetch(
-            'report_items',
-            queryset=ReportItem.objects.select_related(
-                'statement_column'
+
+    def get_queryset(self):
+        base_qs = Report.objects.filter(is_plant_based=True)
+
+        if self.request.method == "GET":
+            return base_qs.select_related(
+                "statement",
+                "deadline",
+                "organization",
             ).prefetch_related(
                 Prefetch(
-                    'inners',
-                    queryset=ReportItemInner.objects.select_related('plant')
+                    "report_items",
+                    queryset=ReportItem.objects.select_related(
+                        "statement_column"
+                    ).prefetch_related(
+                        Prefetch(
+                            "inners",
+                            queryset=ReportItemInner.objects.select_related("plant")
+                        )
+                    )
                 )
             )
+
+        # UPDATE uchun yengilroq queryset kifoya
+        return base_qs.select_related(
+            "statement",
+            "deadline",
+            "organization",
         )
-    )
 
     def get_serializer_class(self):
         if self.request.method == "GET":

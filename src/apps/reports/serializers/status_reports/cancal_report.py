@@ -6,10 +6,11 @@ from rest_framework import serializers
 from apps.reports.models import Report
 from apps.base.serializers import CustomModelSerializer
 from apps.reports.services.general_report import aggregate_general_report
+from apps.reports.services.quarter_validator import DaromadQuarterService
 
 
 class ReportCancelSerializer(CustomModelSerializer):
-    id = serializers.UUIDField(write_only=True, required=True) 
+    id = serializers.UUIDField(write_only=True, required=True)
     cancel_reason = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -20,11 +21,9 @@ class ReportCancelSerializer(CustomModelSerializer):
     def validate(self, attrs):
         instance: Report = self.instance
 
-        # Agar report allaqachon CANCELLED bo'lsa - xato
         if instance.status == Report.StatusChoices.CANCELLED:
             raise ValidationError(_("Report already cancelled."))
 
-        # cancel_reason majburiy (aslida required=True buni o‘zi tekshiradi)
         if not attrs.get("cancel_reason"):
             raise ValidationError(_("Cancel reason is required when cancelling a report."))
 
@@ -34,16 +33,20 @@ class ReportCancelSerializer(CustomModelSerializer):
         instance: Report = self.instance
         previous_status = instance.status
 
-        # Statusni majburan CANCELLED qilish
         instance.status = Report.StatusChoices.CANCELLED
         instance.cancel_reason = self.validated_data["cancel_reason"]
-
-        # cancelled_at har safar yangilanadi
         instance.cancelled_at = timezone.now()
 
-        instance.save(update_fields=["status", "cancel_reason", "cancelled_at"])
+        update_fields = ["status", "cancel_reason", "cancelled_at"]
 
-        # Agar oldin ACCEPTED bo'lsa va endi CANCELLED bo'lsa - umumiy hisobotni qayta hisoblash
+        if DaromadQuarterService.is_daromad_report(instance) and instance.current_quarter:
+            status_field = DaromadQuarterService.get_quarter_status_field(instance.current_quarter)
+            setattr(instance, status_field, Report.StatusChoices.CANCELLED)
+            DaromadQuarterService.mark_quarter_cancelled(instance, instance.current_quarter)
+            update_fields.extend([status_field, "quarter_status_dates"])
+
+        instance.save(update_fields=list(dict.fromkeys(update_fields)))
+
         if previous_status == Report.StatusChoices.ACCEPTED:
             aggregate_general_report(
                 instance.statement,
