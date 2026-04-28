@@ -10,20 +10,19 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportSendAPIView(DRFHistoryMixin,UpdateModelMixin, GenericAPIView):
+class ReportSendAPIView(DRFHistoryMixin, UpdateModelMixin, GenericAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportSendSerializer
-
     permission_classes = [CanSendReport]
 
     def get_object(self):
-        report_id = self.request.data.get('id')
+        report_id = self.request.data.get("id")
         if not report_id:
-            raise ValidationError({'id': 'This field is required.'})
+            raise ValidationError({"id": "This field is required."})
         try:
             obj = self.get_queryset().get(id=report_id)
         except Report.DoesNotExist:
-            raise NotFound('Report not found.')
+            raise NotFound("Report not found.")
         self.check_object_permissions(self.request, obj)
         return obj
 

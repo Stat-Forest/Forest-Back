@@ -11,7 +11,7 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportAcceptAPIView(DRFHistoryMixin,UpdateAPIView):
+class ReportAcceptAPIView(DRFHistoryMixin, UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
     permission_classes = [CanAcceptReport]
