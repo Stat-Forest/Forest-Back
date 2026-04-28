@@ -11,13 +11,12 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportCancelAPIView(DRFHistoryMixin,UpdateAPIView):
+class ReportCancelAPIView(DRFHistoryMixin, UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCancelSerializer
     permission_classes = [CanCancelReport]
 
     def get_object(self):
-        # Report ID body orqali olinadi
         report_id = self.request.data.get("id")
         if not report_id:
             raise CustomExceptionError(
@@ -37,7 +36,6 @@ class ReportCancelAPIView(DRFHistoryMixin,UpdateAPIView):
         return report
 
     def post(self, request, *args, **kwargs):
-        # POST so‘rovni ham UpdateAPIView orqali ishlatish uchun
         return self.update(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
