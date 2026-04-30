@@ -49,12 +49,12 @@ def _pick_best_value(inners: list) -> str:
 
 
 def export_universal_report_to_excel_v2(
-    reports: List[Dict[str, Any]],
-    *,
-    filename_prefix: str = "report_export",
-    lang: str = "uz",
-    statement_id: Optional[str] = None,
-    aggregated_mode: bool = False,
+        reports: List[Dict[str, Any]],
+        *,
+        filename_prefix: str = "report_export",
+        lang: str = "uz",
+        statement_id: Optional[str] = None,
+        aggregated_mode: bool = False,
 ) -> Tuple[str, str]:
     from apps.reports.models import StatementColumn
 
@@ -118,7 +118,8 @@ def export_universal_report_to_excel_v2(
     )
     id_map = {str(c.id): c for c in all_cols}
 
-    def is_org(c): return getattr(c, "is_organization", False)
+    def is_org(c):
+        return getattr(c, "is_organization", False)
 
     export_ids = {cid for cid in needed_ids if cid in id_map and not is_org(id_map[cid])}
     included_ids = set(export_ids)
@@ -285,6 +286,7 @@ def export_universal_report_to_excel_v2(
             rep_items = report.get("report_items") or []
             if not rep_items:
                 continue
+
             # The serializer returns a single dict inside report_items with organization_id
             org_block = rep_items[0] if rep_items else {}
             org_id_tag = org_block.get("organization_id")  # "general", "republic", "individual" or UUID
@@ -298,18 +300,34 @@ def export_universal_report_to_excel_v2(
             # 1) For Viloyat/Respublika Jami rows: one row with aggregated values
             if is_general_rep or is_republic_rep:
                 values = {}
+
                 for item in rep_items:
                     for col in item.get("statement_columns") or []:
                         cid = str(col.get("statement_column_id"))
                         if cid in leaf_ids:
                             values[cid] = _pick_best_value(col.get("inners") or [])
+
                 row_values = [row_no, org_name] + [values.get(cid, "") for cid in leaf_ids]
                 ws.append(row_values)
+
+                # ✅ Viloyat Jami / Respublika Jami rowlarini qora jirniy qilish
+                jami_row_idx = ws.max_row
+
+                for cell in ws[jami_row_idx]:
+                    cell.font = Font(bold=True)
+                    cell.border = thin_border
+                    cell.alignment = Alignment(
+                        horizontal="center",
+                        vertical="center",
+                        wrap_text=True,
+                    )
+
                 continue
 
-            # 2) For normal organizations: expand multiple inners into dynamic rows (like normal mode)
+            # 2) For normal organizations: expand multiple inners into dynamic rows
             #    but DO NOT append an extra "Tashkilot Jami" row in aggregated mode.
             per_col_inners: Dict[str, list] = {cid: [] for cid in leaf_ids}
+
             for item in rep_items:
                 for col in item.get("statement_columns") or []:
                     cid = str(col.get("statement_column_id"))
@@ -324,30 +342,64 @@ def export_universal_report_to_excel_v2(
             # Emit a row per inner index; use the same hierarchical row_no in the first column for all rows
             for r_idx in range(row_count or 0):
                 row_values = [row_no, org_name]
+
                 for cid in leaf_ids:
                     inners = per_col_inners.get(cid, [])
                     val = ""
+
                     if r_idx < len(inners):
                         val = str((inners[r_idx] or {}).get("value") or "")
+
                     row_values.append(val)
+
                 ws.append(row_values)
 
         # Style borders/alignment for aggregated rows
         data_end_row = ws.max_row
-        for row in ws.iter_rows(min_row=data_start_row, max_row=data_end_row, min_col=1, max_col=total_cols):
+
+        for row in ws.iter_rows(
+                min_row=data_start_row,
+                max_row=data_end_row,
+                min_col=1,
+                max_col=total_cols,
+        ):
             for cell in row:
                 cell.border = thin_border
-                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                cell.alignment = Alignment(
+                    horizontal="center",
+                    vertical="center",
+                    wrap_text=True,
+                )
+
+                # ✅ Bu joy muhim:
+                # Agar row "Viloyat Jami" yoki "Respublika Jami" bo'lsa,
+                # final styling paytida ham bold saqlanadi.
+                org_name_cell_value = str(ws.cell(row=cell.row, column=2).value or "").lower()
+                if "viloyat jami" in org_name_cell_value or "respublika jami" in org_name_cell_value:
+                    cell.font = Font(bold=True)
+
         # Column widths and save as usual
         for col in range(1, ws.max_column + 1):
             letter = get_column_letter(col)
+
             if col == 1:
                 ws.column_dimensions[letter].width = 8
                 continue
+
             ws.column_dimensions[letter].width = min(
-                max(8, min(max(len(str(ws.cell(r, col).value or "")) for r in range(1, ws.max_row + 1)) + 1, 28)),
-                28
+                max(
+                    8,
+                    min(
+                        max(
+                            len(str(ws.cell(r, col).value or ""))
+                            for r in range(1, ws.max_row + 1)
+                        ) + 1,
+                        28,
+                    ),
+                ),
+                28,
             )
+
         wb.save(file_path)
         return file_path, filename
 
@@ -448,7 +500,8 @@ def export_universal_report_to_excel_v2(
                             except Exception:
                                 # ignore non-numeric
                                 pass
-                total_row.append(str(int(col_total)) if seen and float(col_total).is_integer() else (str(col_total) if seen else ""))
+                total_row.append(
+                    str(int(col_total)) if seen and float(col_total).is_integer() else (str(col_total) if seen else ""))
 
             ws.append(total_row)
             continue
