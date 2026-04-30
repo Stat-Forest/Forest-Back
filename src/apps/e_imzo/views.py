@@ -188,6 +188,9 @@ class EimzoLoginView(views.APIView):
         )
 
         logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
+        from django.utils import timezone
+        user.last_activity = timezone.now()
+        user.save(update_fields=["last_activity"])
 
         # ← SHU YERGA QO'SHING
         response_data = {
