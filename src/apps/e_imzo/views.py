@@ -188,20 +188,24 @@ class EimzoLoginView(views.APIView):
         )
 
         logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
+        from django.utils import timezone
+        user.last_activity = timezone.now()
+        user.save(update_fields=["last_activity"])
 
-        return Response(
-            {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "email": user.email,
-                "role": user.role,
-                "user_id": user.id,
-                "full_name": user.full_name or cn,
-                "organization": organization_name,
-                "is_new_user": created,
-            },
-            status=status.HTTP_200_OK
-        )
+        # ← SHU YERGA QO'SHING
+        response_data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "email": user.email,
+            "role": user.role,
+            "user_id": user.id,
+            "full_name": user.full_name or cn,
+            "organization": organization_name,
+            "is_new_user": created,
+        }
+        logger.warning(f"=== FINAL RESPONSE === {response_data}")
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["E-imzo"])
