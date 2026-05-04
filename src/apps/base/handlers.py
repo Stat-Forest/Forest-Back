@@ -14,7 +14,6 @@ def custom_exception_handler(exc, context):
         wait_minutes = round(wait_seconds / 60, 1)
         wait_hours = round(wait_seconds / 3600, 1)
 
-        # AI endpointlar uchun AI limit message
         if "/api/v1/ai/" in path or "/ai/" in path:
             return Response(
                 {
@@ -25,7 +24,6 @@ def custom_exception_handler(exc, context):
                 status=429,
             )
 
-        # Login/auth endpointlar uchun normal login throttle message
         if "/api/v1/authentications/" in path or "/authentications/" in path:
             return Response(
                 {
@@ -36,7 +34,6 @@ def custom_exception_handler(exc, context):
                 status=429,
             )
 
-        # Boshqa endpointlar uchun umumiy throttle message
         return Response(
             {
                 "detail": "Juda ko‘p so‘rov yuborildi. Keyinroq qayta urinib ko‘ring.",
