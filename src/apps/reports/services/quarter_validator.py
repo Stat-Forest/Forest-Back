@@ -4,10 +4,9 @@ from dataclasses import dataclass
 from typing import Iterable, Optional
 from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
-
 from apps.reports.models import Report, StatementColumn
 
 
@@ -28,24 +27,28 @@ class DaromadQuarterService:
     - Q2 faqat Q1 ACCEPTED bo'lsa ochiladi.
     - Q3 faqat Q2 ACCEPTED bo'lsa ochiladi.
     - Q4 faqat Q3 ACCEPTED bo'lsa ochiladi.
-    - User faqat har quarter uchun belgilangan AMALDA orderinglarga qiymat kiritadi.
-    - status_plan bor rejalik columnlarga tegilmaydi.
-    - is_organization=True columnlarga tegilmaydi.
-    - Boshqa statementlar uchun bu service ishlatilmaydi.
+    - report.status doim "kamida bitta ACCEPTED quarter bor" holatini aks ettiradi:
+        * Birorta ACCEPTED quarter bor → report.status = ACCEPTED
+        * Hech biri ACCEPTED emas     → report.status = SAVED
+      Bu ReportListAPIView va filtered-general'da report ko'rinishini ta'minlaydi.
     """
 
     QUARTER_ORDER: tuple[str, ...] = ("q1", "q2", "q3", "q4")
     DAROMAD_NAMES: tuple[str, ...] = ("Daromad",)
 
     QUARTER_INPUT_ORDERINGS: dict[str, tuple[str, ...]] = {
-        "q1": ("1.3.2.1.2", "1.3.2.2.2", "1.3.2.3.2"),
-        "q2": ("1.4.2.1.2", "1.4.2.2.2", "1.4.2.3.2"),
-        "q3": ("1.5.2.1.2", "1.5.2.2.2", "1.5.2.3.2"),
-        "q4": ("1.6.2.1.2", "1.6.2.2.2", "1.6.2.3.2"),
+        "q1": ("1.3.2.1.2", "1.3.2.2.2", "1.3.2.3.2", "1.3.1.2"),
+        "q2": ("1.4.2.1.2", "1.4.2.2.2", "1.4.2.3.2", "1.4.1.2"),
+        "q3": ("1.5.2.1.2", "1.5.2.2.2", "1.5.2.3.2", "1.5.1.2"),
+        "q4": ("1.6.2.1.2", "1.6.2.2.2", "1.6.2.3.2", "1.6.1.2"),
     }
 
     COMMON_ALLOWED_PREFIXES: tuple[str, ...] = ("1.1",)
     QUARTER_DATE_KEYS: tuple[str, ...] = ("saved_at", "sent_at", "accepted_at", "cancelled_at")
+
+    # ----------------------------------------------------------------
+    # Statement / report type checks
+    # ----------------------------------------------------------------
 
     @classmethod
     def is_daromad_statement(cls, statement) -> bool:
@@ -56,6 +59,34 @@ class DaromadQuarterService:
     @classmethod
     def is_daromad_report(cls, report: Report) -> bool:
         return cls.is_daromad_statement(report.statement)
+
+    # ----------------------------------------------------------------
+    # FIX: report.status ni to'g'ri hisoblash
+    # ----------------------------------------------------------------
+
+    @classmethod
+    def compute_report_status(cls, report: Report) -> str:
+        """
+        Daromad report'ining umumiy status'ini hisoblaydi.
+
+        Qoidasi:
+          - Kamida bitta quarter ACCEPTED bo'lsa → report.status = ACCEPTED
+            (viloyat jamida va list'da ko'rinishi uchun)
+          - Hech biri ACCEPTED emas             → report.status = SAVED
+
+        Bu logika report.status'ni current_quarter statusiga bog'lamasdan,
+        butun report'ning "qabul qilinganmi" holatini to'g'ri ifodalaydi.
+        """
+        for q in cls.QUARTER_ORDER:
+            quarter_num = q[-1]
+            status = getattr(report, f"quarter_{quarter_num}_status", None)
+            if status == Report.StatusChoices.ACCEPTED:
+                return Report.StatusChoices.ACCEPTED
+        return Report.StatusChoices.SAVED
+
+    # ----------------------------------------------------------------
+    # Validation
+    # ----------------------------------------------------------------
 
     @classmethod
     def validate_create(
@@ -150,16 +181,12 @@ class DaromadQuarterService:
             statement=statement,
             id__in=list(column_ids),
         ).only(
-            "id",
-            "ordering",
-            "title",
-            "title_uz",
-            "is_organization",
-            "status_plan",
+            "id", "ordering", "title", "title_uz",
+            "is_organization", "status_plan",
         )
 
-        found_ids = {str(column.id) for column in columns}
-        requested_ids = {str(column_id) for column_id in column_ids}
+        found_ids = {str(c.id) for c in columns}
+        requested_ids = {str(cid) for cid in column_ids}
         missing = requested_ids - found_ids
         if missing:
             raise ValidationError({
@@ -174,16 +201,15 @@ class DaromadQuarterService:
         for column in columns:
             if column.is_organization:
                 continue
-
             if column.status_plan:
                 continue
-
-            if allow_common and any(column.ordering.startswith(prefix) for prefix in cls.COMMON_ALLOWED_PREFIXES):
+            if allow_common and any(
+                column.ordering.startswith(prefix)
+                for prefix in cls.COMMON_ALLOWED_PREFIXES
+            ):
                 continue
-
             if column.ordering in current_quarter_orderings:
                 continue
-
             if column.ordering in other_quarter_orderings:
                 continue
 
@@ -194,6 +220,10 @@ class DaromadQuarterService:
                     f"{cls.get_quarter_display(quarter)} uchun ruxsat etilmagan."
                 )
             })
+
+    # ----------------------------------------------------------------
+    # Quarter ordering helpers
+    # ----------------------------------------------------------------
 
     @classmethod
     def get_manual_input_orderings(cls, quarter: str) -> list[str]:
@@ -210,14 +240,11 @@ class DaromadQuarterService:
 
     @classmethod
     def get_next_available_quarter(cls, report: Report) -> Optional[str]:
-        if report.get_quarter_status("q1") != Report.StatusChoices.ACCEPTED:
-            return "q1"
-        if report.get_quarter_status("q2") != Report.StatusChoices.ACCEPTED:
-            return "q2"
-        if report.get_quarter_status("q3") != Report.StatusChoices.ACCEPTED:
-            return "q3"
-        if report.get_quarter_status("q4") != Report.StatusChoices.ACCEPTED:
-            return "q4"
+        for q in cls.QUARTER_ORDER:
+            quarter_num = q[-1]
+            status = getattr(report, f"quarter_{quarter_num}_status", None)
+            if status != Report.StatusChoices.ACCEPTED:
+                return q
         return None
 
     @classmethod
@@ -226,7 +253,11 @@ class DaromadQuarterService:
         current_quarter = report.current_quarter or next_quarter
 
         can_create = cls.is_daromad_report(report) and next_quarter == "q1"
-        can_update = cls.is_daromad_report(report) and next_quarter is not None and next_quarter != "q1"
+        can_update = (
+            cls.is_daromad_report(report)
+            and next_quarter is not None
+            and next_quarter != "q1"
+        )
 
         return QuarterAccessInfo(
             current_quarter=current_quarter,
@@ -235,48 +266,60 @@ class DaromadQuarterService:
             can_update=can_update,
         )
 
+    # ----------------------------------------------------------------
+    # FIX: prepare_report_for_create va prepare_report_for_update
+    # ----------------------------------------------------------------
+
     @classmethod
     def prepare_report_for_create(cls, *, report: Report, quarter: str) -> None:
         """
-        Faqat Daromad create paytida ishlaydi.
-        Q1 dan boshlanadi va quarter_1_status SAVED bo'ladi.
-        Shu vaqtda quarter_status_dates ham yangilanadi.
+        Q1 create paytida chaqiriladi.
+        Q1 hali ACCEPTED emas → report.status = SAVED.
         """
         if not cls.is_daromad_report(report):
             return
 
         report.quarter = quarter
         report.current_quarter = quarter
-        report.status = Report.StatusChoices.SAVED
 
+        # Q1 status
         if quarter == "q1" and not report.quarter_1_status:
             report.quarter_1_status = Report.StatusChoices.SAVED
+
+        # report.status — hech qanday quarter ACCEPTED emas → SAVED
+        report.status = cls.compute_report_status(report)
 
         cls.mark_quarter_saved(report, quarter)
 
     @classmethod
     def prepare_report_for_update(cls, *, report: Report, quarter: str) -> None:
         """
-        Faqat Daromad update paytida ishlaydi.
+        QN update paytida chaqiriladi (N >= 2).
 
-        Workflow:
-        - current quarter yangilanadi
-        - report.status doim current quarter uchun SAVED ga tushadi
-        - mos quarter_X_status ham SAVED bo'ladi
-        - oldingi quarter statuslariga tegilmaydi
-        - quarter_status_dates ichida saved_at yangilanadi
+        FIX:
+        - Joriy quarter'ning status_field'ini SAVED qilamiz.
+        - report.status'ni compute_report_status() orqali hisoblaymiz.
+          Bu Q1=ACCEPTED bo'lsa report.status=ACCEPTED bo'lib qolishini kafolatlaydi.
+        - Oldingi quarter statuslariga TEGMAYMIZ.
         """
         if not cls.is_daromad_report(report):
             return
 
         report.quarter = quarter
         report.current_quarter = quarter
-        report.status = Report.StatusChoices.SAVED
 
+        # Joriy quarter'ni SAVED qilamiz
         status_field = cls.get_quarter_status_field(quarter)
         setattr(report, status_field, Report.StatusChoices.SAVED)
 
+        # FIX: report.status = kamida bitta ACCEPTED bor → ACCEPTED, aks holda SAVED
+        report.status = cls.compute_report_status(report)
+
         cls.mark_quarter_saved(report, quarter)
+
+    # ----------------------------------------------------------------
+    # Quarter status field helpers
+    # ----------------------------------------------------------------
 
     @classmethod
     def get_quarter_status_field(cls, quarter: str) -> str:
@@ -287,20 +330,20 @@ class DaromadQuarterService:
         if quarter not in cls.QUARTER_ORDER:
             return None
         idx = cls.QUARTER_ORDER.index(quarter)
-        if idx == 0:
-            return None
-        return cls.QUARTER_ORDER[idx - 1]
+        return cls.QUARTER_ORDER[idx - 1] if idx > 0 else None
 
     @classmethod
     def get_quarter_display(cls, quarter: str) -> str:
-        choices = dict(Report.QuarterChoices.choices)
-        return choices.get(quarter, quarter)
+        return dict(Report.QuarterChoices.choices).get(quarter, quarter)
+
+    # ----------------------------------------------------------------
+    # Quarter status dates
+    # ----------------------------------------------------------------
 
     @classmethod
     def get_quarter_dates(cls, report: Report, quarter: str) -> dict:
         data = cls._ensure_quarter_status_dates(report)
         quarter_data = data.get(quarter, cls._empty_quarter_dates())
-
         return {
             "saved_at": cls._format_quarter_date_for_response(quarter_data.get("saved_at")),
             "sent_at": cls._format_quarter_date_for_response(quarter_data.get("sent_at")),
@@ -332,17 +375,10 @@ class DaromadQuarterService:
         date_key: str,
         when: Optional[datetime] = None,
     ) -> None:
-        """
-        report.quarter_status_dates ichida kerakli quarter/date field ni yangilaydi.
-        Query urmaydi, faqat in-memory objectni o'zgartiradi.
-        save(update_fields=[...]) tashqarida qilinadi.
-        """
         if not cls.is_daromad_report(report):
             return
-
         if quarter not in cls.QUARTER_ORDER:
             return
-
         if date_key not in cls.QUARTER_DATE_KEYS:
             return
 
@@ -352,22 +388,16 @@ class DaromadQuarterService:
 
     @classmethod
     def _ensure_quarter_status_dates(cls, report: Report) -> dict:
-        """
-        quarter_status_dates ni har doim to'liq strukturaga keltiradi.
-        default=dict bo'lgani uchun eski reportlarda {} bo'lishi mumkin.
-        """
         payload = report.quarter_status_dates or {}
-
         normalized = {}
         for quarter in cls.QUARTER_ORDER:
-            quarter_payload = payload.get(quarter) or {}
+            q_data = payload.get(quarter) or {}
             normalized[quarter] = {
-                "saved_at": quarter_payload.get("saved_at"),
-                "sent_at": quarter_payload.get("sent_at"),
-                "accepted_at": quarter_payload.get("accepted_at"),
-                "cancelled_at": quarter_payload.get("cancelled_at"),
+                "saved_at": q_data.get("saved_at"),
+                "sent_at": q_data.get("sent_at"),
+                "accepted_at": q_data.get("accepted_at"),
+                "cancelled_at": q_data.get("cancelled_at"),
             }
-
         report.quarter_status_dates = normalized
         return normalized
 
@@ -392,10 +422,8 @@ class DaromadQuarterService:
     def _format_quarter_date_for_response(value: str | None) -> str | None:
         if not value:
             return None
-
         try:
-            dt = datetime.fromisoformat(value)
-            return dt.strftime("%Y-%m-%d %H:%M")
+            return datetime.fromisoformat(value).strftime("%Y-%m-%d %H:%M")
         except Exception:
             return value
 
