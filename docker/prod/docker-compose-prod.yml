@@ -8,8 +8,10 @@ services:
       - ../../.env
     entrypoint: ["/entrypoint.sh"]
     command: >
-      gunicorn config.wsgi:application
+      gunicorn config.asgi:application
+      -k uvicorn.workers.UvicornWorker
       --bind 0.0.0.0:8000
+      --workers 4
       --access-logfile /var/log/forest-back/gunicorn-access.log
       --error-logfile /var/log/forest-back/gunicorn-error.log
     volumes:
