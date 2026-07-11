@@ -18,6 +18,11 @@ PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
 
 DEBUG = False
 
+# DEBUG = os.environ.get(
+#     "DEBUG",
+#     "False",
+# ) == "True"
+
 CORS_ALLOW_CREDENTIALS = True
 
 DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"
@@ -44,6 +49,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://forest.yutori.uz",
     "http://localhost:5173",
     "http://localhost:5174",
+    "http://localhost:3000",
     "https://stat-urmon.uz",
 ]
 
@@ -52,6 +58,7 @@ CSRF_TRUSTED_ORIGINS = [
 # ===============================
 INSTALLED_APPS = [
     # 3rd party
+    "daphne",
     "modeltranslation",
     "jazzmin",
     "rest_framework",
@@ -62,6 +69,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "debug_toolbar",
+    "channels",
 
     # Django defaults
     "django.contrib.admin",
@@ -84,6 +92,7 @@ INSTALLED_APPS = [
     "apps.information_analytical.apps.InformationAnalyticalConfig",
     "apps.report_admin_stat.apps.ReportAdminStatConfig",
     "apps.ai.apps.AiConfig",
+    "apps.chat.apps.ChatsConfig"
 ]
 
 # ===============================
@@ -128,6 +137,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+ASGI_APPLICATION = "config.asgi.application"
 
 # ===============================
 # 🧱 DATABASES & AUTH
@@ -211,6 +222,15 @@ INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips]
 # ===============================
 # 🔥 REDIS (if used)
 # ===============================
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_DB = 0
+REDIS_HOST = os.environ.get("REDIS_HOST", "forest_redis")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
+REDIS_DB_CHANNELS = 2
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB_CHANNELS}"],
+        },
+    },
+}
