@@ -40,15 +40,8 @@ class CanAccessConversation(BasePermission):
     Rules
 
     - Conversation owner can access.
-
-    - Any SupportAdmin can access.
-
-      This is required because a support administrator
-      must be able to open NEW conversations before
-      assigning them to himself.
+    - Any support administrator can access.
     """
-
-    SUPPORT_GROUP = "SupportAdmin"
 
     @classmethod
     async def check(
@@ -61,7 +54,7 @@ class CanAccessConversation(BasePermission):
         if conversation.user_id == user.id:
             return
 
-        if user.groups.filter(name=cls.SUPPORT_GROUP).exists():
+        if user.role == CustomUser.Role.SUPPORT_ADMIN:
             return
 
         raise ConversationAccessDenied(
@@ -71,18 +64,16 @@ class CanAccessConversation(BasePermission):
 
 class CanSendMessage(BasePermission):
     """
-    Validate whether user can send message.
+    Validate whether user can send messages.
 
     Rules
 
     User:
         Can send only inside his own conversation.
 
-    SupportAdmin:
+    Support administrator:
         Can send only if conversation is assigned to him.
     """
-
-    SUPPORT_GROUP = "SupportAdmin"
 
     @classmethod
     async def check(
@@ -95,7 +86,7 @@ class CanSendMessage(BasePermission):
         if conversation.user_id == user.id:
             return
 
-        if user.groups.filter(name=cls.SUPPORT_GROUP).exists():
+        if user.role == CustomUser.Role.SUPPORT_ADMIN:
 
             if conversation.assigned_to_id != user.id:
                 raise ConversationAccessDenied(
@@ -115,8 +106,6 @@ class CanCloseConversation(BasePermission):
     can close conversation.
     """
 
-    SUPPORT_GROUP = "SupportAdmin"
-
     @classmethod
     async def check(
         cls,
@@ -125,9 +114,7 @@ class CanCloseConversation(BasePermission):
         conversation: Conversation,
     ) -> None:
 
-        if not user.groups.filter(
-            name=cls.SUPPORT_GROUP,
-        ).exists():
+        if user.role != CustomUser.Role.SUPPORT_ADMIN:
             raise SupportPermissionDenied(
                 "Support administrator permissions required."
             )
