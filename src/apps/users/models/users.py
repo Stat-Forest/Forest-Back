@@ -21,6 +21,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         TASHKILOT_RAHBARI = "tashkilot_rahbari", _("Tashkilot rahbari")
         TASHKILOT_HODIMI = "tashkilot_hodimi", _("Tashkilot hodimi")
         HUDUDIY_BOSHQARMA = "hududiy_boshqarma", _("Hududiy boshqarma")
+        SUPPORT_ADMIN = "support_admin", "Support Admin"
 
     class Gender(models.TextChoices):
         MALE = "male", _("Male")
