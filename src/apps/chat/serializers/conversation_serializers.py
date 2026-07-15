@@ -5,6 +5,23 @@ from apps.chat.models import Conversation
 from apps.users.models import CustomUser
 
 
+def _serialize_user(user: CustomUser | None) -> dict | None:
+    """
+    Shared lightweight user representation used across
+    conversation serializers.
+    """
+    if user is None:
+        return None
+
+    return {
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "role": user.role,
+    }
+
+
 class ConversationCreateSerializer(serializers.Serializer):
     """
     Empty serializer.
@@ -19,6 +36,7 @@ class ConversationListSerializer(CustomModelSerializer):
     Conversation list serializer.
     """
 
+    user = serializers.SerializerMethodField()
     assigned_to = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
 
@@ -27,6 +45,7 @@ class ConversationListSerializer(CustomModelSerializer):
 
         fields = (
             "id",
+            "user",
             "status",
             "assigned_to",
             "last_message_at",
@@ -34,17 +53,11 @@ class ConversationListSerializer(CustomModelSerializer):
             "unread_count",
         )
 
-    def get_assigned_to(self, obj):
-        if obj.assigned_to is None:
-            return None
+    def get_user(self, obj):
+        return _serialize_user(obj.user)
 
-        return {
-            "id": obj.assigned_to.id,
-            "full_name": (
-                f"{obj.assigned_to.first_name} "
-                f"{obj.assigned_to.last_name}"
-            ),
-        }
+    def get_assigned_to(self, obj):
+        return _serialize_user(obj.assigned_to)
 
     def get_unread_count(self, obj):
         user = self.context["request"].user
@@ -79,23 +92,8 @@ class ConversationDetailSerializer(CustomModelSerializer):
             "created_at",
         )
 
-    def _user_data(
-        self,
-        user: CustomUser | None,
-    ):
-        if user is None:
-            return None
-
-        return {
-            "id": user.id,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "role": user.role,
-        }
-
     def get_user(self, obj):
-        return self._user_data(obj.user)
+        return _serialize_user(obj.user)
 
     def get_assigned_to(self, obj):
-        return self._user_data(obj.assigned_to)
+        return _serialize_user(obj.assigned_to)
