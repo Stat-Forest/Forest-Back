@@ -95,10 +95,10 @@ def get_or_create_general_report(statement, deadline, region=None):
             general_report.save(update_fields=['deadline'])
 
     # 6) sent_by_role ni konsistent saqlaymiz
-    if region:
-        if general_report.sent_by_role != f"region:{region}":
-            general_report.sent_by_role = f"region:{region}"
-            general_report.save(update_fields=["sent_by_role"])
+    # if region:
+    #     if general_report.sent_by_role != f"region:{region}":
+    #         general_report.sent_by_role = f"region:{region}"
+    #         general_report.save(update_fields=["sent_by_role"])
 
     # 7) Flaglarni kafolatlaymiz
     updates = {}
@@ -160,11 +160,11 @@ def get_or_create_national_report(statement, deadline, region=None):
             national_report.save(update_fields=['deadline'])
 
     # 6) sent_by_role ni konsistent saqlaymiz
-    if region:
-        desired = f"national:{region}"
-        if national_report.sent_by_role != desired:
-            national_report.sent_by_role = desired
-            national_report.save(update_fields=["sent_by_role"])
+    # if region:
+    #     desired = f"national:{region}"
+    #     if national_report.sent_by_role != desired:
+    #         national_report.sent_by_role = desired
+    #         national_report.save(update_fields=["sent_by_role"])
 
     # 7) Flaglarni kafolatlaymiz
     updates = {}
