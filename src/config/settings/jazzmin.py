@@ -81,7 +81,7 @@ JAZZMIN_SETTINGS = {
     "hide_models": [],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
-    "order_with_respect_to": ["users", "reports", "report_admin_stat", "general", "ai"],
+    "order_with_respect_to": ["users", "reports", "report_admin_stat", "general", "ai", "chat"],
 
     # Custom links to append to app groups, keyed on app name
     "custom_links": {
@@ -121,6 +121,9 @@ JAZZMIN_SETTINGS = {
 
         "ai.KnowledgeDocument": "fas fa-file-alt",
         "ai.KnowledgeChunk": "fas fa-brain",
+
+        "chat.Conversation": "fas fa-comments",
+        "chat.Message": "fas fa-envelope",
 
         "logs.HistoryActionJournal": "fas fa-history",
         "admin.LogEntry": "fas fa-history",

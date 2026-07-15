@@ -16,7 +16,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
 
-DEBUG = False
+DEBUG = True
 
 # DEBUG = os.environ.get(
 #     "DEBUG",
