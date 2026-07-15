@@ -23,63 +23,63 @@ def build_message_created_event(
     }
 
 
-def build_conversation_created_event(
-    conversation: Conversation,
-) -> dict:
-    """
-    Broadcast newly created conversation.
-
-    Sent to all online support administrators.
-    """
-
-    return {
-        "event": "conversation_created",
-        "data": ConversationSerializer(conversation).data,
-    }
-
-
-def build_conversation_assigned_event(
-    conversation: Conversation,
-) -> dict:
-    """
-    Broadcast conversation assignment.
-
-    Used to remove NEW conversation
-    from other support administrators.
-    """
-
-    return {
-        "event": "conversation_assigned",
-        "data": ConversationSerializer(conversation).data,
-    }
+# def build_conversation_created_event(
+#     conversation: Conversation,
+# ) -> dict:
+#     """
+#     Broadcast newly created conversation.
+#
+#     Sent to all online support administrators.
+#     """
+#
+#     return {
+#         "event": "conversation_created",
+#         "data": ConversationSerializer(conversation).data,
+#     }
 
 
-def build_conversation_closed_event(
-    conversation: Conversation,
-) -> dict:
-    """
-    Broadcast conversation closing.
-    """
+# def build_conversation_assigned_event(
+#     conversation: Conversation,
+# ) -> dict:
+#     """
+#     Broadcast conversation assignment.
+#
+#     Used to remove NEW conversation
+#     from other support administrators.
+#     """
+#
+#     return {
+#         "event": "conversation_assigned",
+#         "data": ConversationSerializer(conversation).data,
+#     }
+#
+#
+# def build_conversation_closed_event(
+#     conversation: Conversation,
+# ) -> dict:
+#     """
+#     Broadcast conversation closing.
+#     """
+#
+#     return {
+#         "event": "conversation_closed",
+#         "data": ConversationSerializer(conversation).data,
+#     }
 
-    return {
-        "event": "conversation_closed",
-        "data": ConversationSerializer(conversation).data,
-    }
 
-
-def build_messages_read_event(
-    conversation_id: str,
-) -> dict:
-    """
-    Notify that messages were marked as read.
-    """
-
-    return {
-        "event": "messages_read",
-        "data": {
-            "conversation_id": str(conversation_id),
-        },
-    }
+# def build_messages_read_event(
+#     conversation_id: str,
+# ) -> dict:
+#     """
+#     Notify that messages were marked as read.
+#     """
+#
+#     return {
+#         "event": "messages_read",
+#         "data": {
+#             "conversation_id": str(conversation_id),
+#         },
+#     }
 
 
 def build_error_event(
