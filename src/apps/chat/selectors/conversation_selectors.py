@@ -90,7 +90,7 @@ def get_user_conversations(user: CustomUser) -> QuerySet[Conversation]:
 
     return (
         Conversation.objects
-        .select_related("assigned_to")
+        .select_related("user", "assigned_to")
         .filter(user=user)
         .order_by("-last_message_at")
     )
