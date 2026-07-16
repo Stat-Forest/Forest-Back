@@ -170,10 +170,12 @@ def mark_conversation_as_read(
         *,
         conversation_id: str,
         user: CustomUser,
-) -> None:
+) -> int:
     """
-    Mark all unread messages
-    as read for current user.
+    Mark all unread messages as read for current user.
+
+    Returns:
+        Number of messages that were marked as read.
     """
 
     try:
@@ -191,7 +193,7 @@ def mark_conversation_as_read(
         user=user,
     )
 
-    (
+    updated_count = (
         Message.objects
         .filter(
             conversation=conversation,
@@ -205,3 +207,5 @@ def mark_conversation_as_read(
             updated_by=user,
         )
     )
+
+    return updated_count
