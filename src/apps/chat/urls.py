@@ -10,7 +10,7 @@ from apps.chat.api.conversation_views import (
     SupportNewConversationListAPIView,
 )
 from apps.chat.api.message_views import (
-    ConversationMessagesAPIView,
+    ConversationMessagesAPIView, MarkConversationReadAPIView,
 )
 
 urlpatterns = [
@@ -39,6 +39,12 @@ urlpatterns = [
         "conversations/<uuid:conversation_id>/messages/",
         ConversationMessagesAPIView.as_view(),
         name="conversation-messages",
+    ),
+
+    path(
+        "conversations/<uuid:conversation_id>/mark-read/",
+        MarkConversationReadAPIView.as_view(),
+        name="conversation-mark-read",
     ),
 
     # ===============================
