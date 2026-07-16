@@ -1,0 +1,5789 @@
+openapi: 3.0.3
+info:
+  title: Forest API
+  version: 1.0.0
+  description: API documentation for the Forest application
+paths:
+  /api/v1/authentications/change-password/:
+    post:
+      operationId: api_v1_authentications_change_password_create
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - authentications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/authentications/forgot-password/new-password/:
+    post:
+      operationId: api_v1_authentications_forgot_password_new_password_create
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - authentications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NewPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NewPasswordRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/authentications/forgot-password/send-code/:
+    post:
+      operationId: api_v1_authentications_forgot_password_send_code_create
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - authentications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendResetCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendResetCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendResetCodeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendResetCode'
+          description: ''
+  /api/v1/authentications/forgot-password/verify-code/:
+    post:
+      operationId: api_v1_authentications_forgot_password_verify_code_create
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - authentications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyResetCodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyResetCodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyResetCodeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResetCode'
+          description: ''
+  /api/v1/authentications/login/:
+    post:
+      operationId: api_v1_authentications_login_create
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - authentications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /api/v1/authentications/token/refresh/:
+    post:
+      operationId: api_v1_authentications_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/chats/conversations/:
+    post:
+      operationId: api_v1_chats_conversations_create
+      description: Create new support conversation.
+      summary: Create a new support conversation
+      tags:
+      - Chat - User
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chats/conversations/{conversation_id}/:
+    get:
+      operationId: api_v1_chats_conversations_retrieve
+      description: Retrieve conversation details.
+      summary: Retrieve conversation details
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Chat - User
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+  /api/v1/chats/conversations/{conversation_id}/assign/:
+    post:
+      operationId: api_v1_chats_conversations_assign_create
+      description: Assign conversation to support admin.
+      summary: Assign a conversation to current support administrator
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chats/conversations/{conversation_id}/close/:
+    post:
+      operationId: api_v1_chats_conversations_close_create
+      description: Close support conversation.
+      summary: Close an assigned conversation
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chats/conversations/{conversation_id}/mark-read/:
+    post:
+      operationId: api_v1_chats_conversations_mark_read_create
+      description: |-
+        Mark all unread messages in a conversation as read,
+        WITHOUT re-fetching full message history.
+
+        Lightweight alternative to calling
+        GET /conversations/<id>/messages/ again just to
+        refresh read status.
+      summary: Mark unread messages as read without refetching history
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Chat - User
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chats/conversations/{conversation_id}/messages/:
+    get:
+      operationId: api_v1_chats_conversations_messages_retrieve
+      description: Return all messages of a conversation.
+      summary: Get all messages of a conversation (marks them as read)
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Chat - User
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+  /api/v1/chats/conversations/list/:
+    get:
+      operationId: api_v1_chats_conversations_list_retrieve
+      description: List current user's conversations.
+      summary: List current user's conversations
+      tags:
+      - Chat - User
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationList'
+          description: ''
+  /api/v1/chats/support/my/:
+    get:
+      operationId: api_v1_chats_support_my_retrieve
+      description: List assigned conversations.
+      summary: List conversations assigned to current support administrator
+      tags:
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationList'
+          description: ''
+  /api/v1/chats/support/new/:
+    get:
+      operationId: api_v1_chats_support_new_retrieve
+      description: List waiting conversations.
+      summary: List conversations waiting for a support administrator
+      tags:
+      - Chat - Support
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationList'
+          description: ''
+  /api/v1/e_imzo/challenge/:
+    get:
+      operationId: api_v1_e_imzo_challenge_retrieve
+      tags:
+      - E-imzo
+      security:
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/e_imzo/login/:
+    post:
+      operationId: api_v1_e_imzo_login_create
+      tags:
+      - E-imzo
+      security:
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/e_imzo/save-pkcs7/:
+    post:
+      operationId: api_v1_e_imzo_save_pkcs7_create
+      tags:
+      - E-imzo
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/e_imzo/verify-pkcs7/:
+    post:
+      operationId: api_v1_e_imzo_verify_pkcs7_create
+      tags:
+      - E-imzo
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/general/announcements/:
+    get:
+      operationId: api_v1_general_announcements_list
+      description: |-
+        API endpoint that returns active announcements.
+
+        Security:
+        - Accessible only for authenticated users.
+        - Language parameter is validated before usage.
+
+        Performance:
+        - Queryset is cached to reduce database load.
+        - Cache is automatically cleared via signals when data changes.
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: Select language (uz or ru)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: title
+        schema:
+          type: string
+      tags:
+      - Announcement
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAnnouncementListList'
+          description: ''
+  /api/v1/general/handbooks/:
+    get:
+      operationId: api_v1_general_handbooks_list
+      description: |-
+        API endpoint for handbook documents.
+
+        GET:
+            Returns visible handbooks (is_seen=True)
+
+        POST:
+            Creates new handbook (authenticated users only)
+
+        Security:
+            - Accessible only for authenticated users
+
+        Performance:
+            - Uses caching to reduce database queries
+            - Cache cleared automatically via signals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Handbook
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHandBookList'
+          description: ''
+    post:
+      operationId: api_v1_general_handbooks_create
+      description: |-
+        API endpoint for handbook documents.
+
+        GET:
+            Returns visible handbooks (is_seen=True)
+
+        POST:
+            Creates new handbook (authenticated users only)
+
+        Security:
+            - Accessible only for authenticated users
+
+        Performance:
+            - Uses caching to reduce database queries
+            - Cache cleared automatically via signals
+      tags:
+      - Handbook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HandBookRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HandBookRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HandBookRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandBook'
+          description: ''
+  /api/v1/general/land-documents/:
+    get:
+      operationId: api_v1_general_land_documents_list
+      description: |-
+        API endpoint for Land Documents.
+
+        GET:
+            Returns all land documents
+
+        POST:
+            Creates a new land document (authenticated users only)
+
+        Security:
+            - Accessible only for authenticated users
+
+        Performance:
+            - Uses Redis cache to reduce database queries
+            - select_related prevents N+1 queries
+            - Cache automatically cleared via Django signals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Land document
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLandDocumentList'
+          description: ''
+    post:
+      operationId: api_v1_general_land_documents_create
+      description: |-
+        API endpoint for Land Documents.
+
+        GET:
+            Returns all land documents
+
+        POST:
+            Creates a new land document (authenticated users only)
+
+        Security:
+            - Accessible only for authenticated users
+
+        Performance:
+            - Uses Redis cache to reduce database queries
+            - select_related prevents N+1 queries
+            - Cache automatically cleared via Django signals
+      tags:
+      - Land document
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LandDocumentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LandDocumentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LandDocumentRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LandDocument'
+          description: ''
+  /api/v1/general/lands/:
+    get:
+      operationId: api_v1_general_lands_retrieve
+      description: |-
+        API endpoint to return land management summary with caching.
+
+        GET:
+            - Returns all land plots and total area
+            - Supports optional query parameter 'lang' for translation
+            - Cached to reduce database queries
+
+        Security:
+            - Accessible for all authenticated users (can add permission_classes if needed)
+      summary: Yer maydonlari statistikasi
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til: uz yoki ru'
+      tags:
+      - Land management
+      security:
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/general/notifications/:
+    get:
+      operationId: api_v1_general_notifications_list
+      description: Returns notifications from today onwards with translation support
+      summary: List active notifications
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Tilni tanlang: uz yoki ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Notification
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationListList'
+          description: ''
+  /api/v1/general/organization/:
+    get:
+      operationId: api_v1_general_organization_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: region
+        schema:
+          type: string
+          enum:
+          - andijon
+          - buxoro
+          - fargona
+          - jizzax
+          - namangan
+          - navoiy
+          - qashqadaryo
+          - qoraqalpog‘iston
+          - republic
+          - samarqand
+          - sirdaryo
+          - surxondaryo
+          - tashkent
+          - xorazm
+        description: |-
+          * `tashkent` - Toshkent
+          * `namangan` - Namangan
+          * `andijon` - Andijon
+          * `fargona` - Farg'ona
+          * `buxoro` - Buxoro
+          * `samarqand` - Samarqand
+          * `navoiy` - Navoiy
+          * `qashqadaryo` - Qashqadaryo
+          * `surxondaryo` - Surxondaryo
+          * `xorazm` - Xorazm
+          * `sirdaryo` - Sirdaryo
+          * `jizzax` - Jizzax
+          * `qoraqalpog‘iston` - Qoraqalpog'iston
+          * `republic` - Respublika tashkilotlari
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - General
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationList'
+          description: ''
+  /api/v1/information-analytical/:
+    get:
+      operationId: api_v1_information_analytical_retrieve
+      description: "\n        Region va organization bo‘yicha o‘rmon monitoring ma’lumotlarini\
+        \ chiqaradi.\n\n        \U0001F4CC Agar region berilsa → faqat shu hudud va\
+        \ uning tashkilotlari chiqadi\n        \U0001F4CC Agar organization berilsa\
+        \ → faqat shu tashkilot chiqadi  \n        \U0001F4CC Agar hech nima berilmasa\
+        \ → Respublika → Regionlar → Tashkilotlar chiqadi\n        "
+      summary: Forest monitoring – analytical aggregation
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: Til (uz yoki ru)
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+        description: Organization ID bo‘yicha filter
+      - in: query
+        name: period
+        schema:
+          type: string
+        description: |-
+          Hisobot davri bo‘yicha filter.
+
+          Formatlar:
+          • Yillik: 2025
+          • Choraklik: 2025-CHORAK_1, 2025-CHORAK_2, 2025-CHORAK_3, 2025-CHORAK_4
+          • Oylik: 2025-01
+
+          Agar period berilsa, faqat shu davrga tegishli accepted reportlar hisobga olinadi. Agar ma’lumot topilmasa — bo‘sh list qaytadi.
+      - in: query
+        name: region
+        schema:
+          type: string
+        description: 'Region kodi (masalan: ANDIJON, SAMARQAND, TOSHKENT)'
+      tags:
+      - Information-Analytics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/information-analytical/export-excel/:
+    get:
+      operationId: api_v1_information_analytical_export_excel_retrieve
+      description: Forest monitoring ma’lumotlarini Excel formatda eksport qilish
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til (uz/ru), default: uz'
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+        description: Organization UUID
+      - in: query
+        name: period
+        schema:
+          type: string
+        description: 'Davr: Yillik (2025), Choraklik (2025-CHORAKLIK_1), Oylik (2025-01)'
+      - in: query
+        name: region
+        schema:
+          type: string
+        description: Region kodi (ANDIJON, TOSHKENT, SAMARQAND, ...)
+      tags:
+      - Information-Analytics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/report_admin_stat/stats/export/:
+    get:
+      operationId: api_v1_report_admin_stat_stats_export_retrieve
+      tags:
+      - Stats Export
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/:
+    get:
+      operationId: api_v1_reports_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Tilni belgilang: uz yoki ru'
+      - in: query
+        name: organization_name
+        schema:
+          type: string
+        description: Tashkilot nomi
+      - in: query
+        name: organization_region
+        schema:
+          type: string
+          enum:
+          - andijon
+          - buxoro
+          - fargona
+          - jizzax
+          - namangan
+          - navoiy
+          - qashqadaryo
+          - qoraqalpog‘iston
+          - republic
+          - samarqand
+          - sirdaryo
+          - surxondaryo
+          - tashkent
+          - xorazm
+        description: |-
+          Viloyat
+
+          * `tashkent` - Toshkent
+          * `namangan` - Namangan
+          * `andijon` - Andijon
+          * `fargona` - Farg'ona
+          * `buxoro` - Buxoro
+          * `samarqand` - Samarqand
+          * `navoiy` - Navoiy
+          * `qashqadaryo` - Qashqadaryo
+          * `surxondaryo` - Surxondaryo
+          * `xorazm` - Xorazm
+          * `sirdaryo` - Sirdaryo
+          * `jizzax` - Jizzax
+          * `qoraqalpog‘iston` - Qoraqalpog'iston
+          * `republic` - Respublika tashkilotlari
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        description: Hisobot turi
+      - in: query
+        name: statement_period
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - daily
+          - monthly
+          - quarterly
+          - weekly
+          - yearly
+        description: |-
+          Hisobot Davri
+
+          * `daily` - Kunlik
+          * `weekly` - Haftalik
+          * `monthly` - Oylik
+          * `quarterly` - Choraklik (3 oy)
+          * `yearly` - Yillik
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - accepted
+          - cancelled
+          - saved
+          - sent
+        description: |-
+          Hisobot holati
+
+          * `saved` - Saved
+          * `sent` - Sent
+          * `cancelled` - Cancelled
+          * `accepted` - Accepted
+      - in: query
+        name: submit_at
+        schema:
+          type: string
+        description: Yuborish muddati
+      - in: query
+        name: time_status
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - late
+          - on_time
+        description: |-
+          Vaqt holati
+
+          * `on_time` - Bajarilgan
+          * `late` - Kechiktirilgan
+      - in: query
+        name: year
+        schema:
+          type: number
+        description: Yil
+      tags:
+      - Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReportListList'
+          description: ''
+  /api/v1/reports/{id}/:
+    get:
+      operationId: api_v1_reports_retrieve
+      description: |-
+        CustomRetrieveAPIView: Used for read-only endpoints to represent a single model instance.
+        Provides a GET method handler to retrieve details of a specific instance.
+        Example: Use to display details of a specific blog post or user profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDetail'
+          description: ''
+  /api/v1/reports/{id}/delete/:
+    delete:
+      operationId: api_v1_reports_delete_destroy
+      description: DRF viewlar uchun universal log mixin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/reports/{id}/update/:
+    get:
+      operationId: api_v1_reports_update_retrieve
+      description: DRF viewlar uchun universal log mixin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDetail'
+          description: ''
+    put:
+      operationId: api_v1_reports_update_update
+      description: DRF viewlar uchun universal log mixin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportUpdateRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportUpdate'
+          description: ''
+    patch:
+      operationId: api_v1_reports_update_partial_update
+      description: DRF viewlar uchun universal log mixin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReportUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReportUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReportUpdateRequest'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportUpdate'
+          description: ''
+  /api/v1/reports/accept/:
+    post:
+      operationId: api_v1_reports_accept_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportAccept'
+          description: ''
+    put:
+      operationId: api_v1_reports_accept_update
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportAcceptRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportAccept'
+          description: ''
+    patch:
+      operationId: api_v1_reports_accept_partial_update
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReportAcceptRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReportAcceptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReportAcceptRequest'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportAccept'
+          description: ''
+  /api/v1/reports/aggregate/:
+    post:
+      operationId: api_v1_reports_aggregate_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - api
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/cancel/:
+    post:
+      operationId: api_v1_reports_cancel_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCancel'
+          description: ''
+    put:
+      operationId: api_v1_reports_cancel_update
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportCancelRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCancel'
+          description: ''
+    patch:
+      operationId: api_v1_reports_cancel_partial_update
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReportCancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReportCancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReportCancelRequest'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCancel'
+          description: ''
+  /api/v1/reports/column-plants/:
+    get:
+      operationId: api_v1_reports_column_plants_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedColumnPlantList'
+          description: ''
+  /api/v1/reports/create/:
+    post:
+      operationId: api_v1_reports_create_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCreate'
+          description: ''
+  /api/v1/reports/dashboard/:
+    get:
+      operationId: api_v1_reports_dashboard_retrieve
+      description: |-
+        CustomGenericAPIView: Base class for all other generic views.
+        Provides the core functionality such as serialization, pagination, and filtering.
+        Example: Use as a base for creating a view that needs custom pagination or filtering.
+      tags:
+      - Dashboards
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStat'
+          description: ''
+  /api/v1/reports/dashboard/statement-stats/:
+    get:
+      operationId: api_v1_reports_dashboard_statement_stats_retrieve
+      tags:
+      - Dashboards
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/deadlines/:
+    get:
+      operationId: api_v1_reports_deadlines_list
+      parameters:
+      - in: query
+        name: is_new_deadline
+        schema:
+          type: boolean
+        description: |-
+          true → hali regiondagi organizationlardan report yo‘q
+          false → kamida bitta organization report yuborgan
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Deadlines
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeadlineList'
+          description: ''
+  /api/v1/reports/expired-deadlines/:
+    get:
+      operationId: api_v1_reports_expired_deadlines_list
+      parameters:
+      - in: query
+        name: deadline_at
+        schema:
+          type: string
+          format: date
+        description: Deadline date (YYYY-MM-DD)
+      - in: query
+        name: organizations
+        schema:
+          type: string
+          format: uuid
+        description: Organization UUID
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - daily
+          - monthly
+          - quarterly
+          - weekly
+          - yearly
+        description: 'Period: daily, weekly, monthly, quarterly, yearly'
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        description: Statement UUID
+      tags:
+      - Deadlines
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeadlineExpiredList'
+          description: ''
+  /api/v1/reports/export-excel/:
+    get:
+      operationId: api_v1_reports_export_excel_retrieve
+      description: |-
+        Faqat test yoki Swagger UI uchun qo‘llanadi.
+        Masalan:
+        /api/v1/reports/export-excel/?ids=a,b,c&lang=uz&mode=json
+      tags:
+      - Export-Excel
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: api_v1_reports_export_excel_create
+      description: Reportlarni Excel formatda eksport qilish
+      tags:
+      - Export-Excel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportExcelExportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportExcelExportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportExcelExportRequestRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/reports/export-excel/download/:
+    get:
+      operationId: api_v1_reports_export_excel_download_retrieve
+      parameters:
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Yaratilgan fayl nomi
+        required: true
+      tags:
+      - Export-Excel
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/filtered-general/:
+    get:
+      operationId: api_v1_reports_filtered_general_list
+      description: |-
+        Read-only, in-memory filtered aggregates by period (quarter/year).
+        Does NOT write to DB and does NOT trigger existing aggregation signals.
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+        description: 'Period filter: YYYY or YYYY-Qn (e.g., 2025 or 2025-Q2)'
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: Language for column titles
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: statement
+        schema:
+          type: string
+        description: Statement UUID
+      tags:
+      - Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/individual/:
+    get:
+      operationId: api_v1_reports_individual_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Muddat
+      - in: query
+        name: organization
+        schema:
+          type: string
+        description: Tashkilot
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: region
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - ''
+          - andijon
+          - buxoro
+          - fargona
+          - jizzax
+          - namangan
+          - navoiy
+          - qashqadaryo
+          - qoraqalpog‘iston
+          - republic
+          - samarqand
+          - sirdaryo
+          - surxondaryo
+          - tashkent
+          - xorazm
+        description: |-
+          Hudud
+
+          * `` - All
+          * `tashkent` - Toshkent
+          * `namangan` - Namangan
+          * `andijon` - Andijon
+          * `fargona` - Farg'ona
+          * `buxoro` - Buxoro
+          * `samarqand` - Samarqand
+          * `navoiy` - Navoiy
+          * `qashqadaryo` - Qashqadaryo
+          * `surxondaryo` - Surxondaryo
+          * `xorazm` - Xorazm
+          * `sirdaryo` - Sirdaryo
+          * `jizzax` - Jizzax
+          * `qoraqalpog‘iston` - Qoraqalpog'iston
+          * `republic` - Respublika tashkilotlari
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        description: Hisobot turi
+      - in: query
+        name: statement_period
+        schema:
+          type: string
+          enum:
+          - ''
+          - daily
+          - monthly
+          - quarterly
+          - weekly
+          - yearly
+        description: |-
+          Hisobot davri
+
+          * `` - All
+          * `daily` - Kunlik
+          * `weekly` - Haftalik
+          * `monthly` - Oylik
+          * `quarterly` - Choraklik (3 oy)
+          * `yearly` - Yillik
+      - in: query
+        name: time_status
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - ''
+          - late
+          - on_time
+        description: |-
+          Vaqt holati
+
+          * `` - All
+          * `on_time` - Bajarilgan
+          * `late` - Kechiktirilgan
+      tags:
+      - Individual-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReportListList'
+          description: ''
+  /api/v1/reports/individual/{id}/:
+    get:
+      operationId: api_v1_reports_individual_retrieve
+      description: |-
+        CustomRetrieveAPIView: Used for read-only endpoints to represent a single model instance.
+        Provides a GET method handler to retrieve details of a specific instance.
+        Example: Use to display details of a specific blog post or user profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Individual-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportList'
+          description: ''
+  /api/v1/reports/login-stat-deadlines/:
+    get:
+      operationId: api_v1_reports_login_stat_deadlines_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: period_type
+        schema:
+          type: string
+          enum:
+          - monthly
+          - yearly
+        description: |-
+          monthly → Oylik hisobotlar uchun
+          yearly → Yillik hisobotlar uchun
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Deadlines
+      security:
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeadlineReportListList'
+          description: ''
+  /api/v1/reports/plan-columns/:
+    get:
+      operationId: api_v1_reports_plan_columns_list
+      description: API endpoint for listing StatementColumns related to Plan.
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Language parameter: uz (default) or ru'
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Plan
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanColumn'
+          description: ''
+  /api/v1/reports/plan-create/:
+    post:
+      operationId: api_v1_reports_plan_create_create
+      description: |-
+        CREATE PLAN
+
+        - season OPTIONAL
+        - use_plant_plan = False -> plan_items
+        - use_plant_plan = True  -> plants
+
+        Response har doim PlanSerializer formatida
+      tags:
+      - Plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+  /api/v1/reports/plan-items/:
+    get:
+      operationId: api_v1_reports_plan_items_retrieve
+      parameters:
+      - in: query
+        name: column
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: lang
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: plant
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: season
+        schema:
+          type: string
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - PlanItem
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/plan-list/:
+    get:
+      operationId: api_v1_reports_plan_list_list
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Language: uz (default) or ru'
+      - in: query
+        name: organization
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: season
+        schema:
+          type: string
+        description: Season filter (optional)
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: year
+        schema:
+          type: integer
+      tags:
+      - Plan
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlanListList'
+          description: ''
+  /api/v1/reports/plan/{id}/:
+    get:
+      operationId: api_v1_reports_plan_retrieve
+      description: |-
+        Retrieve a single Plan object by ID.
+        Supports only GET method.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plan
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+  /api/v1/reports/plan/{id}/update/:
+    put:
+      operationId: api_v1_reports_plan_update_update
+      description: |-
+        Update an existing Plan object.
+
+        Notes:
+        - The 'statement' field cannot be updated.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+    patch:
+      operationId: api_v1_reports_plan_update_partial_update
+      description: |-
+        Update an existing Plan object.
+
+        Notes:
+        - The 'statement' field cannot be updated.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlanRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlanRequest'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+  /api/v1/reports/plans/{id}/delete/:
+    delete:
+      operationId: api_v1_reports_plans_delete_destroy
+      description: DRF viewlar uchun universal log mixin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plan
+      security:
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/reports/plant-svodka/:
+    get:
+      operationId: api_v1_reports_plant_svodka_retrieve
+      parameters:
+      - in: query
+        name: appendix
+        schema:
+          type: integer
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: Language code (uz or ru)
+      - in: query
+        name: plant
+        schema:
+          type: string
+          format: uuid
+        description: Optional Plant ID (UUID)
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        description: Statement ID (UUID)
+        required: true
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/reports/plant/create/:
+    post:
+      operationId: api_v1_reports_plant_create_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/plants/:
+    get:
+      operationId: api_v1_reports_plants_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: 'Language: uz, ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: parent
+        schema:
+          type: string
+          format: uuid
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Plant
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlantList'
+          description: ''
+  /api/v1/reports/regional/:
+    get:
+      operationId: api_v1_reports_regional_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Regional-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRegionalGeneralReportList'
+          description: ''
+  /api/v1/reports/regional/{id}/:
+    get:
+      operationId: api_v1_reports_regional_retrieve
+      description: |-
+        CustomRetrieveAPIView: Used for read-only endpoints to represent a single model instance.
+        Provides a GET method handler to retrieve details of a specific instance.
+        Example: Use to display details of a specific blog post or user profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Regional-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionalGeneralReport'
+          description: ''
+  /api/v1/reports/report-items/:
+    get:
+      operationId: api_v1_reports_report_items_list
+      parameters:
+      - in: query
+        name: report__id
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Reports Items
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportItem'
+          description: ''
+  /api/v1/reports/report-plant/:
+    get:
+      operationId: api_v1_reports_report_plant_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Tilni belgilang: uz yoki ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlantReportListList'
+          description: ''
+  /api/v1/reports/report-plant/{id}/:
+    get:
+      operationId: api_v1_reports_report_plant_retrieve
+      description: |-
+        CustomRetrieveAPIView: Used for read-only endpoints to represent a single model instance.
+        Provides a GET method handler to retrieve details of a specific instance.
+        Example: Use to display details of a specific blog post or user profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantReportList'
+          description: ''
+  /api/v1/reports/report-plant/{id}/delete:
+    delete:
+      operationId: api_v1_reports_report_plant_delete_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/reports/report-plant/{id}/update:
+    get:
+      operationId: api_v1_reports_report_plant_update_retrieve
+      description: |-
+        Plant-based reportlar uchun GET/UPDATE endpoint.
+        Daromad bo'lsa quarter workflow ishlaydi,
+        qolgan statementlar esa eski update oqimida qoladi.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plant-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantReportUpdateRead'
+          description: ''
+    put:
+      operationId: api_v1_reports_report_plant_update_update
+      description: |-
+        Plant-based reportlar uchun GET/UPDATE endpoint.
+        Daromad bo'lsa quarter workflow ishlaydi,
+        qolgan statementlar esa eski update oqimida qoladi.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plant-Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantReportUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlantReportUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlantReportUpdateRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantReportUpdate'
+          description: ''
+    patch:
+      operationId: api_v1_reports_report_plant_update_partial_update
+      description: |-
+        Plant-based reportlar uchun GET/UPDATE endpoint.
+        Daromad bo'lsa quarter workflow ishlaydi,
+        qolgan statementlar esa eski update oqimida qoladi.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Plant-Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlantReportUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlantReportUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlantReportUpdateRequest'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantReportUpdate'
+          description: ''
+  /api/v1/reports/republic/:
+    get:
+      operationId: api_v1_reports_republic_list
+      description: |-
+        CustomListAPIView: Used to create read-only endpoints to represent a collection of model instances.
+        Provides a GET method handler.
+        Example: Use to display a list of blog posts or user profiles.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Republic-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRegionalGeneralReportList'
+          description: ''
+  /api/v1/reports/republic/{id}/:
+    get:
+      operationId: api_v1_reports_republic_retrieve
+      description: |-
+        CustomRetrieveAPIView: Used for read-only endpoints to represent a single model instance.
+        Provides a GET method handler to retrieve details of a specific instance.
+        Example: Use to display details of a specific blog post or user profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Republic-Reports
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionalGeneralReport'
+          description: ''
+  /api/v1/reports/send/:
+    post:
+      operationId: api_v1_reports_send_create
+      description: DRF viewlar uchun universal log mixin.
+      tags:
+      - Reports Status Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportSendRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportSendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportSendRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSend'
+          description: ''
+  /api/v1/reports/source-reports/kochat-nihol/:
+    get:
+      operationId: api_v1_reports_source_reports_kochat_nihol_list
+      description: |-
+        Faqat ACCEPT qilingan 'Ko‘chat va Nihol' reportlar
+        Optional filter: ?organization=<uuid>
+      parameters:
+      - in: query
+        name: organization
+        schema:
+          type: string
+        description: Tashkilot ID bo‘yicha filter (UUID)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Source-Report
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSourceReportList'
+          description: ''
+  /api/v1/reports/statement-appendices/:
+    get:
+      operationId: api_v1_reports_statement_appendices_retrieve
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: Language code (uz or ru)
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+        description: Statement ID (UUID)
+        required: true
+      tags:
+      - Statements
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/reports/statement-columns/:
+    get:
+      operationId: api_v1_reports_statement_columns_list
+      parameters:
+      - in: query
+        name: is_user_input
+        schema:
+          type: boolean
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: 'Language: uz, ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Statements
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStatementColumnTreeList'
+          description: ''
+  /api/v1/reports/statement-columns-corrected-org-name/:
+    get:
+      operationId: api_v1_reports_statement_columns_corrected_org_name_list
+      parameters:
+      - in: query
+        name: is_user_input
+        schema:
+          type: boolean
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: 'Language: uz, ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: statement
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Statements
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCorrectedStatementColumnTreeList'
+          description: ''
+  /api/v1/reports/statements/:
+    get:
+      operationId: api_v1_reports_statements_list
+      description: Get list of statements with alphabetical ordering and caching
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          default: uz
+        description: 'Language: uz, ru'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Statements
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStatementList'
+          description: ''
+  /api/v1/reports/users/:
+    get:
+      operationId: api_v1_reports_users_list
+      parameters:
+      - in: query
+        name: first_name
+        schema:
+          type: string
+        description: Filter by first name (icontains search)
+      - in: query
+        name: id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Language parameter: uz (default) or ru'
+      - in: query
+        name: last_name
+        schema:
+          type: string
+        description: Filter by last name (icontains search)
+      - in: query
+        name: organization
+        schema:
+          type: string
+        description: Filter by organization (UUID)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: per_page
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - bolim_admin
+          - hududiy_boshqarma
+          - rahbariyat
+          - super_admin
+          - support_admin
+          - tashkilot_hodimi
+          - tashkilot_rahbari
+        description: Filter by user role
+      - in: query
+        name: status_user
+        schema:
+          type: string
+          enum:
+          - login_user
+          - never_login_user
+          - online_user
+        description: |-
+          * `online_user` - Online user
+          * `login_user` - Login bo‘lgan user
+          * `never_login_user` - Hech qachon login qilmagan
+      tags:
+      - Users
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserListList'
+          description: ''
+  /api/v1/statistics/build-forest-golofit/:
+    get:
+      operationId: api_v1_statistics_build_forest_golofit_retrieve
+      description: Golofit statement uchun 'Amalda' ko'rsatkichlarini hudud bo'yicha
+        hisoblaydi
+      summary: Golofit - Amalda
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo'yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/build-forest-teressa/:
+    get:
+      operationId: api_v1_statistics_build_forest_teressa_retrieve
+      description: Terassa statement uchun 'Amalda' ko'rsatkichlarini hudud bo'yicha
+        hisoblaydi
+      summary: Terassa
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo'yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/employee-report-stat/:
+    get:
+      operationId: api_v1_statistics_employee_report_stat_retrieve
+      description: Xodim hisobi (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Xodim hisobi
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo‘yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/finance-fund-stat/:
+    get:
+      operationId: api_v1_statistics_finance_fund_stat_retrieve
+      description: Jami tushumlarni hudud bo'yicha hisoblaydi
+      summary: Jamg'arma
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo'yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/login-stats/:
+    get:
+      operationId: api_v1_statistics_login_stats_retrieve
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til: uz yoki ru (default: uz)'
+      - in: query
+        name: monthly
+        schema:
+          type: string
+        description: 'Oylik davr: YYYY-MM (agar berilmasa, oxirgi oylik deadline)'
+      - in: query
+        name: statement_status
+        schema:
+          type: string
+          enum:
+          - month
+          - year
+        description: 'Statement turi: year yoki month (default: hammasi)'
+      - in: query
+        name: yearly
+        schema:
+          type: string
+        description: 'Yillik davr: YYYY (agar berilmasa, oxirgi yillik deadline)'
+      tags:
+      - Login Stats
+      security:
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/monitor-forest-uzlashtirish/:
+    get:
+      operationId: api_v1_statistics_monitor_forest_uzlashtirish_retrieve
+      description: Yer o‘zlashtirish statementi uchun 'Amalda' ko‘rsatkichlarini hududlar
+        kesimida hisoblaydi
+      summary: Yer o‘zlashtirish - Amalda
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo‘yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/statistics/protect-forest-zararkunanda/:
+    get:
+      operationId: api_v1_statistics_protect_forest_zararkunanda_retrieve
+      description: Zararkunanda va kasalliklarga qarshi kurashish statement uchun
+        'Amalda' ko'rsatkichlarini hudud bo'yicha hisoblaydi
+      summary: Zararkunanda - Amalda
+      parameters:
+      - in: query
+        name: deadline
+        schema:
+          type: string
+          format: uuid
+        description: Deadline UUID bo'yicha filter
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Statistics
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/employee-analysis/:
+    get:
+      operationId: api_v1_sum_employee_analysis_retrieve
+      description: Xodimlar haqidagi ma’lumotlarni 4-ilova va 5-ilova kesimida yig‘ib
+        beradi
+      summary: Xodim hisobi tahlili
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/employee-report/:
+    get:
+      operationId: api_v1_sum_employee_report_retrieve
+      description: Xodim hisobi statistikasi (1-ilova, 2-ilova, 3-ilova)
+      summary: Xodim hisobi
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/finance-fund/:
+    get:
+      operationId: api_v1_sum_finance_fund_retrieve
+      description: Jamg'arma (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Jamg'arma
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/finance-income/:
+    get:
+      operationId: api_v1_sum_finance_income_retrieve
+      description: Daromad (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Daromad
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/land-acquisition/:
+    get:
+      operationId: api_v1_sum_land_acquisition_retrieve
+      description: Yer o‘zlashtirish (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Yer o‘zlashtirish
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/land-covered-forest/:
+    get:
+      operationId: api_v1_sum_land_covered_forest_retrieve
+      description: Urmon bilan qoplangan yerlar (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Urmon bilan qoplangan yerlar
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sum/land-rented/:
+    get:
+      operationId: api_v1_sum_land_rented_retrieve
+      description: Ijaraga berilgan yerlar hisobi (UZ va RU tillarini qo‘llab-quvvatlaydi)
+      summary: Ijaraga berilgan yerlar hisobi
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ru
+          - uz
+        description: 'Til parametri: uz (default) yoki ru'
+      tags:
+      - Sum
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/verify-digital-signature/:
+    post:
+      operationId: api_v1_users_verify_digital_signature_create
+      tags:
+      - api
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AnnouncementList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        desc:
+          type: string
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        lnk:
+          type: string
+          format: uri
+          maxLength: 200
+        ordering:
+          type: integer
+          maximum: 32767
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - desc
+      - id
+      - image
+      - lnk
+      - ordering
+      - title
+    BlankEnum:
+      enum:
+      - ''
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        confirm_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - confirm_password
+      - new_password
+      - old_password
+    ColumnPlant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        column:
+          type: string
+          format: uuid
+        column_title:
+          type: string
+          readOnly: true
+        plant:
+          type: string
+          format: uuid
+        plant_name:
+          type: string
+          readOnly: true
+      required:
+      - column
+      - column_title
+      - id
+      - plant
+      - plant_name
+    ConversationDetail:
+      type: object
+      description: Conversation detail serializer.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusA86Enum'
+        user:
+          type: string
+          readOnly: true
+        assigned_to:
+          type: string
+          readOnly: true
+        taken_at:
+          type: string
+          format: date-time
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_message_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assigned_to
+      - created_at
+      - id
+      - user
+    ConversationList:
+      type: object
+      description: Conversation list serializer.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusA86Enum'
+        assigned_to:
+          type: string
+          readOnly: true
+        last_message_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        unread_count:
+          type: string
+          readOnly: true
+      required:
+      - assigned_to
+      - created_at
+      - id
+      - unread_count
+      - user
+    CorrectedStatementColumnTree:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        statement:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        ordering:
+          type: string
+          default: '0'
+          maxLength: 100
+        parent:
+          type: string
+          format: uuid
+          readOnly: true
+        status_plan:
+          nullable: true
+          title: Plan holati (oy, chorak, yil)
+          oneOf:
+          - $ref: '#/components/schemas/StatusPlanEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_organization:
+          type: boolean
+        children:
+          type: string
+          readOnly: true
+      required:
+      - children
+      - id
+      - parent
+      - statement
+      - title
+    CurrentQuarterEnum:
+      enum:
+      - q1
+      - q2
+      - q3
+      - q4
+      type: string
+      description: |-
+        * `q1` - I-chorak
+        * `q2` - II-chorak
+        * `q3` - III-chorak
+        * `q4` - IV-chorak
+    DashboardStat:
+      type: object
+      properties:
+        sent_reports:
+          type: integer
+        returned_reports:
+          type: integer
+        accepted_reports:
+          type: integer
+        draft_reports:
+          type: integer
+        responsible_users:
+          type: integer
+        deadlines:
+          type: integer
+        plans:
+          type: integer
+        on_time_reports:
+          type: integer
+        late_reports:
+          type: integer
+        expired_deadlines:
+          type: integer
+        total_reports:
+          type: integer
+        father_statements:
+          type: integer
+        child_statements:
+          type: integer
+      required:
+      - accepted_reports
+      - child_statements
+      - deadlines
+      - draft_reports
+      - expired_deadlines
+      - father_statements
+      - late_reports
+      - on_time_reports
+      - plans
+      - responsible_users
+      - returned_reports
+      - sent_reports
+      - total_reports
+    Deadline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organization'
+          readOnly: true
+        statement:
+          allOf:
+          - $ref: '#/components/schemas/StatementLight'
+          readOnly: true
+        submit_at:
+          type: string
+          description: Kunlik - YYYY-MM-DD, Haftalik - YYYY-MM-HAFTALIK_1 / HAFTALIK_2
+            / HAFTALIK_3 / HAFTALIK_4, Oylik - YYYY-MM, Choraklik - YYYY-CHORAK_1
+            / CHORAK_2 / CHORAK_3 / CHORAK_4, Yillik - YYYY
+          maxLength: 100
+        deadline_at:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+          description: 'deadline_at togri kiritish formati (format: DD/MM/YYYY)'
+        year:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - organizations
+      - statement
+      - submit_at
+      - year
+    DeadlineExpired:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        submit_at:
+          type: string
+          description: Kunlik - YYYY-MM-DD, Haftalik - YYYY-MM-HAFTALIK_1 / HAFTALIK_2
+            / HAFTALIK_3 / HAFTALIK_4, Oylik - YYYY-MM, Choraklik - YYYY-CHORAK_1
+            / CHORAK_2 / CHORAK_3 / CHORAK_4, Yillik - YYYY
+          maxLength: 100
+        deadline_at:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+          description: 'deadline_at togri kiritish formati (format: DD/MM/YYYY)'
+        statement:
+          allOf:
+          - $ref: '#/components/schemas/StatementExpired'
+          readOnly: true
+        organizations:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - organizations
+      - statement
+      - submit_at
+    DeadlineReportList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        statement_id:
+          type: integer
+          readOnly: true
+        statement_name:
+          type: string
+          readOnly: true
+        parent_statement_name:
+          type: string
+          readOnly: true
+        statement_period:
+          type: string
+          readOnly: true
+        submit_at:
+          type: string
+          description: Kunlik - YYYY-MM-DD, Haftalik - YYYY-MM-HAFTALIK_1 / HAFTALIK_2
+            / HAFTALIK_3 / HAFTALIK_4, Oylik - YYYY-MM, Choraklik - YYYY-CHORAK_1
+            / CHORAK_2 / CHORAK_3 / CHORAK_4, Yillik - YYYY
+          maxLength: 100
+        deadline_at:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+          description: 'deadline_at togri kiritish formati (format: DD/MM/YYYY)'
+        total_organizations:
+          type: string
+          readOnly: true
+        submitted_organizations:
+          type: string
+          readOnly: true
+        pending_organizations:
+          type: string
+          readOnly: true
+        submission_percentage:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - parent_statement_name
+      - pending_organizations
+      - statement_id
+      - statement_name
+      - statement_period
+      - submission_percentage
+      - submit_at
+      - submitted_organizations
+      - total_organizations
+    DocumentTypeEnum:
+      enum:
+      - farmon
+      - qaror
+      - buyruq
+      - nizom
+      - yoriqnoma
+      - reglament
+      - ariza
+      - malumotnoma
+      - xizmat_xati
+      - dalolatnoma
+      - bayonnoma
+      - ishonchnoma
+      - tushuntirish_xati
+      - tavsifnoma
+      - other
+      type: string
+      description: |-
+        * `farmon` - Farmon
+        * `qaror` - Qaror
+        * `buyruq` - Buyruq
+        * `nizom` - Nizom
+        * `yoriqnoma` - Yo‘riqnoma
+        * `reglament` - Reglament
+        * `ariza` - Ariza
+        * `malumotnoma` - Ma’lumotnoma
+        * `xizmat_xati` - Xizmat xati
+        * `dalolatnoma` - Dalolatnoma
+        * `bayonnoma` - Bayonnoma
+        * `ishonchnoma` - Ishonchnoma
+        * `tushuntirish_xati` - Tushuntirish xati
+        * `tavsifnoma` - Tavsifnoma
+        * `other` - Boshqa
+    HandBook:
+      type: object
+      description: |-
+        Serializer for handbook documents.
+
+        Security:
+        - Prevents empty document names
+        - Returns absolute file URL safely
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Handbook Name
+          maxLength: 255
+        file:
+          type: string
+          format: uri
+          nullable: true
+          title: Attached File
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - file_url
+      - id
+      - name
+    HandBookRequest:
+      type: object
+      description: |-
+        Serializer for handbook documents.
+
+        Security:
+        - Prevents empty document names
+        - Returns absolute file URL safely
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Handbook Name
+          maxLength: 255
+        file:
+          type: string
+          format: binary
+          nullable: true
+          title: Attached File
+      required:
+      - name
+    LandDocument:
+      type: object
+      description: |-
+        Serializer for LandDocument API responses.
+        Provides safe formatted output for frontend usage.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Document Name
+          maxLength: 255
+        date:
+          type: string
+          format: date
+          title: Document Date
+        document_type:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        document_type_display:
+          type: string
+          readOnly: true
+        organization:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+          readOnly: true
+        comment:
+          type: string
+          nullable: true
+        file:
+          type: string
+          format: uri
+          nullable: true
+          title: Attached File
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date
+      - document_type
+      - document_type_display
+      - file_url
+      - id
+      - name
+      - organization
+      - organization_name
+    LandDocumentRequest:
+      type: object
+      description: |-
+        Serializer for LandDocument API responses.
+        Provides safe formatted output for frontend usage.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Document Name
+          maxLength: 255
+        date:
+          type: string
+          format: date
+          title: Document Date
+        document_type:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        organization:
+          type: string
+          format: uuid
+        comment:
+          type: string
+          nullable: true
+        file:
+          type: string
+          format: binary
+          nullable: true
+          title: Attached File
+      required:
+      - date
+      - document_type
+      - name
+      - organization
+    LangEnum:
+      enum:
+      - uz
+      - ru
+      type: string
+      description: |-
+        * `uz` - uz
+        * `ru` - ru
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    Message:
+      type: object
+      description: Message serializer.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sender:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          maxLength: 5000
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - sender
+      - text
+    ModeEnum:
+      enum:
+      - json
+      type: string
+      description: '* `json` - json'
+    NationalityEnum:
+      enum:
+      - Uzbek
+      - Russian
+      - Tajik
+      - Kazakh
+      - Karakalpak
+      - Tatar
+      - Korean
+      - Ukrainian
+      - Turkmen
+      - Kyrgyz
+      - Chinese
+      - Japanese
+      - Other
+      type: string
+      description: |-
+        * `Uzbek` - Uzbek
+        * `Russian` - Russian
+        * `Tajik` - Tajik
+        * `Kazakh` - Kazakh
+        * `Karakalpak` - Karakalpak
+        * `Tatar` - Tatar
+        * `Korean` - Korean
+        * `Ukrainian` - Ukrainian
+        * `Turkmen` - Turkmen
+        * `Kyrgyz` - Kyrgyz
+        * `Chinese` - Chinese
+        * `Japanese` - Japanese
+        * `Other` - Other
+    NewPasswordRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 100
+        confirm_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 100
+      required:
+      - confirm_password
+      - password
+    NotificationList:
+      type: object
+      description: |-
+        Serializer for Notification.
+        Returns translated text based on 'lang' context.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        date:
+          type: string
+          format: date
+          description: The date when the notification is active
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date
+      - id
+      - text
+    NullEnum:
+      enum:
+      - null
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+    OrganizationList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        stir:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        region:
+          $ref: '#/components/schemas/RegionEnum'
+      required:
+      - id
+      - name
+      - region
+    PaginatedAnnouncementListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementList'
+    PaginatedColumnPlantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnPlant'
+    PaginatedCorrectedStatementColumnTreeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrectedStatementColumnTree'
+    PaginatedDeadlineExpiredList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeadlineExpired'
+    PaginatedDeadlineList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deadline'
+    PaginatedDeadlineReportListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeadlineReportList'
+    PaginatedHandBookList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HandBook'
+    PaginatedLandDocumentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LandDocument'
+    PaginatedNotificationListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationList'
+    PaginatedPlanListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanList'
+    PaginatedPlantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plant'
+    PaginatedPlantReportListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantReportList'
+    PaginatedRegionalGeneralReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegionalGeneralReport'
+    PaginatedReportListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportList'
+    PaginatedSourceReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceReport'
+    PaginatedStatementColumnTreeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementColumnTree'
+    PaginatedStatementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Statement'
+    PaginatedUserListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserList'
+    PatchedPlanRequest:
+      type: object
+      properties:
+        organization:
+          type: string
+          format: uuid
+        statement:
+          type: string
+          format: uuid
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 1900
+        season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        plants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanInRequest'
+          writeOnly: true
+        plan_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItemRequest'
+    PatchedPlantReportUpdateRequest:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        deadline:
+          type: string
+          format: uuid
+        quarter:
+          nullable: true
+          description: |-
+            Daromad uchun qaysi chorak update qilinayotgani
+
+            * `q1` - I-chorak
+            * `q2` - II-chorak
+            * `q3` - III-chorak
+            * `q4` - IV-chorak
+          oneOf:
+          - $ref: '#/components/schemas/QuarterEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        report_items:
+          type: array
+          items: {}
+          writeOnly: true
+    PatchedReportAcceptRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          writeOnly: true
+    PatchedReportCancelRequest:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          writeOnly: true
+        cancel_reason:
+          type: string
+          writeOnly: true
+          minLength: 1
+    PatchedReportUpdateRequest:
+      type: object
+      properties:
+        deadline:
+          type: string
+          format: uuid
+        report_items:
+          type: array
+          items: {}
+          writeOnly: true
+    PeriodEnum:
+      enum:
+      - daily
+      - weekly
+      - monthly
+      - quarterly
+      - yearly
+      type: string
+      description: |-
+        * `daily` - Kunlik
+        * `weekly` - Haftalik
+        * `monthly` - Oylik
+        * `quarterly` - Choraklik (3 oy)
+        * `yearly` - Yillik
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organization:
+          type: string
+          format: uuid
+        statement:
+          type: string
+          format: uuid
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 1900
+        season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        plant_plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanOut'
+          readOnly: true
+        plan_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItem'
+      required:
+      - id
+      - organization
+      - plant_plans
+      - year
+    PlanColumn:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        parent:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        ordering:
+          type: string
+          maxLength: 100
+        status_plan:
+          nullable: true
+          title: Plan holati (oy, chorak, yil)
+          oneOf:
+          - $ref: '#/components/schemas/StatusPlanEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - id
+      - parent
+      - title
+    PlanItem:
+      type: object
+      properties:
+        column_id:
+          type: string
+          readOnly: true
+        column_name:
+          type: string
+          readOnly: true
+        column_parent_name:
+          type: string
+          readOnly: true
+        plan_value:
+          type: number
+          format: double
+      required:
+      - column_id
+      - column_name
+      - column_parent_name
+      - plan_value
+    PlanItemRequest:
+      type: object
+      properties:
+        column:
+          type: string
+          format: uuid
+          writeOnly: true
+        plan_value:
+          type: number
+          format: double
+      required:
+      - column
+      - plan_value
+    PlanList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 1900
+        season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+        statement:
+          type: string
+          readOnly: true
+        plan_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanListItem'
+          readOnly: true
+        plants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanOut'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - organization
+      - plan_items
+      - plants
+      - statement
+      - updated_at
+      - year
+    PlanListItem:
+      type: object
+      properties:
+        column_id:
+          type: string
+          format: uuid
+          readOnly: true
+        column_parent_name:
+          type: string
+          readOnly: true
+        column_name:
+          type: string
+          readOnly: true
+        plan_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - column_id
+      - column_name
+      - column_parent_name
+    PlanRequest:
+      type: object
+      properties:
+        organization:
+          type: string
+          format: uuid
+        statement:
+          type: string
+          format: uuid
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: 1900
+        season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        plants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanInRequest'
+          writeOnly: true
+        plan_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItemRequest'
+      required:
+      - organization
+      - year
+    Plant:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        parent:
+          type: string
+          format: uuid
+          nullable: true
+        parent_name:
+          type: string
+          readOnly: true
+        children:
+          type: string
+          readOnly: true
+      required:
+      - children
+      - id
+      - name
+      - parent_name
+    PlantPlanIn:
+      type: object
+      properties:
+        plant:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanItem'
+      required:
+      - items
+      - plant
+    PlantPlanInRequest:
+      type: object
+      properties:
+        plant:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanItemRequest'
+      required:
+      - items
+      - plant
+    PlantPlanItem:
+      type: object
+      properties:
+        column:
+          type: string
+          format: uuid
+        plan_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - column
+      - plan_value
+    PlantPlanItemOut:
+      type: object
+      properties:
+        column_id:
+          type: string
+          format: uuid
+        column_name:
+          type: string
+          readOnly: true
+        column_parent_name:
+          type: string
+          readOnly: true
+        plan_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - column_id
+      - column_name
+      - column_parent_name
+      - plan_value
+    PlantPlanItemOutRequest:
+      type: object
+      properties:
+        column_id:
+          type: string
+          format: uuid
+        plan_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - column_id
+      - plan_value
+    PlantPlanItemRequest:
+      type: object
+      properties:
+        column:
+          type: string
+          format: uuid
+        plan_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - column
+      - plan_value
+    PlantPlanOut:
+      type: object
+      properties:
+        plant:
+          type: string
+          format: uuid
+        plant_name:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanItemOut'
+      required:
+      - items
+      - plant
+      - plant_name
+    PlantPlanOutRequest:
+      type: object
+      properties:
+        plant:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantPlanItemOutRequest'
+      required:
+      - items
+      - plant
+    PlantReportList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organization:
+          type: string
+          format: uuid
+          nullable: true
+        organization_name:
+          type: string
+          readOnly: true
+        statement:
+          type: string
+          format: uuid
+        statement_name:
+          type: string
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        submit_at:
+          type: string
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusA04Enum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cancel_reason:
+          type: string
+          nullable: true
+          description: Reason for cancelling the report
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+        deadline_at:
+          type: string
+          readOnly: true
+        report_items:
+          type: string
+          readOnly: true
+        time_status:
+          type: string
+          readOnly: true
+        report_season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReportSeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        foot_note:
+          type: string
+          nullable: true
+          description: Foydalanuvchi tomonidan kiritilgan izoh
+          maxLength: 255
+        sent_by_full_name:
+          type: string
+          readOnly: true
+        sent_by_org_name:
+          type: string
+          readOnly: true
+        sent_by_role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SentByRoleEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_general:
+          type: string
+          readOnly: true
+        is_republic:
+          type: string
+          readOnly: true
+        is_plant_based:
+          type: string
+          readOnly: true
+        row_number:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - deadline
+      - deadline_at
+      - id
+      - is_general
+      - is_plant_based
+      - is_republic
+      - organization_name
+      - period
+      - report_items
+      - row_number
+      - sent_by_full_name
+      - sent_by_org_name
+      - statement
+      - statement_name
+      - submit_at
+      - time_status
+    PlantReportUpdate:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        quarter:
+          nullable: true
+          description: |-
+            Daromad uchun qaysi chorak update qilinayotgani
+
+            * `q1` - I-chorak
+            * `q2` - II-chorak
+            * `q3` - III-chorak
+            * `q4` - IV-chorak
+          oneOf:
+          - $ref: '#/components/schemas/QuarterEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - deadline
+      - id
+    PlantReportUpdateRead:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        quarter:
+          nullable: true
+          description: |-
+            Hisobot qaysi chorak uchun ekanligi (faqat Daromad uchun)
+
+            * `q1` - I-chorak
+            * `q2` - II-chorak
+            * `q3` - III-chorak
+            * `q4` - IV-chorak
+          oneOf:
+          - $ref: '#/components/schemas/QuarterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        current_quarter:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CurrentQuarterEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        quarter_info:
+          type: string
+          readOnly: true
+        report_items:
+          type: string
+          readOnly: true
+      required:
+      - deadline
+      - id
+      - quarter_info
+      - report_items
+    PlantReportUpdateRequest:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        deadline:
+          type: string
+          format: uuid
+        quarter:
+          nullable: true
+          description: |-
+            Daromad uchun qaysi chorak update qilinayotgani
+
+            * `q1` - I-chorak
+            * `q2` - II-chorak
+            * `q3` - III-chorak
+            * `q4` - IV-chorak
+          oneOf:
+          - $ref: '#/components/schemas/QuarterEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        report_items:
+          type: array
+          items: {}
+          writeOnly: true
+      required:
+      - deadline
+      - report_items
+    QuarterEnum:
+      enum:
+      - q1
+      - q2
+      - q3
+      - q4
+      type: string
+      description: |-
+        * `q1` - I-chorak
+        * `q2` - II-chorak
+        * `q3` - III-chorak
+        * `q4` - IV-chorak
+    RegionEnum:
+      enum:
+      - tashkent
+      - namangan
+      - andijon
+      - fargona
+      - buxoro
+      - samarqand
+      - navoiy
+      - qashqadaryo
+      - surxondaryo
+      - xorazm
+      - sirdaryo
+      - jizzax
+      - qoraqalpog‘iston
+      - republic
+      type: string
+      description: |-
+        * `tashkent` - Toshkent
+        * `namangan` - Namangan
+        * `andijon` - Andijon
+        * `fargona` - Farg'ona
+        * `buxoro` - Buxoro
+        * `samarqand` - Samarqand
+        * `navoiy` - Navoiy
+        * `qashqadaryo` - Qashqadaryo
+        * `surxondaryo` - Surxondaryo
+        * `xorazm` - Xorazm
+        * `sirdaryo` - Sirdaryo
+        * `jizzax` - Jizzax
+        * `qoraqalpog‘iston` - Qoraqalpog'iston
+        * `republic` - Respublika tashkilotlari
+    RegionalGeneralReport:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organization_name:
+          type: string
+          readOnly: true
+        report_items:
+          type: string
+          readOnly: true
+        children_reports:
+          type: string
+          readOnly: true
+      required:
+      - children_reports
+      - id
+      - organization_name
+      - report_items
+    ReportAccept:
+      type: object
+      properties:
+        status:
+          type: string
+          readOnly: true
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accepted_at
+      - status
+    ReportAcceptRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          writeOnly: true
+      required:
+      - id
+    ReportCancel:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusA04Enum'
+          readOnly: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - cancelled_at
+      - status
+    ReportCancelRequest:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          writeOnly: true
+        cancel_reason:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - cancel_reason
+      - id
+    ReportCreate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        report_season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReportSeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        foot_note:
+          type: string
+          nullable: true
+          description: Foydalanuvchi tomonidan kiritilgan izoh
+          maxLength: 255
+      required:
+      - deadline
+      - id
+    ReportCreateRequest:
+      type: object
+      properties:
+        deadline:
+          type: string
+          format: uuid
+        report_season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReportSeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        foot_note:
+          type: string
+          nullable: true
+          description: Foydalanuvchi tomonidan kiritilgan izoh
+          maxLength: 255
+        source_report:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+        report_items:
+          type: array
+          items: {}
+          writeOnly: true
+      required:
+      - deadline
+      - report_items
+    ReportDetail:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        submit_at:
+          type: string
+          readOnly: true
+        report_items:
+          type: string
+          readOnly: true
+      required:
+      - deadline
+      - id
+      - report_items
+      - submit_at
+    ReportExcelExportRequestRequest:
+      type: object
+      properties:
+        report_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Export qilinadigan report ID lar ro‘yxati
+        lang:
+          allOf:
+          - $ref: '#/components/schemas/LangEnum'
+          default: uz
+          description: |-
+            Til (uz / ru)
+
+            * `uz` - uz
+            * `ru` - ru
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          description: |-
+            Agar 'json' bo‘lsa, download_url qaytariladi
+
+            * `json` - json
+        row_numbers:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+          description: Hisoblangan ierarxik qator raqamlari
+        aggregated:
+          type: boolean
+      required:
+      - report_ids
+    ReportItem:
+      type: object
+      properties:
+        statement_column:
+          type: string
+          format: uuid
+        value:
+          type: string
+          readOnly: true
+      required:
+      - statement_column
+      - value
+    ReportList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organization:
+          type: string
+          format: uuid
+          nullable: true
+        organization_name:
+          type: string
+          readOnly: true
+        statement:
+          type: string
+          format: uuid
+        statement_name:
+          type: string
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        submit_at:
+          type: string
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusA04Enum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cancel_reason:
+          type: string
+          nullable: true
+          description: Reason for cancelling the report
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+        deadline_at:
+          type: string
+          readOnly: true
+        report_items:
+          type: string
+          readOnly: true
+        time_status:
+          type: string
+          readOnly: true
+        report_season:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReportSeasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        foot_note:
+          type: string
+          nullable: true
+          description: Foydalanuvchi tomonidan kiritilgan izoh
+          maxLength: 255
+        sent_by_full_name:
+          type: string
+          readOnly: true
+        sent_by_org_name:
+          type: string
+          readOnly: true
+        sent_by_role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SentByRoleEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_general:
+          type: string
+          readOnly: true
+        is_republic:
+          type: string
+          readOnly: true
+        is_plant_based:
+          type: string
+          readOnly: true
+        row_number:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - deadline
+      - deadline_at
+      - id
+      - is_general
+      - is_plant_based
+      - is_republic
+      - organization_name
+      - period
+      - report_items
+      - row_number
+      - sent_by_full_name
+      - sent_by_org_name
+      - statement
+      - statement_name
+      - submit_at
+      - time_status
+    ReportSeasonEnum:
+      enum:
+      - spring
+      - autumn
+      type: string
+      description: |-
+        * `spring` - Bahorgi
+        * `autumn` - Kuzgi
+    ReportSend:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          readOnly: true
+        sent_at:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - sent_at
+      - status
+    ReportSendRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+      - id
+    ReportUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+      required:
+      - deadline
+      - id
+    ReportUpdateRequest:
+      type: object
+      properties:
+        deadline:
+          type: string
+          format: uuid
+        report_items:
+          type: array
+          items: {}
+          writeOnly: true
+      required:
+      - deadline
+      - report_items
+    SeasonEnum:
+      enum:
+      - spring
+      - autumn
+      type: string
+      description: |-
+        * `spring` - Bahorgi
+        * `autumn` - Kuzgi
+    SendResetCode:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    SendResetCodeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    SentByRoleEnum:
+      enum:
+      - super_admin
+      - rahbariyat
+      - bolim_admin
+      - tashkilot_rahbari
+      - tashkilot_hodimi
+      - hududiy_boshqarma
+      type: string
+      description: |-
+        * `super_admin` - Super Admin
+        * `rahbariyat` - Rahbariyat
+        * `bolim_admin` - Bo`lim Admin
+        * `tashkilot_rahbari` - Tashkilot rahbari
+        * `tashkilot_hodimi` - Tashkilot hodimi
+        * `hududiy_boshqarma` - Hududiy boshqarma
+    SourceReport:
+      type: object
+      description: |-
+        A base mixin to be used for custom serialization behaviors in DRF serializers.
+        Include common validations, transformations, and error handling that apply broadly across your serializers.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        organization:
+          type: string
+          format: uuid
+          nullable: true
+        organization_name:
+          type: string
+          readOnly: true
+        statement:
+          type: string
+          format: uuid
+        statement_name:
+          type: string
+          readOnly: true
+        deadline:
+          type: string
+          format: uuid
+        submit_at:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusA04Enum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - deadline
+      - id
+      - organization_name
+      - statement
+      - statement_name
+      - submit_at
+    Statement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        period:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PeriodEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        parent:
+          type: string
+          format: uuid
+          nullable: true
+        children:
+          type: string
+          readOnly: true
+      required:
+      - children
+      - id
+      - name
+    StatementColumnTree:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        statement:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        ordering:
+          type: string
+          default: '0'
+          maxLength: 100
+        parent:
+          type: string
+          format: uuid
+          readOnly: true
+        status_plan:
+          nullable: true
+          title: Plan holati (oy, chorak, yil)
+          oneOf:
+          - $ref: '#/components/schemas/StatusPlanEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_organization:
+          type: boolean
+        children:
+          type: string
+          readOnly: true
+      required:
+      - children
+      - id
+      - parent
+      - statement
+      - title
+    StatementExpired:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        parent_name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - parent_name
+      - period
+    StatementLight:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        parent_name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - parent_name
+      - period
+    StatusA04Enum:
+      enum:
+      - saved
+      - sent
+      - cancelled
+      - accepted
+      type: string
+      description: |-
+        * `saved` - Saved
+        * `sent` - Sent
+        * `cancelled` - Cancelled
+        * `accepted` - Accepted
+    StatusA86Enum:
+      enum:
+      - new
+      - taken
+      - closed
+      type: string
+      description: |-
+        * `new` - New
+        * `taken` - Taken
+        * `closed` - Closed
+    StatusPlanEnum:
+      enum:
+      - yanvar
+      - fevral
+      - mart
+      - aprel
+      - may
+      - iyun
+      - iyul
+      - avgust
+      - sentabr
+      - oktabr
+      - noyabr
+      - dekabr
+      - chorak_1
+      - chorak_2
+      - chorak_3
+      - chorak_4
+      - yillik_1
+      - yillik_2
+      - yillik_3
+      - yillik
+      - yillik_total
+      type: string
+      description: |-
+        * `yanvar` - Yanvar
+        * `fevral` - Fevral
+        * `mart` - Mart
+        * `aprel` - Aprel
+        * `may` - May
+        * `iyun` - Iyun
+        * `iyul` - Iyul
+        * `avgust` - Avgust
+        * `sentabr` - Sentabr
+        * `oktabr` - Oktabr
+        * `noyabr` - Noyabr
+        * `dekabr` - Dekabr
+        * `chorak_1` - 1-chorak
+        * `chorak_2` - 2-chorak
+        * `chorak_3` - 3-chorak
+        * `chorak_4` - 4-chorak
+        * `yillik_1` - Yillik_1
+        * `yillik_2` - Yillik_2
+        * `yillik_3` - Yillik_3
+        * `yillik` - Yillik
+        * `yillik_total` - Yillik Total
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserList:
+      type: object
+      properties:
+        user_number:
+          type: string
+          description: Foydalanuvchiga biriktirilgan noyob raqam
+          maxLength: 10
+        first_name:
+          type: string
+          description: Foydalanuvchining ismi
+          maxLength: 250
+        last_name:
+          type: string
+          description: Foydalanuvchining familiyasi
+          maxLength: 250
+        organization:
+          type: string
+          format: uuid
+          nullable: true
+          description: Foydalanuvchining ishlaydigan tashkiloti
+        statement:
+          type: string
+          format: uuid
+          nullable: true
+          description: Foydalanuvchining tegishli bo'lgan hisobot yo'nalishi
+        organization_name:
+          type: string
+          readOnly: true
+        statement_name:
+          type: string
+          readOnly: true
+        nationality:
+          allOf:
+          - $ref: '#/components/schemas/NationalityEnum'
+          title: Nation
+          description: |-
+            Foydalanuvchining millati
+
+            * `Uzbek` - Uzbek
+            * `Russian` - Russian
+            * `Tajik` - Tajik
+            * `Kazakh` - Kazakh
+            * `Karakalpak` - Karakalpak
+            * `Tatar` - Tatar
+            * `Korean` - Korean
+            * `Ukrainian` - Ukrainian
+            * `Turkmen` - Turkmen
+            * `Kyrgyz` - Kyrgyz
+            * `Chinese` - Chinese
+            * `Japanese` - Japanese
+            * `Other` - Other
+        information:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          description: 'Foydalanuvchining telefon raqami. Namuna: +998XXXXXXXXX'
+          pattern: ^\+998\d{9}$
+          maxLength: 13
+        role:
+          type: string
+          readOnly: true
+        role_display:
+          type: string
+          readOnly: true
+        region:
+          nullable: true
+          description: |-
+            Hududiy boshqarma foydalanuvchisi uchun region
+
+            * `tashkent` - Toshkent
+            * `namangan` - Namangan
+            * `andijon` - Andijon
+            * `fargona` - Farg'ona
+            * `buxoro` - Buxoro
+            * `samarqand` - Samarqand
+            * `navoiy` - Navoiy
+            * `qashqadaryo` - Qashqadaryo
+            * `surxondaryo` - Surxondaryo
+            * `xorazm` - Xorazm
+            * `sirdaryo` - Sirdaryo
+            * `jizzax` - Jizzax
+            * `qoraqalpog‘iston` - Qoraqalpog'iston
+            * `republic` - Respublika tashkilotlari
+          oneOf:
+          - $ref: '#/components/schemas/RegionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        region_display:
+          type: string
+          readOnly: true
+        region_user_orgs:
+          type: string
+          readOnly: true
+      required:
+      - first_name
+      - information
+      - last_name
+      - organization_name
+      - region_display
+      - region_user_orgs
+      - role
+      - role_display
+      - statement_name
+    VerifyResetCode:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          maxLength: 6
+      required:
+      - code
+      - email
+    VerifyResetCodeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - code
+      - email
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

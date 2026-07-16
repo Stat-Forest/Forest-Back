@@ -205,6 +205,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ===============================
 # 🔐 REST FRAMEWORK & SPECTACULAR
 # ===============================
+# base.py
 SPECTACULAR_SETTINGS = {
     "TITLE": "Forest API",
     "DESCRIPTION": "API documentation for the Forest application",
