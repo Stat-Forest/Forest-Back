@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -30,6 +31,10 @@ class ConversationCreateAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ConversationCreateSerializer
 
+    @extend_schema(
+        tags=["Chat - User"],
+        summary="Create a new support conversation",
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(
             data=request.data,
@@ -70,6 +75,10 @@ class ConversationListAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ConversationListSerializer
 
+    @extend_schema(
+        tags=["Chat - User"],
+        summary="List current user's conversations",
+    )
     def get(self, request, *args, **kwargs):
         conversations = get_user_conversations(
             request.user,
@@ -91,6 +100,10 @@ class ConversationDetailAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ConversationDetailSerializer
 
+    @extend_schema(
+        tags=["Chat - User", "Chat - Support"],
+        summary="Retrieve conversation details",
+    )
     def get(self, request, conversation_id, *args, **kwargs):
         conversation = get_accessible_conversation(
             conversation_id=conversation_id,
@@ -120,6 +133,10 @@ class SupportNewConversationListAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ConversationListSerializer
 
+    @extend_schema(
+        tags=["Chat - Support"],
+        summary="List conversations waiting for a support administrator",
+    )
     def get(self, request, *args, **kwargs):
         conversations = get_new_conversations()
 
@@ -139,6 +156,10 @@ class SupportMyConversationListAPIView(GenericAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ConversationListSerializer
 
+    @extend_schema(
+        tags=["Chat - Support"],
+        summary="List conversations assigned to current support administrator",
+    )
     def get(self, request, *args, **kwargs):
         conversations = get_assigned_conversations(
             request.user,
@@ -159,6 +180,10 @@ class AssignConversationAPIView(GenericAPIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=["Chat - Support"],
+        summary="Assign a conversation to current support administrator",
+    )
     def post(self, request, conversation_id, *args, **kwargs):
         try:
             conversation = assign_conversation(
@@ -189,6 +214,10 @@ class CloseConversationAPIView(GenericAPIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=["Chat - Support"],
+        summary="Close an assigned conversation",
+    )
     def post(self, request, conversation_id, *args, **kwargs):
         try:
             conversation = close_conversation(
