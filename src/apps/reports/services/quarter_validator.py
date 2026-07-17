@@ -69,20 +69,20 @@ class DaromadQuarterService:
         """
         Daromad report'ining umumiy status'ini hisoblaydi.
 
-        Qoidasi:
-          - Kamida bitta quarter ACCEPTED bo'lsa → report.status = ACCEPTED
-            (viloyat jamida va list'da ko'rinishi uchun)
-          - Hech biri ACCEPTED emas             → report.status = SAVED
-
-        Bu logika report.status'ni current_quarter statusiga bog'lamasdan,
-        butun report'ning "qabul qilinganmi" holatini to'g'ri ifodalaydi.
+        Qoidasi (ustunlik tartibi):
+          1. Kamida bitta ACCEPTED → report.status = ACCEPTED
+          2. Kamida bitta SENT (va hech biri ACCEPTED emas) → report.status = SENT
+          3. Hech biri ACCEPTED/SENT emas → report.status = SAVED
         """
+        has_sent = False
         for q in cls.QUARTER_ORDER:
             quarter_num = q[-1]
             status = getattr(report, f"quarter_{quarter_num}_status", None)
             if status == Report.StatusChoices.ACCEPTED:
                 return Report.StatusChoices.ACCEPTED
-        return Report.StatusChoices.SAVED
+            if status == Report.StatusChoices.SENT:
+                has_sent = True
+        return Report.StatusChoices.SENT if has_sent else Report.StatusChoices.SAVED
 
     # ----------------------------------------------------------------
     # Validation
