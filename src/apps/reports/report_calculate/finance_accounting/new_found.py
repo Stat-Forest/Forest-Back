@@ -69,15 +69,9 @@ def calculate_daromad_plant_based(report: Report, pre: dict | None = None):
     values = defaultdict(lambda: defaultdict(Decimal))
     inner_map = {}
 
-    non_plant_based_orderings = {"1.1.3", "1.1.4", "1.1.5"}
-    plant_based_yillik_reja = {"1.1.2"}
-
     plant_based_column_ids = {
         c.id for c in column_by_ordering.values()
-        if not c.is_organization and (
-            c.ordering not in non_plant_based_orderings or
-            c.ordering in plant_based_yillik_reja
-        )
+        if not c.is_organization
     }
 
     deleted_count = ReportItemInner.objects.filter(
@@ -96,7 +90,7 @@ def calculate_daromad_plant_based(report: Report, pre: dict | None = None):
 
         column = column_by_ordering.get(ordering)
         if column and not column.is_organization:
-            if inner.plant_id is None and ordering not in non_plant_based_orderings:
+            if inner.plant_id is None:
                 continue
 
         val = normalize(inner.value)
@@ -173,24 +167,18 @@ def calculate_daromad_plant_based(report: Report, pre: dict | None = None):
             yil_reja_plant += values[chorak_reja].get(plant_id, Decimal("0"))
         set_value("1.1.2", plant_id, yil_reja_plant)
 
-    yil_reja_total = Decimal("0")
-    yil_amalda_total = Decimal("0")
-
-    for plant_id in all_plant_ids:
-        yil_reja_total += values["1.1.2"].get(plant_id, Decimal("0"))
-        yil_amalda_total += sum(
+        yil_amalda_plant = sum(
             values[chorak_amalda].get(plant_id, Decimal("0"))
             for chorak_amalda in chorak_map.keys()
         )
+        set_value("1.1.3", plant_id, yil_amalda_plant)
+        set_value("1.1.4", plant_id, yil_amalda_plant - yil_reja_plant)
 
-    set_value("1.1.3", None, yil_amalda_total)
-    set_value("1.1.4", None, yil_amalda_total - yil_reja_total)
-
-    if yil_reja_total:
-        foiz_total = round_decimal((yil_amalda_total / yil_reja_total) * 100, 1)
-    else:
-        foiz_total = Decimal("0")
-    set_value("1.1.5", None, foiz_total)
+        if yil_reja_plant:
+            foiz_plant = round_decimal((yil_amalda_plant / yil_reja_plant) * 100, 1)
+        else:
+            foiz_plant = Decimal("0")
+        set_value("1.1.5", plant_id, foiz_plant)
 
     with transaction.atomic():
         if new_items:
