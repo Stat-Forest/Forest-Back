@@ -1,8 +1,12 @@
 from datetime import date
+# pyrefly: ignore [missing-import]
 from django.core.cache import cache
+# pyrefly: ignore [missing-import]
 from django.db.models import Exists, OuterRef
 
+# pyrefly: ignore [missing-import]
 from apps.reports.models import Report, Deadline, Plan,Statement
+# pyrefly: ignore [missing-import]
 from apps.users.models import CustomUser
 
 DASHBOARD_CACHE_TTL = 10
@@ -37,6 +41,17 @@ class DashboardStatService:
                     "users": CustomUser.objects.all(),
                     "plans": Plan.objects.all(),
                 }
+
+        # SUPPORT ADMIN
+        if user.role == CustomUser.Role.SUPPORT_ADMIN:
+            return {
+                "reports": Report.objects.none(),
+                "deadlines": Deadline.objects.none(),
+                "users": CustomUser.objects.filter(
+                    role=CustomUser.Role.SUPPORT_ADMIN
+                ),
+                "plans": Plan.objects.none(),
+            }
 
         # STATEMENT
         if user.statement:
@@ -124,6 +139,10 @@ class DashboardStatService:
                 if self._deadline_has_missing_report(deadline, orgs):
                     expired_count += 1
             return expired_count
+
+        # SUPPORT ADMIN
+        if user.role == CustomUser.Role.SUPPORT_ADMIN:
+            return 0
 
         # ORGANIZATION USER — faqat o'z orgi bo'yicha
         if user.role in {

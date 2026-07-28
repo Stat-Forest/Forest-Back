@@ -1,4 +1,4 @@
-# serializers.py
+# chat_serializers.py
 from rest_framework import serializers
 from apps.reports.models import Deadline, Report
 

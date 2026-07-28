@@ -550,7 +550,7 @@ def _create_report_items(
 
         plant_keys = sorted(
             (k for k in per_plant if k is not None),
-            key=lambda k: plant_map.get(k, ""),
+            key=lambda k: plant_map.get(k) or "",
         )
         for pk in plant_keys:
             inners_to_create.append(
@@ -682,7 +682,7 @@ def _serialize_report_like(
 
         inners = list(it.inners.all())
         inners.sort(
-            key=lambda x: (0, plant_map.get(str(x.plant_id), "")) if x.plant_id else (1, "")
+            key=lambda x: (0, plant_map.get(str(x.plant_id)) or "") if x.plant_id else (1, "")
         )
 
         inners_payload = []
@@ -690,7 +690,7 @@ def _serialize_report_like(
             payload = {"value": inn.value}
             if inn.plant_id:
                 payload["plant_id"] = str(inn.plant_id)
-                payload["plant_name"] = plant_map.get(str(inn.plant_id), "")
+                payload["plant_name"] = plant_map.get(str(inn.plant_id)) or ""
             inners_payload.append(payload)
 
         statement_columns_payload.append({
@@ -762,7 +762,8 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
 
     plant_map: Dict[str, str] = {}
     if all_plant_ids:
-        plant_map = dict(Plant.objects.filter(id__in=all_plant_ids).values_list("id", "name"))
+        plant_db = Plant.objects.filter(id__in=all_plant_ids).values_list("id", "name")
+        plant_map = {str(pk): name or "" for pk, name in plant_db}
 
     # 6) Regionlar bo'yicha guruhlash
     by_region: Dict[str, List[Report]] = defaultdict(list)
@@ -832,11 +833,10 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
                         all_plant_ids.add(str(inn.plant_id))
 
         if all_plant_ids - set(plant_map.keys()):
-            extra = dict(
-                Plant.objects.filter(
-                    id__in=all_plant_ids - set(plant_map.keys())
-                ).values_list("id", "name")
-            )
+            extra_db = Plant.objects.filter(
+                id__in=all_plant_ids - set(plant_map.keys())
+            ).values_list("id", "name")
+            extra = {str(pk): name or "" for pk, name in extra_db}
             plant_map.update(extra)
 
         republic_rep = rebuild_republic_for_deadline(

@@ -317,7 +317,7 @@
                 {"value": "0636c686-a21c-466f-975a-0846e81e1491"}
             ]
         },
-{
+        {
             "statement_column": "b2a481bb-72e9-473a-a75c-bd59cf98ce7c",
             "inners": [
                 {"value": "60"}
@@ -970,7 +970,6 @@
     ]
 }
 
-
 # ========== Ijaraga berilgan yerlar hisobi
 
 {
@@ -1357,7 +1356,6 @@
     ]
 }
 
-
 # ============== Og'ir mahalla
 
 {
@@ -1381,7 +1379,7 @@
                 {"value": "5"}
             ]
         },
-{
+        {
             "statement_column": "3f5af54e-53cc-4122-b330-05f55751b76b",
             "inners": [
                 {"value": "5"}
@@ -1393,7 +1391,7 @@
                 {"value": "5"}
             ]
         },
-{
+        {
             "statement_column": "d11cf89e-32c7-4dcd-94d2-1143fa67bec5",
             "inners": [
                 {"value": "5"}
@@ -1451,7 +1449,6 @@
         }
     ]
 }
-
 
 # ============== Talim muassasalari
 
@@ -1535,7 +1532,6 @@
     ]
 }
 
-
 # ============== Terassa
 
 {
@@ -1567,7 +1563,6 @@
         }
     ]
 }
-
 
 # ============== Bruno
 
@@ -1605,12 +1600,67 @@
 # ============== Urug` xarakati Reja
 
 {
+    "deadline": "0f7dd80d-19ae-46c0-8c1c-cae80e4baeba",
+    "report_items": [
+        {
+            "statement_column": "56a6e3f6-6106-4ae7-a486-cb9f4da72c11",
+            "inners": [
+                {"value": "5aa60e9f-6904-4eb9-8842-cc8d8e7f13c2"}
+            ]
+        },
+        {
+            "statement_column": "9b568d94-9ae6-40ae-86b0-b9689a6e26c4",
+            "inners": [
+                {"value": "80"}
+            ]
+        },
+        {
+            "statement_column": "7a330ac7-adfa-4376-b448-159adab76b7b",
+            "inners": [
+                {
+                    "plant": "9c9a2671-72d7-4cb5-92b9-3b22e5b927f5",
+                    "value": "5"
+                },
+                {
+                    "plant": "ee5efdb6-d2cc-4514-9569-2b76e9c97af3",
+                    "value": "10"
+                },
+                {
+                    "plant": "e25255e1-1163-4fc3-83dd-7c39339e6479",
+                    "value": "11"
+                }
+            ]
+        }
+    ]
+}
+
+
+# ============= Column Plant =============
+{
+  "organization": "d4a2484c-ce21-46ae-9ad6-ce42e33c9998",
+  "statement": "5d248ce5-22e0-4cde-8bf8-a083175b8c11",
+  "year": 2025,
+  "plan_items": [
+    {
+      "column": "0a9f5bc1-55c1-4dd5-873f-f909c91deb23",
+      "plant": "f3369190-bcdd-4aef-a519-80783508fa3c",
+      "plan_value": 200
+    }
+  ]
+}
+
+# ============== Urug` xarakati Reja Update
+
+
+{
     "deadline": "061f35a9-e277-497a-b7f0-1daef94e642e",
     "report_items": [
         {
             "statement_column": "83f935ea-4d55-4cd2-9f81-e91e85938e95",
             "inners": [
-                {"value": "e963a1b0-efda-4122-9faa-89f14a44d205"}
+                {
+                    "value": "e963a1b0-efda-4122-9faa-89f14a44d205"
+                }
             ]
         },
         {
@@ -1641,52 +1691,6 @@
         }
     ]
 }
-
-# ============== Urug` xarakati Reja Update
-
-
-{
-  "deadline": "061f35a9-e277-497a-b7f0-1daef94e642e",
-  "report_items": [
-    {
-      "statement_column": "83f935ea-4d55-4cd2-9f81-e91e85938e95",
-      "inners": [
-        {
-          "value": "e963a1b0-efda-4122-9faa-89f14a44d205"
-        }
-      ]
-    },
-    {
-      "statement_column": "a912a7e8-828a-42b0-b9f4-c5d4feb43501",
-      "inners": [
-        {
-          "plant": "110de82c-cfa7-45d4-a4d8-5e07b0ae8e96",
-          "value": "20"
-        },
-        {
-          "plant": "1d8f80ea-1f11-4392-a94a-8b5163f756d7",
-          "value": "20"
-        }
-      ]
-    },
-    {
-      "statement_column": "8403cb5e-8382-4485-aa11-a6fd2e04a4f9",
-      "inners": [
-        {
-          "plant": "110de82c-cfa7-45d4-a4d8-5e07b0ae8e96",
-          "value": "5"
-        },
-        {
-          "plant": "1d8f80ea-1f11-4392-a94a-8b5163f756d7",
-          "value": "10"
-        }
-      ]
-    }
-  ]
-}
-
-
-
 
 # ============== Urug` xarakati
 
@@ -1738,87 +1742,85 @@
     ]
 }
 
-
 # ========= Qalamcha tayyorlash
 
 {
-    "deadline": "971b51bd-0ff7-48dc-9512-959508c04c68",
+    "deadline": "a6f7e0d4-9df6-46e5-a1c0-4ebc7b5b74e0",
     "report_items": [
         {
-            "statement_column": "171ec79c-e411-4b0f-b00a-aaa103463382",
+            "statement_column": "dc947bdb-9f8d-4eb5-8617-727888c69078",
             "inners": [
-                {"value": "f3769322-72ab-48b2-a318-c7242b7c8f47"}
+                {"value": "d4a2484c-ce21-46ae-9ad6-ce42e33c9998"}
             ]
         },
         {
-            "statement_column": "54381dc7-41f2-4196-9d7b-ae6c9ce2ee39",
+            "statement_column": "368628f3-dfd2-45ba-b4d0-b16f53ae25e5",
             "inners": [
                 {"value": "50"}
             ]
         },
         {
-            "statement_column": "7672793d-834a-4760-a105-47df38ae8a0e",
+            "statement_column": "5d2ada04-21ca-4cb4-82d7-3a0c2413b693",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "60606896-76e8-4bf5-82f0-46497a8a87a4",
+            "statement_column": "dab30824-6d62-4fbf-bf9f-267ce53c61f9",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "94b9d11b-45c4-4bdf-b158-83f93ead106c",
+            "statement_column": "85807477-a017-44d1-a712-8abf8e8ca7d8",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "c3e58220-282f-4d08-b01d-6daa8ef55f7e",
+            "statement_column": "a38fc162-599b-4953-ab24-26dc77726d83",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "f7841bd1-0177-4f3b-a20d-a752d3dfa542",
+            "statement_column": "2f526fc1-53a5-42eb-9ea3-54b3ef7495db",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "32cbd925-c9ad-4d8c-bd2c-35f5e565642a",
+            "statement_column": "a0bb3729-bcdf-48c5-be56-8a515aadf273",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "5de4362a-805b-46c8-a09e-e16479f2bfbf",
+            "statement_column": "0cb73ae3-39a9-46f3-83cc-ba8c26c86eb5",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "35658192-e691-4ea1-8c2c-955fc32913cc",
+            "statement_column": "c00c1d51-be27-4d0d-91ad-a0320756021b",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "2fc3cb41-97e4-440f-98a5-a773008b51af",
+            "statement_column": "ed286ca5-7e36-4d53-9f49-6e1ebed97605",
             "inners": [
                 {"value": "5"}
             ]
         },
         {
-            "statement_column": "ddac43ce-ac8c-4184-afae-61ec8a96bf1b",
+            "statement_column": "acc00ecf-4272-4365-bde5-aad3cbc0b5b6",
             "inners": [
                 {"value": "5"}
             ]
         }
     ]
 }
-
 
 # ============ Pichan o`rish
 
@@ -1846,7 +1848,6 @@
         }
     ]
 }
-
 
 # ============ Svod Chorva
 
@@ -2128,8 +2129,6 @@
     ]
 }
 
-
-
 # ============ Parrandachilik
 
 {
@@ -2270,7 +2269,6 @@
     ]
 }
 
-
 # ============ Baliqchilik ilovasi.
 
 
@@ -2309,7 +2307,6 @@
         }
     ]
 }
-
 
 # ============ Yaylov hisoboti
 
@@ -2397,53 +2394,63 @@
     ]
 }
 
-
-
 # =========== Ko`chatxona va Niholxona Jami
 
 {
-    "deadline": "4f20e154-93ff-4f2b-a62d-5b951dba63a5",
+    "deadline": "8197a2ff-6b3d-40c2-ab26-d687adf2ff73",
     "report_items": [
         {
-            "statement_column": "8de1fdc5-689e-4c5f-bc5e-700f5e01f7e1",
+            "statement_column": "418624ee-03ea-48d3-bc95-56a439de28c8",
             "inners": [
-                {"value": "c05609a5-7aa8-4efd-aa09-04d4061f2078"}
+                {"value": "d4a2484c-ce21-46ae-9ad6-ce42e33c9998"}
             ]
         },
         {
-            "statement_column": "a88baebf-bbd7-4267-a0c9-1cf463e0c4a1",
+            "statement_column": "8ff0341e-718d-4b32-bbef-d4b405831981",
             "inners": [
-                {"value": "120"}
+                {"value": "20"}
             ]
         },
         {
-            "statement_column": "bf3848f4-96b9-47eb-bbe6-4a2fa89a6f65",
+            "statement_column": "5425eb0c-b16c-49ef-838b-068bb958c14f",
             "inners": [
-                {"value": "60"}
+                {"value": "10"}
             ]
         },
         {
-            "statement_column": "05c9c6ac-043b-466f-b280-9cbc84935594",
+            "statement_column": "b53ac4dc-65a3-4100-9478-d83cd1c59166",
             "inners": [
-                {"value": "50"}
+                {
+                    "plant": "fd39b70e-13ad-4dbc-87d7-44149cd06dfd",
+                    "value": "10"
+                },
+                {
+                    "plant": "5089b127-4f6a-45d7-9389-85cb49be8fee",
+                    "value": "10"
+                }
             ]
         },
         {
-            "statement_column": "1d2666e5-1964-4a58-ba22-b5c29ac82c75",
+            "statement_column": "16bdbfba-2a5c-472b-8982-aab5330efd4e",
             "inners": [
-                {"value": "60"}
+                {"value": "10"}
             ]
         },
         {
-            "statement_column": "3b5ccac8-2318-4d91-8731-fc3d91fdb13b",
+            "statement_column": "05f9ccfd-7201-4d49-b18b-ce85c1d3122d",
             "inners": [
-                {"value": "50"}
+                {
+                    "plant": "fd39b70e-13ad-4dbc-87d7-44149cd06dfd",
+                    "value": "10"
+                },
+                {
+                    "plant": "5089b127-4f6a-45d7-9389-85cb49be8fee",
+                    "value": "10"
+                }
             ]
         }
     ]
 }
-
-
 
 # =========== Metallalom ilovasi.
 
@@ -3564,12 +3571,7 @@
     ]
 }
 
-
-
-
 # =========== Qishloq Xo`jaligi ALL APPS =============
-
-
 
 
 {
@@ -4179,3 +4181,67 @@
         }
     ]
 }
+
+# =============================  Kochat va Nihol Yetishtirish Jami
+
+{
+    "deadline": "c45223a0-6a1c-409a-9162-d2f000d159e4",
+    "source_report": "c1108291-0ab9-4032-8458-e0b11bb955ea",
+    "report_items": [
+        {
+            "statement_column": "48518912-ca88-4302-9b8c-a5fc6b94f27b",
+            "inners": [
+                {"value": "5aa60e9f-6904-4eb9-8842-cc8d8e7f13c2"}
+            ]
+        },
+        {
+            "statement_column": "e3ad560f-5f91-4802-b9ff-b5f4fe444240",
+            "inners": [
+                {"value": "100"}
+            ]
+        },
+        {
+            "statement_column": "e6c80797-ad92-4d41-9a41-4f804d63ffc7",
+            "inners": [
+                {"value": "50"}
+            ]
+        },
+        {
+            "statement_column": "ac83e3f8-9d1a-47d9-b7b7-1f2666795bbe",
+            "inners": [
+                {"value": "50"}
+            ]
+        }
+    ]
+}
+
+
+
+{
+  "organization": "5aa60e9f-6904-4eb9-8842-cc8d8e7f13c2",
+  "statement": "834b5d61-8107-4121-bfc6-1b261982c133",
+  "year": 2026,
+  "plants": [
+    {
+      "plant": "61649d77-3d18-4219-a310-7d5cee3072bb",
+      "items": [
+        { "column": "84657d7f-d9ee-445c-8faf-f0b548008a55", "plan_value": 1 },
+        { "column": "9e0a6468-f234-42dd-96fa-4105929ffc91", "plan_value": 1 },
+        { "column": "79814152-8a28-4340-a228-16b90bfa8c6f", "plan_value": 1 },
+
+        { "column": "fc237aca-669b-4011-98ff-1a6dbf4f2948", "plan_value": 1 },
+        { "column": "76010c3f-272c-4c30-a0e5-0b8bd594bc63", "plan_value": 1 },
+        { "column": "2efafcec-0674-43ee-8f72-12355e07fa3d", "plan_value": 1 },
+
+        { "column": "8063de92-b6fe-4317-9143-357e003ca4a1", "plan_value": 1 },
+        { "column": "7e65d0fe-5bd8-4f38-aa9e-30865a8d9210", "plan_value": 1 },
+        { "column": "83506938-7a36-4968-ad3a-f1b23036840b", "plan_value": 1 },
+
+        { "column": "28d1d45c-e68b-4f31-a23f-69c32c7035df", "plan_value": 1 },
+        { "column": "9f02f60f-ecae-46d6-bf2b-b6663103cc2b", "plan_value": 1 },
+        { "column": "9bce1450-8e18-41b0-8686-e63be960d325", "plan_value": 1 }
+      ]
+    }
+  ]
+}
+

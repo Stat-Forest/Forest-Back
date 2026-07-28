@@ -1,5 +1,5 @@
 # ==============================
-# serializers.py
+# chat_serializers.py
 # ==============================
 from rest_framework import serializers
 from apps.general.models import LandManagement
