@@ -5,7 +5,6 @@ from modeltranslation.utils import build_localized_fieldname
 
 from apps.reports.models import Plant, Statement
 
-
 CATEGORY_STRUCTURE = {
     "Iganbarglilar": [
         ("Qrim qarag‘ayi", "Қрим қарағайи"),
@@ -16,6 +15,7 @@ CATEGORY_STRUCTURE = {
         ("Sharq tuya", "Шарқ туя"),
         ("Kiparis", "Кипарис"),
         ("Tyanshan qora qarag‘ayi", "Тяншан қора қарағайи"),
+        ("Sarvi (kiparis)", "сарви (кипарис)"),
         ("Tog' archa", "Тоғ арча"),
     ],
 

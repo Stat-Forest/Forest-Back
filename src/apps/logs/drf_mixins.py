@@ -29,7 +29,7 @@ class DRFHistoryMixin:
         user = self._get_user_or_fail()
         obj._history_user = user
 
-        obj.save(update_fields=[])
+        obj.save(update_fields=["updated_at"])
 
         return obj
 

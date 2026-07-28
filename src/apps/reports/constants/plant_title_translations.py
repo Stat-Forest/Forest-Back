@@ -41,7 +41,7 @@ plant_translations = {
     "Tok": "Виноград",
     "nok (murut)": "Груша (мурут)",
     "Dulana": "Тут белый",
-    "jiyda (lox)": "Ясень (лох)",
+    "jiyda": "Ясень",
     "anor": "Гранат",
     "chilonjiyda (unabi)": "Инжир (унаби)",
     "non jiyda": "Хлебное дерево",

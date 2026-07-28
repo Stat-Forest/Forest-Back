@@ -201,3 +201,194 @@
         }
     ]
 }
+
+
+# ================================== DAROMAD 1 ======================================
+
+
+{
+    "deadline": "63ce3b5c-9a75-4249-a798-7c60a5cc080e",
+    "quarter": "q1",
+    "report_items": [
+        {
+            "statement_column": "338392af-2524-442b-9d61-7f067fc5cb90",
+            "inners": [
+                {"value": "f0bb8210-4038-4ccf-85e1-efaa3abf5f9c"}
+            ]
+        },
+        {
+            "statement_column": "1611898e-879f-425f-86d0-4bdf155d1134",
+            "inners": [
+                {"value": "60"}
+            ]
+        },
+        {
+            "statement_column": "948bd7e9-5589-458a-9b75-ecf2c7ed4eab",
+            "inners": [
+                {"value": "15"}
+            ]
+        },
+        {
+            "statement_column": "88eaefa6-4387-4d0d-88ea-a45d38d6df81",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "9147f853-33a3-419f-b6be-0e70a2ec97b3",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "f1a7d587-59ce-4146-ac42-30132b4fad44",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "b38219c9-bd9c-4e46-a605-40673afa1883",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "5fafb214-a56b-4e9b-ade4-8b77cbd1c515",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "fa7307f8-58ee-4a4c-ac5f-df0394e374ac",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "0d1a4cad-59a7-4f28-bb87-09f23d9bac72",
+            "inners": [
+                {"value": "15"}
+            ]
+        },
+        {
+            "statement_column": "da886556-fdda-4ce8-9378-8b52dbd08387",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "560e284d-1a44-4d84-8f02-4586a6e9c4f4",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "1668dbb8-b9b6-4c81-b86e-e7f597e08ebd",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "baadad55-2942-4242-bfc9-6ce09e3160be",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "b9889250-fb44-478c-b7b3-ce987209950b",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "b8171c47-b8fa-44ac-9aa1-6dc7f3c52c20",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "b9a0bd88-2c2d-4484-86ce-f5682ea72911",
+            "inners": [
+                {"value": "15"}
+            ]
+        },
+        {
+            "statement_column": "fcc7e317-0e1c-4443-94b3-4664af441a8f",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "50724f38-dfd9-4d81-83c5-ade2aba6f393",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "dc1e0852-ca33-46f6-8d2d-41a4dd5592f9",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "ad0f90e5-f321-41b9-b7e9-c9f9abc50a03",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "ec9a8df9-6d7e-4ba6-96e6-29c99b0b6f3c",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "ee8149dd-dc15-4131-a51f-4871e9a80ec2",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "00eb3788-0976-4737-b493-10508b36d6b9",
+            "inners": [
+                {"value": "15"}
+            ]
+        },
+        {
+            "statement_column": "c2dc9c91-6c51-40dc-857a-08fb617c3292",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "6a0d477c-d608-4f08-af43-4b169847f264",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "e77aa00b-b0cb-4c49-bb8b-a72d9a371caf",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "e0f30683-b460-4f0d-b466-b70e46962d37",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        },
+        {
+            "statement_column": "f8e2d2b4-8dfa-4ec2-8d2b-522f5c52d176",
+            "inners": [
+                {"value": "5"}
+            ]
+        },
+        {
+            "statement_column": "e92933b6-19a2-4e67-a4d8-a683cad2e59f",
+            "inners": [
+                {"plant": "1f372597-d55c-4430-a258-a868c581a9f1", "value": "1"}
+            ]
+        }
+    ]
+}

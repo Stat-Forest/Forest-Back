@@ -1,5 +1,3 @@
-version: "3.9"
-
 x-shared-config: &shared-config
   build:
     context: ../..
@@ -12,8 +10,6 @@ x-shared-config: &shared-config
     - forest_network
 
 services:
-
-  # ---------------- DJANGO ----------------
   forest_app:
     <<: *shared-config
     container_name: forest_app_container
@@ -23,9 +19,13 @@ services:
     depends_on:
       - forest_postgres
       - forest_redis
-      - e_imzo_server
+      #- forest_ollama
+    volumes:
+      - ../../src:/app
+      - ./logs:/var/log/forest-back
+      - ./exports:/app/exports
 
-  # ---------------- POSTGRES ----------------
+
   forest_postgres:
     image: postgres:16
     container_name: forest_postgres_container
@@ -36,7 +36,6 @@ services:
     networks:
       - forest_network
 
-  # ---------------- REDIS ----------------
   forest_redis:
     image: redis:7.0.15
     container_name: forest_redis_container
@@ -46,7 +45,6 @@ services:
       - forest_network
     restart: always
 
-  # ---------------- CELERY WORKER ----------------
   forest_celery_worker:
     <<: *shared-config
     container_name: forest_celery_worker_container
@@ -55,7 +53,6 @@ services:
       - forest_redis
       - forest_postgres
 
-  # ---------------- CELERY BEAT ----------------
   forest_celery_beat:
     <<: *shared-config
     container_name: forest_celery_beat_container
@@ -63,27 +60,20 @@ services:
     depends_on:
       - forest_celery_worker
 
-  # ---------------- E-IMZO SERVER ----------------
-  e_imzo_server:
-    build:
-      context: ../../e-imzo-server
-      dockerfile: Dockerfile
-    container_name: e_imzo_server_container
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-    networks:
-      - forest_network
-    restart: always
-    environment:
-      - TZ=Asia/Tashkent
+##  forest_ollama:
+#    image: ollama/ollama:latest
+#    #container_name: forest_ollama_container
+#    mem_limit: 3g
+#    volumes:
+#      - ollama_data:/root/.ollama
+#    networks:
+#      - forest_network
+#    restart: unless-stopped
 
-# ---------------- VOLUMES ----------------
 volumes:
   postgres_data:
   redis_data:
+#  ollama_data:
 
-# ---------------- NETWORK ----------------
 networks:
   forest_network:
-    driver: bridge
