@@ -593,7 +593,7 @@ def rebuild_general_for_deadline(
         is_daromad=is_daromad,
     )
 
-    region_label = dict(RegionChoices.choices).get(str(region_key), str(region_key))
+    region_label = str(dict(RegionChoices.choices).get(str(region_key), str(region_key))).title()
     _create_report_items(
         report=general,
         totals=totals,
@@ -685,13 +685,20 @@ def _serialize_report_like(
             key=lambda x: (0, plant_map.get(str(x.plant_id)) or "") if x.plant_id else (1, "")
         )
 
-        inners_payload = []
-        for inn in inners:
-            payload = {"value": inn.value}
-            if inn.plant_id:
-                payload["plant_id"] = str(inn.plant_id)
-                payload["plant_name"] = plant_map.get(str(inn.plant_id)) or ""
-            inners_payload.append(payload)
+        is_org_col = col_id in cache.org_name_cols
+
+        if is_org_col:
+            # Tashkilot nomi column — org_name yozish
+            inners_payload = [{"value": org_name}]
+        else:
+            # Numeric column — barcha plant qiymatlarni yig'ib bitta qiymat berish
+            total = Decimal("0")
+            has_value = False
+            for inn in inners:
+                val = _safe_decimal(inn.value)
+                total += val
+                has_value = True
+            inners_payload = [{"value": str(total)}] if has_value else []
 
         statement_columns_payload.append({
             "statement_column_id": col_id,
@@ -776,7 +783,10 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
     region_general_reports: List[Report] = []
 
     # 7) Har bir region uchun general rebuild
+    region_choices_map = dict(RegionChoices.choices)
     for region_key, reps in by_region.items():
+        region_label = region_choices_map.get(str(region_key), str(region_key)).title()
+
         general_rep = rebuild_general_for_deadline(
             statement=statement,
             deadline=deadline,
@@ -805,20 +815,20 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
         if general_rep:
             parent = _serialize_report_like(
                 general_rep, cache, lang, plant_map,
-                org_name_override=f"{region_key} – Viloyat Jami",
+                org_name_override=f"{region_label} – Viloyat Jami",
             )
             results.append({
                 "id": parent["id"],
-                "organization_name": parent["organization_name"] or f"{region_key} – Viloyat Jami",
+                "organization_name": parent["organization_name"] or f"{region_label} – Viloyat Jami",
                 "report_items": parent["report_items"],
                 "children_reports": children_payload,
             })
         else:
             results.append({
                 "id": None,
-                "organization_name": f"{region_key} – Viloyat Jami",
+                "organization_name": f"{region_label} – Viloyat Jami",
                 "report_items": [{"organization_id": "general",
-                                  "organization_name": f"{region_key} – Viloyat Jami",
+                                  "organization_name": f"{region_label} – Viloyat Jami",
                                   "statement_columns": []}],
                 "children_reports": children_payload,
             })
