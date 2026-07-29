@@ -614,7 +614,7 @@ class PlanListItemSerializer(serializers.ModelSerializer):
 
 
 
-# serializers.py
+# chat_serializers.py
 class PlanListSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     statement = serializers.SerializerMethodField()

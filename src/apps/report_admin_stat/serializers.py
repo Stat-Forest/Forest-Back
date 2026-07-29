@@ -1,4 +1,4 @@
-# apps/report_admin_stat/serializers.py
+# apps/report_admin_stat/chat_serializers.py
 from rest_framework import serializers
 
 
