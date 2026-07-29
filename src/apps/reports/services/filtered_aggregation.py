@@ -603,16 +603,17 @@ def rebuild_general_for_deadline(
     )
 
     try:
+        general.statement = statement  # duplicate SELECT statement oldini olish
         calculate_general_report(general)
     except Exception as e:
         logger.error(f"[FILTERED][GENERAL] calculate_general_report error: {e}")
     try:
-        if getattr(general.statement, "calculate_expression", None):
+        if getattr(statement, "calculate_expression", None):
             calculate_by_expressions(general)
     except Exception as e:
         logger.error(f"[FILTERED][GENERAL] calculate_by_expressions error: {e}")
 
-    return Report.objects.filter(id=general.id).prefetch_related(_prefetch_items_qs()).first()
+    return Report.objects.filter(id=general.id).select_related("organization").prefetch_related(_prefetch_items_qs()).first()
 
 
 @transaction.atomic
@@ -648,16 +649,17 @@ def rebuild_republic_for_deadline(
     )
 
     try:
+        rep.statement = statement  # duplicate SELECT statement oldini olish
         calculate_general_report(rep)
     except Exception as e:
         logger.error(f"[FILTERED][REPUBLIC] calculate_general_report error: {e}")
     try:
-        if getattr(rep.statement, "calculate_expression", None):
+        if getattr(statement, "calculate_expression", None):
             calculate_by_expressions(rep)
     except Exception as e:
         logger.error(f"[FILTERED][REPUBLIC] calculate_by_expressions error: {e}")
 
-    return Report.objects.filter(id=rep.id).prefetch_related(_prefetch_items_qs()).first()
+    return Report.objects.filter(id=rep.id).select_related("organization").prefetch_related(_prefetch_items_qs()).first()
 
 
 # ============================================================
@@ -691,14 +693,13 @@ def _serialize_report_like(
             # Tashkilot nomi column — org_name yozish
             inners_payload = [{"value": org_name}]
         else:
-            # Numeric column — barcha plant qiymatlarni yig'ib bitta qiymat berish
-            total = Decimal("0")
-            has_value = False
+            inners_payload = []
             for inn in inners:
-                val = _safe_decimal(inn.value)
-                total += val
-                has_value = True
-            inners_payload = [{"value": str(total)}] if has_value else []
+                payload = {"value": inn.value}
+                if inn.plant_id:
+                    payload["plant_id"] = str(inn.plant_id)
+                    payload["plant_name"] = plant_map.get(str(inn.plant_id)) or ""
+                inners_payload.append(payload)
 
         statement_columns_payload.append({
             "statement_column_id": col_id,
@@ -768,9 +769,11 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
                     all_plant_ids.add(str(inn.plant_id))
 
     plant_map: Dict[str, str] = {}
+    # lang ga qarab name_uz yoki name_ru olinadi
+    plant_name_field = f"name_{lang}" if lang in ("uz", "ru") else "name_uz"
     if all_plant_ids:
-        plant_db = Plant.objects.filter(id__in=all_plant_ids).values_list("id", "name")
-        plant_map = {str(pk): name or "" for pk, name in plant_db}
+        plant_db = Plant.objects.filter(id__in=all_plant_ids).values_list("id", plant_name_field, "name")
+        plant_map = {str(pk): (localized or fallback or "") for pk, localized, fallback in plant_db}
 
     # 6) Regionlar bo'yicha guruhlash
     by_region: Dict[str, List[Report]] = defaultdict(list)
@@ -845,8 +848,8 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
         if all_plant_ids - set(plant_map.keys()):
             extra_db = Plant.objects.filter(
                 id__in=all_plant_ids - set(plant_map.keys())
-            ).values_list("id", "name")
-            extra = {str(pk): name or "" for pk, name in extra_db}
+            ).values_list("id", plant_name_field, "name")
+            extra = {str(pk): (localized or fallback or "") for pk, localized, fallback in extra_db}
             plant_map.update(extra)
 
         republic_rep = rebuild_republic_for_deadline(
