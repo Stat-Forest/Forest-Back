@@ -15,3 +15,28 @@ class OrganizationListSerializer(serializers.ModelSerializer):
         lang = get_lang_code(self.context)
         translated = get_translated_field(obj, "name", lang)
         return translated or obj.name
+
+
+
+class OrganizationMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ("id", "name")
+
+
+class RegionOrganizationsSerializer(serializers.Serializer):
+    region = serializers.CharField()
+    count = serializers.IntegerField()
+    display = serializers.CharField()
+    organizations = OrganizationMiniSerializer(many=True)
+
+
+class RepublicSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    count = serializers.IntegerField()
+    display = serializers.CharField()
+
+
+class OrganizationsByRegionResponseSerializer(serializers.Serializer):
+    republic = RepublicSerializer()
+    regions = RegionOrganizationsSerializer(many=True)

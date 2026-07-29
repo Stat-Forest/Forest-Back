@@ -1,4 +1,6 @@
 from urllib.parse import parse_qs
+from django.utils import timezone
+from django.conf import settings
 
 from channels.auth import AuthMiddlewareStack
 from channels.db import database_sync_to_async
@@ -22,6 +24,8 @@ from apps.users.models import CustomUser
 def get_user_from_token(token: str):
     """
     Validate JWT token and return authenticated user.
+    
+    Also checks inactivity timeout to match CustomJWTAuthentication logic.
 
     Returns:
         CustomUser | AnonymousUser
@@ -32,13 +36,25 @@ def get_user_from_token(token: str):
 
         payload = AccessToken(token)
 
-        return CustomUser.objects.only(
+        user = CustomUser.objects.only(
             "id",
             "is_active",
+            "last_activity",
         ).get(
             pk=payload["user_id"],
             is_active=True,
         )
+
+        # Inactivity timeout check (same as CustomJWTAuthentication)
+        timeout_seconds = getattr(settings, "SESSION_INACTIVITY_TIMEOUT_SECONDS", 900)
+        now = timezone.now()
+
+        if user.last_activity:
+            inactivity_seconds = (now - user.last_activity).total_seconds()
+            if inactivity_seconds > timeout_seconds:
+                return AnonymousUser()
+
+        return user
 
     except (
         TokenError,

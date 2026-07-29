@@ -1,12 +1,32 @@
 # apps/users/admin_forms.py
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from apps.users.models.users import CustomUser
+
 
 class CustomUserAdminForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = "__all__"
+
+    def clean_password(self):
+        password = self.cleaned_data.get("password")
+        if not password:
+            return password
+
+        # Mavjud user tahrirlashda — agar password o'zgarmagan bo'lsa, tekshirmaslik
+        if self.instance and self.instance.pk:
+            # Django admin hashed passwordni saqlaydi, agar qiymat o'sha bo'lsa — o'zgarmagan
+            if password == self.instance.password:
+                return password
+
+        try:
+            validate_password(password, user=self.instance)
+        except ValidationError as e:
+            raise ValidationError(e.messages)
+
+        return password
 
     def clean_region_user_orgs(self):
         orgs = self.cleaned_data.get("region_user_orgs")

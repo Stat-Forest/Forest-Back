@@ -1,5 +1,5 @@
 # ==============================
-# models.py
+# chat.py
 # ==============================
 from django.db import models
 from apps.base.models import AbstractBaseModel
