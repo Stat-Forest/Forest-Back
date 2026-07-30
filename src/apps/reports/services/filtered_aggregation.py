@@ -259,7 +259,7 @@ def _prefetch_items_qs():
 # Query helpers
 # ============================================================
 
-def filter_reports_by_deadline(statement, deadline_id: str):
+def filter_reports_by_deadline(statement, deadline_id: str, quarter: str | None = None):
     """
     ODDIY STATEMENTLAR: faqat status=ACCEPTED reportlar.
 
@@ -267,6 +267,8 @@ def filter_reports_by_deadline(statement, deadline_id: str):
     quarter_X_status=ACCEPTED bo'lgan reportlar.
     Chunki Daromadda bitta Report'da 4 chorak saqlanadi va
     joriy chorak SAVED/SENT tursa ham oldingi choraklar ACCEPTED bo'lib qoladi.
+
+    quarter berilsa (q1..q4) — faqat shu chorak ACCEPTED bo'lgan reportlar.
     """
     base_qs = (
         Report.objects
@@ -284,6 +286,11 @@ def filter_reports_by_deadline(statement, deadline_id: str):
     )
 
     if _is_daromad_statement(statement):
+        if quarter and quarter in ("q1", "q2", "q3", "q4"):
+            q_num = quarter[-1]  # "q2" → "2"
+            return base_qs.filter(
+                **{f"quarter_{q_num}_status": Report.StatusChoices.ACCEPTED}
+            )
         return base_qs.filter(
             Q(quarter_1_status=Report.StatusChoices.ACCEPTED) |
             Q(quarter_2_status=Report.StatusChoices.ACCEPTED) |
@@ -330,6 +337,7 @@ def _sum_reports_for_general(
     cache: StatementDataCache,
     individual_general_by_org: dict[str, Report] | None = None,
     is_daromad: bool = False,
+    quarter_filter: str | None = None,
 ) -> Dict[str, Dict[str | None, Decimal]]:
     """
     Region jami uchun qiymatlarni yig'adi.
@@ -352,7 +360,11 @@ def _sum_reports_for_general(
         # Daromad: faqat ACCEPTED quarter column'larini ruxsat et
         allowed_col_ids: set[str] | None = None
         if is_daromad:
-            accepted_quarters = _get_accepted_quarters(report)
+            if quarter_filter:
+                # Faqat tanlangan chorak
+                accepted_quarters = [quarter_filter]
+            else:
+                accepted_quarters = _get_accepted_quarters(report)
             if not accepted_quarters:
                 logger.warning(
                     f"[DAROMAD] Report {report.id} da ACCEPTED quarter yo'q, skip."
@@ -579,6 +591,7 @@ def rebuild_general_for_deadline(
     plant_map: Dict[str, str],
     individual_general_by_org: dict[str, Report] | None = None,
     is_daromad: bool = False,
+    quarter_filter: str | None = None,
 ) -> Optional[Report]:
     general = _ensure_general_report(statement, str(deadline.id), region_key, deadline)
     if not general:
@@ -591,6 +604,7 @@ def rebuild_general_for_deadline(
         cache=cache,
         individual_general_by_org=individual_general_by_org,
         is_daromad=is_daromad,
+        quarter_filter=quarter_filter,
     )
 
     region_label = str(dict(RegionChoices.choices).get(str(region_key), str(region_key))).title()
@@ -672,6 +686,7 @@ def _serialize_report_like(
     lang: str,
     plant_map: Dict[str, str],
     org_name_override: Optional[str] = None,
+    allowed_col_ids: set[str] | None = None,
 ) -> Dict:
     org_name = org_name_override
     if org_name is None:
@@ -680,6 +695,9 @@ def _serialize_report_like(
     statement_columns_payload = []
     for it in rep.report_items.all():
         col_id = str(it.statement_column_id)
+        # Quarter filter: faqat ruxsat etilgan column'lar
+        if allowed_col_ids is not None and col_id not in allowed_col_ids:
+            continue
         col_name = cache.get_column_path(col_id, lang)
 
         inners = list(it.inners.all())
@@ -729,7 +747,7 @@ def _serialize_report_like(
 # Main entry point
 # ============================================================
 
-def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
+def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str | None = None) -> Dict:
     """
     Daromad va oddiy statementlar uchun filtered aggregation.
 
@@ -752,7 +770,7 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
 
     # 3) Reportlarni yuklash
     is_daromad = _is_daromad_statement(statement)
-    individuals = list(filter_reports_by_deadline(statement, deadline_id))
+    individuals = list(filter_reports_by_deadline(statement, deadline_id, quarter=quarter))
 
     # 4) Individual general (maxsus statementlar uchun)
     individual_general_by_org: dict[str, Report] = {}
@@ -785,6 +803,11 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
     results = []
     region_general_reports: List[Report] = []
 
+    # Daromad + quarter filter: faqat shu chorak ustunlari ko'rinadi
+    serialize_allowed: set[str] | None = None
+    if is_daromad and quarter:
+        serialize_allowed = cache.build_daromad_allowed_col_ids([quarter])
+
     # 7) Har bir region uchun general rebuild
     region_choices_map = dict(RegionChoices.choices)
     for region_key, reps in by_region.items():
@@ -799,13 +822,14 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
             plant_map=plant_map,
             individual_general_by_org=individual_general_by_org,
             is_daromad=is_daromad,
+            quarter_filter=quarter,
         )
         if general_rep:
             region_general_reports.append(general_rep)
 
         children_payload = []
         for r in reps:
-            s = _serialize_report_like(r, cache, lang, plant_map)
+            s = _serialize_report_like(r, cache, lang, plant_map, allowed_col_ids=serialize_allowed)
             children_payload.append({
                 "id": s["id"],
                 "organization_name": s["organization_name"],
@@ -819,6 +843,7 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
             parent = _serialize_report_like(
                 general_rep, cache, lang, plant_map,
                 org_name_override=f"{region_label} – Viloyat Jami",
+                allowed_col_ids=serialize_allowed,
             )
             results.append({
                 "id": parent["id"],
@@ -863,6 +888,7 @@ def build_filtered_payload(statement, deadline_id: str, lang: str) -> Dict:
             rp = _serialize_report_like(
                 republic_rep, cache, lang, plant_map,
                 org_name_override="Respublika Jami",
+                allowed_col_ids=serialize_allowed,
             )
             results.append({
                 "id": rp["id"],
