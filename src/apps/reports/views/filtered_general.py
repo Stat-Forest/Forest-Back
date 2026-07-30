@@ -31,6 +31,15 @@ from apps.reports.services.filtered_aggregation import build_filtered_payload
             enum=["uz", "ru"],
             description="Language for column titles",
         ),
+        OpenApiParameter(
+            name="quarter",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            enum=["q1", "q2", "q3", "q4"],
+            description="Quarter filter for Daromad: q1, q2, q3, q4. "
+                        "Berilmasa barcha ACCEPTED choraklar umumiy chiqadi.",
+        ),
     ],
 )
 class FilteredGeneralReportAPIView(CustomListAPIView):
@@ -44,9 +53,13 @@ class FilteredGeneralReportAPIView(CustomListAPIView):
         statement_id = request.query_params.get("statement")
         deadline_id = request.query_params.get("deadline")
         lang = (request.query_params.get("lang") or "uz").lower()
+        quarter = request.query_params.get("quarter")
 
         if lang not in ("uz", "ru"):
             lang = "uz"
+
+        if quarter and quarter not in ("q1", "q2", "q3", "q4"):
+            quarter = None
 
         if not statement_id or not deadline_id:
             return Response([], status=200)
@@ -57,5 +70,5 @@ class FilteredGeneralReportAPIView(CustomListAPIView):
         except Exception:
             return Response({"detail": "Invalid statement"}, status=400)
 
-        payload = build_filtered_payload(statement, deadline_id, lang)
+        payload = build_filtered_payload(statement, deadline_id, lang, quarter=quarter)
         return Response(payload, status=200)
