@@ -28,7 +28,6 @@ services:
       - forest_postgres
       - forest_redis
       - e_imzo_server        # ← qo'shildi
-      - forest_ollama
     restart: always
     networks:
       - forest_network
@@ -131,15 +130,6 @@ services:
     environment:
       - TZ=Asia/Tashkent
 
-  forest_ollama:
-    image: ollama/ollama:latest
-    container_name: forest_ollama_container
-    mem_limit: 3g
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - forest_network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -147,7 +137,6 @@ volumes:
   certbot-etc:
   certbot-var:
   backups_data:
-  ollama_data:
 
 networks:
   forest_network:
