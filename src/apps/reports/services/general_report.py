@@ -306,14 +306,18 @@ def aggregate_national_report(statement, deadline, region):
                     total_reja += safe_decimal(org_inner.value)
             grouped_values[rc.id] = [str(total_reja)]
 
-    # 6️⃣ Yangi ReportItem larni yaratamiz (faqat yagona column_id lar bilan)
-    new_inners = []
+    # 6️⃣ Yangi ReportItem larni bulk_create orqali yaratamiz
+    items_to_create = [
+        ReportItem(report=national_report, statement_column_id=column_id)
+        for column_id in grouped_values
+    ]
+    created_items = ReportItem.objects.bulk_create(items_to_create)
 
+    # column_id → item mapping orqali inner larni yaratamiz
+    col_id_to_item = {item.statement_column_id: item for item in created_items}
+    new_inners = []
     for column_id, values in grouped_values.items():
-        item = ReportItem.objects.create(
-            report=national_report,
-            statement_column_id=column_id
-        )
+        item = col_id_to_item[column_id]
         total = sum(safe_decimal(v) for v in values)
         new_inners.append(ReportItemInner(report_item=item, value=str(total)))
 
