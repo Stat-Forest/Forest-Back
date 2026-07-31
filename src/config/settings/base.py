@@ -16,12 +16,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
 
-DEBUG = False
-
-# DEBUG = os.environ.get(
-#     "DEBUG",
-#     "False",
-# ) == "True"
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -68,7 +63,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "drf_spectacular",
-    "debug_toolbar",
+    "drf_spectacular_sidecar",
     "channels",
 
     # Django defaults
@@ -104,7 +99,6 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 
     # CustomMiddleWare for Enter Admin
@@ -212,6 +206,9 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
 # ===============================
@@ -236,3 +233,12 @@ CHANNEL_LAYERS = {
     },
 }
 
+# ===============================
+# 🐛 DEBUG TOOLBAR (faqat DEBUG=True da)
+# ===============================
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.middleware.common.CommonMiddleware") + 1,
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    )
