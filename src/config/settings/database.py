@@ -13,7 +13,9 @@ if POSTGRES:
             'USER': os.environ['POSTGRES_USER'],
             'PASSWORD': os.environ['POSTGRES_PASSWORD'],
             'HOST': os.environ["DB_HOST"],
-            'PORT': os.environ["DB_PORT"]
+            'PORT': os.environ["DB_PORT"],
+            'CONN_MAX_AGE': 600,            # 10 min persistent connection
+            'CONN_HEALTH_CHECKS': True,      # Django 4.1+ stale connection check
         }
     }
 

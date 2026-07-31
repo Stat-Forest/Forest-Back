@@ -757,7 +757,18 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
     - Daromad uchun quarter-aware aggregation: faqat ACCEPTED
       quarter'larning Amalda column'lari summalanadi.
     - plant_map bir marta yuklanadi va hamma joyga uzatiladi.
+    - Redis cache: natija 5 daqiqa saqlanadi, signal bilan invalidate qilinadi.
     """
+
+    # ─── Redis cache check ───
+    from apps.reports.services.report_cache import (
+        get_cached_filtered_payload,
+        set_cached_filtered_payload,
+    )
+    stmt_id = str(statement.id)
+    cached = get_cached_filtered_payload(stmt_id, deadline_id, lang, quarter)
+    if cached is not None:
+        return cached
 
     # 1) Cache — request-scoped, singleton emas
     cache = StatementDataCache(str(statement.id))
@@ -906,4 +917,9 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
                 "children_reports": [],
             })
 
-    return {"count": len(results), "next": None, "previous": None, "results": results}
+    result = {"count": len(results), "next": None, "previous": None, "results": results}
+
+    # ─── Redis cache set ───
+    set_cached_filtered_payload(stmt_id, deadline_id, lang, quarter, result)
+
+    return result

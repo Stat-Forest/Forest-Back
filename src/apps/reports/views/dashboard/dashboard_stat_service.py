@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.db.models import Exists, OuterRef
 
 # pyrefly: ignore [missing-import]
-from apps.reports.models import Report, Deadline, Plan,Statement
+from apps.reports.models import Report, Deadline, Plan, Statement
 # pyrefly: ignore [missing-import]
 from apps.users.models import CustomUser
 
@@ -28,19 +28,21 @@ class DashboardStatService:
         cache.set(self.cache_key, data, DASHBOARD_CACHE_TTL)
         return data
 
-    # ================= BASE CONTEXT =================
+    # ================= BASE CONTEXT =================gklNX2189oisAIOXD@
     def _get_base_context(self):
         user = self.user
 
         # SUPER / MARKAZIY
-        if user.role == CustomUser.Role.SUPER_ADMIN:
-            if not user.organization and not user.statement:
-                return {
-                    "reports": Report.objects.filter(is_report=True),
-                    "deadlines": Deadline.objects.all(),
-                    "users": CustomUser.objects.all(),
-                    "plans": Plan.objects.all(),
-                }
+        if user.role in {
+            CustomUser.Role.SUPER_ADMIN,
+            CustomUser.Role.RAHBARIYAT,
+        } and not user.organization and not user.statement:
+            return {
+                "reports": Report.objects.filter(is_report=True),
+                "deadlines": Deadline.objects.all(),
+                "users": CustomUser.objects.all(),
+                "plans": Plan.objects.all(),
+            }
 
         # SUPPORT ADMIN
         if user.role == CustomUser.Role.SUPPORT_ADMIN:
@@ -132,7 +134,10 @@ class DashboardStatService:
         expired_qs = deadlines_qs.filter(deadline_at__lt=date.today())
 
         # SUPER_ADMIN — barcha orglar bo'yicha tekshiradi
-        if user.role == CustomUser.Role.SUPER_ADMIN:
+        if user.role in {
+            CustomUser.Role.SUPER_ADMIN,
+            CustomUser.Role.RAHBARIYAT,
+        }:
             expired_count = 0
             for deadline in expired_qs.prefetch_related("organizations"):
                 orgs = deadline.organizations.all()
