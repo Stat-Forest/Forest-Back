@@ -28,7 +28,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no -T ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
           cd /root/Forest-Back
           git fetch origin && git checkout main && git reset --hard origin/main
-          # Faqat app xizmatlarini qayta build — DB/Redis/Nginx tegmasdan
+          docker-compose -f docker/prod/docker-compose-prod.yml stop forest_app forest_celery_worker forest_celery_beat
+          docker-compose -f docker/prod/docker-compose-prod.yml rm -f forest_app forest_celery_worker forest_celery_beat
           docker-compose -f docker/prod/docker-compose-prod.yml build forest_app forest_celery_worker forest_celery_beat
-          docker-compose -f docker/prod/docker-compose-prod.yml up -d --no-deps forest_app forest_celery_worker forest_celery_beat
+          docker-compose -f docker/prod/docker-compose-prod.yml up -d forest_app forest_celery_worker forest_celery_beat
         EOF
