@@ -16,12 +16,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
 
-DEBUG = False
-
-# DEBUG = os.environ.get(
-#     "DEBUG",
-#     "False",
-# ) == "True"
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -68,6 +63,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "drf_spectacular",
+    "drf_spectacular_sidecar",
     "debug_toolbar",
     "channels",
 
@@ -212,6 +208,9 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
 # ===============================
