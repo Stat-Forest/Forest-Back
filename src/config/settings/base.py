@@ -64,7 +64,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "drf_spectacular_sidecar",
-    "debug_toolbar",
     "channels",
 
     # Django defaults
@@ -100,7 +99,6 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 
     # CustomMiddleWare for Enter Admin
@@ -235,3 +233,12 @@ CHANNEL_LAYERS = {
     },
 }
 
+# ===============================
+# 🐛 DEBUG TOOLBAR (faqat DEBUG=True da)
+# ===============================
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.middleware.common.CommonMiddleware") + 1,
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    )
