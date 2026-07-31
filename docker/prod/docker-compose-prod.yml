@@ -31,6 +31,13 @@ services:
     restart: always
     networks:
       - forest_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
 
   forest_nginx:
     image: nginx:latest
@@ -76,6 +83,13 @@ services:
     networks:
       - forest_network
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
 
   forest_redis:
     image: redis:7.0.15
@@ -100,6 +114,13 @@ services:
     networks:
       - forest_network
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
 
   forest_celery_beat:
     build:
