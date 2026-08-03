@@ -34,7 +34,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/min',  # Unauthenticated: 30 requests per minute
-        'user': '120/min',  # Authenticated: 120 requests per minute
+        'user': '300/min',  # Authenticated: 300 requests per minute (signal chain uchun kerak)
         'burst': '10/min',  # Scope-based burst limit for sensitive endpoints (login, OTP, etc.)
         'login_ip': '10/min',
         'login_email': '5/min',
