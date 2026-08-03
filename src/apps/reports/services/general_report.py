@@ -38,46 +38,41 @@ def is_calculated_column(col) -> bool:
 def get_or_create_general_report(statement, deadline, region=None):
     """
     Regional (viloyat) jami reportini deadline-dan mustaqil tarzda bitta qilib yuritadi.
-    - Unikal kalit: (statement, region, is_general=True, organization=NULL)
-    - Ichkarida so‘nggi (latest) Deadline tanlanadi va report shu deadline bilan bog‘lanadi.
-    - Agar bir nechta nusxa bo‘lsa, eng yangisi qoladi, qolganlari o‘chiriladi.
+    Optimized: minimal queries.
     """
     from apps.reports.models import Report
 
-    # 1) Mazkur region uchun so'nggi deadline-ni aniqlash
     latest_deadline = (
         Deadline.objects.filter(statement=statement, organizations__region=region)
         .order_by('-created_at')
         .first()
+    ) or (
+        Deadline.objects.filter(statement=statement)
+        .order_by('-created_at')
+        .first()
     )
-    # Fallback: agar region bo'yicha deadline topilmasa, statement bo'yicha eng so'nggi deadline-ni olamiz
-    if not latest_deadline:
-        latest_deadline = (
-            Deadline.objects.filter(statement=statement)
-            .order_by('-created_at')
-            .first()
-        )
 
-    # Agar deadline topilmasa ham obyekt mavjud bo'lishi kerak, ammo deadline-ni None
-    # qilish o‘rniga, mavjud bo‘lsa saqlaymiz. Aggregation funktsiyalari o‘zlari
-    # latest_deadline bilan ishlaydi.
+    # Single query: first 2 results to detect duplicates
+    qs = list(
+        Report.objects.filter(
+            organization__isnull=True,
+            statement=statement,
+            is_general=True,
+            region=region,
+        ).order_by('-created_at')[:2]
+    )
 
-    # 2) Mavjud jami report(lar)ni deadline-dan qat'i nazar qidiramiz
-    qs = Report.objects.filter(
-        organization__isnull=True,
-        statement=statement,
-        is_general=True,
-        region=region,
-    ).order_by('-created_at')
+    if len(qs) > 1:
+        # Keep first, delete rest
+        Report.objects.filter(
+            organization__isnull=True,
+            statement=statement,
+            is_general=True,
+            region=region,
+        ).exclude(id=qs[0].id).delete()
 
-    general_report = qs.first()
+    general_report = qs[0] if qs else None
 
-    # 3) Dublikatlar bo‘lsa, barchasini birga yig‘amiz va bitta qoldiramiz
-    if qs.count() > 1:
-        keep_id = general_report.id
-        qs.exclude(id=keep_id).delete()
-
-    # 4) Agar yo‘q bo‘lsa – yaratamiz
     if not general_report:
         general_report = Report.objects.create(
             organization=None,
@@ -89,27 +84,19 @@ def get_or_create_general_report(statement, deadline, region=None):
             is_report=False,
         )
     else:
-        # 5) Mavjud bo‘lsa – deadline-ni eng songgisiga yangilaymiz
+        # Batch all updates into single save
+        updates = []
         if latest_deadline and general_report.deadline_id != getattr(latest_deadline, 'id', None):
             general_report.deadline = latest_deadline
-            general_report.save(update_fields=['deadline'])
-
-    # 6) sent_by_role ni konsistent saqlaymiz
-    # if region:
-    #     if general_report.sent_by_role != f"region:{region}":
-    #         general_report.sent_by_role = f"region:{region}"
-    #         general_report.save(update_fields=["sent_by_role"])
-
-    # 7) Flaglarni kafolatlaymiz
-    updates = {}
-    if general_report.is_report:
-        updates['is_report'] = False
-    if general_report.status != Report.StatusChoices.SAVED:
-        updates['status'] = Report.StatusChoices.SAVED
-    if updates:
-        for k, v in updates.items():
-            setattr(general_report, k, v)
-        general_report.save(update_fields=list(updates.keys()))
+            updates.append('deadline')
+        if general_report.is_report:
+            general_report.is_report = False
+            updates.append('is_report')
+        if general_report.status != Report.StatusChoices.SAVED:
+            general_report.status = Report.StatusChoices.SAVED
+            updates.append('status')
+        if updates:
+            general_report.save(update_fields=updates)
 
     return general_report
 
@@ -117,33 +104,32 @@ def get_or_create_general_report(statement, deadline, region=None):
 def get_or_create_national_report(statement, deadline, region=None):
     """
     Respublika jami reportini deadline-dan mustaqil tarzda bitta qilib yuritadi.
-    - Unikal kalit: (statement, is_republic=True) [region odatda RegionChoices.REPUBLIC]
-    - Ichkarida so‘nggi (latest) Deadline tanlanadi va report shu deadline bilan bog‘lanadi.
-    - Agar bir nechta nusxa bo‘lsa, eng yangisi qoladi, qolganlari o‘chiriladi.
+    Optimized: minimal queries.
     """
     from apps.reports.models import Report
 
-    # 1) So'nggi deadline-ni aniqlash (respublika umumiy, statement bo‘yicha)
     latest_deadline = (
         Deadline.objects.filter(statement=statement)
         .order_by('-created_at')
         .first()
     )
 
-    # 2) Mavjud respublika jami report(lar)ni deadline-dan qat'i nazar qidiramiz
-    qs = Report.objects.filter(
-        statement=statement,
-        is_republic=True,
-    ).order_by('-created_at')
+    # Single query: first 2 results to detect duplicates
+    qs = list(
+        Report.objects.filter(
+            statement=statement,
+            is_republic=True,
+        ).order_by('-created_at')[:2]
+    )
 
-    national_report = qs.first()
+    if len(qs) > 1:
+        Report.objects.filter(
+            statement=statement,
+            is_republic=True,
+        ).exclude(id=qs[0].id).delete()
 
-    # 3) Dublikatlar bo‘lsa – bitta qoldiramiz
-    if qs.count() > 1:
-        keep_id = national_report.id
-        qs.exclude(id=keep_id).delete()
+    national_report = qs[0] if qs else None
 
-    # 4) Agar yo‘q bo‘lsa – yaratamiz
     if not national_report:
         national_report = Report.objects.create(
             statement=statement,
@@ -154,28 +140,18 @@ def get_or_create_national_report(statement, deadline, region=None):
             is_report=False,
         )
     else:
-        # 5) Mavjud bo‘lsa – deadline-ni eng songgisiga yangilaymiz
+        updates = []
         if latest_deadline and national_report.deadline_id != getattr(latest_deadline, 'id', None):
             national_report.deadline = latest_deadline
-            national_report.save(update_fields=['deadline'])
-
-    # 6) sent_by_role ni konsistent saqlaymiz
-    # if region:
-    #     desired = f"national:{region}"
-    #     if national_report.sent_by_role != desired:
-    #         national_report.sent_by_role = desired
-    #         national_report.save(update_fields=["sent_by_role"])
-
-    # 7) Flaglarni kafolatlaymiz
-    updates = {}
-    if national_report.is_report:
-        updates['is_report'] = False
-    if national_report.status != Report.StatusChoices.SAVED:
-        updates['status'] = Report.StatusChoices.SAVED
-    if updates:
-        for k, v in updates.items():
-            setattr(national_report, k, v)
-        national_report.save(update_fields=list(updates.keys()))
+            updates.append('deadline')
+        if national_report.is_report:
+            national_report.is_report = False
+            updates.append('is_report')
+        if national_report.status != Report.StatusChoices.SAVED:
+            national_report.status = Report.StatusChoices.SAVED
+            updates.append('status')
+        if updates:
+            national_report.save(update_fields=updates)
 
     return national_report
 
