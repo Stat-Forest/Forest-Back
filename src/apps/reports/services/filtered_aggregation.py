@@ -693,6 +693,11 @@ def _serialize_report_like(
         org_name = get_translated_field(rep.organization, "name", lang) if rep.organization else ""
 
     statement_columns_payload = []
+    # col_id → sum of plant values (for computing percentage row_total later)
+    col_totals_map: Dict[str, Decimal] = {}
+    # Track which columns are calculated (%, foiz, etc.)
+    calculated_col_ids: set[str] = set()
+
     for it in rep.report_items.all():
         col_id = str(it.statement_column_id)
         # Quarter filter: faqat ruxsat etilgan column'lar
@@ -706,24 +711,83 @@ def _serialize_report_like(
         )
 
         is_org_col = col_id in cache.org_name_cols
+        is_calculated = not cache.is_aggregatable(col_id)
 
         if is_org_col:
             # Tashkilot nomi column — org_name yozish
             inners_payload = [{"value": org_name}]
+            row_total = None
         else:
             inners_payload = []
+            plant_sum = Decimal("0")
             for inn in inners:
                 payload = {"value": inn.value}
                 if inn.plant_id:
                     payload["plant_id"] = str(inn.plant_id)
                     payload["plant_name"] = plant_map.get(str(inn.plant_id)) or ""
+                    plant_sum += _safe_decimal(inn.value)
                 inners_payload.append(payload)
 
-        statement_columns_payload.append({
+            if is_calculated:
+                calculated_col_ids.add(col_id)
+                row_total = None  # will be computed after all columns
+            else:
+                row_total = str(plant_sum.quantize(Decimal("0.01")))
+                col_totals_map[col_id] = plant_sum
+
+        col_payload = {
             "statement_column_id": col_id,
             "statement_column_name": col_name,
             "inners": inners_payload,
-        })
+        }
+        if row_total is not None:
+            col_payload["row_total"] = row_total
+        statement_columns_payload.append(col_payload)
+
+    # ── Calculated columns row_total: (Amalda / Reja) * 100 etc. ──
+    # Reja va Amalda column'larini ordering bo'yicha topish
+    if calculated_col_ids:
+        # col_id → ordering mapping
+        col_ordering_map: Dict[str, str] = {}
+        ordering_total_map: Dict[str, Decimal] = {}
+        for cid, col_obj in cache.all_columns.items():
+            ordering = getattr(col_obj, "ordering", "") or ""
+            col_ordering_map[cid] = ordering
+            if cid in col_totals_map:
+                ordering_total_map[ordering] = col_totals_map[cid]
+
+        for col_payload in statement_columns_payload:
+            cid = col_payload["statement_column_id"]
+            if cid not in calculated_col_ids:
+                continue
+            ordering = col_ordering_map.get(cid, "")
+            # Foizda column: ordering 1.1.5 → (1.1.3 / 1.1.2) * 100
+            # Farq column: ordering 1.1.4 → 1.1.3 - 1.1.2
+            # Chorak farq: 1.X.1.3 → 1.X.1.2 - 1.X.1.1
+            row_total_val = Decimal("0")
+            if ordering == "1.1.5":
+                reja = ordering_total_map.get("1.1.2", Decimal("0"))
+                amalda = ordering_total_map.get("1.1.3", Decimal("0"))
+                if reja:
+                    row_total_val = (amalda / reja * 100).quantize(Decimal("0.01"))
+            elif ordering == "1.1.4":
+                amalda = ordering_total_map.get("1.1.3", Decimal("0"))
+                reja = ordering_total_map.get("1.1.2", Decimal("0"))
+                row_total_val = (amalda - reja).quantize(Decimal("0.01"))
+            elif ordering.endswith(".1.3"):
+                # Chorak farq: X.Y.1.3 = X.Y.1.2 - X.Y.1.1
+                prefix = ordering[:-1]  # "X.Y.1."
+                ch_amalda = ordering_total_map.get(f"{prefix}2", Decimal("0"))
+                ch_reja = ordering_total_map.get(f"{prefix}1", Decimal("0"))
+                row_total_val = (ch_amalda - ch_reja).quantize(Decimal("0.01"))
+            else:
+                # Boshqa calculated column → sum (fallback)
+                plant_sum = Decimal("0")
+                for inn_data in col_payload.get("inners", []):
+                    plant_sum += _safe_decimal(inn_data.get("value", "0"))
+                row_total_val = plant_sum.quantize(Decimal("0.01"))
+
+            col_payload["row_total"] = str(row_total_val)
 
     org_id_str = str(rep.organization_id) if rep.organization_id else None
     return {
