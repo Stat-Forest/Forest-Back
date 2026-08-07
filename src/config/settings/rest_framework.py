@@ -19,10 +19,13 @@ REST_FRAMEWORK = {
     # Throttling
     # Protects against brute-force, scraping, and DoS attacks.
     #
-    # Rates:
-    #   anon  — unauthenticated users (stricter)
-    #   user  — authenticated users
-    #   burst — short-window spike protection (optional, add ScopedRateThrottle per view)
+    # STRATEGY:
+    #   - Global: faqat AnonRateThrottle (noma'lum foydalanuvchilar uchun)
+    #   - Authenticated foydalanuvchilar uchun global throttle YO'Q, chunki:
+    #     1) Report CRUD operatsiyalari ko'p parallel so'rov yuboradi
+    #     2) Signal cascade (individual → general → national) vaqt oladi
+    #     3) Frontend bir vaqtda list + create + columns + filtered-general yuklaydi
+    #   - Xavfli endpointlar (login, AI, OTP) o'z throttle klasslari bilan himoyalangan
     #
     # To apply scoped throttle on a specific view:
     #   throttle_classes = [ScopedRateThrottle]
@@ -30,11 +33,9 @@ REST_FRAMEWORK = {
     # -------------------------------------------------------------------------
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/min',  # Unauthenticated: 30 requests per minute
-        'user': '300/min',  # Authenticated: 300 requests per minute (signal chain uchun kerak)
         'burst': '10/min',  # Scope-based burst limit for sensitive endpoints (login, OTP, etc.)
         'login_ip': '10/min',
         'login_email': '5/min',
