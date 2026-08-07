@@ -1,20 +1,21 @@
 from rest_framework import views
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.throttling import UserRateThrottle
 
 from apps.base.serializers import EmptySerializer
 
 
-class BaseThrottle(UserRateThrottle):
-    rate = '1000/day'
-
-
 class BaseAPIView(views.APIView):
     """
-    BaseAPIView permissions, throttling.
+    BaseAPIView permissions.
+
+    Throttling note:
+    Global throttle faqat AnonRateThrottle (noma'lum foydalanuvchilar).
+    Xavfli endpointlar (login, AI) o'z throttle klasslari bilan himoyalangan.
+    Report CRUD operatsiyalari uchun throttle qo'yilmagan,
+    chunki authenticated foydalanuvchilar ko'p parallel so'rov yuboradi.
     """
     permission_classes = [IsAuthenticated]
-    throttle_classes = [BaseThrottle]
 
     serializer_class = EmptySerializer
     queryset = []
+

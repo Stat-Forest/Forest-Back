@@ -13,7 +13,7 @@ from apps.ai.services.throttle import AIDailyThrottle
 
 class AIChatView(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_classes = [AIDailyThrottle]
+    # throttle_classes = [AIDailyThrottle]
 
     @extend_schema(
         tags=["AI"],

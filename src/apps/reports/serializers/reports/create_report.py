@@ -426,21 +426,29 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                 ReportItem.objects.bulk_create(report_items_buffer, batch_size=1000)
                 ReportItemInner.objects.bulk_create(report_inners_buffer, batch_size=2000)
 
-                # 2. 🔑 MUHIM JOY
-                def run_after_commit():
-                    for report in reports_map.values():
-                        print("STATEMENT NAME:", repr(report.statement.name_uz))
-                        statement = report.statement
-                        calculate_func = ALL_CALCULATORS.get(statement.name_uz)
-                        print("CALCULATOR FOUND:", calculate_func)
+                # 2. Calculator va aggregation — SINXRON bajariladi
+                # MUHIM: on_commit() ishlatilmaydi, chunki response qaytarishdan
+                # OLDIN calculator ishlashi kerak. Aks holda foydalanuvchi
+                # bo'sh Foiz/Amalda ustunlarini ko'radi ("bo'sh blankalar" muammosi).
+                for report in reports_map.values():
+                    statement = report.statement
+                    calculate_func = ALL_CALCULATORS.get(statement.name_uz)
 
-                        if calculate_func:
-                            calculate_func(report)
-                        elif statement.calculate_expression:
-                            calculate_by_expressions(report)
+                    if calculate_func:
+                        calculate_func(report)
+                    elif statement.calculate_expression:
+                        calculate_by_expressions(report)
 
-                        aggregate_individual_report(report)
+                    aggregate_individual_report(report)
 
-                transaction.on_commit(run_after_commit)
+            # 3. DB'dan yangilangan datani qayta yuklash
+            # Calculator yaratgan/yangilagan ReportItem va ReportItemInner'larni
+            # response'da ko'rsatish uchun DB'dan qayta o'qiymiz.
+            report_ids = [r.id for r in reports_map.values()]
+            refreshed_reports = list(
+                Report.objects.filter(id__in=report_ids)
+                .select_related("organization", "statement", "deadline")
+                .prefetch_related("report_items__inners", "report_items__statement_column")
+            )
 
-            return list(reports_map.values())
+            return refreshed_reports
