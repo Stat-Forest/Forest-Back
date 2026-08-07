@@ -882,6 +882,12 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
     serialize_allowed: set[str] | None = None
     if is_daromad and quarter:
         serialize_allowed = cache.build_daromad_allowed_col_ids([quarter])
+        # Yillik summary columns ham ko'rinishi kerak (Reja, Amalda, Farqi, Foizda)
+        # General reportda calculator Q1 datadan qayta hisoblagan, shuning uchun to'g'ri
+        for yillik_ordering in ("1.1.2", "1.1.3", "1.1.4", "1.1.5"):
+            col_id = cache.get_col_id_by_ordering(yillik_ordering)
+            if col_id:
+                serialize_allowed.add(col_id)
 
     # 7) Har bir region uchun general rebuild
     region_choices_map = dict(RegionChoices.choices)
