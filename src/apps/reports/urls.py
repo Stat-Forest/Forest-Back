@@ -59,6 +59,14 @@ from apps.reports.views.plant_column import PlantListAPIView
 
 from apps.report_admin_stat.views import StatementReportStatView
 
+
+
+from apps.reports.views.plan_excel import (
+    PlanExcelTemplateAPIView,
+    PlanExcelImportAPIView,
+)
+
+
 urlpatterns = [
 
     # ====================  USERS URL   ====================
@@ -120,6 +128,10 @@ urlpatterns = [
     path("plan/<uuid:pk>/", PlanRetrieveView.as_view(), name="plan-detail"),
     path('plans/<uuid:pk>/delete/', PlanDeleteAPIView.as_view(), name='plan-delete'),
     path("plan-items/", PlanItemDetailAPIView.as_view(), name="planitem-detail"),
+
+    path("plan-excel/template/", PlanExcelTemplateAPIView.as_view(), name="plan-excel-template"),
+    path("plan-excel/import/", PlanExcelImportAPIView.as_view(), name="plan-excel-import"),
+
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
     path("plants/", PlantListAPIView.as_view(), name="plant-list"),
