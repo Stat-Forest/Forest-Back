@@ -64,6 +64,7 @@ from apps.report_admin_stat.views import StatementReportStatView
 from apps.reports.views.plan_excel import (
     PlanExcelTemplateAPIView,
     PlanExcelImportAPIView,
+    PlanExcelExportAPIView,
 )
 
 
@@ -131,6 +132,7 @@ urlpatterns = [
 
     path("plan-excel/template/", PlanExcelTemplateAPIView.as_view(), name="plan-excel-template"),
     path("plan-excel/import/", PlanExcelImportAPIView.as_view(), name="plan-excel-import"),
+    path("plan-excel/export/", PlanExcelExportAPIView.as_view(), name="plan-excel-export"),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================
