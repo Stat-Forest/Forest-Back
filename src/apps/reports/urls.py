@@ -136,6 +136,7 @@ urlpatterns = [
     path("plan-items/", PlanItemDetailAPIView.as_view(), name="planitem-detail"),
 
     path("plan-excel/template/", PlanExcelTemplateAPIView.as_view(), name="plan-excel-template"),
+    
     path("plan-excel/import/", PlanExcelImportAPIView.as_view(), name="plan-excel-import"),
     path("plan-excel/export/", PlanExcelExportAPIView.as_view(), name="plan-excel-export"),
 
