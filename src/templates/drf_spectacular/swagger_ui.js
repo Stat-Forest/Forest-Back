@@ -14,7 +14,7 @@ const reloadSchemaOnAuthChange = () => {
             schemaAuthFailed = false;
             setTimeout(() => ui.specActions.download());
             return ori(...args);
-          },ReportSendSerializer
+          },
           authorize: (ori) => (...args) => {
             schemaAuthFailed = false;
             setTimeout(() => ui.specActions.download());

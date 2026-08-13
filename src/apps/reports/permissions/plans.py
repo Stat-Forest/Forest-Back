@@ -1,5 +1,25 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework.permissions import BasePermission
 from apps.users.models import CustomUser
+
+
+class IsBolimAdmin(BasePermission):
+    """
+    Faqat bo'lim adminlari uchun ruxsat (Plan Excel template / import / export).
+
+    `has_permission` view darajasida ishlaydi — APIView'larda ham (obj bo'lmasa
+    ham) chaqiriladi, shuning uchun `CanCreatePlan` (faqat has_object_permission)
+    dan farqli o'laroq template/import kabi GET/POST'larni ishonchli cheklaydi.
+    """
+    message = _("Bu amal faqat bo'lim adminlari uchun ruxsat etilgan.")
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and user.role == CustomUser.Role.BOLIM_ADMIN
+        )
 
 
 class CanManagePlan(BasePermission):
