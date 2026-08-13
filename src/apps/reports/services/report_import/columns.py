@@ -28,6 +28,7 @@ def get_importable_columns(statement):
         .filter(
             statement=statement,
             is_organization=False,
+            is_user_input=True,
         )
         .filter(parent__isnull=False)
         .select_related("parent")
