@@ -46,6 +46,7 @@ jobs:
           SERVICES="forest_app forest_celery_worker forest_celery_beat"
 
           $COMPOSE build $SERVICES
-          $COMPOSE up -d --force-recreate $SERVICES
+          $COMPOSE rm -s -f $SERVICES
+          $COMPOSE up -d $SERVICES
           $COMPOSE ps
         EOF
