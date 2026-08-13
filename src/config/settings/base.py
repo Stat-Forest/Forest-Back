@@ -15,7 +15,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
-
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 CORS_ALLOW_CREDENTIALS = True
