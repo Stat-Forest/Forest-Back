@@ -62,10 +62,22 @@ def _build_column_id_map_from_titles(ws, col_offset, importable_columns, lang):
     column_map = {}
     max_header_row = 1
 
+    # Detect if this is an export file (starts with "№" and "Tashkilot nomi")
+    actual_col_offset = col_offset
+    cell_a1 = str(ws.cell(row=1, column=1).value or "").strip()
+    cell_b1 = str(ws.cell(row=1, column=2).value or "").strip()
+    cell_c1 = str(ws.cell(row=1, column=3).value or "").strip()
+    
+    if cell_a1 == "№" and cell_b1.lower() == "tashkilot nomi":
+        if cell_c1.lower() in ["o'simlik nomi", "название растения"]:
+            actual_col_offset = 4
+        else:
+            actual_col_offset = 3
+
     for row_idx in range(1, min(ws.max_row, 10) + 1):
         row_cells = ws[row_idx] if ws.max_row >= row_idx else []
         for cell in row_cells:
-            if cell.column < col_offset:
+            if cell.column < actual_col_offset:
                 continue
             if cell.column in column_map:
                 continue
@@ -81,7 +93,7 @@ def _build_column_id_map_from_titles(ws, col_offset, importable_columns, lang):
                 if row_idx > max_header_row:
                     max_header_row = row_idx
 
-    return column_map, max_header_row
+    return column_map, max_header_row, actual_col_offset
 
 
 def _extract_row_items(row_cells, col_offset, column_map, row_number, title_by_id, errors):
@@ -168,7 +180,10 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
     warnings = []
     if not column_map:
         # UUID'lar topilmadi — sarlavha matniga fallback
-        column_map, max_header_row = _build_column_id_map_from_titles(ws, col_offset, amalda_columns, lang)
+        column_map, max_header_row, new_col_offset = _build_column_id_map_from_titles(ws, col_offset, amalda_columns, lang)
+        if new_col_offset > col_offset:
+            col_offset = new_col_offset
+            
         if column_map:
             data_start_row = max_header_row + 1
             warnings.append({
