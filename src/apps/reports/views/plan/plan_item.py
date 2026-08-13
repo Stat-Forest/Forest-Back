@@ -65,10 +65,7 @@ class PlanItemDetailAPIView(APIView):
         try:
             plan = Plan.objects.select_related("statement").get(**plan_filters)
         except Plan.DoesNotExist:
-            return Response(
-                {"detail": "Plan not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response([], status=status.HTTP_200_OK)
 
         # ===============================
         # ✅ COLUMN CACHE
