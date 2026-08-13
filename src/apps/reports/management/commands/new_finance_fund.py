@@ -18,12 +18,17 @@ class Command(BaseCommand):
             current_year = timezone.now().year
 
             # Asosiy statement
+            # use_plant_plan=True — Daromad plant (daromad manbalari) asosida
+            # to'ldiriladi: har bir manba (plant) uchun alohida oylik qiymatlar
+            # kiritiladi va chorak/yillik ular asosida hisoblanadi. Plant'lar
+            # `plants_for_income` management buyrug'i bilan yaratiladi.
             daromad_statement = Statement.objects.create(
                 name="Daromad",
                 name_uz="Daromad",
                 name_ru="Доход",
                 parent=moliya_statement,
                 period=PeriodChoices.OYLIK,
+                use_plant_plan=True,
             )
 
             # 1 - asosiy root
