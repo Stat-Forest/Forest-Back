@@ -29,12 +29,11 @@ jobs:
         set -euo pipefail
         ssh -o StrictHostKeyChecking=no -T ${{ secrets.USER }}@${{ secrets.HOST }} 'bash -euo pipefail -s' << 'EOF'
           cd /root/Forest-Back
-          git config --global --add safe.directory /root/Forest-Back
 
           echo "=== BEFORE: $(git rev-parse --short HEAD) ==="
-          git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
-          git fetch origin main
-          git reset --hard FETCH_HEAD
+          git fetch origin --prune
+          git checkout -f main
+          git reset --hard origin/main
           echo "=== AFTER:  $(git rev-parse --short HEAD) ==="
           git log --oneline -1
 
@@ -42,7 +41,6 @@ jobs:
           SERVICES="forest_app forest_celery_worker forest_celery_beat"
 
           $COMPOSE build $SERVICES
-          $COMPOSE rm -s -f $SERVICES
-          $COMPOSE up -d $SERVICES
+          $COMPOSE up -d --force-recreate $SERVICES
           $COMPOSE ps
         EOF
