@@ -24,23 +24,29 @@ jobs:
         echo "${{ secrets.ENV_FILE }}" > .env
         scp -o StrictHostKeyChecking=no .env ${{ secrets.USER }}@${{ secrets.HOST }}:/root/Forest-Back/.env
 
+    - name: Sync files to server via rsync
+      run: |
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+          --exclude '.git/' \
+          --exclude 'media/' \
+          --exclude 'staticfiles/' \
+          --exclude 'backups/' \
+          --exclude '.env' \
+          --exclude '__pycache__/' \
+          --exclude 'venv/' \
+          ./ ${{ secrets.USER }}@${{ secrets.HOST }}:/root/Forest-Back/
+
     - name: Deploy via SSH
       run: |
         set -euo pipefail
         ssh -o StrictHostKeyChecking=no -T ${{ secrets.USER }}@${{ secrets.HOST }} 'bash -euo pipefail -s' << 'EOF'
           cd /root/Forest-Back
 
-          echo "=== BEFORE: $(git rev-parse --short HEAD) ==="
-          git fetch origin --prune
-          git checkout -f main
-          git reset --hard origin/main
-          echo "=== AFTER:  $(git rev-parse --short HEAD) ==="
-          git log --oneline -1
-
           COMPOSE="docker-compose -f docker/prod/docker-compose-prod.yml"
           SERVICES="forest_app forest_celery_worker forest_celery_beat"
 
           $COMPOSE build $SERVICES
-          $COMPOSE up -d --force-recreate $SERVICES
+          $COMPOSE rm -s -f $SERVICES
+          $COMPOSE up -d $SERVICES
           $COMPOSE ps
         EOF
