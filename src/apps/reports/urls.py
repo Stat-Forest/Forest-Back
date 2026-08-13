@@ -66,6 +66,11 @@ from apps.reports.views.plan_excel import (
     PlanExcelImportAPIView,
 )
 
+from apps.reports.views.imports.import_excel import (
+    ImportTemplateDownloadAPIView,
+    ImportParseAPIView,
+)
+
 
 urlpatterns = [
 
@@ -131,6 +136,10 @@ urlpatterns = [
 
     path("plan-excel/template/", PlanExcelTemplateAPIView.as_view(), name="plan-excel-template"),
     path("plan-excel/import/", PlanExcelImportAPIView.as_view(), name="plan-excel-import"),
+
+    # ====================  JADVAL IMPORT URL ====================
+    path("import-template/", ImportTemplateDownloadAPIView.as_view(), name="import-excel-template"),
+    path("import-parse/", ImportParseAPIView.as_view(), name="import-excel-parse"),
 
 
     # ====================  PLANT URL FOR SPECIALLY    ====================

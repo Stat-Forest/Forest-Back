@@ -1,0 +1,216 @@
+# apps/reports/views/imports/import_excel.py
+"""
+Hisobot "Amalda" qiymatlarini Excel fayldan import qilish uchun
+ikki endpoint:
+
+1. ImportTemplateDownloadAPIView  — shablon yuklab olish
+2. ImportParseAPIView             — faylni parse qilib JSON qaytarish
+
+DB ga hech narsa yozilmaydi — barcha business logika
+service layer da (reports/services/report_import/).
+"""
+
+import os
+from io import BytesIO
+
+from django.http import HttpResponse
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers
+
+from apps.reports.models import Statement
+from apps.reports.services.report_import.template_generator import build_import_template
+from apps.reports.services.report_import.parser import parse_import_excel
+
+
+# ── Fayl hajmi limiti (bayt) ──
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+@extend_schema(
+    tags=["Import-Excel"],
+    parameters=[
+        OpenApiParameter(
+            name="statement_id",
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="Jadval (Statement) UUID'si",
+        ),
+        OpenApiParameter(
+            name="lang",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Til: uz yoki ru",
+            enum=["uz", "ru"],
+        ),
+    ],
+    responses={200: None, 400: dict, 404: dict},
+    description="Import uchun Excel shablon yuklab olish",
+)
+class ImportTemplateDownloadAPIView(APIView):
+    """
+    GET /api/v1/reports/import-template/
+
+    Berilgan statement uchun bo'sh import shablonini (.xlsx) qaytaradi.
+    Faqat Amalda ustunlar shablonga kiritiladi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        statement_id = request.query_params.get("statement_id")
+        lang = request.query_params.get("lang", "uz").lower()
+        if lang not in ("uz", "ru"):
+            lang = "uz"
+
+        if not statement_id:
+            return Response(
+                {"detail": "statement_id query parametri majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            statement = Statement.objects.get(
+                id=statement_id,
+                parent__isnull=False,  # faqat child statement
+            )
+        except Statement.DoesNotExist:
+            return Response(
+                {"detail": "Statement topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            wb = build_import_template(statement, lang=lang)
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Workbook ni xotiradan response ga yozamiz
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        statement_name = getattr(statement, f"name_{lang}", statement.name) or statement.name
+        safe_name = "".join(
+            c if c not in '<>:"/\\|?*' else "_" for c in statement_name
+        ).strip().replace(" ", "_")
+        filename = f"{safe_name}_import_shablon.xlsx"
+
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class ImportParseSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text=".xlsx fayl")
+    statement_id = serializers.UUIDField(help_text="Jadval (Statement) UUID'si")
+    sheet_name = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="O'qiladigan sheet nomi (bo'sh bo'lsa active sheet)",
+    )
+    lang = serializers.ChoiceField(
+        choices=[("uz", "uz"), ("ru", "ru")],
+        default="uz",
+        required=False,
+        help_text="Til: uz yoki ru",
+    )
+
+
+@extend_schema(
+    tags=["Import-Excel"],
+    request=ImportParseSerializer,
+    responses={
+        200: dict,
+        400: dict,
+        404: dict,
+    },
+    description=(
+        "Excel faylni parse qilib, Amalda ustunlar uchun "
+        "{column, value} juftliklarini JSON sifatida qaytaradi. "
+        "DB ga hech narsa yozilmaydi."
+    ),
+)
+class ImportParseAPIView(GenericAPIView):
+    """
+    POST /api/v1/reports/import-parse/
+
+    Yuklangan .xlsx faylni parse qilib, frontend uchun
+    strukturalangan payload qaytaradi.
+
+    Frontend bu payload bilan formdagi Amalda maydonlarini to'ldiradi.
+    Foydalanuvchi ko'rib chiqib, keyin mavjud create/update flow
+    orqali yuboradi.
+    """
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    serializer_class = ImportParseSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # ── Parametrlarni olish ──
+        uploaded_file = serializer.validated_data.get("file")
+        statement_id = serializer.validated_data.get("statement_id")
+        sheet_name = serializer.validated_data.get("sheet_name") or None
+        lang = serializer.validated_data.get("lang")
+
+        # Fayl kengaytmasi
+        file_ext = os.path.splitext(uploaded_file.name or "")[1].lower()
+        if file_ext != ".xlsx":
+            return Response(
+                {"detail": "Faqat .xlsx formatdagi fayllar qabul qilinadi."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Fayl hajmi
+        if uploaded_file.size and uploaded_file.size > MAX_FILE_SIZE:
+            max_mb = MAX_FILE_SIZE // (1024 * 1024)
+            return Response(
+                {"detail": f"Fayl hajmi {max_mb} MB dan oshmasligi kerak."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Statement
+        try:
+            statement = Statement.objects.get(
+                id=statement_id,
+                parent__isnull=False,
+            )
+        except Statement.DoesNotExist:
+            return Response(
+                {"detail": "Statement topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # ── Parse ──
+        try:
+            result = parse_import_excel(
+                file_obj=uploaded_file,
+                statement=statement,
+                sheet_name=sheet_name,
+                lang=lang,
+            )
+        except ValueError as exc:
+            return Response(
+                {"status": "error", "detail": str(exc), "items": [], "errors": []},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(result, status=status.HTTP_200_OK)
