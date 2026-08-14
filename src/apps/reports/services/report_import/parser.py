@@ -10,16 +10,24 @@ Qaytariladigan har bir `column` — shu statement ning import qilinadigan
 topadi, shuning uchun payloadga boshqa hech qanday ustun (reja, guruh
 sarlavhasi, avto-hisob) tushmasligi kerak.
 
-Return formati (oddiy):
+Return formati (oddiy hisobot — is_plant_based=False):
     {"status": "success"|"partial"|"error",
+     "is_plant_based": false,
      "items": [{"column": "<uuid>", "value": "..."}, ...],
      "warnings": [...], "errors": [...]}
 
-Return formati (plantlik):
+Return formati (plantlik hisobot — is_plant_based=True):
     {"status": "success"|"partial"|"error",
+     "is_plant_based": true,
+     "items": [{"column": "<uuid>", "plant": "<uuid>",
+                "plant_name": "...", "value": "..."}, ...],
      "plants": [{"plant": "<uuid>", "plant_name": "...",
                   "items": [{"column": "<uuid>", "value": "..."}, ...]}, ...],
      "warnings": [...], "errors": [...]}
+
+`items` har doim bor va bir xil ishlatiladi — plantlik hisobotda har bir
+element qo'shimcha `plant` bilan keladi. `plants` esa o'sha ma'lumotning
+o'simlik bo'yicha guruhlangan ko'rinishi (Excel qatorlari kabi).
 
 `warnings` va `errors` elementlari bir xil shaklda:
     {"row": <int|null>, "column_title": <str|null>, "message": "..."}
@@ -31,6 +39,7 @@ from apps.reports.models import Plant
 from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.reports.services.report_import.columns import (
     StatementColumnIndex,
+    is_plant_based_statement,
     normalize_title,
     split_title_path,
     strip_ordinal,
@@ -466,7 +475,7 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
     }
 
     # ── 5. Qiymatlarni o'qish ──
-    if bool(getattr(statement, "use_plant_plan", False)):
+    if is_plant_based_statement(statement):
         return _parse_plant_based(
             ws=ws,
             statement=statement,
@@ -547,6 +556,7 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
     status = "success" if not errors else ("partial" if all_items else "error")
     return {
         "status": status,
+        "is_plant_based": False,
         "items": all_items,
         "warnings": warnings,
         "errors": errors,
@@ -646,11 +656,25 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
         if len(new_values) < len(items):
             skipped_rows += 1
 
+    # Ikki ko'rinishda beramiz:
+    #   items  — tekis ro'yxat, har bir qiymat o'z o'simligi bilan
+    #            ({column, plant, plant_name, value})
+    #   plants — o'simlik bo'yicha guruhlangan (Excel qatorlari kabi)
+    all_items = []
     for entry in plants_payload:
         entry["items"] = [
             {"column": column_id, "value": value}
             for column_id, value in values_by_plant[entry["plant"]].items()
         ]
+        all_items.extend(
+            {
+                "column": item["column"],
+                "plant": entry["plant"],
+                "plant_name": entry["plant_name"],
+                "value": item["value"],
+            }
+            for item in entry["items"]
+        )
 
     if skipped_rows:
         warnings.append(_issue(
@@ -670,6 +694,8 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
     status = "success" if not errors else ("partial" if plants_payload else "error")
     return {
         "status": status,
+        "is_plant_based": True,
+        "items": all_items,
         "plants": plants_payload,
         "warnings": warnings,
         "errors": errors,

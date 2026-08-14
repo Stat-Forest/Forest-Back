@@ -16,6 +16,7 @@ from apps.reports.serializers.reports.list_reports import ReportListSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.reports.models import ReportItemInner
 from apps.reports.exports.excel_export import export_universal_report_to_excel_v2
+from apps.reports.services.report_import.columns import is_plant_based_statement
 from apps.reports.serializers.export.export_serializers import ReportExcelExportRequestSerializer
 
 
@@ -169,8 +170,19 @@ class ReportExcelExportAPIView(APIView):
                 if ind:
                     combined_reports.append(ind)
 
-        # Agar bu plantli report bo'lsa, maxsus serializer ishlatamiz
-        is_plant = ReportItemInner.objects.filter(report_item__report__in=combined_reports, plant__isnull=False).exists()
+        # Agar bu plantli jadval bo'lsa, maxsus serializer ishlatamiz.
+        #
+        # MUHIM: bu yerda "tanlangan hisobotlarda plantli qiymat bormi?" deb
+        # tekshirish yetarli emas — plantlik jadvalning "Jami" hisobotida
+        # plantsiz qiymatlar bo'ladi. Unda oddiy serializer tanlanib, export
+        # o'simlik ustunini yo'qotardi va qiymatlarni qatorlar bo'ylab
+        # tarqatib yuborardi (ilovalar zinapoya bo'lib ketardi).
+        is_plant = (
+            is_plant_based_statement(statement)
+            or ReportItemInner.objects.filter(
+                report_item__report__in=combined_reports, plant__isnull=False
+            ).exists()
+        )
         SerializerCls = PlantReportListSerializer if is_plant else ReportListSerializer
         # Pass row number map for hierarchical numbering if provided
         row_numbers_map = request.data.get("row_numbers", {}) if hasattr(request, 'data') else {}

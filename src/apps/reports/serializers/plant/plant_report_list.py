@@ -112,7 +112,10 @@ class PlantReportListSerializer(ReportListSerializer):
                     continue
 
                 inner_values = []
-                for inner in item.inners.all():
+                # Tartib barqaror bo'lishi kerak — exportda qator joylashuvi
+                # shu ro'yxat tartibiga bog'liq (qarang: list_reports.py)
+                for inner in sorted(item.inners.all(),
+                                    key=lambda i: (i.created_at, str(i.id))):
                     val = inner.value
                     inner_data = {"id": str(inner.id)}
 
