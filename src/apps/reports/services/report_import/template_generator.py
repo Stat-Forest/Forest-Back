@@ -18,7 +18,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Protection
 from openpyxl.utils import get_column_letter
 
 from apps.reports.models import Plant
-from apps.reports.services.report_import.columns import get_importable_columns
+from apps.reports.services.report_import.columns import StatementColumnIndex
 
 HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
 HEADER_FILL = PatternFill("solid", fgColor="4472C4")
@@ -31,11 +31,6 @@ ID_ROW = 2
 DATA_START_ROW = 3
 
 
-def _column_title(column, lang):
-    """Ustun sarlavhasini tilga qarab oladi."""
-    return getattr(column, f"title_{lang}", column.title_uz) or column.title_uz
-
-
 def build_import_template(statement, lang="uz"):
     """
     Statement uchun import shablonini (.xlsx Workbook) quradi.
@@ -45,10 +40,12 @@ def build_import_template(statement, lang="uz"):
     Raises:
         ValueError — agar to'ldiriladigan Amalda ustunlar topilmasa.
     """
-    columns = list(get_importable_columns(statement))
+    index = StatementColumnIndex(statement, lang=lang)
+    columns = index.importable
     if not columns:
         raise ValueError(
-            "Bu statement uchun import qilinadigan ustunlar topilmadi."
+            "Bu statement uchun import qilinadigan ustunlar topilmadi "
+            "(barcha oxirgi ustunlar reja yoki avto-hisob sifatida belgilangan)."
         )
 
     is_plant_based = bool(getattr(statement, "use_plant_plan", False))
@@ -75,11 +72,14 @@ def build_import_template(statement, lang="uz"):
             cell.alignment = HEADER_ALIGNMENT
 
     # ── Amalda ustun sarlavhalari ──
+    # Sarlavha — statement ichida yagona bo'lishi kafolatlangan nom
+    # ("Amalda" 12 ta bo'lsa → "Yanvar » Amalda"). Yashirin UUID qatori
+    # o'chib ketsa ham, parser shu nom bo'yicha to'g'ri ustunni topadi.
     for i, column in enumerate(columns):
         cell = ws.cell(
             row=HEADER_ROW,
             column=col_offset + i,
-            value=_column_title(column, lang),
+            value=index.label(column),
         )
         cell.font = HEADER_FONT
         cell.fill = HEADER_FILL
