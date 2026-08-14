@@ -72,6 +72,21 @@ def _format_excel_display_value(value) -> str:
     return text
 
 
+def _non_empty_inners(inners) -> list:
+    """
+    Bo'sh qiymatli inner'larni olib tashlaydi.
+
+    Nima uchun: oddiy (plantsiz) hisobotda qator raqami shu ro'yxatning
+    indeksidan olinadi. Agar 2-ilova ustunlarida oldin bo'sh inner'lar
+    turgan bo'lsa, qiymat pastki qatorga surilib ketardi — Excelda
+    1-ilova tepada, 2-ilova pastda "zinapoya" bo'lib ko'rinardi.
+    """
+    return [
+        inn for inn in (inners or [])
+        if str((inn or {}).get("value") or "").strip() != ""
+    ]
+
+
 def _pick_best_value(inners: list) -> str:
     """
     Multiple inner qiymatlarni bitta Excel cell qiymatiga aylantiradi.
@@ -194,7 +209,7 @@ def export_universal_report_to_excel_v2(
         if col.get("statement_column_id")
     }
 
-    if not needed_ids:
+    if not needed_ids and not statement_id:
         ws.append(["№", "Tashkilot nomi"])
         wb.save(file_path)
         return file_path, filename
@@ -216,7 +231,17 @@ def export_universal_report_to_excel_v2(
     def is_org(c):
         return getattr(c, "is_organization", False)
 
-    export_ids = {cid for cid in needed_ids if cid in id_map and not is_org(id_map[cid])}
+    # Jadval saytda qanday ko'rinsa, Excelda ham shunday bo'lishi kerak:
+    # ustunlar ro'yxati hisobotdagi qiymatlardan emas, jadvalning O'ZIDAN
+    # olinadi. Aks holda qiymati yo'q ustun (masalan hali hisoblanmagan
+    # "Jami") Exceldan butunlay tushib qolar va jadval shakli o'zgarib
+    # ketardi.
+    parent_ids = {str(c.parent_id) for c in all_cols if c.parent_id}
+    export_ids = {
+        str(c.id)
+        for c in all_cols
+        if not is_org(c) and str(c.id) not in parent_ids  # faqat leaf ustunlar
+    }
     included_ids = set(export_ids)
 
     for cid in list(export_ids):
@@ -371,7 +396,12 @@ def export_universal_report_to_excel_v2(
         thin_border,
     )
 
-    ws.freeze_panes = ws.cell(row=HEADER_START_ROW + max_depth, column=fixed_cols + 1)
+    # DIQQAT: ws.cell(...) chaqirilsa, o'sha katak YARATILADI va ws.max_row
+    # bittaga oshib ketadi — natijada sarlavha bilan ma'lumot orasida bo'sh
+    # qator paydo bo'lardi. Shuning uchun manzilni matn ko'rinishida beramiz.
+    ws.freeze_panes = (
+        f"{get_column_letter(fixed_cols + 1)}{HEADER_START_ROW + max_depth}"
+    )
 
     # =============================
     # Data rows
@@ -426,7 +456,7 @@ def export_universal_report_to_excel_v2(
                 for col in item.get("statement_columns") or []:
                     cid = str(col.get("statement_column_id"))
                     if cid in per_col_inners:
-                        per_col_inners[cid] = list(col.get("inners") or [])
+                        per_col_inners[cid] = _non_empty_inners(col.get("inners"))
 
             row_count = 0
             for cid in leaf_ids:
@@ -526,7 +556,7 @@ def export_universal_report_to_excel_v2(
                 for col in item.get("statement_columns") or []:
                     cid = str(col.get("statement_column_id"))
                     if cid in per_col_inners:
-                        per_col_inners[cid] = list(col.get("inners") or [])
+                        per_col_inners[cid] = _non_empty_inners(col.get("inners"))
 
             row_count = 0
             for cid in leaf_ids:
@@ -543,6 +573,10 @@ def export_universal_report_to_excel_v2(
                         val = _format_excel_display_value((inners[r_idx] or {}).get("value"))
 
                     row_values.append(val)
+
+                # Butunlay bo'sh qator yozilmasin — saytda bunday qator yo'q
+                if not any(v not in (None, "") for v in row_values[2:]):
+                    continue
 
                 ws.append(row_values)
 
@@ -590,6 +624,9 @@ def export_universal_report_to_excel_v2(
 
         plant_names: Dict[str, str] = {}
         per_plant: Dict[str, Dict[str, str]] = {}
+        # O'simliksiz qiymatlar (plantlik jadvalning "Jami" hisobotlarida
+        # shunday bo'ladi) — yo'qolib ketmasligi uchun alohida yig'amiz
+        plantless: Dict[str, str] = {}
 
         for item in rep_items:
             for col in item.get("statement_columns") or []:
@@ -600,11 +637,23 @@ def export_universal_report_to_excel_v2(
                 for inn in (col.get("inners") or []):
                     pid = inn.get("plant_id")
                     if not pid:
+                        plantless[cid] = _accumulate_decimal_string(
+                            plantless.get(cid), inn.get("value")
+                        )
                         continue
 
                     plant_names[pid] = inn.get("plant_name") or plant_names.get(pid) or ""
                     prev = per_plant.setdefault(pid, {}).get(cid)
                     per_plant[pid][cid] = _accumulate_decimal_string(prev, inn.get("value"))
+
+        # Hisobotda umuman o'simlik bo'lmasa (masalan faqat "Jami" qiymatlari),
+        # ma'lumot yo'qolmasligi uchun bitta oddiy qator sifatida yozamiz
+        if not plant_names and plantless:
+            ws.append(
+                [display_index, org_name, ""]
+                + [_format_excel_display_value(plantless.get(cid, "")) for cid in leaf_ids]
+            )
+            continue
 
         for pid, pname in plant_names.items():
             row = [display_index, org_name, pname]
