@@ -158,7 +158,12 @@ class ReportListSerializer(serializers.ModelSerializer):
 
                 inner_values = []
                 # ✅ inners ham prefetched -> bu query qilmaydi
-                for inner in item.inners.all():
+                # Tartib MUHIM: exportda qator raqami shu ro'yxatning
+                # indeksidan olinadi. ReportItemInner da ordering yo'q,
+                # shuning uchun qiymat tahrirlansa DB uni oxiriga surib
+                # yuboradi va qiymat boshqa qatorga "sakrab" ketadi.
+                for inner in sorted(item.inners.all(),
+                                    key=lambda i: (i.created_at, str(i.id))):
                     val = inner.value
 
                     if column.is_organization:

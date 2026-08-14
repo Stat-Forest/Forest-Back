@@ -21,7 +21,7 @@ faqat nomi bilan emas, ota-ona zanjiri (path) bilan aniqlash kerak.
 
 import re
 
-from apps.reports.models import StatementColumn
+from apps.reports.models import Plant, StatementColumn
 
 # Template sarlavhasida path segmentlarini ajratuvchi belgi:
 #   "Yanvar » Amalda"
@@ -109,6 +109,32 @@ def get_importable_columns(statement):
         .select_related("parent")
         .order_by("ordering")
     )
+
+
+def is_plant_based_statement(statement):
+    """
+    Jadval o'simliklar kesimidami?
+
+    `use_plant_plan` ga ishonib bo'lmaydi — u **Reja** moduliniki
+    ("reja o'simlik bo'yicha kiritiladi") va bazada faqat bitta jadvalda
+    True. Amalda esa hisobot qatorlari o'simlikka bog'lanadigan jadvallar
+    ko'proq (masalan "Shakl 8-O'X", "Ko'chatxona va Niholxona Jami").
+
+    Shuning uchun uchta dalilning istalgan biri yetarli:
+      1. use_plant_plan = True
+      2. shu jadval bo'yicha plantlik hisobot mavjud
+      3. jadvalga leaf o'simliklar biriktirilgan (yangi jadval — hali
+         hisobot yo'q bo'lsa ham shablon to'g'ri chiqishi uchun)
+    """
+    if getattr(statement, "use_plant_plan", False):
+        return True
+
+    from apps.reports.models import Report
+
+    if Report.objects.filter(statement=statement, is_plant_based=True).exists():
+        return True
+
+    return Plant.objects.filter(statement=statement, children__isnull=True).exists()
 
 
 class StatementColumnIndex:

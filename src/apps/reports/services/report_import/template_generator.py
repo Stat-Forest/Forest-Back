@@ -18,7 +18,10 @@ from openpyxl.styles import Font, PatternFill, Alignment, Protection
 from openpyxl.utils import get_column_letter
 
 from apps.reports.models import Plant
-from apps.reports.services.report_import.columns import StatementColumnIndex
+from apps.reports.services.report_import.columns import (
+    StatementColumnIndex,
+    is_plant_based_statement,
+)
 
 HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
 HEADER_FILL = PatternFill("solid", fgColor="4472C4")
@@ -48,7 +51,7 @@ def build_import_template(statement, lang="uz"):
             "(barcha oxirgi ustunlar reja yoki avto-hisob sifatida belgilangan)."
         )
 
-    is_plant_based = bool(getattr(statement, "use_plant_plan", False))
+    is_plant_based = is_plant_based_statement(statement)
 
     wb = openpyxl.Workbook()
     ws = wb.active
