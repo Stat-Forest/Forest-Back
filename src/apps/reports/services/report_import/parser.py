@@ -373,10 +373,14 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
     """
     Yuklangan Excel faylni o'qib, frontend uchun payload qaytaradi.
 
+    Export fayli har bir ilova uchun alohida varaq (sheet) chiqaradi,
+    shuning uchun `sheet_name` berilmasa BARCHA varaqlar o'qiladi va
+    natijalar birlashtiriladi.
+
     Args:
         file_obj: InMemoryUploadedFile yoki file-like object
         statement: Statement model instance
-        sheet_name: O'qiladigan sheet nomi (None bo'lsa active sheet)
+        sheet_name: O'qiladigan sheet nomi (None bo'lsa — barcha varaqlar)
         lang: Til kodi ("uz" yoki "ru")
 
     Returns:
@@ -398,9 +402,9 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
                 f"'{sheet_name}' nomli sheet topilmadi. "
                 f"Mavjud sheetlar: {', '.join(wb.sheetnames)}"
             )
-        ws = wb[sheet_name]
+        sheets = [wb[sheet_name]]
     else:
-        ws = wb.active
+        sheets = list(wb.worksheets)
 
     # ── 3. Import qilinadigan ustunlar ──
     index = StatementColumnIndex(statement, lang=lang)
@@ -410,6 +414,28 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
             "(barcha oxirgi ustunlar reja yoki avto-hisob sifatida belgilangan)."
         )
 
+    is_plant_based = is_plant_based_statement(statement)
+
+    results = []
+    failures = []
+    for ws in sheets:
+        try:
+            results.append(
+                _parse_sheet(ws, statement, index, lang, is_plant_based)
+            )
+        except ValueError as exc:
+            # Bitta varaqda ma'lumot bo'lmasligi mumkin (masalan bo'sh ilova) —
+            # butun importni to'xtatmaymiz
+            failures.append(str(exc))
+
+    if not results:
+        raise ValueError(failures[0] if failures else "Faylda hech qanday qiymat topilmadi.")
+
+    return _merge_sheet_results(results, is_plant_based)
+
+
+def _parse_sheet(ws, statement, index, lang, is_plant_based):
+    """Bitta varaqni o'qiydi (ilova = varaq)."""
     warnings = []
     errors = []
 
@@ -475,7 +501,7 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
     }
 
     # ── 5. Qiymatlarni o'qish ──
-    if is_plant_based_statement(statement):
+    if is_plant_based:
         return _parse_plant_based(
             ws=ws,
             statement=statement,
@@ -497,6 +523,88 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
         errors=errors,
         data_start_row=data_start_row,
     )
+
+
+def _merge_sheet_results(results, is_plant_based):
+    """
+    Har bir ilova alohida varaqda bo'lgani uchun, varaqlar natijasini
+    bitta payloadga birlashtiramiz. Bir ustun bir necha varaqda uchrasa,
+    birinchi topilgan qiymat qoladi.
+    """
+    warnings = []
+    errors = []
+    seen_warnings = set()
+
+    for result in results:
+        for warning in result.get("warnings", []):
+            key = (warning.get("row"), warning.get("column_title"), warning.get("message"))
+            if key in seen_warnings:
+                continue
+            seen_warnings.add(key)
+            warnings.append(warning)
+        errors.extend(result.get("errors", []))
+
+    if not is_plant_based:
+        values = {}
+        for result in results:
+            for item in result.get("items", []):
+                values.setdefault(item["column"], item["value"])
+
+        items = [{"column": cid, "value": val} for cid, val in values.items()]
+        status = "success" if not errors else ("partial" if items else "error")
+        return {
+            "status": status,
+            "is_plant_based": False,
+            "items": items,
+            "warnings": warnings,
+            "errors": errors,
+        }
+
+    plants_order = []
+    plant_names = {}
+    values_by_plant = {}
+
+    for result in results:
+        for entry in result.get("plants", []):
+            pid = entry["plant"]
+            if pid not in values_by_plant:
+                values_by_plant[pid] = {}
+                plant_names[pid] = entry.get("plant_name") or ""
+                plants_order.append(pid)
+            for item in entry.get("items", []):
+                values_by_plant[pid].setdefault(item["column"], item["value"])
+
+    plants = []
+    items = []
+    for pid in plants_order:
+        plant_items = [
+            {"column": cid, "value": val}
+            for cid, val in values_by_plant[pid].items()
+        ]
+        plants.append({
+            "plant": pid,
+            "plant_name": plant_names[pid],
+            "items": plant_items,
+        })
+        items.extend(
+            {
+                "column": it["column"],
+                "plant": pid,
+                "plant_name": plant_names[pid],
+                "value": it["value"],
+            }
+            for it in plant_items
+        )
+
+    status = "success" if not errors else ("partial" if plants else "error")
+    return {
+        "status": status,
+        "is_plant_based": True,
+        "items": items,
+        "plants": plants,
+        "warnings": warnings,
+        "errors": errors,
+    }
 
 
 def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_start_row):
