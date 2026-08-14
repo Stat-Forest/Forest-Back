@@ -678,23 +678,29 @@ def export_universal_report_to_excel_v2(
                         ]
                         totals_by_col[cid] = _pick_best_value(inners)
 
-        if totals_by_col:
-            jami_row += [
-                _format_excel_display_value(totals_by_col.get(cid, ""))
-                for cid in leaf_ids
-            ]
-        else:
-            summed = []
+        # Tashkilot darajasidagi qiymatlar. Har bir ustun uchun tartib:
+        #   1) "Tashkilot Jami" hisobotidagi qiymat
+        #   2) shu hisobotning o'simliksiz qiymati — 3-ilova (svodka) shunday
+        #      saqlanadi: u 1- va 2-ilovadan hisoblanib, bitta umumiy qiymat
+        #      sifatida (plantsiz) yoziladi. Avval bu qiymatlar exportga
+        #      umuman tushmasdi — 3-ilova bo'sh ko'rinardi.
+        #   3) o'simliklar bo'yicha yig'indi
+        jami_values = []
+        for cid in leaf_ids:
+            value = totals_by_col.get(cid)
 
-            for cid in leaf_ids:
-                values_for_sum = [
-                    per_plant.get(pid, {}).get(cid)
-                    for pid in plant_names.keys()
-                ]
-                total, seen = _sum_decimal_values(values_for_sum)
-                summed.append(_format_excel_display_value(total) if seen else "")
+            if value in (None, ""):
+                value = plantless.get(cid)
 
-            jami_row += summed
+            if value in (None, ""):
+                total, seen = _sum_decimal_values(
+                    [per_plant.get(pid, {}).get(cid) for pid in plant_names.keys()]
+                )
+                value = total if seen else ""
+
+            jami_values.append(_format_excel_display_value(value))
+
+        jami_row += jami_values
 
         if plant_names or any(v not in (None, "") for v in jami_row[3:]):
             ws.append(jami_row)
