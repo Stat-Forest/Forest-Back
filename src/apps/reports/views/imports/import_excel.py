@@ -25,9 +25,10 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers
 
-from apps.reports.models import Statement
+from apps.reports.models import Plan, Statement
 from apps.reports.services.report_import.template_generator import build_import_template
 from apps.reports.services.report_import.parser import parse_import_excel
+from apps.reports.services.report_import.plan_validation import PlanMismatchError
 
 
 # ── Fayl hajmi limiti (bayt) ──
@@ -102,9 +103,14 @@ class ImportTemplateDownloadAPIView(APIView):
         buffer.seek(0)
 
         statement_name = getattr(statement, f"name_{lang}", statement.name) or statement.name
+        # Nazorat belgilari (\n, \r, \t va h.k.) ham olib tashlanadi — aks
+        # holda Content-Disposition header qurishda Django BadHeaderError
+        # bilan yiqiladi (statement nomida tasodifan yangi qator bo'lsa).
         safe_name = "".join(
-            c if c not in '<>:"/\\|?*' else "_" for c in statement_name
+            c if c not in '<>:"/\\|?*' and c.isprintable() else "_"
+            for c in statement_name
         ).strip().replace(" ", "_")
+        safe_name = safe_name or "statement"
         filename = f"{safe_name}_import_shablon.xlsx"
 
         response = HttpResponse(
@@ -118,6 +124,22 @@ class ImportTemplateDownloadAPIView(APIView):
 class ImportParseSerializer(serializers.Serializer):
     file = serializers.FileField(help_text=".xlsx fayl")
     statement_id = serializers.UUIDField(help_text="Jadval (Statement) UUID'si")
+    organization_id = serializers.UUIDField(
+        help_text=(
+            "Tashkilot UUID'si. Faylda Reja (status_plan) ustunlariga "
+            "qiymat topilsa, aynan shu tashkilot uchun bo'lim_admin "
+            "tasdiqlagan Plan/PlanItem qiymati bilan solishtiriladi."
+        ),
+    )
+    year = serializers.IntegerField(
+        help_text="Hisobot yili — Reja (Plan) shu yil bo'yicha qidiriladi.",
+    )
+    season = serializers.ChoiceField(
+        choices=Plan.SeasonChoices.choices,
+        required=False,
+        allow_blank=True,
+        help_text="Mavsum (bahorgi/kuzgi) — faqat shunga bog'liq statement'lar uchun.",
+    )
     sheet_name = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -168,6 +190,9 @@ class ImportParseAPIView(GenericAPIView):
         # ── Parametrlarni olish ──
         uploaded_file = serializer.validated_data.get("file")
         statement_id = serializer.validated_data.get("statement_id")
+        organization_id = serializer.validated_data.get("organization_id")
+        year = serializer.validated_data.get("year")
+        season = serializer.validated_data.get("season") or None
         sheet_name = serializer.validated_data.get("sheet_name") or None
         lang = serializer.validated_data.get("lang")
 
@@ -199,13 +224,22 @@ class ImportParseAPIView(GenericAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # ── Parse ──
+        # ── Parse (+ topilsa, Reja ustunlarini tasdiqlangan Plan bilan
+        # solishtirish — apps/reports/services/report_import/plan_validation.py) ──
         try:
             result = parse_import_excel(
                 file_obj=uploaded_file,
                 statement=statement,
                 sheet_name=sheet_name,
                 lang=lang,
+                organization=organization_id,
+                year=year,
+                season=season,
+            )
+        except PlanMismatchError as exc:
+            return Response(
+                {"status": "error", "detail": str(exc), "items": [], "errors": exc.issues},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         except ValueError as exc:
             return Response(

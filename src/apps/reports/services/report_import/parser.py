@@ -39,11 +39,14 @@ from apps.reports.models import Plant
 from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.reports.services.report_import.columns import (
     StatementColumnIndex,
+    _issue,
+    get_plan_columns,
     is_plant_based_statement,
     normalize_title,
     split_title_path,
     strip_ordinal,
 )
+from apps.reports.services.report_import.plan_validation import validate_plan_values
 
 HEADER_ROW = 1
 ID_ROW = 2
@@ -63,11 +66,6 @@ ROW_NUMBER_HEADERS = {"№", "n", "t/r", "№ п/п"}
 SERVICE_HEADERS = (
     PLANT_ID_HEADERS | PLANT_NAME_HEADERS | ORGANIZATION_HEADERS | ROW_NUMBER_HEADERS
 )
-
-
-def _issue(message, row=None, column_title=None):
-    """warnings/errors uchun yagona format."""
-    return {"row": row, "column_title": column_title, "message": message}
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -369,7 +367,8 @@ def _cell_text(row_cells, col):
 #  Asosiy kirish nuqtasi
 # ──────────────────────────────────────────────────────────────────────
 
-def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
+def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz",
+                        organization=None, year=None, season=None):
     """
     Yuklangan Excel faylni o'qib, frontend uchun payload qaytaradi.
 
@@ -382,12 +381,20 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
         statement: Statement model instance
         sheet_name: O'qiladigan sheet nomi (None bo'lsa — barcha varaqlar)
         lang: Til kodi ("uz" yoki "ru")
+        organization: Organization instance/UUID — berilsa, faylda topilgan
+            Reja ustunlari qiymati shu tashkilotning tasdiqlangan Plan/
+            PlanItem qiymati bilan solishtiriladi (`plan_validation.py`).
+        year: int — Reja qidiriladigan yil (`organization` bilan birga kerak).
+        season: str|None — Plan.SeasonChoices qiymati (mavsumga bog'liq
+            statement'lar uchun).
 
     Returns:
         dict — response payload (status, items/plants, warnings, errors)
 
     Raises:
         ValueError — fayl formati noto'g'ri yoki o'qib bo'lmasa
+        PlanMismatchError (ValueError farzandi) — faylda topilgan Reja
+            qiymati tasdiqlangan reja bilan mos kelmasa
     """
     # ── 1. Workbook ochish ──
     try:
@@ -414,15 +421,25 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
             "(barcha oxirgi ustunlar reja yoki avto-hisob sifatida belgilangan)."
         )
 
+    # Reja ustunlari uchun alohida index — faylda topilsa (bo'lim_admin
+    # tasdiqlagan reja bilan solishtirish uchun), lekin javobga hech
+    # qachon qo'shilmaydi.
+    plan_index = StatementColumnIndex(
+        statement, lang=lang, columns_queryset=get_plan_columns(statement)
+    )
+
     is_plant_based = is_plant_based_statement(statement)
 
     results = []
+    plan_founds = []
     failures = []
     for ws in sheets:
         try:
-            results.append(
-                _parse_sheet(ws, statement, index, lang, is_plant_based)
+            result, plan_found = _parse_sheet(
+                ws, statement, index, plan_index, lang, is_plant_based
             )
+            results.append(result)
+            plan_founds.append(plan_found)
         except ValueError as exc:
             # Bitta varaqda ma'lumot bo'lmasligi mumkin (masalan bo'sh ilova) —
             # butun importni to'xtatmaymiz
@@ -431,16 +448,51 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz"):
     if not results:
         raise ValueError(failures[0] if failures else "Faylda hech qanday qiymat topilmadi.")
 
+    if organization is not None and year is not None:
+        flat_found, plant_found = _merge_plan_found(plan_founds)
+        validate_plan_values(
+            statement=statement,
+            organization=organization,
+            year=year,
+            season=season,
+            index_label=plan_index.label_by_id,
+            flat_found=flat_found,
+            plant_found=plant_found,
+        )
+
     return _merge_sheet_results(results, is_plant_based)
 
 
-def _parse_sheet(ws, statement, index, lang, is_plant_based):
+def _merge_plan_found(plan_founds):
+    """
+    Har bir varaqda topilgan Reja qiymatlarini birlashtiradi (bir ustun
+    bir necha varaqda uchrasa — birinchi topilgan qiymat qoladi, xuddi
+    Amalda `_merge_sheet_results` kabi).
+    """
+    flat = {}
+    by_plant = {}
+    for pf in plan_founds:
+        for column_id, value_row in pf["flat"].items():
+            flat.setdefault(column_id, value_row)
+        for plant_id, cols in pf["by_plant"].items():
+            dest = by_plant.setdefault(plant_id, {})
+            for column_id, value_row in cols.items():
+                dest.setdefault(column_id, value_row)
+    return flat, by_plant
+
+
+def _parse_sheet(ws, statement, index, plan_index, lang, is_plant_based):
     """Bitta varaqni o'qiydi (ilova = varaq)."""
     warnings = []
     errors = []
 
     last_scan_row = min(ws.max_row, MAX_HEADER_SCAN_ROWS)
     merged_values = _merged_header_values(ws, last_scan_row)
+    # Sarlavha bloki reja ustunlarini topish uchun ham kerak — Amalda
+    # ustunlar yashirin UUID qatori orqali topilgan bo'lsa ham, reja
+    # ustunlari hech qachon UUID qatoriga tushmagani uchun har doim
+    # sarlavha matni bo'yicha qidiriladi.
+    header_rows = _header_rows(ws, index, merged_values, last_scan_row)
 
     # ── 4. Ustunlarni moslashtirish ──
     # 4a. Shablon: 2-qatordagi yashirin UUID'lar (eng ishonchli yo'l)
@@ -456,7 +508,6 @@ def _parse_sheet(ws, statement, index, lang, is_plant_based):
             ))
     else:
         # 4b. Fallback: sarlavha matni bo'yicha (export yoki qo'lda tuzilgan fayl)
-        header_rows = _header_rows(ws, index, merged_values, last_scan_row)
         if not header_rows:
             raise ValueError(
                 "Fayldan birorta ham ustunni aniqlab bo'lmadi. "
@@ -500,9 +551,19 @@ def _parse_sheet(ws, statement, index, lang, is_plant_based):
         if column_id in index.importable_ids
     }
 
+    # ── 4c. Reja ustunlarini aniqlash (faqat validatsiya uchun — javobga
+    # hech qachon qo'shilmaydi). Sarlavha bloki topilmagan bo'lsa (ID
+    # qatori orqali Amalda topilgan-u, lekin sarlavha aniqlanmagan holat
+    # ehtimoldan yiroq) — reja tekshiruvi shunchaki o'tkazib yuboriladi.
+    plan_column_map = {}
+    if plan_index.importable and header_rows:
+        plan_column_map, _plan_service_cols, _plan_unmatched = _match_columns_by_title(
+            ws, plan_index, merged_values, header_rows
+        )
+
     # ── 5. Qiymatlarni o'qish ──
     if is_plant_based:
-        return _parse_plant_based(
+        result, plan_found_by_plant = _parse_plant_based(
             ws=ws,
             statement=statement,
             index=index,
@@ -512,9 +573,11 @@ def _parse_sheet(ws, statement, index, lang, is_plant_based):
             errors=errors,
             lang=lang,
             data_start_row=data_start_row,
+            plan_column_map=plan_column_map,
         )
+        return result, {"flat": {}, "by_plant": plan_found_by_plant}
 
-    return _parse_flat(
+    result, plan_found_flat = _parse_flat(
         ws=ws,
         index=index,
         column_map=column_map,
@@ -522,7 +585,9 @@ def _parse_sheet(ws, statement, index, lang, is_plant_based):
         warnings=warnings,
         errors=errors,
         data_start_row=data_start_row,
+        plan_column_map=plan_column_map,
     )
+    return result, {"flat": plan_found_flat, "by_plant": {}}
 
 
 def _merge_sheet_results(results, is_plant_based):
@@ -607,7 +672,8 @@ def _merge_sheet_results(results, is_plant_based):
     }
 
 
-def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_start_row):
+def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_start_row,
+                 plan_column_map=None):
     """
     Oddiy (flat) report parse.
 
@@ -615,6 +681,11 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
     Shuning uchun bir nechta ma'lumot qatori bo'lsa (masalan, ko'p
     tashkilotli export fayl), birinchi to'ldirilgan qiymat olinadi va
     foydalanuvchi ogohlantiriladi.
+
+    Returns:
+        (result_dict, plan_found) — `plan_found` {column_id: (value, row)}
+        faylda topilgan Reja ustuni qiymatlari (javobga qo'shilmaydi,
+        faqat `plan_validation.validate_plan_values` uchun).
     """
     if ws.max_row < data_start_row:
         raise ValueError(
@@ -622,15 +693,24 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
         )
 
     values_by_column = {}
+    plan_found = {}
     first_row_used = None
     skipped_rows = 0
 
     for row_cells in ws.iter_rows(min_row=data_start_row):
         items = _extract_row_items(row_cells, column_map)
-        if not items:
+        plan_items = _extract_row_items(row_cells, plan_column_map) if plan_column_map else []
+        if not items and not plan_items:
             continue
 
         row_number = row_cells[0].row
+
+        for pit in plan_items:
+            plan_found.setdefault(pit["column"], (pit["value"], row_number))
+
+        if not items:
+            continue
+
         new_values = [it for it in items if it["column"] not in values_by_column]
         if new_values:
             if first_row_used is None:
@@ -662,22 +742,26 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
         raise ValueError("Faylda hech qanday qiymat topilmadi.")
 
     status = "success" if not errors else ("partial" if all_items else "error")
-    return {
+    result = {
         "status": status,
         "is_plant_based": False,
         "items": all_items,
         "warnings": warnings,
         "errors": errors,
     }
+    return result, plan_found
 
 
 def _parse_plant_based(ws, statement, index, column_map, service_columns,
-                       warnings, errors, lang, data_start_row):
+                       warnings, errors, lang, data_start_row, plan_column_map=None):
     """
     Plantlik report parse.
 
     O'simlik avval ID bo'yicha (shablon), topilmasa nomi bo'yicha
     (export fayl) aniqlanadi.
+
+    Returns:
+        (result_dict, plan_found) — `plan_found` {plant_id: {column_id: (value, row)}}.
     """
     plants = list(Plant.objects.filter(statement=statement, children__isnull=True))
     plants_by_id = {str(p.id): p for p in plants}
@@ -705,6 +789,7 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
 
     plants_payload = []
     values_by_plant = {}
+    plan_found = {}
     skipped_rows = 0
     total_rows = 0
 
@@ -714,7 +799,8 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
         row_number = row_cells[0].row
 
         items = _extract_row_items(row_cells, column_map)
-        if not items:
+        plan_items = _extract_row_items(row_cells, plan_column_map) if plan_column_map else []
+        if not items and not plan_items:
             continue  # bo'sh yoki "Jami" kabi qator — jim o'tkazamiz
 
         raw_id = _cell_text(row_cells, plant_id_col)
@@ -748,6 +834,15 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
             continue
 
         plant_id = str(plant.id)
+
+        if plan_items:
+            plan_stored = plan_found.setdefault(plant_id, {})
+            for pit in plan_items:
+                plan_stored.setdefault(pit["column"], (pit["value"], row_number))
+
+        if not items:
+            continue
+
         if plant_id not in values_by_plant:
             values_by_plant[plant_id] = {}
             plant_name = getattr(plant, f"name_{lang}", plant.name) or plant.name
@@ -800,7 +895,7 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
         raise ValueError("Faylda hech qanday o'simlik uchun qiymat topilmadi.")
 
     status = "success" if not errors else ("partial" if plants_payload else "error")
-    return {
+    result = {
         "status": status,
         "is_plant_based": True,
         "items": all_items,
@@ -808,3 +903,4 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
         "warnings": warnings,
         "errors": errors,
     }
+    return result, plan_found
