@@ -1,102 +1,19 @@
-from apps.chat.models import (
-    Conversation,
-    Message,
+import logging
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+from apps.chat.serializers.conversation_serializers import (
+    ConversationDetailSerializer,
 )
-from apps.chat.websocket.chat_serializers import (
-    ConversationSerializer,
-    MessageSerializer,
-)
+
+logger = logging.getLogger(__name__)
 
 ERROR_EVENT = "chat.error"
 
-
-def build_message_created_event(
-    message: Message,
-) -> dict:
-    """
-    Broadcast newly created message.
-    """
-
-    return {
-        "event": "message_created",
-        "data": MessageSerializer(message).data,
-    }
-
-
-# def build_conversation_created_event(
-#     conversation: Conversation,
-# ) -> dict:
-#     """
-#     Broadcast newly created conversation.
-#
-#     Sent to all online support administrators.
-#     """
-#
-#     return {
-#         "event": "conversation_created",
-#         "data": ConversationSerializer(conversation).data,
-#     }
-
-
-# def build_conversation_assigned_event(
-#     conversation: Conversation,
-# ) -> dict:
-#     """
-#     Broadcast conversation assignment.
-#
-#     Used to remove NEW conversation
-#     from other support administrators.
-#     """
-#
-#     return {
-#         "event": "conversation_assigned",
-#         "data": ConversationSerializer(conversation).data,
-#     }
-#
-#
-# def build_conversation_closed_event(
-#     conversation: Conversation,
-# ) -> dict:
-#     """
-#     Broadcast conversation closing.
-#     """
-#
-#     return {
-#         "event": "conversation_closed",
-#         "data": ConversationSerializer(conversation).data,
-#     }
-
-
-# def build_messages_read_event(
-#     conversation_id: str,
-# ) -> dict:
-#     """
-#     Notify that messages were marked as read.
-#     """
-#
-#     return {
-#         "event": "messages_read",
-#         "data": {
-#             "conversation_id": str(conversation_id),
-#         },
-#     }
-
-
-def build_error_event(
-    code: str,
-    message: str,
-) -> dict:
-    """
-    Standard websocket error payload.
-    """
-
-    return {
-        "event": "error",
-        "data": {
-            "code": code,
-            "message": message
-        }
-    }
+MESSAGE_CREATED = "chat_message"
+CONVERSATION_ASSIGNED = "conversation_assigned"
+CONVERSATION_CLOSED = "conversation_closed"
 
 
 def conversation_group_name(
@@ -107,3 +24,71 @@ def conversation_group_name(
     """
 
     return f"conversation_{conversation_id}"
+
+
+def build_message_created_event(payload: dict) -> dict:
+    """
+    Broadcast newly created message.
+
+    `payload` — allaqachon serializatsiya qilingan xabar
+    (`message_services.serialize_message`), chunki serializatsiya DB ga
+    murojaat qiladi va async consumer ichida bajarilmaydi.
+    """
+
+    return {
+        "type": MESSAGE_CREATED,
+        "message": payload,
+    }
+
+
+def build_conversation_event(conversation, event: str) -> dict:
+    """
+    Chat holati o'zgarganini (olindi / yopildi) bildiruvchi payload.
+    """
+
+    return {
+        "type": event,
+        "conversation": ConversationDetailSerializer(conversation).data,
+    }
+
+
+def build_error_event(message: str) -> dict:
+    """
+    Standard websocket error payload.
+    """
+
+    return {
+        "type": ERROR_EVENT,
+        "message": message,
+    }
+
+
+def broadcast_conversation_event(*, conversation, event: str) -> None:
+    """
+    Chat guruhiga holat o'zgarganini yuborish.
+
+    Har doim `transaction.on_commit()` ichidan chaqiriladi — tranzaksiya
+    orqaga qaytsa, mijozlarga yolg'on xabar ketmasligi uchun.
+
+    Channel layer (Redis) ishlamay qolsa ham asosiy amaliyot (chat olindi /
+    yopildi) allaqachon bazaga yozilgan, shuning uchun xato faqat log'ga
+    yoziladi va yuqoriga ko'tarilmaydi.
+    """
+
+    try:
+        channel_layer = get_channel_layer()
+
+        if channel_layer is None:
+            return
+
+        async_to_sync(channel_layer.group_send)(
+            conversation_group_name(conversation.id),
+            build_conversation_event(conversation, event),
+        )
+
+    except Exception:
+        logger.exception(
+            "[CHAT] broadcast failed: event=%s conversation=%s",
+            event,
+            conversation.id,
+        )

@@ -11,10 +11,7 @@ from rest_framework_simplejwt.exceptions import (
     InvalidToken,
     TokenError,
 )
-from rest_framework_simplejwt.tokens import (
-    AccessToken,
-    UntypedToken,
-)
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.users.models import CustomUser
 
@@ -32,27 +29,38 @@ def get_user_from_token(token: str):
     """
 
     try:
-        UntypedToken(token)
-
+        # `AccessToken` imzo, muddat va token turini o'zi tekshiradi —
+        # refresh token bu yerdan o'tolmaydi.
         payload = AccessToken(token)
 
-        user = CustomUser.objects.only(
-            "id",
-            "is_active",
-            "last_activity",
-        ).get(
+        # `.only()` ishlatilmaydi: xabar serializatsiyasi first_name/
+        # last_name/role ni o'qiydi va deferred maydonlar har bir xabar
+        # uchun qo'shimcha so'rov keltirib chiqarardi.
+        user = CustomUser.objects.get(
             pk=payload["user_id"],
             is_active=True,
         )
 
         # Inactivity timeout check (same as CustomJWTAuthentication)
         timeout_seconds = getattr(settings, "SESSION_INACTIVITY_TIMEOUT_SECONDS", 900)
+        touch_interval_seconds = getattr(settings, "SESSION_ACTIVITY_TOUCH_INTERVAL_SECONDS", 60)
         now = timezone.now()
 
         if user.last_activity:
             inactivity_seconds = (now - user.last_activity).total_seconds()
+
             if inactivity_seconds > timeout_seconds:
                 return AnonymousUser()
+
+            # Faollikni yangilaymiz. Aks holda faqat WebSocket orqali
+            # yozishayotgan foydalanuvchining sessiyasi "harakatsiz" deb
+            # hisoblanib, keyingi ulanishda 4401 bilan rad etilardi.
+            if inactivity_seconds >= touch_interval_seconds:
+                user.last_activity = now
+                user.save(update_fields=["last_activity"])
+        else:
+            user.last_activity = now
+            user.save(update_fields=["last_activity"])
 
         return user
 

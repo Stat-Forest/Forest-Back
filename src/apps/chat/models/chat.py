@@ -1,9 +1,21 @@
 from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 
 from apps.base.models import AbstractBaseModel
 from apps.users.models import CustomUser
+
+#: Xabar matnining maksimal uzunligi. Model validatori `objects.create()` da
+#: ishlamagani uchun haqiqiy tekshiruv service qatlamida shu qiymat bo'yicha
+#: bajariladi (`apps.chat.services.message_services`).
+MAX_MESSAGE_LENGTH = 5000
+
+#: Chatlarni saralash tartibi: xabar yozilgan bo'lsa — oxirgi xabar vaqti,
+#: yozilmagan bo'lsa — yaratilgan vaqti. Oddiy `-last_message_at` Postgres'da
+#: NULL larni BIRINCHI qo'yadi, ya'ni xabarsiz eski chatlar bugungi faol
+#: chatlardan yuqorida chiqib ketardi.
+CONVERSATION_ACTIVITY = Coalesce("last_message_at", "created_at")
 
 
 class Conversation(AbstractBaseModel):
@@ -52,17 +64,23 @@ class Conversation(AbstractBaseModel):
     class Meta:
         verbose_name = "Conversation"
         verbose_name_plural = "Conversations"
-        ordering = ("-last_message_at", "-created_at")
+        ordering = (CONVERSATION_ACTIVITY.desc(), "-created_at")
         # user/assigned_to uchun alohida index kerak emas —
         # ForeignKey Django tomonidan avtomatik index qilinadi.
-        permissions = [
-            ("manage_support_chat", "Can manage support chat"),
-        ]
         constraints = [
+            # Bir vaqtda faqat BITTA chat admin qo'lida bo'lishi mumkin.
+            #
+            # Ilgari bu constraint NEW ni ham qamrab olardi. Natijada hech kim
+            # olmagan chat foydalanuvchini abadiy bloklab turardi — u kunlik
+            # 2 ta limitiga umuman yetib bora olmasdi. NEW chat esa hech kimni
+            # band qilmaydi (u shunchaki navbatda turadi), shuning uchun
+            # "ko'pi bilan 2 ta faol chat" qoidasi service qatlamida,
+            # `create_conversation` dagi qulf ostida tekshiriladi
+            # (partial UNIQUE bilan "ko'pi bilan 2 ta" ni ifodalab bo'lmaydi).
             models.UniqueConstraint(
                 fields=["user"],
-                condition=Q(status__in=["new", "taken"]),
-                name="unique_active_conversation_per_user",
+                condition=Q(status="taken"),
+                name="unique_taken_conversation_per_user",
             ),
         ]
 
@@ -89,7 +107,7 @@ class Message(AbstractBaseModel):
     )
     text = models.TextField(
         validators=[
-            MaxLengthValidator(5000)
+            MaxLengthValidator(MAX_MESSAGE_LENGTH)
         ]
     )
     is_read = models.BooleanField(default=False)

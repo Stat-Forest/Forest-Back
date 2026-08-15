@@ -1,7 +1,18 @@
+import json
+import logging
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-from apps.chat.websocket.events import conversation_group_name, ERROR_EVENT
+from apps.chat.websocket.chat_serializers import SendMessageSerializer
+from apps.chat.websocket.events import (
+    CONVERSATION_ASSIGNED,
+    CONVERSATION_CLOSED,
+    MESSAGE_CREATED,
+    build_error_event,
+    build_message_created_event,
+    conversation_group_name,
+)
 from apps.chat.exceptions import (
     ConversationNotFound,
     ConversationAccessDenied,
@@ -9,10 +20,12 @@ from apps.chat.exceptions import (
 )
 from apps.chat.services import (
     get_conversation_or_raise,
-    can_connect_to_conversation,
+    validate_conversation_access,
     send_message,
     serialize_message
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -43,7 +56,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
 
             await database_sync_to_async(
-                can_connect_to_conversation
+                validate_conversation_access
             )(
                 conversation=conversation,
                 user=self.user,
@@ -80,12 +93,30 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """
             Send error message to websocket client.
         """
-        await self.send_json(
-            {
-                "type": ERROR_EVENT,
-                "message": message
-            }
-        )
+        await self.send_json(build_error_event(message))
+
+    async def receive(self, text_data=None, bytes_data=None, **kwargs):
+        """
+        Xom frame'ni qabul qilish.
+
+        Bazaviy implementatsiya buzuq JSON yoki binary frame'da
+        istisno ko'taradi va consumer'ni butunlay yiqitadi (ulanish
+        uziladi). Bu yerda ular oddiy xato javobiga aylantiriladi —
+        soket tirik qoladi.
+        """
+
+        if text_data is None:
+            await self._send_error("Only text frames are supported.")
+            return
+
+        try:
+            content = json.loads(text_data)
+
+        except (json.JSONDecodeError, ValueError):
+            await self._send_error("Invalid JSON payload.")
+            return
+
+        await self.receive_json(content, **kwargs)
 
     async def receive_json(
         self,
@@ -96,16 +127,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         Receive websocket message.
         """
 
-        text = content.get(
-            "text",
-            "",
-        ).strip()
-
-        if not text:
-            await self._send_error(
-                "Message cannot be empty.",
-            )
+        if not isinstance(content, dict):
+            await self._send_error("Payload must be a JSON object.")
             return
+
+        serializer = SendMessageSerializer(data=content)
+
+        if not serializer.is_valid():
+            errors = serializer.errors.get("text") or ["Invalid payload."]
+            await self._send_error(str(errors[0]))
+            return
+
+        text = serializer.validated_data["text"]
 
         try:
             message = await database_sync_to_async(
@@ -128,12 +161,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
             return
 
+        except Exception:
+            # Kutilmagan xato (DB uzilishi va h.k.) — soketni yiqitmaymiz,
+            # aks holda mijoz sababini bilmay qayta ulanishga urinaveradi.
+            logger.exception(
+                "[CHAT] send_message failed: conversation=%s user=%s",
+                self.conversation_id,
+                getattr(self.user, "id", None),
+            )
+            await self._send_error("Message could not be delivered.")
+            return
+
         await self.channel_layer.group_send(
             self.group_name,
-            {
-                "type": "chat_message",
-                "message": payload,
-            },
+            build_message_created_event(payload),
         )
 
     async def chat_message(self, event):
@@ -142,7 +183,29 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """
         await self.send_json(
             {
-                "type": "chat_message",
+                "type": MESSAGE_CREATED,
                 "message": event["message"],
+            }
+        )
+
+    async def conversation_assigned(self, event):
+        """
+        Chat support admin tomonidan olindi.
+        """
+        await self.send_json(
+            {
+                "type": CONVERSATION_ASSIGNED,
+                "conversation": event["conversation"],
+            }
+        )
+
+    async def conversation_closed(self, event):
+        """
+        Chat yopildi.
+        """
+        await self.send_json(
+            {
+                "type": CONVERSATION_CLOSED,
+                "conversation": event["conversation"],
             }
         )
