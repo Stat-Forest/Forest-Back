@@ -9,7 +9,11 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
+# DIQQAT: aynan "config.settings" — "config.settings.base" EMAS.
+# `base.py` chala: DATABASES, REST_FRAMEWORK, SIMPLE_JWT va boshqalar
+# `config/settings/__init__.py` da yig'iladi. Prod `gunicorn config.asgi`
+# bilan ishga tushadi, ya'ni bu qator yagona sozlama manbai bo'ladi.
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 from django.core.asgi import get_asgi_application
 
