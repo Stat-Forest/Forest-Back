@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.chat.api.conversation_views import (
     AssignConversationAPIView,
+    CancelConversationAPIView,
     CloseConversationAPIView,
     ConversationCreateAPIView,
     ConversationDetailAPIView,
@@ -45,6 +46,12 @@ urlpatterns = [
         "conversations/<uuid:conversation_id>/mark-read/",
         MarkConversationReadAPIView.as_view(),
         name="conversation-mark-read",
+    ),
+
+    path(
+        "conversations/<uuid:conversation_id>/cancel/",
+        CancelConversationAPIView.as_view(),
+        name="conversation-cancel",
     ),
 
     # ===============================
