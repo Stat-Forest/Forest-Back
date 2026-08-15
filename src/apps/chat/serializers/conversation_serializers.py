@@ -2,24 +2,19 @@ from rest_framework import serializers
 
 from apps.base.serializers import CustomModelSerializer
 from apps.chat.models import Conversation
-from apps.users.models import CustomUser
+from apps.chat.serializers.message_serializers import ChatUserSerializer
 
 
-def _serialize_user(user: CustomUser | None) -> dict | None:
+class ConversationUserSerializer(ChatUserSerializer):
     """
-    Shared lightweight user representation used across
-    conversation serializers.
-    """
-    if user is None:
-        return None
+    Chat egasi / admin ma'lumoti — email bilan.
 
-    return {
-        "id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "role": user.role,
-    }
+    Email faqat chatga kirish huquqi bor tomonlarga ko'rinadi
+    (support endpointlari `IsSupportAdmin` bilan yopilgan).
+    """
+
+    class Meta(ChatUserSerializer.Meta):
+        fields = ChatUserSerializer.Meta.fields + ("email",)
 
 
 class ConversationCreateSerializer(serializers.Serializer):
@@ -36,9 +31,9 @@ class ConversationListSerializer(CustomModelSerializer):
     Conversation list serializer.
     """
 
-    user = serializers.SerializerMethodField()
-    assigned_to = serializers.SerializerMethodField()
-    unread_count = serializers.SerializerMethodField()
+    user = ConversationUserSerializer(read_only=True)
+    assigned_to = ConversationUserSerializer(read_only=True)
+    unread_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Conversation
@@ -52,22 +47,7 @@ class ConversationListSerializer(CustomModelSerializer):
             "created_at",
             "unread_count",
         )
-
-    def get_user(self, obj):
-        return _serialize_user(obj.user)
-
-    def get_assigned_to(self, obj):
-        return _serialize_user(obj.assigned_to)
-
-    def get_unread_count(self, obj):
-        user = self.context["request"].user
-
-        return (
-            obj.messages
-            .filter(is_read=False)
-            .exclude(sender=user)
-            .count()
-        )
+        read_only_fields = fields
 
 
 class ConversationDetailSerializer(CustomModelSerializer):
@@ -75,8 +55,8 @@ class ConversationDetailSerializer(CustomModelSerializer):
     Conversation detail serializer.
     """
 
-    user = serializers.SerializerMethodField()
-    assigned_to = serializers.SerializerMethodField()
+    user = ConversationUserSerializer(read_only=True)
+    assigned_to = ConversationUserSerializer(read_only=True)
 
     class Meta:
         model = Conversation
@@ -91,9 +71,4 @@ class ConversationDetailSerializer(CustomModelSerializer):
             "last_message_at",
             "created_at",
         )
-
-    def get_user(self, obj):
-        return _serialize_user(obj.user)
-
-    def get_assigned_to(self, obj):
-        return _serialize_user(obj.assigned_to)
+        read_only_fields = fields

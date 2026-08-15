@@ -1,16 +1,9 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.chat.exceptions import (
-    ChatException,
-    ConversationNotFound,
-)
-from apps.chat.selectors.conversation_selectors import (
-    get_conversation_by_id,
-)
 from apps.chat.selectors.message_selectors import (
     get_conversation_messages,
 )
@@ -18,13 +11,15 @@ from apps.chat.serializers.message_serializers import (
     MessageSerializer,
 )
 from apps.chat.services.message_services import (
+    get_conversation_or_raise,
     mark_conversation_as_read,
+    validate_conversation_access,
 )
 
 
 class ConversationMessagesAPIView(GenericAPIView):
     """
-    Return all messages of a conversation.
+    Return messages of a conversation (paginated).
     """
 
     permission_classes = (IsAuthenticated,)
@@ -32,83 +27,37 @@ class ConversationMessagesAPIView(GenericAPIView):
 
     @extend_schema(
         tags=["Chat - User", "Chat - Support"],
-        summary="Get all messages of a conversation (marks them as read)",
+        summary="Get messages of a conversation (marks them as read)",
     )
     def get(self, request, conversation_id, *args, **kwargs):
-        conversation = get_conversation_by_id(conversation_id)
+        conversation = get_conversation_or_raise(
+            conversation_id=conversation_id,
+        )
 
-        if conversation is None:
-            return Response(
-                {"detail": "Conversation not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        validate_conversation_access(
+            conversation=conversation,
+            user=request.user,
+        )
 
-        if (
-                request.user.id != conversation.user_id
-                and request.user.id != conversation.assigned_to_id
-        ):
-            return Response(
-                {"detail": "You don't have access to this conversation."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # O'qilgan deb belgilash serializatsiyadan OLDIN bajariladi:
+        # queryset lazy bo'lgani uchun aks holda javobdagi `is_read`
+        # qiymatlari yozuv tartibiga bog'lib qolardi.
+        mark_conversation_as_read(
+            conversation_id=conversation.id,
+            user=request.user,
+        )
 
         messages = get_conversation_messages(conversation)
+
+        page = self.paginate_queryset(messages)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = self.get_serializer(messages, many=True)
 
-        try:
-            mark_conversation_as_read(
-                conversation_id=conversation.id,
-                user=request.user,
-            )
-        except ChatException:
-            # o'qishni belgilash muvaffaqiyatsiz bo'lsa ham,
-            # xabarlarni ko'rsatishga xalaqit bermasin
-            pass
-
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    # def get(
-    #     self,
-    #     request,
-    #     conversation_id,
-    #     *args,
-    #     **kwargs,
-    # ):
-    #     conversation = get_conversation_by_id(
-    #         conversation_id,
-    #     )
-    #
-    #     if conversation is None:
-    #         raise ConversationNotFound(
-    #             "Conversation not found."
-    #         )
-    #
-    #     if (
-    #         request.user.id != conversation.user_id
-    #         and request.user.id != conversation.assigned_to_id
-    #     ):
-    #         raise ChatException(
-    #             "You don't have access to this conversation."
-    #         )
-    #
-    #     messages = get_conversation_messages(
-    #         conversation,
-    #     )
-    #
-    #     serializer = self.get_serializer(
-    #         messages,
-    #         many=True,
-    #     )
-    #
-    #     mark_conversation_as_read(
-    #         conversation_id=conversation.id,
-    #         user=request.user,
-    #     )
-    #
-    #     return Response(
-    #         serializer.data,
-    #         status=status.HTTP_200_OK,
-    #     )
 
 
 class MarkConversationReadAPIView(GenericAPIView):
@@ -126,36 +75,19 @@ class MarkConversationReadAPIView(GenericAPIView):
     @extend_schema(
         tags=["Chat - User", "Chat - Support"],
         summary="Mark unread messages as read without refetching history",
+        request=None,
+        responses={
+            200: inline_serializer(
+                name="MarkConversationReadResponse",
+                fields={"marked_count": serializers.IntegerField()},
+            )
+        },
     )
     def post(self, request, conversation_id, *args, **kwargs):
-        conversation = get_conversation_by_id(conversation_id)
-
-        if conversation is None:
-            return Response(
-                {"detail": "Conversation not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if (
-                request.user.id != conversation.user_id
-                and request.user.id != conversation.assigned_to_id
-        ):
-            return Response(
-                {"detail": "You don't have access to this conversation."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            marked_count = mark_conversation_as_read(
-                conversation_id=conversation.id,
-                user=request.user,
-            )
-
-        except ChatException as exc:
-            return Response(
-                {"detail": str(exc)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        marked_count = mark_conversation_as_read(
+            conversation_id=conversation_id,
+            user=request.user,
+        )
 
         return Response(
             {"marked_count": marked_count},
