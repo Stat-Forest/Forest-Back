@@ -111,6 +111,33 @@ def get_importable_columns(statement):
     )
 
 
+def get_plan_columns(statement):
+    """
+    Reja (status_plan berilgan) ustunlar — bularni FAQAT bo'lim_admin
+    Plan/PlanItem (yoki PlantPlan/PlantPlanItem) orqali kiritadi.
+
+    Ta'rif `apps.reports.services.simple_ensure_plans.ensure_plans_exist_simple`
+    dagi bilan bir xil — shu ikkalasi bir xil "reja ustuni" tushunchasiga
+    tayanishi kerak.
+    """
+    return (
+        StatementColumn.objects
+        .filter(
+            statement=statement,
+            status_plan__isnull=False,
+            is_user_input=True,
+        )
+        .select_related("parent")
+        .order_by("ordering")
+    )
+
+
+def _issue(message, row=None, column_title=None):
+    """warnings/errors uchun yagona format (import parser va reja
+    validatsiyasi ikkalasida ham ishlatiladi)."""
+    return {"row": row, "column_title": column_title, "message": message}
+
+
 def is_plant_based_statement(statement):
     """
     Jadval o'simliklar kesimidami?
@@ -148,7 +175,15 @@ class StatementColumnIndex:
     kerak bo'ladi.
     """
 
-    def __init__(self, statement, lang="uz"):
+    def __init__(self, statement, lang="uz", columns_queryset=None):
+        """
+        `columns_queryset` — moslashtiriladigan ustunlar to'plami.
+        Berilmasa (odatiy holat) `get_importable_columns` (Amalda)
+        ishlatiladi. Reja ustunlarini xuddi shu yo'l (path) bo'yicha
+        moslashtirish uchun `get_plan_columns` bilan alohida nusxa
+        yaratish mumkin — sarlavha/suffix/ordinal moslashtirish mantig'i
+        (parser.py) ikkalasida ham bir xil ishlaydi.
+        """
         self.statement = statement
         self.lang = lang
 
@@ -158,8 +193,12 @@ class StatementColumnIndex:
         self._by_id = {str(c.id): c for c in self.all_columns}
         self._title_variants_cache = {}
 
+        columns_source = (
+            columns_queryset if columns_queryset is not None
+            else get_importable_columns(statement)
+        )
         self.importable = sorted(
-            get_importable_columns(statement),
+            columns_source,
             key=lambda c: ordering_key(c.ordering),
         )
         self.importable_ids = {str(c.id) for c in self.importable}
@@ -336,3 +375,12 @@ class StatementColumnIndex:
         ]
         position = twins.index(column_id) + 1 if column_id in twins else 1
         return f"{PATH_SEPARATOR.join(display_path)} ({position})"
+
+    def label_by_id(self, column_id):
+        """`label()` bilan bir xil, lekin column ID (str) qabul qiladi —
+        qiymatlari faqat ID orqali yig'iladigan joylarda (masalan reja
+        validatsiyasi) ustun obyektini qayta izlashga hojat qoldirmaydi."""
+        column = self._by_id.get(str(column_id))
+        if column is None:
+            return str(column_id)
+        return self.label(column)
