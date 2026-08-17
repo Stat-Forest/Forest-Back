@@ -789,6 +789,36 @@ def _serialize_report_like(
 
             col_payload["row_total"] = str(row_total_val)
 
+    # ── Virtual "O'simlik nomi" ustuni (plant-based statementlar uchun) ──
+    # use_plant_plan flag'iga yoki inners ichida plant_id borligiga qarab aniqlanadi
+    all_plants: Dict[str, str] = {}
+    for col_data in statement_columns_payload:
+        for inn in col_data.get("inners", []):
+            pid = inn.get("plant_id")
+            if pid and pid not in all_plants:
+                all_plants[pid] = inn.get("plant_name", "")
+
+    if all_plants:
+        plant_name_label = "Название растения" if lang == "ru" else "O'simlik nomi"
+        plant_inners = [
+            {"plant_id": pid, "plant_name": pname, "value": pname}
+            for pid, pname in sorted(all_plants.items(), key=lambda x: x[1])
+        ]
+        plant_col = {
+            "statement_column_id": "plant_name_virtual",
+            "statement_column_name": plant_name_label,
+            "is_virtual": True,
+            "inners": plant_inners,
+        }
+        # Tashkilot nomi'dan keyin insert qilish
+        insert_idx = 0
+        for i, c in enumerate(statement_columns_payload):
+            if c.get("statement_column_id") in cache.org_name_cols:
+                insert_idx = i + 1
+                break
+        statement_columns_payload.insert(insert_idx, plant_col)
+
+
     org_id_str = str(rep.organization_id) if rep.organization_id else None
     return {
         "id": str(rep.id),
