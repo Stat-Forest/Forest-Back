@@ -93,6 +93,29 @@ def should_use_individual_general_plan_source(statement) -> bool:
     return bool(statement_names & PLAN_FROM_INDIVIDUAL_GENERAL_STATEMENTS)
 
 
+def _get_global_plan_reja_col_ids(statement, cache: StatementDataCache) -> Set[str]:
+    """
+    Global plan statementlar uchun Reja column IDlarini ordering bo'yicha aniqlaydi.
+    Bu columnlar individual_general (Tashkilot Jami) reportlardan olinishi kerak.
+    general_report.py dagi statement_has_global_plan logikasi bilan mos.
+    """
+    stmt_name = (getattr(statement, "name", "") or getattr(statement, "name_uz", "") or "").strip().lower()
+
+    if any(k in stmt_name for k in ("urug", "seed")):
+        reja_orderings = ["1.1.2.1"]
+    elif any(k in stmt_name for k in ("og'ir", "ogir", "mahalla")):
+        reja_orderings = ["1.1.4"]
+    else:
+        return set()
+
+    result: Set[str] = set()
+    for ordering in reja_orderings:
+        col_id = cache.get_col_id_by_ordering(ordering)
+        if col_id:
+            result.add(col_id)
+    return result
+
+
 # ============================================================
 # Column helpers — singleton YO'Q, har doim fresh hisoblaydi
 # ============================================================
@@ -338,6 +361,7 @@ def _sum_reports_for_general(
     individual_general_by_org: dict[str, Report] | None = None,
     is_daromad: bool = False,
     quarter_filter: str | None = None,
+    reja_col_ids: Set[str] | None = None,
 ) -> Dict[str, Dict[str | None, Decimal]]:
     """
     Region jami uchun qiymatlarni yig'adi.
@@ -397,7 +421,13 @@ def _sum_reports_for_general(
                 continue
 
             # 3) Reja source tanlash
-            if cache.is_plan_column(col_id) and col_id in individual_items:
+            #    status_plan bor column'lar YOKI ordering bo'yicha aniqlangan
+            #    global plan reja column'lari individual_general'dan olinadi
+            is_reja_source = (
+                cache.is_plan_column(col_id)
+                or (reja_col_ids and col_id in reja_col_ids)
+            )
+            if is_reja_source and col_id in individual_items:
                 source = individual_items[col_id]
             else:
                 source = main_items.get(col_id)
@@ -592,6 +622,7 @@ def rebuild_general_for_deadline(
     individual_general_by_org: dict[str, Report] | None = None,
     is_daromad: bool = False,
     quarter_filter: str | None = None,
+    reja_col_ids: Set[str] | None = None,
 ) -> Optional[Report]:
     general = _ensure_general_report(statement, str(deadline.id), region_key, deadline)
     if not general:
@@ -605,6 +636,7 @@ def rebuild_general_for_deadline(
         individual_general_by_org=individual_general_by_org,
         is_daromad=is_daromad,
         quarter_filter=quarter_filter,
+        reja_col_ids=reja_col_ids,
     )
 
     region_label = str(dict(RegionChoices.choices).get(str(region_key), str(region_key))).title()
@@ -879,9 +911,11 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
 
     # 4) Individual general (maxsus statementlar uchun)
     individual_general_by_org: dict[str, Report] = {}
+    reja_col_ids: Set[str] = set()
     if should_use_individual_general_plan_source(statement):
         igs = list(filter_individual_general_reports_by_deadline(statement, deadline_id))
         individual_general_by_org = build_individual_general_by_org(igs)
+        reja_col_ids = _get_global_plan_reja_col_ids(statement, cache)
 
     # 5) Plant map — bir marta barcha reportlar uchun
     all_plant_ids: set[str] = set()
@@ -934,6 +968,7 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
             individual_general_by_org=individual_general_by_org,
             is_daromad=is_daromad,
             quarter_filter=quarter,
+            reja_col_ids=reja_col_ids,
         )
         if general_rep:
             region_general_reports.append(general_rep)
