@@ -72,9 +72,11 @@ def preload_statement_columns_and_items(report: Report):
         for item in report_items
     }
 
-    # plant_id -> inner object
+    # column_id -> {plant_id -> inner object}
+    # column.id kalit sifatida ishlatiladi (item.id emas!)
+    # chunki yangi yaratilgan ReportItem.id None bo'ladi
     inner_cache = {
-        item.id: {inner.plant_id: inner for inner in item.inners.all()}
+        item.statement_column_id: {inner.plant_id: inner for inner in item.inners.all()}
         for item in report_items
     }
 
@@ -104,9 +106,10 @@ def create_plant_values(
         item = ReportItem(report=report, statement_column=column)
         report_item_map[column.id] = item
         create_buffer["report_items"].append(item)
-        inner_cache[item.id] = {}
+        inner_cache[column.id] = {}
 
-    old_inners = inner_cache.get(item.id, {})
+    # column.id orqali cache'dan olish (item.id emas!)
+    old_inners = inner_cache.get(column.id, {})
 
     # Inners — har bir o'simlik uchun
     for plant_id, new_val in plant_totals.items():
