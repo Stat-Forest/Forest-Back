@@ -145,6 +145,37 @@ class PlantReportListSerializer(ReportListSerializer):
                     "inners": inner_values,
                 })
 
+        # ── Virtual "O'simlik nomi" ustuni ──
+        # inners ichida plant_id bor bo'lsa, virtual ustun qo'shiladi
+        all_plants = {}
+        for col_data in statement_columns:
+            for inn in col_data.get("inners", []):
+                pid = inn.get("plant_id")
+                if pid and pid not in all_plants:
+                    all_plants[pid] = inn.get("plant_name", "")
+
+        if all_plants:
+            plant_name_label = "Название растения" if lang == "ru" else "O'simlik nomi"
+            plant_inners = [
+                {"plant_id": pid, "plant_name": pname, "value": pname}
+                for pid, pname in sorted(all_plants.items(), key=lambda x: x[1])
+            ]
+            plant_col = {
+                "statement_column_id": "plant_name_virtual",
+                "statement_column_name": plant_name_label,
+                "is_virtual": True,
+                "is_organization": False,
+                "status_plan": None,
+                "inners": plant_inners,
+            }
+            # Tashkilot nomi (is_organization=True) dan keyin insert qilish
+            insert_idx = 0
+            for i, c in enumerate(statement_columns):
+                if c.get("is_organization"):
+                    insert_idx = i + 1
+                    break
+            statement_columns.insert(insert_idx, plant_col)
+
         return [{
             "organization_id": organization_id,
             "organization_name": organization_name,
