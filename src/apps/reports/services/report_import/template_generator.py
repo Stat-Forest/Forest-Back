@@ -4,25 +4,27 @@
 
 Shablonda:
     Row 1..N — ko'p qatorli sarlavhalar (merged cells — jadval tuzilmasiga mos)
-    Row N+1  — (yashirin) StatementColumn UUID'lari
+    Row N+1  — (yashirin) StatementColumn UUID'lari (faqat importable)
     Row N+2+ — foydalanuvchi qiymat yozadigan qatorlar
 
-Sarlavhalar export kodidagi kabi daraxt tuzilmasidan foydalanib
-merged cells bilan chiqariladi — jadval saytda qanday ko'rinsa,
-shablonda ham shunday bo'ladi.
+Sarlavhalar BARCHA leaf ustunlar uchun chiqariladi — jadval saytda qanday
+ko'rinsa, shablonda ham shunday ko'rinadi. Faqat Reja va avto-hisob
+ustunlari kulrang rangda belgilanadi (ularni to'ldirish shart emas).
+UUID qatoriga esa faqat importable ustunlar tushadi — shu orqali parser
+qaysi ustunlarni o'qish kerakligini biladi.
 
 Plantlik statement uchun:
     Col A  — Tashkilot nomi (foydalanuvchi o'zi yozadi)
     Col B  — O'simlik nomi (foydalanuvchi o'zi yozadi)
-    Col C+ — Amalda ustunlar
+    Col C+ — Barcha leaf ustunlar (importable = ko'k, read-only = kulrang)
 
 Oddiy statement uchun:
     Col A  — Tashkilot nomi
-    Col B+ — Amalda ustunlar
+    Col B+ — Barcha leaf ustunlar (importable = ko'k, read-only = kulrang)
 """
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Protection
 from openpyxl.utils import get_column_letter
 
 from apps.reports.models import StatementColumn
@@ -32,9 +34,14 @@ from apps.reports.services.report_import.columns import (
     ordering_key,
 )
 
+# ── Stillar ──
 HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
-HEADER_FILL = PatternFill("solid", fgColor="4472C4")
+HEADER_FILL = PatternFill("solid", fgColor="4472C4")  # Ko'k — importable
 HEADER_ALIGNMENT = Alignment(wrap_text=True, vertical="center", horizontal="center")
+
+# Reja/avto-hisob ustunlar uchun — kulrang sarlavha
+READONLY_HEADER_FILL = PatternFill("solid", fgColor="808080")
+READONLY_DATA_FILL = PatternFill("solid", fgColor="D9D9D9")
 
 THIN_BORDER = Border(
     left=Side(style="thin", color="000000"),
@@ -51,10 +58,36 @@ def _ordering_key(ordering_str):
     return ordering_key(ordering_str)
 
 
-def _build_column_tree(statement, importable_ids, lang="uz"):
+def _get_all_visible_leaf_ids(statement):
+    """
+    Statement uchun barcha ko'rinadigan leaf ustun ID'larini qaytaradi.
+    is_organization=True bo'lgan ustunlar chiqarib tashlanadi.
+    """
+    all_cols = list(
+        StatementColumn.objects.filter(statement=statement)
+        .select_related("parent")
+        .order_by("ordering")
+    )
+    # Leaf = bolalari bo'lmagan
+    all_ids = {str(c.id) for c in all_cols}
+    parent_ids = {str(c.parent_id) for c in all_cols if c.parent_id}
+    leaf_ids = all_ids - parent_ids
+
+    # is_organization filtrlash
+    result = set()
+    for c in all_cols:
+        if str(c.id) in leaf_ids and not getattr(c, "is_organization", False):
+            result.add(str(c.id))
+    return result
+
+
+def _build_column_tree(statement, visible_leaf_ids, lang="uz"):
     """
     Statement ustunlari daraxtini qurib, sarlavha yaratish uchun kerakli
     ma'lumotlarni qaytaradi.
+
+    visible_leaf_ids — shablonda ko'rsatiladigan BARCHA leaf ustun ID'lari
+    (importable + reja + avto-hisob, ORG dan tashqari).
 
     Returns:
         (roots, children_map, leaf_ids, id_map)
@@ -66,9 +99,9 @@ def _build_column_tree(statement, importable_ids, lang="uz"):
     )
     id_map = {str(c.id): c for c in all_cols}
 
-    # Leaf importable ustunlarning barcha ota-onalarini topish
-    included_ids = set(importable_ids)
-    for cid in list(importable_ids):
+    # Leaf ustunlarning barcha ota-onalarini topish
+    included_ids = set(visible_leaf_ids)
+    for cid in list(visible_leaf_ids):
         cur = id_map.get(cid)
         while cur and cur.parent_id:
             included_ids.add(str(cur.parent_id))
@@ -94,7 +127,7 @@ def _build_column_tree(statement, importable_ids, lang="uz"):
     def dfs(node):
         ch = children_map.get(str(node.id), [])
         if not ch:
-            return [node] if str(node.id) in importable_ids else []
+            return [node] if str(node.id) in visible_leaf_ids else []
         return [x for c in ch for x in dfs(c)]
 
     leaf_ids = []
@@ -133,9 +166,10 @@ def build_import_template(statement, lang="uz"):
     """
     Statement uchun import shablonini (.xlsx Workbook) quradi.
 
-    Sarlavhalar ko'p qatorli merged cells bilan chiqariladi —
-    jadval saytda qanday ko'rinsa, shablonda ham shunday bo'ladi.
-    Plantlar oldindan to'ldirilmaydi — foydalanuvchi o'zi kiritadi.
+    Shablonda BARCHA leaf ustunlar ko'rinadi — jadval saytda qanday
+    ko'rinsa, shunday. Importable (Amalda) ustunlar ko'k rangda,
+    Reja va avto-hisob ustunlar kulrang rangda. UUID qatoriga faqat
+    importable ustunlar yoziladi.
 
     Returns:
         openpyxl.Workbook
@@ -153,9 +187,12 @@ def build_import_template(statement, lang="uz"):
     importable_ids = {str(c.id) for c in columns}
     is_plant_based = is_plant_based_statement(statement)
 
-    # Ustun daraxtini qurish
+    # Barcha ko'rinadigan leaf ustunlar (ORG dan tashqari)
+    all_visible_ids = _get_all_visible_leaf_ids(statement)
+
+    # Ustun daraxtini qurish — BARCHA ko'rinadigan leaf ustunlar
     roots, children_map, leaf_ids, id_map = _build_column_tree(
-        statement, importable_ids, lang=lang
+        statement, all_visible_ids, lang=lang
     )
 
     if not roots:
@@ -181,10 +218,15 @@ def build_import_template(statement, lang="uz"):
     # Sarlavha grid'ini yaratish
     header_grid = [["" for _ in range(total_cols)] for _ in range(max_depth)]
 
-    # Fixed ustunlar sarlavhalari (№ olib tashlandi)
+    # Fixed ustunlar sarlavhalari
     header_grid[0][0] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
     if is_plant_based:
-        header_grid[0][1] = "O'simlik nomi" if lang == "uz" else "Название растения"
+        # Daromad statementda "Daromad manbalari" sarlavhasi ishlatiladi
+        stmt_name = (statement.name_uz or statement.name or "").lower()
+        if "daromad" in stmt_name:
+            header_grid[0][1] = "Daromad manbalari" if lang == "uz" else "Источники дохода"
+        else:
+            header_grid[0][1] = "O'simlik nomi" if lang == "uz" else "Название растения"
 
     span_cache = {}
     merges = []
@@ -236,7 +278,8 @@ def build_import_template(statement, lang="uz"):
     for r1, c1, r2, c2 in merges:
         ws.merge_cells(start_row=r1, start_column=c1, end_row=r2, end_column=c2)
 
-    # Sarlavha stili
+    # ── Sarlavha stili ──
+    # Avval barcha sarlavha kataklariga default stil beramiz
     for row in ws.iter_rows(
         min_row=HEADER_START_ROW, max_row=HEADER_START_ROW + max_depth - 1,
         min_col=1, max_col=total_cols,
@@ -247,20 +290,43 @@ def build_import_template(statement, lang="uz"):
             cell.alignment = HEADER_ALIGNMENT
             cell.border = THIN_BORDER
 
+    # Reja/avto-hisob ustunlarning sarlavhalarini kulrang qilish
+    # Leaf ustunning Excel ustun indeksini aniqlash
+    readonly_excel_cols = set()
+    for i, leaf_id in enumerate(leaf_ids):
+        if leaf_id not in importable_ids:
+            excel_col = fixed_cols + 1 + i
+            readonly_excel_cols.add(excel_col)
+
+    # Kulrang sarlavha — faqat leaf ustunning o'ziga va
+    # uning ustidagi sarlavha kataklariga (agar barchasi readonly bo'lsa)
+    for excel_col in readonly_excel_cols:
+        for row in range(HEADER_START_ROW, HEADER_START_ROW + max_depth):
+            cell = ws.cell(row=row, column=excel_col)
+            cell.fill = READONLY_HEADER_FILL
+
     # ── UUID qatori (sarlavhalardan keyin, yashirin + ko'rinmas) ──
-    id_row = HEADER_START_ROW + max_depth  # sarlavhalardan bitta pastda
-    # UUID font — oq rang, juda kichik o'lcham. Agar frontend preview
-    # hidden row'ni ko'rsatsa ham UUID'lar ko'rinmaydi.
+    # FAQAT importable ustunlar uchun UUID yoziladi
+    id_row = HEADER_START_ROW + max_depth
     uuid_font = Font(color="FFFFFF", size=1)
     for i, leaf_id in enumerate(leaf_ids):
-        cell = ws.cell(row=id_row, column=fixed_cols + 1 + i, value=leaf_id)
-        cell.font = uuid_font
+        excel_col = fixed_cols + 1 + i
+        if leaf_id in importable_ids:
+            cell = ws.cell(row=id_row, column=excel_col, value=leaf_id)
+            cell.font = uuid_font
 
     ws.row_dimensions[id_row].hidden = True
-    ws.row_dimensions[id_row].height = 0.1  # minimal balandlik
+    ws.row_dimensions[id_row].height = 0.1
 
     # ── Data start row ──
     data_start_row = id_row + 1
+
+    # ── Readonly ustunlar data zonasida kulrang fon ──
+    # Dastlabki 20 qatorga kulrang fon qo'yamiz (foydalanuvchi kiritmasligi uchun)
+    for excel_col in readonly_excel_cols:
+        for data_row in range(data_start_row, data_start_row + 20):
+            cell = ws.cell(row=data_row, column=excel_col)
+            cell.fill = READONLY_DATA_FILL
 
     # ── Ustun kengliklari ──
     for i in range(1, total_cols + 1):
