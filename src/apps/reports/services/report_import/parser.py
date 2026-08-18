@@ -61,7 +61,7 @@ MAX_UNMATCHED_WARNINGS = 10
 
 # Ma'lumot ustuni EMAS — xizmat ustunlari (№, tashkilot, o'simlik nomi)
 PLANT_ID_HEADERS = {"plant id", "plant id (o'zgartirmang)", "o'simlik id"}
-PLANT_NAME_HEADERS = {"o'simlik nomi", "название растения", "o'simlik"}
+PLANT_NAME_HEADERS = {"o'simlik nomi", "название растения", "o'simlik", "daromad manbalari", "источники дохода"}
 ORGANIZATION_HEADERS = {"tashkilot nomi", "название организации"}
 ROW_NUMBER_HEADERS = {"№", "n", "t/r", "№ п/п"}
 SERVICE_HEADERS = (
