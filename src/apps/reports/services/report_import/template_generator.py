@@ -3,40 +3,141 @@
 "Amalda" qiymatlar importi uchun Excel (.xlsx) shablon yaratish.
 
 Shablonda:
-    Row 1  — ustun sarlavhalari (faqat Amalda)
-    Row 2  — (yashirin) StatementColumn UUID'lari
-    Row 3+ — foydalanuvchi qiymat yozadigan qatorlar
+    Row 1..N — ko'p qatorli sarlavhalar (merged cells — jadval tuzilmasiga mos)
+    Row N+1  — (yashirin) StatementColumn UUID'lari
+    Row N+2+ — foydalanuvchi qiymat yozadigan qatorlar
 
-Plantlik statement uchun qo'shimcha:
-    Col A  — Plant ID (o'zgartirmang)
-    Col B  — O'simlik nomi (faqat o'qish)
+Sarlavhalar export kodidagi kabi daraxt tuzilmasidan foydalanib
+merged cells bilan chiqariladi — jadval saytda qanday ko'rinsa,
+shablonda ham shunday bo'ladi.
+
+Plantlik statement uchun:
+    Col A  — № (foydalanuvchi qator raqamini yozadi)
+    Col B  — Tashkilot nomi (foydalanuvchi o'zi yozadi)
+    Col C  — O'simlik nomi (foydalanuvchi o'zi yozadi)
+    Col D+ — Amalda ustunlar
+
+Oddiy statement uchun:
+    Col A  — №
+    Col B  — Tashkilot nomi
     Col C+ — Amalda ustunlar
 """
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Protection
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from apps.reports.models import Plant
+from apps.reports.models import StatementColumn
 from apps.reports.services.report_import.columns import (
     StatementColumnIndex,
     is_plant_based_statement,
+    ordering_key,
 )
 
 HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
 HEADER_FILL = PatternFill("solid", fgColor="4472C4")
 HEADER_ALIGNMENT = Alignment(wrap_text=True, vertical="center", horizontal="center")
 
-PLANT_LABEL_FONT = Font(italic=True, color="333333")
+THIN_BORDER = Border(
+    left=Side(style="thin", color="000000"),
+    right=Side(style="thin", color="000000"),
+    top=Side(style="thin", color="000000"),
+    bottom=Side(style="thin", color="000000"),
+)
 
-HEADER_ROW = 1
-ID_ROW = 2
-DATA_START_ROW = 3
+HEADER_START_ROW = 1
+
+
+def _ordering_key(ordering_str):
+    """'1.1.10' → (1, 1, 10) — matn sifatida emas, son sifatida saralash."""
+    return ordering_key(ordering_str)
+
+
+def _build_column_tree(statement, importable_ids, lang="uz"):
+    """
+    Statement ustunlari daraxtini qurib, sarlavha yaratish uchun kerakli
+    ma'lumotlarni qaytaradi.
+
+    Returns:
+        (roots, children_map, leaf_ids, id_map)
+    """
+    all_cols = list(
+        StatementColumn.objects.filter(statement=statement)
+        .select_related("parent")
+        .order_by("ordering")
+    )
+    id_map = {str(c.id): c for c in all_cols}
+
+    # Leaf importable ustunlarning barcha ota-onalarini topish
+    included_ids = set(importable_ids)
+    for cid in list(importable_ids):
+        cur = id_map.get(cid)
+        while cur and cur.parent_id:
+            included_ids.add(str(cur.parent_id))
+            cur = id_map.get(str(cur.parent_id))
+
+    # Children xaritasi — faqat kerakli ustunlar
+    children_map = {}
+    for cid in included_ids:
+        c = id_map.get(cid)
+        if not c:
+            continue
+        # is_organization ustunlarni olib tashlaymiz
+        if getattr(c, "is_organization", False):
+            continue
+        parent_key = str(c.parent_id) if c.parent_id else None
+        children_map.setdefault(parent_key, []).append(c)
+
+    for k in children_map:
+        children_map[k].sort(key=lambda x: _ordering_key(x.ordering or ""))
+
+    roots = children_map.get(None, [])
+
+    def dfs(node):
+        ch = children_map.get(str(node.id), [])
+        if not ch:
+            return [node] if str(node.id) in importable_ids else []
+        return [x for c in ch for x in dfs(c)]
+
+    leaf_ids = []
+    for root in roots:
+        leaf_ids.extend(str(c.id) for c in dfs(root))
+
+    return roots, children_map, leaf_ids, id_map
+
+
+def _compute_depth(node, children_map):
+    """Daraxt chuqurligi."""
+    ch = children_map.get(str(node.id), [])
+    return 1 if not ch else 1 + max(_compute_depth(c, children_map) for c in ch)
+
+
+def _compute_span(node, children_map, span_cache):
+    """Node ning qancha leaf ustunni qamrab olishi."""
+    if node.id in span_cache:
+        return span_cache[node.id]
+    ch = children_map.get(str(node.id), [])
+    result = 1 if not ch else sum(
+        _compute_span(c, children_map, span_cache) for c in ch
+    )
+    span_cache[node.id] = result
+    return result
+
+
+def _title_of(column, lang):
+    """Ustun sarlavhasini tanlangan tilda qaytaradi."""
+    if lang == "ru":
+        return column.title_ru or column.title_uz or column.title or ""
+    return column.title_uz or column.title or ""
 
 
 def build_import_template(statement, lang="uz"):
     """
     Statement uchun import shablonini (.xlsx Workbook) quradi.
+
+    Sarlavhalar ko'p qatorli merged cells bilan chiqariladi —
+    jadval saytda qanday ko'rinsa, shablonda ham shunday bo'ladi.
+    Plantlar oldindan to'ldirilmaydi — foydalanuvchi o'zi kiritadi.
 
     Returns:
         openpyxl.Workbook
@@ -51,7 +152,16 @@ def build_import_template(statement, lang="uz"):
             "(barcha oxirgi ustunlar reja yoki avto-hisob sifatida belgilangan)."
         )
 
+    importable_ids = {str(c.id) for c in columns}
     is_plant_based = is_plant_based_statement(statement)
+
+    # Ustun daraxtini qurish
+    roots, children_map, leaf_ids, id_map = _build_column_tree(
+        statement, importable_ids, lang=lang
+    )
+
+    if not roots:
+        raise ValueError("Jadval tuzilmasi topilmadi.")
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -60,73 +170,105 @@ def build_import_template(statement, lang="uz"):
     sheet_title = getattr(statement, f"name_{lang}", statement.name) or statement.name
     ws.title = sheet_title[:31]
 
-    # Plantlik bo'lsa, A va B ustunlar Plant uchun ajratiladi
-    col_offset = 3 if is_plant_based else 1
+    # ── Sarlavha tuzilmasi ──
+    # Plantlik jadvalda: №, Tashkilot nomi, O'simlik nomi — 3 ta fixed ustun
+    # Oddiy jadvalda: №, Tashkilot nomi — 2 ta fixed ustun
+    fixed_cols = 3 if is_plant_based else 2
 
-    # ── Plant sarlavhalari (faqat plantlik) ──
+    # Daraxt chuqurligi — har bir root uchun alohida
+    max_depth = max(_compute_depth(root, children_map) for root in roots)
+    total_leaf_count = len(leaf_ids)
+    total_cols = fixed_cols + total_leaf_count
+
+    # Sarlavha grid'ini yaratish
+    header_grid = [["" for _ in range(total_cols)] for _ in range(max_depth)]
+
+    # Fixed ustunlar sarlavhalari
+    header_grid[0][0] = "№"
+    header_grid[0][1] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
     if is_plant_based:
-        for idx, label in enumerate(
-            ("Plant ID (o'zgartirmang)", "O'simlik nomi"),
-            start=1,
-        ):
-            cell = ws.cell(row=HEADER_ROW, column=idx, value=label)
+        header_grid[0][2] = "O'simlik nomi" if lang == "uz" else "Название растения"
+
+    span_cache = {}
+    merges = []
+
+    def place(node, level, col):
+        """Daraxt node'ini header_grid'ga joylashtiradi va merge diapazoni qo'shadi."""
+        header_grid[level][col] = _title_of(node, lang)
+        sp = _compute_span(node, children_map, span_cache)
+        ch = children_map.get(str(node.id), [])
+
+        if not ch:
+            # Leaf ustun — pastki qatorgacha vertikal merge
+            if level < max_depth - 1:
+                merges.append((
+                    HEADER_START_ROW + level, col + 1,
+                    HEADER_START_ROW + max_depth - 1, col + 1,
+                ))
+            return col + 1
+
+        # Guruh ustun — gorizontal merge
+        merges.append((
+            HEADER_START_ROW + level, col + 1,
+            HEADER_START_ROW + level, col + sp,
+        ))
+
+        cur = col
+        for c in ch:
+            cur = place(c, level + 1, cur)
+        return col + sp
+
+    # Har bir root uchun joylashtirish
+    current_col = fixed_cols
+    for root in roots:
+        current_col = place(root, 0, current_col)
+
+    # Grid'ni worksheetga yozish
+    for row_data in header_grid:
+        ws.append(row_data)
+
+    # Fixed ustunlarni vertikal merge qilish
+    for fixed_col in range(1, fixed_cols + 1):
+        if max_depth > 1:
+            ws.merge_cells(
+                start_row=HEADER_START_ROW, start_column=fixed_col,
+                end_row=HEADER_START_ROW + max_depth - 1, end_column=fixed_col,
+            )
+
+    # Merge diapasonlarini qo'llash
+    for r1, c1, r2, c2 in merges:
+        ws.merge_cells(start_row=r1, start_column=c1, end_row=r2, end_column=c2)
+
+    # Sarlavha stili
+    for row in ws.iter_rows(
+        min_row=HEADER_START_ROW, max_row=HEADER_START_ROW + max_depth - 1,
+        min_col=1, max_col=total_cols,
+    ):
+        for cell in row:
             cell.font = HEADER_FONT
             cell.fill = HEADER_FILL
             cell.alignment = HEADER_ALIGNMENT
+            cell.border = THIN_BORDER
 
-    # ── Amalda ustun sarlavhalari ──
-    # Sarlavha — statement ichida yagona bo'lishi kafolatlangan nom
-    # ("Amalda" 12 ta bo'lsa → "Yanvar » Amalda"). Yashirin UUID qatori
-    # o'chib ketsa ham, parser shu nom bo'yicha to'g'ri ustunni topadi.
-    for i, column in enumerate(columns):
-        cell = ws.cell(
-            row=HEADER_ROW,
-            column=col_offset + i,
-            value=index.label(column),
-        )
-        cell.font = HEADER_FONT
-        cell.fill = HEADER_FILL
-        cell.alignment = HEADER_ALIGNMENT
+    # ── UUID qatori (sarlavhalardan keyin, yashirin) ──
+    id_row = HEADER_START_ROW + max_depth  # sarlavhalardan bitta pastda
+    for i, leaf_id in enumerate(leaf_ids):
+        ws.cell(row=id_row, column=fixed_cols + 1 + i, value=leaf_id)
 
-        # Yashirin qatorda UUID saqlaymiz
-        ws.cell(row=ID_ROW, column=col_offset + i, value=str(column.id))
+    ws.row_dimensions[id_row].hidden = True
 
-    # ID qatorini yashiramiz
-    ws.row_dimensions[ID_ROW].hidden = True
-
-    # ── Plantlik: leaf o'simliklarni qatorlarga yozish ──
-    if is_plant_based:
-        plants = (
-            Plant.objects
-            .filter(statement=statement, children__isnull=True)
-            .order_by("name")
-        )
-        row = DATA_START_ROW
-        for plant in plants:
-            ws.cell(row=row, column=1, value=str(plant.id))
-            plant_name = getattr(plant, f"name_{lang}", plant.name) or plant.name
-            name_cell = ws.cell(row=row, column=2, value=plant_name)
-            name_cell.font = PLANT_LABEL_FONT
-            name_cell.protection = Protection(locked=True)
-            row += 1
-
-        if row == DATA_START_ROW:
-            ws.cell(
-                row=DATA_START_ROW,
-                column=2,
-                value="(o'simliklar topilmadi)",
-            )
+    # ── Data start row ──
+    data_start_row = id_row + 1
 
     # ── Ustun kengliklari ──
-    total_cols = col_offset + len(columns)
     for i in range(1, total_cols + 1):
         letter = get_column_letter(i)
-        if is_plant_based and i <= 2:
+        if i <= fixed_cols:
             ws.column_dimensions[letter].width = 28
         else:
             ws.column_dimensions[letter].width = 22
 
     # Sarlavha va ID qatorlarini muzlatib qo'yamiz
-    ws.freeze_panes = f"A{DATA_START_ROW}"
+    ws.freeze_panes = f"A{data_start_row}"
 
     return wb
