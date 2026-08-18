@@ -125,14 +125,17 @@ class ImportParseSerializer(serializers.Serializer):
     file = serializers.FileField(help_text=".xlsx fayl")
     statement_id = serializers.UUIDField(help_text="Jadval (Statement) UUID'si")
     organization_id = serializers.UUIDField(
+        required=False,
         help_text=(
-            "Tashkilot UUID'si. Faylda Reja (status_plan) ustunlariga "
-            "qiymat topilsa, aynan shu tashkilot uchun bo'lim_admin "
-            "tasdiqlagan Plan/PlanItem qiymati bilan solishtiriladi."
+            "Tashkilot UUID'si. Berilmasa Reja validatsiyasi o'tkazib yuboriladi. "
+            "Faylda Reja (status_plan) ustunlariga qiymat topilsa, aynan shu "
+            "tashkilot uchun bo'lim_admin tasdiqlagan Plan/PlanItem qiymati "
+            "bilan solishtiriladi."
         ),
     )
     year = serializers.IntegerField(
-        help_text="Hisobot yili — Reja (Plan) shu yil bo'yicha qidiriladi.",
+        required=False,
+        help_text="Hisobot yili — Reja (Plan) shu yil bo'yicha qidiriladi. Berilmasa Reja validatsiyasi o'tkazib yuboriladi.",
     )
     season = serializers.ChoiceField(
         choices=Plan.SeasonChoices.choices,

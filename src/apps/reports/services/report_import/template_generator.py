@@ -12,15 +12,13 @@ merged cells bilan chiqariladi — jadval saytda qanday ko'rinsa,
 shablonda ham shunday bo'ladi.
 
 Plantlik statement uchun:
-    Col A  — № (foydalanuvchi qator raqamini yozadi)
-    Col B  — Tashkilot nomi (foydalanuvchi o'zi yozadi)
-    Col C  — O'simlik nomi (foydalanuvchi o'zi yozadi)
-    Col D+ — Amalda ustunlar
+    Col A  — Tashkilot nomi (foydalanuvchi o'zi yozadi)
+    Col B  — O'simlik nomi (foydalanuvchi o'zi yozadi)
+    Col C+ — Amalda ustunlar
 
 Oddiy statement uchun:
-    Col A  — №
-    Col B  — Tashkilot nomi
-    Col C+ — Amalda ustunlar
+    Col A  — Tashkilot nomi
+    Col B+ — Amalda ustunlar
 """
 
 import openpyxl
@@ -171,9 +169,9 @@ def build_import_template(statement, lang="uz"):
     ws.title = sheet_title[:31]
 
     # ── Sarlavha tuzilmasi ──
-    # Plantlik jadvalda: №, Tashkilot nomi, O'simlik nomi — 3 ta fixed ustun
-    # Oddiy jadvalda: №, Tashkilot nomi — 2 ta fixed ustun
-    fixed_cols = 3 if is_plant_based else 2
+    # Plantlik jadvalda: Tashkilot nomi, O'simlik nomi — 2 ta fixed ustun
+    # Oddiy jadvalda: Tashkilot nomi — 1 ta fixed ustun
+    fixed_cols = 2 if is_plant_based else 1
 
     # Daraxt chuqurligi — har bir root uchun alohida
     max_depth = max(_compute_depth(root, children_map) for root in roots)
@@ -183,11 +181,10 @@ def build_import_template(statement, lang="uz"):
     # Sarlavha grid'ini yaratish
     header_grid = [["" for _ in range(total_cols)] for _ in range(max_depth)]
 
-    # Fixed ustunlar sarlavhalari
-    header_grid[0][0] = "№"
-    header_grid[0][1] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
+    # Fixed ustunlar sarlavhalari (№ olib tashlandi)
+    header_grid[0][0] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
     if is_plant_based:
-        header_grid[0][2] = "O'simlik nomi" if lang == "uz" else "Название растения"
+        header_grid[0][1] = "O'simlik nomi" if lang == "uz" else "Название растения"
 
     span_cache = {}
     merges = []
@@ -250,12 +247,17 @@ def build_import_template(statement, lang="uz"):
             cell.alignment = HEADER_ALIGNMENT
             cell.border = THIN_BORDER
 
-    # ── UUID qatori (sarlavhalardan keyin, yashirin) ──
+    # ── UUID qatori (sarlavhalardan keyin, yashirin + ko'rinmas) ──
     id_row = HEADER_START_ROW + max_depth  # sarlavhalardan bitta pastda
+    # UUID font — oq rang, juda kichik o'lcham. Agar frontend preview
+    # hidden row'ni ko'rsatsa ham UUID'lar ko'rinmaydi.
+    uuid_font = Font(color="FFFFFF", size=1)
     for i, leaf_id in enumerate(leaf_ids):
-        ws.cell(row=id_row, column=fixed_cols + 1 + i, value=leaf_id)
+        cell = ws.cell(row=id_row, column=fixed_cols + 1 + i, value=leaf_id)
+        cell.font = uuid_font
 
     ws.row_dimensions[id_row].hidden = True
+    ws.row_dimensions[id_row].height = 0.1  # minimal balandlik
 
     # ── Data start row ──
     data_start_row = id_row + 1
