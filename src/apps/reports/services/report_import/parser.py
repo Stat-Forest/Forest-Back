@@ -664,17 +664,18 @@ def _merge_sheet_results(results, is_plant_based):
         errors.extend(result.get("errors", []))
 
     if not is_plant_based:
-        values = {}
+        all_items = []
+        all_rows = []
         for result in results:
-            for item in result.get("items", []):
-                values.setdefault(item["column"], item["value"])
+            all_items.extend(result.get("items", []))
+            all_rows.extend(result.get("rows", []))
 
-        items = [{"column": cid, "value": val} for cid, val in values.items()]
-        status = "success" if not errors else ("partial" if items else "error")
+        status = "success" if not errors else ("partial" if all_items else "error")
         return {
             "status": status,
             "is_plant_based": False,
-            "items": items,
+            "items": all_items,
+            "rows": all_rows,
             "warnings": warnings,
             "errors": errors,
         }
@@ -731,10 +732,13 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
     """
     Oddiy (flat) report parse.
 
-    Bitta hisobot = bitta tashkilot = har bir ustun uchun bitta qiymat.
-    Shuning uchun bir nechta ma'lumot qatori bo'lsa (masalan, ko'p
-    tashkilotli export fayl), birinchi to'ldirilgan qiymat olinadi va
-    foydalanuvchi ogohlantiriladi.
+    Har bir ma'lumot qatorini alohida entry sifatida o'qiydi.
+    Foydalanuvchi bir nechta qator kiritishi mumkin (masalan, har bir
+    qator — alohida tashkilot yoki alohida yozuv).
+
+    Response formati:
+        items: [{column, value, row, organization}, ...]  — barcha qatorlardan
+        rows:  [{row, organization, items: [{column, value}]}, ...]  — qator bo'yicha guruhlangan
 
     Returns:
         (result_dict, plan_found) — `plan_found` {column_id: (value, row)}
@@ -746,10 +750,9 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
             f"Faylda ma'lumot qatori topilmadi (kamida {data_start_row}-qator kerak)."
         )
 
-    values_by_column = {}
+    all_items = []
+    rows = []
     plan_found = {}
-    first_row_used = None
-    skipped_rows = 0
 
     for row_cells in ws.iter_rows(min_row=data_start_row):
         items = _extract_row_items(row_cells, column_map)
@@ -765,32 +768,27 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
         if not items:
             continue
 
-        new_values = [it for it in items if it["column"] not in values_by_column]
-        if new_values:
-            if first_row_used is None:
-                first_row_used = row_number
-            for item in new_values:
-                values_by_column[item["column"]] = item["value"]
-        if len(new_values) < len(items):
-            skipped_rows += 1
-
-    if skipped_rows:
+        # Tashkilot nomini aniqlash
         organization = _cell_text(
-            next(ws.iter_rows(min_row=first_row_used, max_row=first_row_used)),
+            row_cells,
             service_columns.get("organization"),
-        ) if first_row_used else ""
-        detail = f" ({organization})" if organization else ""
-        warnings.append(_issue(
-            f"Faylda bir nechta ma'lumot qatori bor. Hisobot bitta tashkilot "
-            f"uchun to'ldirilgani sababli {first_row_used}-qator{detail} "
-            f"qiymatlari olindi, qolgan {skipped_rows} ta qator o'tkazib yuborildi.",
-            row=first_row_used,
-        ))
+        )
 
-    all_items = [
-        {"column": column_id, "value": value}
-        for column_id, value in values_by_column.items()
-    ]
+        row_entry = {
+            "row": row_number,
+            "organization": organization,
+            "items": items,
+        }
+        rows.append(row_entry)
+
+        # Flat items — har bir element qator va tashkilot ma'lumoti bilan
+        for item in items:
+            all_items.append({
+                "column": item["column"],
+                "value": item["value"],
+                "row": row_number,
+                "organization": organization,
+            })
 
     if not all_items and not errors:
         raise ValueError("Faylda hech qanday qiymat topilmadi.")
@@ -800,6 +798,7 @@ def _parse_flat(ws, index, column_map, service_columns, warnings, errors, data_s
         "status": status,
         "is_plant_based": False,
         "items": all_items,
+        "rows": rows,
         "warnings": warnings,
         "errors": errors,
     }
