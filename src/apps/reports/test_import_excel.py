@@ -282,7 +282,7 @@ class ImportTemplateAPITests(TestCase):
 
         all_headers = _all_header_values(ws)
         self.assertIn("O'simlik nomi", all_headers)
-        self.assertIn("№", all_headers)
+        # № ustuni olib tashlandi — shablonda yo'q
         self.assertIn("Tashkilot nomi", all_headers)
 
         # UUID qatori topilishi kerak
@@ -457,20 +457,32 @@ class ImportParseAPITests(TestCase):
         by_col = {item["column"]: item["value"] for item in resp.json()["items"]}
         self.assertEqual(by_col[str(self.fixture.jan_amalda.id)], "1234.56")
 
-    def test_multi_row_flat_uses_first_and_warns(self):
+    def test_multi_row_flat_returns_all_rows(self):
+        """Bir nechta qator kiritilsa, barcha qatorlar qaytariladi."""
         wb = self._download_template_wb(self.fixture.statement.id)
         ws = wb.active
         data_row = _find_data_start_row(ws)
         jan_col = _find_col_by_uuid(ws, self.fixture.jan_amalda.id)
         ws.cell(row=data_row, column=jan_col, value=1)
         ws.cell(row=data_row + 1, column=jan_col, value=2)
+        ws.cell(row=data_row + 2, column=jan_col, value=3)
 
         resp = self._post(wb, self.fixture.statement.id)
         self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.content)
         body = resp.json()
-        by_col = {item["column"]: item["value"] for item in body["items"]}
-        self.assertEqual(by_col[str(self.fixture.jan_amalda.id)], "1")
-        self.assertTrue(any("bitta tashkilot" in w["message"] for w in body["warnings"]))
+        # Barcha 3 qator qaytarilishi kerak
+        self.assertEqual(len(body["rows"]), 3)
+        row_values = [
+            body["rows"][i]["items"][0]["value"]
+            for i in range(3)
+        ]
+        self.assertEqual(row_values, ["1", "2", "3"])
+        # items massivida ham barcha qiymatlar bo'lishi kerak
+        jan_values = [
+            item["value"] for item in body["items"]
+            if item["column"] == str(self.fixture.jan_amalda.id)
+        ]
+        self.assertEqual(len(jan_values), 3)
 
     def test_empty_file_returns_400(self):
         wb = self._download_template_wb(self.fixture.statement.id)
@@ -511,17 +523,24 @@ class ImportParseAPITests(TestCase):
         resp = self._post(wb, "00000000-0000-0000-0000-000000000000")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_missing_organization_id_or_year_rejected(self):
+    def test_missing_organization_id_or_year_skips_plan_validation(self):
+        """organization_id va year berilmasa, endpoint 200 qaytaradi,
+        Reja validatsiyasi o'tkazib yuboriladi."""
         wb = self._download_template_wb(self.fixture.statement.id)
+        ws = wb.active
+        data_row = _find_data_start_row(ws)
+        jan_col = _find_col_by_uuid(ws, self.fixture.jan_amalda.id)
+        ws.cell(row=data_row, column=jan_col, value=42)
+
         upload = make_upload(wb)
         resp = self.client.post(
             PARSE_URL,
             {"file": upload, "statement_id": str(self.fixture.statement.id)},
             format="multipart",
         )
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("organization_id", resp.json())
-        self.assertIn("year", resp.json())
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.content)
+        body = resp.json()
+        self.assertEqual(body["status"], "success")
 
     def test_garbage_file_returns_400_not_500(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
