@@ -348,7 +348,13 @@ def export_universal_report_to_excel_v2(
         header_grid[0][0] = "№"
         header_grid[0][1] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
         if any_plant:
-            header_grid[0][2] = "O'simlik nomi" if lang == "uz" else "Название растения"
+            from apps.reports.models import Statement
+            stmt = Statement.objects.filter(id=statement_id).first()
+            stmt_name = (stmt.name_uz or stmt.name or "").lower() if stmt else ""
+            if "daromad" in stmt_name:
+                header_grid[0][2] = "Daromad manbalari" if lang == "uz" else "Источники дохода"
+            else:
+                header_grid[0][2] = "O'simlik nomi" if lang == "uz" else "Название растения"
 
         span_cache = {}
 
