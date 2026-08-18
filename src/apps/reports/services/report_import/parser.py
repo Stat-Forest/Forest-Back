@@ -49,7 +49,8 @@ from apps.reports.services.report_import.columns import (
 from apps.reports.services.report_import.plan_validation import validate_plan_values
 
 HEADER_ROW = 1
-ID_ROW = 2
+# ID_ROW endi statik emas — ko'p qatorli sarlavhada UUID qatori
+# sarlavha blokidan keyin turadi. _find_uuid_row() orqali topiladi.
 
 # Sarlavhalar shuncha qatordan ichida qidiriladi (export fayllarida
 # sarlavha 2-qatordan boshlanadi va 4-5 qavat bo'lishi mumkin).
@@ -288,17 +289,54 @@ def _match_columns_by_title(ws, index, merged_values, header_rows):
     return column_map, service_columns, unmatched + ambiguous
 
 
-def _match_columns_by_uuid_row(ws, index):
+def _find_uuid_row(ws, index, max_scan_rows=None):
     """
-    2-qatordagi yashirin UUID'lardan {excel_column_index: column_uuid} quradi.
+    Yashirin UUID qatorini dynamik topadi.
+
+    Ko'p qatorli sarlavhali shablonda UUID qatori sarlavha blokidan
+    KEYIN joylashadi (endi 2-qator emas). Shuning uchun barcha
+    qatorlarni (1 dan max_scan_rows gacha) ko'rib chiqamiz va UUID
+    formatidagi qiymatlar (ulardan kamida bittasi importable) bor
+    qatorni qaytaramiz.
+    """
+    if max_scan_rows is None:
+        max_scan_rows = min(ws.max_row, MAX_HEADER_SCAN_ROWS)
+
+    for row in range(1, max_scan_rows + 1):
+        uuid_count = 0
+        importable_count = 0
+        for cell in ws[row]:
+            raw = cell.value
+            if raw is None or str(raw).strip() == "":
+                continue
+            text = str(raw).strip()
+            # UUID formati: 8-4-4-4-12 (kamida bitta "-" bor va to'g'ri uzunlik)
+            if "-" in text and len(text) == 36:
+                uuid_count += 1
+                if text in index.importable_ids:
+                    importable_count += 1
+        # Kamida 1 ta importable UUID bo'lsa — bu UUID qatori
+        if importable_count >= 1:
+            return row
+
+    return None
+
+
+def _match_columns_by_uuid_row(ws, index, uuid_row=None):
+    """
+    Berilgan qatordagi yashirin UUID'lardan {excel_column_index: column_uuid} quradi.
     Faqat import qilinadigan ustunlar qabul qilinadi.
+
+    `uuid_row` berilmasa, `_find_uuid_row` orqali topiladi.
     """
+    if uuid_row is None:
+        uuid_row = _find_uuid_row(ws, index)
+    if uuid_row is None:
+        return {}, [], None
+
     column_map = {}
     foreign = []
-    if ws.max_row < ID_ROW:
-        return column_map, foreign
-
-    for cell in ws[ID_ROW]:
+    for cell in ws[uuid_row]:
         raw = cell.value
         if raw is None or str(raw).strip() == "":
             continue
@@ -307,22 +345,34 @@ def _match_columns_by_uuid_row(ws, index):
             column_map[cell.column] = uuid_str
         elif "-" in uuid_str:  # UUID ko'rinishida, lekin import qilinmaydi
             foreign.append((cell.column, uuid_str))
-    return column_map, foreign
+    return column_map, foreign, uuid_row
 
 
-def _find_service_columns_in_template(ws, index, merged_values):
-    """Shablon fayldagi xizmat ustunlari (Plant ID, O'simlik nomi)."""
+def _find_service_columns_in_template(ws, index, merged_values, header_end_row=None):
+    """
+    Shablon fayldagi xizmat ustunlari (Plant ID, O'simlik nomi, №, Tashkilot).
+
+    Ko'p qatorli sarlavhada xizmat ustunlari faqat 1-qatorda emas,
+    barcha sarlavha qatorlarida bo'lishi mumkin. Shuning uchun barcha
+    sarlavha qatorlarini skanerlaymiz.
+    """
+    if header_end_row is None:
+        header_end_row = HEADER_ROW
+
     service_columns = {}
-    for col in range(1, ws.max_column + 1):
-        text = normalize_title(
-            merged_values.get((HEADER_ROW, col), ws.cell(row=HEADER_ROW, column=col).value)
-        )
-        if text in PLANT_ID_HEADERS:
-            service_columns.setdefault("plant_id", col)
-        elif text in PLANT_NAME_HEADERS:
-            service_columns.setdefault("plant_name", col)
-        elif text in ORGANIZATION_HEADERS:
-            service_columns.setdefault("organization", col)
+    for row in range(HEADER_ROW, header_end_row + 1):
+        for col in range(1, ws.max_column + 1):
+            text = normalize_title(
+                merged_values.get((row, col), ws.cell(row=row, column=col).value)
+            )
+            if text in PLANT_ID_HEADERS:
+                service_columns.setdefault("plant_id", col)
+            elif text in PLANT_NAME_HEADERS:
+                service_columns.setdefault("plant_name", col)
+            elif text in ORGANIZATION_HEADERS:
+                service_columns.setdefault("organization", col)
+            elif text in ROW_NUMBER_HEADERS:
+                service_columns.setdefault("row_number", col)
     return service_columns
 
 
@@ -495,12 +545,16 @@ def _parse_sheet(ws, statement, index, plan_index, lang, is_plant_based):
     header_rows = _header_rows(ws, index, merged_values, last_scan_row)
 
     # ── 4. Ustunlarni moslashtirish ──
-    # 4a. Shablon: 2-qatordagi yashirin UUID'lar (eng ishonchli yo'l)
-    column_map, foreign_uuids = _match_columns_by_uuid_row(ws, index)
+    # 4a. Shablon: yashirin UUID qatorini dynamik topish (eng ishonchli yo'l)
+    column_map, foreign_uuids, found_uuid_row = _match_columns_by_uuid_row(ws, index)
 
     if column_map:
-        data_start_row = ID_ROW + 1
-        service_columns = _find_service_columns_in_template(ws, index, merged_values)
+        data_start_row = found_uuid_row + 1
+        # Sarlavha UUID qatoridan OLDIN tugaydi
+        header_end_row = found_uuid_row - 1 if found_uuid_row else HEADER_ROW
+        service_columns = _find_service_columns_in_template(
+            ws, index, merged_values, header_end_row=header_end_row
+        )
         if foreign_uuids:
             warnings.append(_issue(
                 f"{len(foreign_uuids)} ta ustun import qilinmaydi "
