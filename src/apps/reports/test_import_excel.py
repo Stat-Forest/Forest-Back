@@ -225,9 +225,11 @@ class ImportTemplateAPITests(TestCase):
 
         # Barcha sarlavha qatorlaridagi qiymatlar
         all_headers = _all_header_values(ws)
-        # Reja / avto-hisob / tashkilot ustunlari CHIQMASLIGI kerak
-        self.assertNotIn("Reja ustuni", all_headers)
-        self.assertNotIn("Avto-hisob", all_headers)
+        # Endi barcha leaf ustunlar sarlavhada ko'rinadi
+        # (reja/avto-hisob ham — kulrang rangda)
+        self.assertIn("Reja ustuni", all_headers)
+        self.assertIn("Avto-hisob", all_headers)
+        # Tashkilot (is_organization=True) sarlavhada emas
         self.assertNotIn("Tashkilot", all_headers)
         # Ko'p qatorli sarlavhada alohida qatorlarda turadi
         self.assertIn("Yanvar", all_headers)
@@ -238,10 +240,14 @@ class ImportTemplateAPITests(TestCase):
         uuid_row = _find_uuid_row(ws)
         self.assertIsNotNone(uuid_row, "UUID qatori topilmadi")
         ids_row = [c.value for c in ws[uuid_row] if c.value is not None]
+        # UUID qatoriga FAQAT importable ustunlar tushadi
         self.assertIn(str(self.fixture.jan_amalda.id), ids_row)
         self.assertIn(str(self.fixture.feb_amalda.id), ids_row)
         self.assertIn(str(self.fixture.tumanlar.id), ids_row)
         self.assertEqual(len(ids_row), 3)
+        # Reja va avto-hisob UUID qatorida BO'LMASLIGI kerak
+        self.assertNotIn(str(self.fixture.reja.id), ids_row)
+        self.assertNotIn(str(self.fixture.auto_calc.id), ids_row)
         self.assertTrue(ws.row_dimensions[uuid_row].hidden)
 
     def test_no_importable_columns_raises_400(self):

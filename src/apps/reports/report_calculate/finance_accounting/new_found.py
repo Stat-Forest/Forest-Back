@@ -180,28 +180,7 @@ def calculate_daromad_plant_based(report: Report, pre: dict | None = None):
             foiz_plant = Decimal("0")
         set_value("1.1.5", plant_id, foiz_plant)
 
-    # ── Cross-plant totals (Tashkilot Jami qatori) ──
-    # Summable orderings: reja, amalda, farq — oddiy yig'indi
-    summable_orderings = [
-        *chorak_reja_orderings,                                       # chorak reja
-        *chorak_map.keys(),                                           # chorak amalda
-        *chorak_farq_orderings,                                       # chorak farq
-        *[m for months in chorak_map.values() for m in months],       # oylik amalda
-        "1.1.2", "1.1.3", "1.1.4",                                   # yillik reja, amalda, farq
-    ]
 
-    for ordering in summable_orderings:
-        total = sum(values[ordering].get(pid, Decimal("0")) for pid in all_plant_ids)
-        set_value(ordering, None, total)
-
-    # Foizda — (total_amalda / total_reja) * 100, yig'indi EMAS
-    total_reja = values["1.1.2"].get(None, Decimal("0"))
-    total_amalda = values["1.1.3"].get(None, Decimal("0"))
-    if total_reja:
-        total_foiz = round_decimal((total_amalda / total_reja) * 100, 1)
-    else:
-        total_foiz = Decimal("0")
-    set_value("1.1.5", None, total_foiz)
 
     with transaction.atomic():
         if new_items:

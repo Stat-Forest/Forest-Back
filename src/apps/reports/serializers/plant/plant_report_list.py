@@ -155,7 +155,11 @@ class PlantReportListSerializer(ReportListSerializer):
                     all_plants[pid] = inn.get("plant_name", "")
 
         if all_plants:
-            plant_name_label = "Название растения" if lang == "ru" else "O'simlik nomi"
+            stmt_name = (report.statement.name_uz or report.statement.name or "").lower()
+            if "daromad" in stmt_name:
+                plant_name_label = "Источники дохода" if lang == "ru" else "Daromad manbalari"
+            else:
+                plant_name_label = "Название растения" if lang == "ru" else "O'simlik nomi"
             plant_inners = [
                 {"plant_id": pid, "plant_name": pname, "value": pname}
                 for pid, pname in sorted(all_plants.items(), key=lambda x: x[1])
