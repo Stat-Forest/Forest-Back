@@ -7,20 +7,18 @@ Shablonda:
     Row N+1  — (yashirin) StatementColumn UUID'lari (faqat importable)
     Row N+2+ — foydalanuvchi qiymat yozadigan qatorlar
 
-Sarlavhalar BARCHA leaf ustunlar uchun chiqariladi — jadval saytda qanday
-ko'rinsa, shablonda ham shunday ko'rinadi. Faqat Reja va avto-hisob
-ustunlari kulrang rangda belgilanadi (ularni to'ldirish shart emas).
-UUID qatoriga esa faqat importable ustunlar tushadi — shu orqali parser
-qaysi ustunlarni o'qish kerakligini biladi.
+Reja (status_plan berilgan) ustunlar shablonga UMUMAN kiritilmaydi —
+na sarlavhada, na data zonasida ko'rinmaydi. Tashkilot nomi ustuni
+ham shablonga kiritilmaydi — foydalanuvchi saytda tashkilotni allaqachon
+tanlagan bo'ladi. UUID qatoriga faqat importable ustunlar tushadi —
+shu orqali parser qaysi ustunlarni o'qish kerakligini biladi.
 
 Plantlik statement uchun:
-    Col A  — Tashkilot nomi (foydalanuvchi o'zi yozadi)
-    Col B  — O'simlik nomi (foydalanuvchi o'zi yozadi)
-    Col C+ — Barcha leaf ustunlar (importable = ko'k, read-only = kulrang)
+    Col A  — O'simlik nomi / Daromad manbalari (foydalanuvchi o'zi yozadi)
+    Col B+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
 
 Oddiy statement uchun:
-    Col A  — Tashkilot nomi
-    Col B+ — Barcha leaf ustunlar (importable = ko'k, read-only = kulrang)
+    Col A+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
 """
 
 import openpyxl
@@ -60,8 +58,12 @@ def _ordering_key(ordering_str):
 
 def _get_all_visible_leaf_ids(statement):
     """
-    Statement uchun barcha ko'rinadigan leaf ustun ID'larini qaytaradi.
-    is_organization=True bo'lgan ustunlar chiqarib tashlanadi.
+    Statement uchun shablonda ko'rsatiladigan leaf ustun ID'larini qaytaradi.
+
+    Chiqarib tashlanadi:
+        - is_organization=True bo'lgan ustunlar (tashkilot ustunlari)
+        - is_user_input=False bo'lgan ustunlar (avto-hisob ustunlari)
+        - status_plan berilgan ustunlar (reja ustunlari)
     """
     all_cols = list(
         StatementColumn.objects.filter(statement=statement)
@@ -73,10 +75,16 @@ def _get_all_visible_leaf_ids(statement):
     parent_ids = {str(c.parent_id) for c in all_cols if c.parent_id}
     leaf_ids = all_ids - parent_ids
 
-    # is_organization filtrlash
+    # Filtrlash: faqat is_user_input=True, is_organization=False,
+    # status_plan=null (reja emas) bo'lgan leaf ustunlar
     result = set()
     for c in all_cols:
-        if str(c.id) in leaf_ids and not getattr(c, "is_organization", False):
+        if (
+            str(c.id) in leaf_ids
+            and not getattr(c, "is_organization", False)
+            and getattr(c, "is_user_input", True)  # Avto-hisob ustunlarini chiqarib tashlaymiz
+            and not c.status_plan  # Reja ustunlarini chiqarib tashlaymiz
+        ):
             result.add(str(c.id))
     return result
 
@@ -166,10 +174,12 @@ def build_import_template(statement, lang="uz"):
     """
     Statement uchun import shablonini (.xlsx Workbook) quradi.
 
-    Shablonda BARCHA leaf ustunlar ko'rinadi — jadval saytda qanday
-    ko'rinsa, shunday. Importable (Amalda) ustunlar ko'k rangda,
-    Reja va avto-hisob ustunlar kulrang rangda. UUID qatoriga faqat
-    importable ustunlar yoziladi.
+    Reja (status_plan berilgan) ustunlar shablonga kiritilmaydi.
+    Tashkilot nomi ustuni ham shablonga kiritilmaydi — foydalanuvchi
+    saytda tashkilotni allaqachon tanlagan bo'ladi.
+
+    Plantlik jadvalda bitta fixed ustun bo'ladi (O'simlik nomi /
+    Daromad manbalari), oddiy jadvalda fixed ustun yo'q.
 
     Returns:
         openpyxl.Workbook
@@ -206,9 +216,9 @@ def build_import_template(statement, lang="uz"):
     ws.title = sheet_title[:31]
 
     # ── Sarlavha tuzilmasi ──
-    # Plantlik jadvalda: Tashkilot nomi, O'simlik nomi — 2 ta fixed ustun
-    # Oddiy jadvalda: Tashkilot nomi — 1 ta fixed ustun
-    fixed_cols = 2 if is_plant_based else 1
+    # Plantlik jadvalda: O'simlik nomi / Daromad manbalari — 1 ta fixed ustun
+    # Oddiy jadvalda: fixed ustun yo'q
+    fixed_cols = 1 if is_plant_based else 0
 
     # Daraxt chuqurligi — har bir root uchun alohida
     max_depth = max(_compute_depth(root, children_map) for root in roots)
@@ -218,15 +228,14 @@ def build_import_template(statement, lang="uz"):
     # Sarlavha grid'ini yaratish
     header_grid = [["" for _ in range(total_cols)] for _ in range(max_depth)]
 
-    # Fixed ustunlar sarlavhalari
-    header_grid[0][0] = "Tashkilot nomi" if lang == "uz" else "Наименование организации"
+    # Fixed ustunlar sarlavhalari (faqat plantlik jadvalda)
     if is_plant_based:
         # Daromad statementda "Daromad manbalari" sarlavhasi ishlatiladi
         stmt_name = (statement.name_uz or statement.name or "").lower()
         if "daromad" in stmt_name:
-            header_grid[0][1] = "Daromad manbalari" if lang == "uz" else "Источники дохода"
+            header_grid[0][0] = "Daromad manbalari" if lang == "uz" else "Источники дохода"
         else:
-            header_grid[0][1] = "O'simlik nomi" if lang == "uz" else "Название растения"
+            header_grid[0][0] = "O'simlik nomi" if lang == "uz" else "Название растения"
 
     span_cache = {}
     merges = []
@@ -290,7 +299,7 @@ def build_import_template(statement, lang="uz"):
             cell.alignment = HEADER_ALIGNMENT
             cell.border = THIN_BORDER
 
-    # Reja/avto-hisob ustunlarning sarlavhalarini kulrang qilish
+    # Avto-hisob ustunlarning sarlavhalarini kulrang qilish
     # Leaf ustunning Excel ustun indeksini aniqlash
     readonly_excel_cols = set()
     for i, leaf_id in enumerate(leaf_ids):
