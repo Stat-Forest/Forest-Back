@@ -20,7 +20,7 @@ Plantlik statement uchun:
 Oddiy statement uchun:
     Col A+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
 """
-
+    
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Protection
 from openpyxl.utils import get_column_letter
