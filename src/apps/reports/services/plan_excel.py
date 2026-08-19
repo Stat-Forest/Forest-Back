@@ -13,12 +13,18 @@ Dizayn qarori:
       - bir xil nomli (lekin turli statement/parent'ga tegishli) ustunlar
         aralashib ketmaydi.
 
-Foydalanuvchi 2-qatorni o'chirib yubormasligi kerak — shuning uchun u
-`hidden` qilib qo'yiladi, lekin fayldan butunlay olib tashlanmaydi.
+Plant-plan statement'larda ham xuddi shunday: A-ustunda Plant ID saqlanadi
+(import shu ID orqali qatorni plant bilan bog'laydi), lekin bu ustun
+foydalanuvchiga ko'rinmasligi uchun YASHIRILGAN (hidden). Foydalanuvchi
+faqat o'qiladigan "O'simlik nomi" ustunini ko'radi.
+
+Foydalanuvchi 2-qatorni (ID qatori) yoki A-ustunni (Plant ID) o'chirib
+yubormasligi kerak — shuning uchun ular `hidden` qilib qo'yiladi, lekin
+fayldan butunlay olib tashlanmaydi.
 """
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from apps.reports.models import Plant, StatementColumn
@@ -26,12 +32,56 @@ from apps.reports.services.plan_columns import get_plan_input_columns
 
 HEADER_FONT = Font(bold=True, color="FFFFFF")
 HEADER_FILL = PatternFill("solid", fgColor="4472C4")
+THIN_SIDE = Side(style="thin", color="D9D9D9")
+THIN_BORDER = Border(left=THIN_SIDE, right=THIN_SIDE, top=THIN_SIDE, bottom=THIN_SIDE)
 ID_ROW = 2
 HEADER_ROW = 1
+
+# Ko'p tilli statik yorliqlar. Frontend qaysi tilda bo'lsa, o'sha `lang`
+# qiymatini yuboradi (query param). Noma'lum til yoki lang berilmasa -> uz.
+LABELS = {
+    "uz": {
+        "plant_id": "Plant ID (tizim uchun, o'chirmang)",
+        "plant_name": "O'simlik nomi",
+        "sheet_title": "Reja",
+        "no_plants": "(o'simliklar topilmadi)",
+        "no_plants_export": "(rejaga o'simlik kiritilmagan)",
+    },
+    "ru": {
+        "plant_id": "ID растения (для системы, не удаляйте)",
+        "plant_name": "Название растения",
+        "sheet_title": "План",
+        "no_plants": "(растения не найдены)",
+        "no_plants_export": "(в план не добавлены растения)",
+    },
+}
+
+
+def _label(key, lang):
+    return LABELS.get(lang, LABELS["uz"]).get(key, LABELS["uz"][key])
 
 
 def _column_title(column, lang):
     return getattr(column, f"title_{lang}", column.title_uz) or column.title_uz
+
+
+def _plant_name(plant, lang):
+    """
+    O'simlik nomini saytda tanlangan tilda qaytaradi.
+
+    Plant modelida `name_uz` / `name_ru` bo'lishi ham, faqat `name` bo'lishi
+    ham mumkin bo'lgani uchun ikkalasiga ham mos ishlaydi:
+        name_{lang} -> name_uz -> name
+    """
+    value = getattr(plant, f"name_{lang}", None)
+    if value:
+        return value
+
+    value = getattr(plant, "name_uz", None)
+    if value:
+        return value
+
+    return getattr(plant, "name", "") or ""
 
 
 # Guruh yorlig'i sifatida ishlatiladigan parent title uchun maksimal uzunlik.
@@ -69,6 +119,22 @@ def _full_column_label(column, lang, max_ancestors=2):
     return " - ".join(part for part in nearest if part)
 
 
+def _autosize_header_widths(labels, min_width=14, max_width=32):
+    """Sarlavha matni uzunligiga qarab taxminiy ustun kengligini hisoblaydi."""
+    widths = []
+    for label in labels:
+        length = len(label or "")
+        widths.append(max(min_width, min(max_width, int(length * 1.05) + 2)))
+    return widths
+
+
+def _style_header_cell(cell):
+    cell.font = HEADER_FONT
+    cell.fill = HEADER_FILL
+    cell.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
+    cell.border = THIN_BORDER
+
+
 def build_plan_template(statement, lang="uz"):
     """
     Statement uchun to'ldirish shablonini (.xlsx, openpyxl Workbook) quradi.
@@ -76,8 +142,9 @@ def build_plan_template(statement, lang="uz"):
     - use_plant_plan=False bo'lsa: 1 ta ma'lumot qatori (3-qator), har bir
       ustun uchun bitta katak.
     - use_plant_plan=True bo'lsa: har bir leaf Plant uchun bitta qator
-      (3-qatordan boshlab), A ustunida Plant ID (o'chirilmasin), B ustunida
-      o'simlik nomi (faqat o'qish uchun, import paytida ishlatilmaydi).
+      (3-qatordan boshlab). A-ustunida Plant ID saqlanadi, lekin bu ustun
+      YASHIRILGAN — foydalanuvchi faqat B-ustundagi (tanlangan tildagi)
+      o'simlik nomini ko'radi.
     """
     columns = list(get_plan_input_columns(statement))
     if not columns:
@@ -88,25 +155,27 @@ def build_plan_template(statement, lang="uz"):
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Reja"
+    ws.title = _label("sheet_title", lang)
 
     is_plant_plan = bool(getattr(statement, "use_plant_plan", False))
     col_offset = 3 if is_plant_plan else 1
 
     if is_plant_plan:
-        for idx, label in enumerate(("Plant ID (o'zgartirmang)", "O'simlik nomi"), start=1):
-            c = ws.cell(row=HEADER_ROW, column=idx, value=label)
-            c.font = HEADER_FONT
-            c.fill = HEADER_FILL
+        id_cell = ws.cell(row=HEADER_ROW, column=1, value=_label("plant_id", lang))
+        _style_header_cell(id_cell)
 
-    for i, column in enumerate(columns):
-        cell = ws.cell(row=HEADER_ROW, column=col_offset + i, value=_full_column_label(column, lang))
-        cell.font = HEADER_FONT
-        cell.fill = HEADER_FILL
-        cell.alignment = Alignment(wrap_text=True, vertical="center")
+        name_cell = ws.cell(row=HEADER_ROW, column=2, value=_label("plant_name", lang))
+        _style_header_cell(name_cell)
+
+    column_labels = [_full_column_label(column, lang) for column in columns]
+
+    for i, (column, label) in enumerate(zip(columns, column_labels)):
+        cell = ws.cell(row=HEADER_ROW, column=col_offset + i, value=label)
+        _style_header_cell(cell)
         ws.cell(row=ID_ROW, column=col_offset + i, value=str(column.id))
 
     ws.row_dimensions[ID_ROW].hidden = True
+    ws.row_dimensions[HEADER_ROW].height = 42
 
     if is_plant_plan:
         plants = (
@@ -115,21 +184,34 @@ def build_plan_template(statement, lang="uz"):
         )
         row = 3
         for plant in plants:
-            ws.cell(row=row, column=1, value=str(plant.id))
-            ws.cell(row=row, column=2, value=plant.name)
+            id_cell = ws.cell(row=row, column=1, value=str(plant.id))
+            id_cell.border = THIN_BORDER
+
+            name_cell = ws.cell(row=row, column=2, value=_plant_name(plant, lang))
+            name_cell.border = THIN_BORDER
             row += 1
         if row == 3:
             # Statement'ga bog'liq leaf plant topilmadi — bo'sh qator qoldiramiz
-            ws.cell(row=3, column=2, value="(o'simliklar topilmadi)")
+            ws.cell(row=3, column=2, value=_label("no_plants", lang))
     else:
         # Yagona ma'lumot qatori uchun joy
         ws.cell(row=3, column=1, value=None)
 
     total_cols = col_offset + len(columns)
-    for i in range(1, total_cols + 1):
-        ws.column_dimensions[get_column_letter(i)].width = 20 if i > col_offset - 1 else 26
 
-    ws.freeze_panes = "A3"
+    if is_plant_plan:
+        # A-ustun (Plant ID) foydalanuvchiga ko'rinmaydi, lekin import uchun
+        # faylda saqlanadi.
+        ws.column_dimensions["A"].hidden = True
+        ws.column_dimensions["A"].width = 8
+        ws.column_dimensions["B"].width = 30
+
+    data_widths = _autosize_header_widths(column_labels)
+    for i, width in enumerate(data_widths):
+        ws.column_dimensions[get_column_letter(col_offset + i)].width = width
+
+    ws.freeze_panes = get_column_letter(col_offset) + "3"
+    ws.sheet_view.showGridLines = True
     return wb
 
 
@@ -169,11 +251,13 @@ def build_plan_export(plan, lang="uz"):
 
     Layout:
       - use_plant_plan=False -> 1-qator sarlavha, 2-qator qiymatlar.
-      - use_plant_plan=True  -> har bir plant uchun bitta qator (A: plant nomi),
-        ustunlarda shu plant uchun qiymatlar.
+      - use_plant_plan=True  -> har bir plant uchun bitta qator (A: tanlangan
+        tildagi o'simlik nomi), ustunlarda shu plant uchun qiymatlar.
 
     Ustunlar to'liq breakdown: foydalanuvchi kiritgan oylik qiymatlar hamda
     ular asosida hisoblangan chorak / yillik / jami ustunlari ham ko'rsatiladi.
+    Jadval sarlavha uzunligiga qarab avtomatik kengaytiriladi, grid chiziqlari,
+    autofilter va freeze panes bilan chiroyli ko'rinishda tayyorlanadi.
     """
     statement = plan.statement
     columns = _export_columns(statement)
@@ -184,21 +268,24 @@ def build_plan_export(plan, lang="uz"):
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Reja"
+    ws.title = _label("sheet_title", lang)
 
     is_plant_plan = bool(getattr(statement, "use_plant_plan", False))
     col_offset = 2 if is_plant_plan else 1
 
     if is_plant_plan:
-        c = ws.cell(row=HEADER_ROW, column=1, value="O'simlik nomi")
-        c.font = HEADER_FONT
-        c.fill = HEADER_FILL
+        name_header = ws.cell(row=HEADER_ROW, column=1, value=_label("plant_name", lang))
+        _style_header_cell(name_header)
 
-    for i, column in enumerate(columns):
-        cell = ws.cell(row=HEADER_ROW, column=col_offset + i, value=_full_column_label(column, lang))
-        cell.font = HEADER_FONT
-        cell.fill = HEADER_FILL
-        cell.alignment = Alignment(wrap_text=True, vertical="center")
+    column_labels = [_full_column_label(column, lang) for column in columns]
+
+    for i, (column, label) in enumerate(zip(columns, column_labels)):
+        cell = ws.cell(row=HEADER_ROW, column=col_offset + i, value=label)
+        _style_header_cell(cell)
+
+    ws.row_dimensions[HEADER_ROW].height = 42
+
+    last_row = HEADER_ROW
 
     if is_plant_plan:
         row = 2
@@ -209,27 +296,48 @@ def build_plan_export(plan, lang="uz"):
             .all()
         )
         for pp in plant_plans:
-            ws.cell(row=row, column=1, value=pp.plant.name)
+            name_cell = ws.cell(row=row, column=1, value=_plant_name(pp.plant, lang))
+            name_cell.border = THIN_BORDER
+
             values = {item.column_id: item.plan_value for item in pp.items.all()}
             for i, column in enumerate(columns):
                 value = values.get(column.id)
+                cell = ws.cell(row=row, column=col_offset + i)
+                cell.border = THIN_BORDER
                 if value is not None:
-                    ws.cell(row=row, column=col_offset + i, value=float(value))
+                    cell.value = float(value)
+                    cell.number_format = "#,##0.00"
             row += 1
         if row == 2:
-            ws.cell(row=2, column=1, value="(rejaga o'simlik kiritilmagan)")
+            ws.cell(row=2, column=1, value=_label("no_plants_export", lang))
+            row = 3
+        last_row = row - 1
     else:
         values = {item.column_id: item.plan_value for item in plan.plan_items.all()}
         for i, column in enumerate(columns):
             value = values.get(column.id)
+            cell = ws.cell(row=2, column=col_offset + i)
+            cell.border = THIN_BORDER
             if value is not None:
-                ws.cell(row=2, column=col_offset + i, value=float(value))
+                cell.value = float(value)
+                cell.number_format = "#,##0.00"
+        last_row = 2
 
     total_cols = col_offset + len(columns) - 1
-    for i in range(1, total_cols + 1):
-        ws.column_dimensions[get_column_letter(i)].width = 20 if i >= col_offset else 26
 
-    ws.freeze_panes = "A2"
+    if is_plant_plan:
+        ws.column_dimensions["A"].width = 30
+
+    data_widths = _autosize_header_widths(column_labels)
+    for i, width in enumerate(data_widths):
+        ws.column_dimensions[get_column_letter(col_offset + i)].width = width
+
+    # Chiroyli grid ko'rinish uchun autofilter va freeze panes
+    last_col_letter = get_column_letter(total_cols)
+    ws.auto_filter.ref = f"A{HEADER_ROW}:{last_col_letter}{last_row}"
+    ws.freeze_panes = get_column_letter(col_offset) + "2"
+    ws.sheet_view.showGridLines = True
+
     return wb
 
 
@@ -240,6 +348,8 @@ def parse_plan_excel(file_obj, statement):
         - use_plant_plan=True  -> {"plants": [{"plant": <uuid>, "items": [...]}, ...]}
 
     Bo'sh kataklar e'tiborga olinmaydi (0 sifatida emas — umuman yuborilmaydi).
+    Plant ID ustuni (A) yashirilgan bo'lsa ham qiymati faylda saqlanib qoladi,
+    shuning uchun bu yerda hidden holatidan qat'iy nazar to'g'ri o'qiladi.
     """
     try:
         wb = openpyxl.load_workbook(file_obj, data_only=True)
@@ -300,4 +410,4 @@ def parse_plan_excel(file_obj, statement):
     if not items:
         raise ValueError("Faylda hech qanday qiymat topilmadi.")
 
-    return {"plan_items": items}
+    return {"plan_items": items}    
