@@ -43,13 +43,21 @@ jobs:
           cd /root/Forest-Back
 
           # ---------------------------------------------------------------
-          # docker-compose 1.29.2 (V1) yangi Docker Engine bilan konteynerni
-          # QAYTA YARATA olmaydi -> KeyError: 'ContainerConfig'.
-          # Sabab: V1 eski konteyner image'idan 'ContainerConfig' maydonini
-          # o'qiydi, yangi Engine esa uni umuman qaytarmaydi.
-          # Yechim: "recreate" yo'liga hech qachon kirmaslik —
-          #   * dependency'lar  -> --no-recreate (faqat start)
-          #   * app servislari  -> avval o'chirib, keyin toza yaratish
+          # docker-compose 1.29.2 (V1) + yangi Docker Engine = xavfli birikmа.
+          # V1 konteynerni QAYTA YARATISHDA (recreate) eski image'dan
+          # 'ContainerConfig' maydonini o'qiydi — yangi Engine esa uni
+          # qaytarmaydi → KeyError: 'ContainerConfig'.
+          #
+          # Yechim: HECH QACHON recreate yo'liga kirmaslik:
+          #   * dependency'lar  → --no-recreate (faqat start/create)
+          #   * app servislari  → avval TO'LIQ o'chirib, keyin TOZA yaratish
+          #
+          # MUHIM tartib:
+          #   1. Dependency'lar ishga tushiriladi (--no-recreate)
+          #   2. App konteynerlar TO'LIQ o'chiriladi (rm -s -f + docker rm)
+          #   3. Dangling imagelar tozalanadi (disk joy bo'shatish)
+          #   4. Yangi image build qilinadi
+          #   5. Yangi konteynerlar yaratiladi (--no-deps — dep'larga tegmaydi)
           # ---------------------------------------------------------------
 
           COMPOSE="docker-compose -f docker/prod/docker-compose-prod.yml"
@@ -59,39 +67,51 @@ jobs:
           DEPS="forest_postgres forest_redis e_imzo_server"
 
           # 1) Dependency'lar ishlab tursin. --no-recreate => recreate yo'q => xato yo'q.
-          echo ">>> [1/4] Dependency'lar tekshirilmoqda..."
+          echo ">>> [1/5] Dependency'lar tekshirilmoqda..."
           $COMPOSE up -d --no-recreate $DEPS
 
-          # 2) Yangi kod bilan image yig'ish
-          echo ">>> [2/4] Image yig'ilmoqda..."
-          $COMPOSE build $APP_SERVICES
-
-          # 3) Eski konteynerlarni butunlay yo'q qilish.
-          #    Bu qadam majburiy: eski konteyner qolsa V1 recreate'ga kiradi va yiqiladi.
-          echo ">>> [3/4] Eski konteynerlar o'chirilmoqda..."
-          $COMPOSE rm -s -f $APP_SERVICES || true
+          # 2) Eski app konteynerlarni BUTUNLAY yo'q qilish.
+          #    Bu qadam MAJBURIY va BUILD'dan OLDIN bo'lishi kerak:
+          #    agar eski konteyner qolsa, V1 "up" da recreate yo'liga kiradi
+          #    va ContainerConfig xatosi beradi.
+          echo ">>> [2/5] Eski app konteynerlar o'chirilmoqda..."
+          $COMPOSE stop $APP_SERVICES 2>/dev/null || true
+          $COMPOSE rm -f $APP_SERVICES 2>/dev/null || true
           for c in $APP_CONTAINERS; do
             docker rm -f "$c" >/dev/null 2>&1 || true
           done
 
-          # 4) Toza yaratish. Oldingi konteyner yo'q => V1 create yo'lidan boradi.
-          echo ">>> [4/4] Yangi konteynerlar ko'tarilmoqda..."
+          # 3) Dangling (nomi yo'q) imagelarni tozalash — disk joy bo'shatish.
+          #    DIQQAT: volume'lar TEGIB BO'LMAYDI (postgres data!)
+          echo ">>> [3/5] Eski imagelar tozalanmoqda..."
+          docker image prune -f 2>/dev/null || true
+
+          # 4) Yangi kod bilan image yig'ish.
+          echo ">>> [4/5] Image yig'ilmoqda..."
+          $COMPOSE build $APP_SERVICES
+
+          # 5) Yangi konteynerlar yaratish. Eski konteyner yo'q =>
+          #    V1 "create" yo'lidan boradi (recreate emas) => ContainerConfig xato yo'q.
+          #    --no-deps => dependency'larga tegmaydi (ular allaqachon ishlayapti).
+          echo ">>> [5/5] Yangi konteynerlar ko'tarilmoqda..."
           $COMPOSE up -d --no-deps $APP_SERVICES
 
           $COMPOSE ps
 
-          # 5) Oldingi yiqilgan deploy'lardan qolgan "<hash>_<nom>" konteynerlarni ogohlantirish.
-          #    V1 recreate paytida eski konteynerni rename qiladi va xato bo'lsa shu nomda qoladi.
+          # Oldingi yiqilgan deploy'lardan qolgan "<hash>_<nom>" konteynerlarni
+          # aniqlash. V1 recreate paytida eski konteynerni rename qiladi va
+          # xato bo'lsa shu nomda qoladi.
           ORPHANS="$(docker ps -a --format '{{.Names}}' | grep -E '^[0-9a-f]{12}_' || true)"
           if [ -n "$ORPHANS" ]; then
             echo "!!! DIQQAT: nomi buzilgan konteynerlar bor (eski yiqilgan deploy qoldig'i):"
             echo "$ORPHANS"
-            echo "!!! Qo'lda tuzating: docker rename <eski_nom> <to'g'ri_nom>"
+            echo "!!! Qo'lda tuzating: docker rm <eski_nom>"
           fi
 
           # ESLATMA: postgres / redis / e_imzo_server sozlamasini
           # docker-compose-prod.yml da o'zgartirsangiz, bu skript uni QO'LLAMAYDI.
           # Serverda qo'lda, xuddi shu usulda bajaring:
-          #   docker-compose -f docker/prod/docker-compose-prod.yml rm -s -f forest_redis
+          #   docker-compose -f docker/prod/docker-compose-prod.yml stop forest_redis
+          #   docker-compose -f docker/prod/docker-compose-prod.yml rm -f forest_redis
           #   docker-compose -f docker/prod/docker-compose-prod.yml up -d --no-deps forest_redis
         EOF
