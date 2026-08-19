@@ -25,7 +25,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Protection
 from openpyxl.utils import get_column_letter
 
-from apps.reports.models import StatementColumn
+from apps.reports.models import Plant, StatementColumn
 from apps.reports.services.report_import.columns import (
     StatementColumnIndex,
     is_plant_based_statement,
@@ -330,20 +330,62 @@ def build_import_template(statement, lang="uz"):
     # ── Data start row ──
     data_start_row = id_row + 1
 
+    # ── Plantlik jadvalda — barcha leaf plantlarni data qatorlariga yozish ──
+    leaf_plants = []
+    if is_plant_based:
+        leaf_plants = list(
+            Plant.objects.filter(
+                statement=statement,
+                children__isnull=True,  # faqat leaf plantlar
+            ).order_by("name")
+        )
+        plant_name_font = Font(size=11)
+        plant_name_alignment = Alignment(vertical="center")
+        for plant_idx, plant in enumerate(leaf_plants):
+            row_num = data_start_row + plant_idx
+            # Tilga qarab plant nomini tanlash
+            plant_name = (
+                getattr(plant, f"name_{lang}", None) or plant.name or ""
+            )
+            cell = ws.cell(row=row_num, column=1, value=plant_name)
+            cell.font = plant_name_font
+            cell.alignment = plant_name_alignment
+            cell.border = THIN_BORDER
+
     # ── Readonly ustunlar data zonasida kulrang fon ──
-    # Dastlabki 20 qatorga kulrang fon qo'yamiz (foydalanuvchi kiritmasligi uchun)
+    # Dastlabki 20 qatorga (yoki plant soni qadar) kulrang fon qo'yamiz
+    data_row_count = max(20, len(leaf_plants))
     for excel_col in readonly_excel_cols:
-        for data_row in range(data_start_row, data_start_row + 20):
+        for data_row in range(data_start_row, data_start_row + data_row_count):
             cell = ws.cell(row=data_row, column=excel_col)
             cell.fill = READONLY_DATA_FILL
 
     # ── Ustun kengliklari ──
-    for i in range(1, total_cols + 1):
+    # Fixed ustunlar uchun kenglikni eng uzun text asosida hisoblaymiz
+    if fixed_cols > 0:
+        max_text_len = 0
+        # Sarlavha textlarini tekshirish
+        for row_idx in range(max_depth):
+            for fc in range(fixed_cols):
+                text = header_grid[row_idx][fc]
+                if text:
+                    max_text_len = max(max_text_len, len(str(text)))
+        # Data zonasidagi textlarni tekshirish (plant nomlari va h.k.)
+        for fc in range(1, fixed_cols + 1):
+            for data_row in range(data_start_row, data_start_row + len(leaf_plants)):
+                cell_val = ws.cell(row=data_row, column=fc).value
+                if cell_val:
+                    max_text_len = max(max_text_len, len(str(cell_val)))
+        # Kenglik: har bir belgi uchun ~1.2, minimal 20, +4 padding
+        fixed_col_width = max(20, max_text_len * 1.2 + 4)
+        for fc in range(1, fixed_cols + 1):
+            letter = get_column_letter(fc)
+            ws.column_dimensions[letter].width = fixed_col_width
+
+    # Statement ustunlari uchun standart kenglik
+    for i in range(fixed_cols + 1, total_cols + 1):
         letter = get_column_letter(i)
-        if i <= fixed_cols:
-            ws.column_dimensions[letter].width = 28
-        else:
-            ws.column_dimensions[letter].width = 22
+        ws.column_dimensions[letter].width = 22
 
     # Sarlavha va ID qatorlarini muzlatib qo'yamiz
     ws.freeze_panes = f"A{data_start_row}"
