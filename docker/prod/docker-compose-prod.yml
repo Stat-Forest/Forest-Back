@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   forest_app:
     build:
@@ -7,13 +9,21 @@ services:
     env_file:
       - ../../.env
     entrypoint: ["/entrypoint.sh"]
+    # ⚠️ MUAMMO: gunicorn --workers 4 + UvicornWorker WebSocket uchun
+    # channel_layer.group_add() da event loop conflict → 500 xatosi.
+    # Daphne bilan almashtirildi (Django Channels rasmiy ASGI serveri).
+    # command: >
+    #   gunicorn config.asgi:application
+    #   -k uvicorn.workers.UvicornWorker
+    #   --bind 0.0.0.0:8000
+    #   --workers 4
+    #   --access-logfile /var/log/forest-back/gunicorn-access.log
+    #   --error-logfile /var/log/forest-back/gunicorn-error.log
     command: >
-      gunicorn config.asgi:application
-      -k uvicorn.workers.UvicornWorker
-      --bind 0.0.0.0:8000
-      --workers 4
-      --access-logfile /var/log/forest-back/gunicorn-access.log
-      --error-logfile /var/log/forest-back/gunicorn-error.log
+      daphne -b 0.0.0.0 -p 8000
+      --access-log /var/log/forest-back/daphne-access.log
+      config.asgi:application
+
     volumes:
       - ../../staticfiles:/app/staticfiles
       - ../../media:/app/media
