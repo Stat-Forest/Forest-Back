@@ -20,7 +20,7 @@ Plantlik statement uchun:
 Oddiy statement uchun:
     Col A+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
 """
-    
+
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Protection
 from openpyxl.utils import get_column_letter
@@ -49,6 +49,43 @@ THIN_BORDER = Border(
 )
 
 HEADER_START_ROW = 1
+
+
+def _get_unique_leaf_plants(statement, lang="uz"):
+    """
+    Statement'ga tegishli leaf plantlarni qaytaradi, lekin nomlari
+    takrorlanmasligini kafolatlaydi.
+
+    Muammo: Plant daraxtida bitta o'simlik nomi bir nechta parent
+    kategoriya ostida bo'lishi mumkin (masalan "archa" — ham "Bargli
+    daraxt" va ham "Igna bargli daraxt" ostida alohida DB yozuv sifatida
+    mavjud). Shablonda faqat nom ko'rsatilgani uchun, bunday
+    duplikatlar foydalanuvchini adashtirib qo'yadi va parser ham
+    "bir nechta o'simlik topildi" xatosini qaytaradi.
+
+    Shuning uchun: tanlangan tildagi display name asosida takroriy
+    plantlar o'tkazib yuboriladi — faqat birinchisi saqlanadi.
+    """
+    all_leaf_plants = list(
+        Plant.objects.filter(
+            statement=statement,
+            children__isnull=True,
+        ).order_by("name")
+    )
+
+    seen_names = set()
+    unique_plants = []
+    for plant in all_leaf_plants:
+        display_name = (
+            getattr(plant, f"name_{lang}", None) or plant.name or ""
+        ).strip().lower()
+        if display_name and display_name not in seen_names:
+            seen_names.add(display_name)
+            unique_plants.append(plant)
+        elif not display_name:
+            # Nomsiz plant — qo'shamiz (xatolik bo'lmasligi uchun)
+            unique_plants.append(plant)
+    return unique_plants
 
 
 def _ordering_key(ordering_str):
@@ -317,12 +354,7 @@ def _render_appendix_sheet(
     # Plantlik jadvalda — leaf plantlarni data qatorlariga yozish
     leaf_plants = []
     if is_plant_based:
-        leaf_plants = list(
-            Plant.objects.filter(
-                statement=statement,
-                children__isnull=True,
-            ).order_by("name")
-        )
+        leaf_plants = _get_unique_leaf_plants(statement, lang)
         plant_name_font = Font(size=11)
         plant_name_alignment = Alignment(vertical="center")
         for plant_idx, plant in enumerate(leaf_plants):
