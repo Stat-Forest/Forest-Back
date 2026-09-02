@@ -817,6 +817,24 @@ def _parse_plant_based(ws, statement, index, column_map, service_columns,
         (result_dict, plan_found) — `plan_found` {plant_id: {column_id: (value, row)}}.
     """
     plants = list(Plant.objects.filter(statement=statement, children__isnull=True))
+
+    # Bir xil nomli plantlarni deduplikatsiya qilamiz.
+    # Plant daraxtida bitta o'simlik nomi bir nechta parent kategoriya
+    # ostida alohida DB yozuv sifatida bo'lishi mumkin (masalan "archa"
+    # ham "Bargli daraxt" ham "Igna bargli daraxt" ostida).
+    # Shablonda faqat bitta qator chiqadi, shuning uchun parser ham
+    # faqat bitta plantni tanishi kerak.
+    seen_plant_names = set()
+    unique_plants = []
+    for p in plants:
+        norm_name = normalize_title(p.name)
+        if norm_name and norm_name not in seen_plant_names:
+            seen_plant_names.add(norm_name)
+            unique_plants.append(p)
+        elif not norm_name:
+            unique_plants.append(p)
+    plants = unique_plants
+
     plants_by_id = {str(p.id): p for p in plants}
 
     plants_by_name = {}
