@@ -65,6 +65,24 @@ def handle_delete_report(sender, instance: Report, **kwargs):
     if not instance.is_report:
         return
 
+    # Signal ni vaqtincha o'chiramiz — ichki .delete() chaqiruvlari
+    # yana shu signalni ishga tushirib, RecursionError keltirib chiqarmasligi uchun.
+    pre_delete.disconnect(handle_delete_report, sender=Report)
+    try:
+        _handle_delete_report_inner(instance)
+    finally:
+        # Har qanday holatda signalni qayta ulaymiz
+        pre_delete.connect(handle_delete_report, sender=Report)
+
+
+def _handle_delete_report_inner(instance: Report):
+    """
+    Report o'chirilganda bog'liq jami reportlarni tozalash.
+
+    Bu funksiya signal ichidan chaqiriladi, lekin signal vaqtincha
+    o'chirilgan bo'ladi — shuning uchun ichki .delete() chaqiruvlari
+    rekursiyaga olib kelmaydi.
+    """
     # Hamma kerakli reportlarni oldindan bitta querysetga yig‘ib olamiz
     base_qs = Report.objects.filter(
         statement=instance.statement,
