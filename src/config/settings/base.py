@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
+
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 CORS_ALLOW_CREDENTIALS = True
@@ -31,12 +32,14 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # files will be installed here
+
 EXPORT_ROOT = os.path.join(BASE_DIR, "exports")
 
 ALLOWED_HOSTS = [
     "forest.yutori.uz", "www.forest.yutori.uz",
     "93.188.84.164", "localhost", "127.0.0.1",
     "stat-urmon.uz", "www.stat-urmon.uz",
+    "api.stat-urmon.uz",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -45,6 +48,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5174",
     "http://localhost:3000",
     "https://stat-urmon.uz",
+    "https://api.stat-urmon.uz",
 ]
 
 # ===============================
