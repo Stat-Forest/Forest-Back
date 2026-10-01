@@ -62,9 +62,14 @@ services:
     networks:
       - forest_network
 
-  # forest.yutori.uz + stat-urmon.uz bitta sertifikatda (SAN). api.stat-urmon.uz
-  # uchun alohida sertifikat bor — shu xizmatni qayta ishlatib emas, alohida
-  # buyruq bilan olingan:
+  # forest.yutori.uz — eskirgan domen, chiqarib tashlanish arafasida (api.stat-urmon.uz
+  # uni almashtirdi). stat-urmon.uz va api.stat-urmon.uz endi MUSTAQIL sertifikatlarga
+  # ega — forest.yutori.uz'ning taqdiridan (DNS o'chirilishi, cert yangilanmay qolishi)
+  # ta'sirlanmaydi. Ular shu xizmatni qayta ishlatib emas, alohida buyruq bilan olingan:
+  #   docker-compose -f docker/prod/docker-compose-prod.yml run --rm forest_certbot \
+  #     certonly --webroot --webroot-path=/var/www/certbot \
+  #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
+  #     --cert-name stat-urmon.uz -d stat-urmon.uz
   #   docker-compose -f docker/prod/docker-compose-prod.yml run --rm forest_certbot \
   #     certonly --webroot --webroot-path=/var/www/certbot \
   #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
@@ -81,7 +86,6 @@ services:
       --agree-tos
       --no-eff-email
       -d forest.yutori.uz
-      -d stat-urmon.uz
 
   forest_postgres:
     image: postgres:16
