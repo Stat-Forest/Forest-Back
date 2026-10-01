@@ -26,7 +26,14 @@ jobs:
 
     - name: Sync files to server via rsync
       run: |
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+        # --inplace: faylni almashtirish (temp + rename) o'rniga JOYIDA yozadi.
+        # Buning SABABI: docker-compose bitta faylni (masalan nginx.conf) bind-mount
+        # qilganda, konteyner o'sha faylning INODE'iga bog'lanadi, yo'liga emas.
+        # rsync --inplace'siz har safar yangi inode yaratadi (rename orqali) va
+        # ishlab turgan konteyner eski, "o'lik" inode'ni o'qishda davom etadi —
+        # `nginx -s reload` ham yordam bermaydi, konteynerni qayta yaratish kerak
+        # bo'lib qoladi. --inplace shu muammoni butunlay oldini oladi.
+        rsync -avz --inplace -e "ssh -o StrictHostKeyChecking=no" \
           --exclude '.git/' \
           --exclude 'media/' \
           --exclude 'staticfiles/' \
@@ -106,6 +113,20 @@ jobs:
             echo "!!! DIQQAT: nomi buzilgan konteynerlar bor (eski yiqilgan deploy qoldig'i):"
             echo "$ORPHANS"
             echo "!!! Qo'lda tuzating: docker rm <eski_nom>"
+          fi
+
+          # 6) Nginx config o'zgargan bo'lishi mumkin (--inplace rsync tufayli
+          #    konteyner buni bind-mount orqali darhol ko'radi) — shuning uchun
+          #    har deploy'da xavfsiz tekshirib reload qilamiz. forest_nginx
+          #    ataylab recreate QILINMAYDI (yuqoridagi ContainerConfig xatosi
+          #    shu yerda ham chiqadi) — faqat ichidagi process'ga signal beriladi.
+          echo ">>> [6/6] Nginx config tekshirilmoqda va reload qilinmoqda..."
+          if docker exec forest_nginx_prod nginx -t; then
+            docker exec forest_nginx_prod nginx -s reload
+            echo ">>> Nginx reload qilindi."
+          else
+            echo "!!! DIQQAT: nginx.conf noto'g'ri — reload QILINMADI, eski config ishlab turibdi."
+            echo "!!! Qo'lda tekshiring: docker exec forest_nginx_prod nginx -t"
           fi
 
           # ESLATMA: postgres / redis / e_imzo_server sozlamasini
