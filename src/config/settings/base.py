@@ -23,8 +23,6 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"
 
 CORS_ALLOWED_ORIGINS = [
-    "https://forest.yutori.uz",
-    "https://www.forest.yutori.uz",
     "https://stat-urmon.uz",
     "https://www.stat-urmon.uz",
     "http://localhost:5173",
@@ -36,14 +34,12 @@ CORS_ALLOWED_ORIGINS = [
 EXPORT_ROOT = os.path.join(BASE_DIR, "exports")
 
 ALLOWED_HOSTS = [
-    "forest.yutori.uz", "www.forest.yutori.uz",
     "93.188.84.164", "localhost", "127.0.0.1",
     "stat-urmon.uz", "www.stat-urmon.uz",
     "api.stat-urmon.uz",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://forest.yutori.uz",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
