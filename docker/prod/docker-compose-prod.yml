@@ -62,6 +62,13 @@ services:
     networks:
       - forest_network
 
+  # forest.yutori.uz + stat-urmon.uz bitta sertifikatda (SAN). api.stat-urmon.uz
+  # uchun alohida sertifikat bor — shu xizmatni qayta ishlatib emas, alohida
+  # buyruq bilan olingan:
+  #   docker-compose -f docker/prod/docker-compose-prod.yml run --rm forest_certbot \
+  #     certonly --webroot --webroot-path=/var/www/certbot \
+  #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
+  #     -d api.stat-urmon.uz
   forest_certbot:
     image: certbot/certbot
     container_name: forest_certbot
@@ -69,10 +76,10 @@ services:
       - ./certbot/etc:/etc/letsencrypt
       - ./certbot/var:/var/www/certbot
     command: >
-      certonly --webroot --webroot-path=/var/www/certbot 
-      --email tolqinovoybek92@gmail.com 
-      --agree-tos 
-      --no-eff-email 
+      certonly --webroot --webroot-path=/var/www/certbot
+      --email tolqinovoybek92@gmail.com
+      --agree-tos
+      --no-eff-email
       -d forest.yutori.uz
       -d stat-urmon.uz
 
