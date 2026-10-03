@@ -20,6 +20,16 @@ from apps.reports.services.report_import.columns import is_plant_based_statement
 from apps.reports.serializers.export.export_serializers import ReportExcelExportRequestSerializer
 
 
+def _is_safe_export_filename(filename: str) -> bool:
+    return (
+        filename == os.path.basename(filename)
+        and "\\" not in filename
+        and "\x00" not in filename
+        and not filename.startswith(".")
+        and filename.lower().endswith(".xlsx")
+    )
+
+
 @extend_schema(tags=["Export-Excel"])
 class ReportExcelExportAPIView(APIView):
     """
@@ -251,10 +261,25 @@ class ReportExcelDownloadAPIView(APIView):
         if not filename:
             return Response({"detail": "filename query param kiritilmadi"}, status=400)
 
-        export_dir = getattr(settings, "EXPORT_ROOT", os.path.join(settings.BASE_DIR, "exports"))
-        file_path = os.path.join(export_dir, filename)
+        # Faqat oddiy fayl nomi qabul qilinadi: "../.env" yoki "/etc/passwd"
+        # kabi yo'llar orqali export papkasidan tashqariga chiqib bo'lmaydi.
+        if not _is_safe_export_filename(filename):
+            raise Http404("Fayl topilmadi")
 
-        if not os.path.exists(file_path):
+        export_dir = os.path.realpath(
+            getattr(settings, "EXPORT_ROOT", os.path.join(settings.BASE_DIR, "exports"))
+        )
+        file_path = os.path.realpath(os.path.join(export_dir, filename))
+        if os.path.dirname(file_path) != export_dir or not os.path.isfile(file_path):
+            raise Http404("Fayl topilmadi")
+
+        # Fayl faqat uni eksport qilgan foydalanuvchiga beriladi
+        # (eksport HistoryActionJournal'ga yoziladi).
+        if not request.user.is_superuser and not HistoryActionJournal.objects.filter(
+            user=request.user,
+            model_name="ReportExport",
+            object_repr=filename,
+        ).exists():
             raise Http404("Fayl topilmadi")
 
         return FileResponse(
