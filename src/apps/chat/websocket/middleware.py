@@ -33,6 +33,10 @@ def get_user_from_token(token: str):
         # refresh token bu yerdan o'tolmaydi.
         payload = AccessToken(token)
 
+        # Parolni tiklash tokeni chat uchun yaroqsiz
+        if payload.get("pwd_reset"):
+            return AnonymousUser()
+
         # `.only()` ishlatilmaydi: xabar serializatsiyasi first_name/
         # last_name/role ni o'qiydi va deferred maydonlar har bir xabar
         # uchun qo'shimcha so'rov keltirib chiqarardi.
