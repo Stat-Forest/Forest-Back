@@ -21,7 +21,7 @@ def verify_signature_with_my_gov(signature: str, sign_data: str, pinfl: str):
         "pinfl": pinfl
     }
 
-    response = requests.post(MY_GOV_CHECK_SIGNATURE, json=payload, headers=headers)
+    response = requests.post(MY_GOV_CHECK_SIGNATURE, json=payload, headers=headers, timeout=(5, 30))
 
     if not response:
         raise CustomExceptionError(code=400, detail=f"MyGov check-signature failed: {response.status_code} - {response.text}")

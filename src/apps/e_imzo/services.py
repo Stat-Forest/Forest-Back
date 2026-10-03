@@ -1,6 +1,11 @@
 import requests
 from rest_framework.request import Request
 
+# (ulanish, javob o'qish) soniyalarda — e-imzo server osilib qolsa
+# worker cheksiz kutib qolmasligi uchun.
+EIMZO_TIMEOUT = (5, 30)
+EIMZO_UNAVAILABLE_MESSAGE = "E-imzo server javob bermadi. Birozdan keyin qayta urinib ko'ring."
+
 class EimzoServiceApi:
     def __init__(self):
         self.VERIFY_URL = "http://e_imzo_server:8080/backend/pkcs7/verify"
@@ -18,30 +23,36 @@ class EimzoServiceApi:
         return {"X-Real-IP": self.get_user_ip(request)}
 
     def timestamp_pkcs7(self, pkcs7: str, request: Request):
-        res = requests.post(self.TIME_STAMP_URL, data=pkcs7, headers=self.get_headers(request))
+        res = requests.post(self.TIME_STAMP_URL, data=pkcs7, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
         return res.status_code, res
 
     def eimzo_verify(self, pkcs7wtst: str, request: Request):
-        res = requests.post(f"{self.VERIFY_URL}/attached", data=pkcs7wtst, headers=self.get_headers(request))
+        res = requests.post(f"{self.VERIFY_URL}/attached", data=pkcs7wtst, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
         return res.status_code, res
 
     def pkcs7_join(self, pkcs7_data_1: str, pkcs7_data_2: str, request: Request):
         data = f"{pkcs7_data_1}|{pkcs7_data_2}"
-        res = requests.post(self.JOIN_URL, data=data, headers=self.get_headers(request))
+        res = requests.post(self.JOIN_URL, data=data, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
         return res.status_code, res
 
     def pkcs7_info(self, pkcs7: str, request: Request):
-        res = requests.post(self.PKCS7_INFO_URL, data=pkcs7, headers=self.get_headers(request))
+        res = requests.post(self.PKCS7_INFO_URL, data=pkcs7, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
         return res.status_code, res
 
     def eri_challenge(self, request: Request):
-        res = requests.get(self.CHALLENGE_URL, headers=self.get_headers(request))
+        try:
+            res = requests.get(self.CHALLENGE_URL, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
+        except requests.RequestException:
+            return False, 503, EIMZO_UNAVAILABLE_MESSAGE
         if res.status_code != 200:
             return False, res.status_code, res.json()
         return True, res.status_code, res.json()
 
     def eri_backend_auth(self, request: Request, pkcs7: str):
-        res = requests.post(self.BACKEND_AUTH_URL, headers=self.get_headers(request), data=pkcs7)
+        try:
+            res = requests.post(self.BACKEND_AUTH_URL, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT, data=pkcs7)
+        except requests.RequestException:
+            return False, 503, EIMZO_UNAVAILABLE_MESSAGE
         if res.status_code != 200:
             return False, res.status_code, res.text
         data = res.json()
