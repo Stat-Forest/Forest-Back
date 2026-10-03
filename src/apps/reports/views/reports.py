@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from apps.reports.permissions import CanCreateReport
 from apps.reports.filters.report_region import ReportFilter
 from apps.reports.permissions.check_delete_report import CanDeleteReport
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin, CanEditReportData
 from apps.reports.models import Report, Plant, ReportItem, StatementColumn
 from apps.reports.serializers.reports import (
     ReportListSerializer,
@@ -181,7 +182,7 @@ class ReportCreateAPIView(DRFHistoryMixin,CustomCreateAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportDeleteAPIView(DRFHistoryMixin,CustomDestroyAPIView):
+class ReportDeleteAPIView(DRFHistoryMixin, ReportScopedQuerysetMixin, CustomDestroyAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportDetailSerializer
     permission_classes = (CanDeleteReport,)
@@ -189,7 +190,7 @@ class ReportDeleteAPIView(DRFHistoryMixin,CustomDestroyAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportRetrieveAPIView(CustomRetrieveAPIView):
+class ReportRetrieveAPIView(ReportScopedQuerysetMixin, CustomRetrieveAPIView):
     queryset = Report.objects.select_related(
         'statement',
         'deadline__statement',
@@ -204,7 +205,7 @@ class ReportRetrieveAPIView(CustomRetrieveAPIView):
 
 
 @extend_schema(tags=["Reports"])
-class ReportUpdateAPIView(DRFHistoryMixin,CustomRetrieveUpdateAPIView):
+class ReportUpdateAPIView(DRFHistoryMixin, ReportScopedQuerysetMixin, CustomRetrieveUpdateAPIView):
     queryset = Report.objects.select_related(
         'statement',
         'deadline__statement',
@@ -216,7 +217,7 @@ class ReportUpdateAPIView(DRFHistoryMixin,CustomRetrieveUpdateAPIView):
     ).distinct().order_by('-created_at')
     serializer_class = ReportUpdateSerializer
     lookup_field = 'id'
-    # permission_classes = (CanUpdateReport,)
+    permission_classes = (CanEditReportData,)
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
