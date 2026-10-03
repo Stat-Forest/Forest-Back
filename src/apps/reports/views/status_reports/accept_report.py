@@ -7,23 +7,26 @@ from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
 from apps.reports.serializers.status_reports import ReportAcceptSerializer
 from apps.reports.permissions import CanAcceptReport
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin
 from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportAcceptAPIView(DRFHistoryMixin, UpdateAPIView):
+class ReportAcceptAPIView(DRFHistoryMixin, ReportScopedQuerysetMixin, UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportAcceptSerializer
     permission_classes = [CanAcceptReport]
 
     def get_object(self, report_id):
         try:
-            return self.get_queryset().get(id=report_id)
+            report = self.get_queryset().get(id=report_id)
         except Report.DoesNotExist:
             raise CustomExceptionError(
                 code=404,
                 detail={"report": _("Report not found.")}
             )
+        self.check_object_permissions(self.request, report)
+        return report
 
     def post(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

@@ -5,12 +5,13 @@ from rest_framework.exceptions import ValidationError, NotFound
 
 from apps.reports.models import Report
 from apps.reports.permissions import CanSendReport
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin
 from apps.reports.serializers.status_reports import ReportSendSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportSendAPIView(DRFHistoryMixin, UpdateModelMixin, GenericAPIView):
+class ReportSendAPIView(DRFHistoryMixin, ReportScopedQuerysetMixin, UpdateModelMixin, GenericAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportSendSerializer
     permission_classes = [CanSendReport]
