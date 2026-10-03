@@ -59,17 +59,17 @@ class DashboardStatService:
         if user.statement:
             return {
                 "reports": Report.objects.filter(
-                    statement__parent_id=user.statement.id,
+                    statement__parent_id=user.statement_id,
                     is_report=True
                 ),
                 "deadlines": Deadline.objects.filter(
-                    statement__parent_id=user.statement.id
+                    statement__parent_id=user.statement_id
                 ),
                 "users": CustomUser.objects.filter(
-                    statement_id=user.statement.id
+                    statement_id=user.statement_id
                 ),
                 "plans": Plan.objects.filter(
-                    statement__parent_id=user.statement.id
+                    statement__parent_id=user.statement_id
                 ),
             }
 

@@ -160,3 +160,29 @@ class ReportAccessTest(APITestCase):
         response = self._as(self.support).get(f"{BASE}/report-items/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
+
+
+class BolimAdminWithoutStatementTest(APITestCase):
+    """statement biriktirilmagan bolim_admin 500 emas, bo'sh natija olishi kerak."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="bolim_nostmt@example.com",
+            password="TestPassword123!",
+            first_name="Test",
+            last_name="User",
+            role="bolim_admin",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_report_list(self):
+        response = self.client.get(f"{BASE}/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard(self):
+        response = self.client.get(f"{BASE}/dashboard/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_statements(self):
+        response = self.client.get(f"{BASE}/statements/")
+        self.assertEqual(response.status_code, 200)

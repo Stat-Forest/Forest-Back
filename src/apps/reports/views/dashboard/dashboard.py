@@ -12,5 +12,12 @@ class DashboardStatListView(CustomGenericAPIView):
 
     def get(self, request, *args, **kwargs):
         service = DashboardStatService(request.user)
-        data = service.get_stats()
+        try:
+            data = service.get_stats()
+        except ValueError:
+            # Foydalanuvchiga tashkilot ham, bo'lim ham biriktirilmagan
+            return Response(
+                {"detail": "Foydalanuvchiga tashkilot yoki bo'lim biriktirilmagan."},
+                status=403,
+            )
         return Response(data)

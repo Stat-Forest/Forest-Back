@@ -18,7 +18,7 @@ class StatementReportStatService:
 
         if user.statement:
             return Report.objects.filter(
-                statement__parent_id=user.statement.id,
+                statement__parent_id=user.statement_id,
                 is_report=True
             )
 
