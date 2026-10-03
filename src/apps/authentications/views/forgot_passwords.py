@@ -48,6 +48,7 @@ class VerifyCodeAPIView(CustomGenericAPIView):
 @extend_schema(tags=["authentications"])
 class NewPasswordAPIView(CustomGenericAPIView):
     permission_classes = [IsAuthenticated]
+    allow_password_reset_token = True
     serializer_class = NewPasswordSerializer
 
     def post(self, request):
