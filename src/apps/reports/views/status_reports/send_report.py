@@ -7,7 +7,7 @@ from apps.reports.models import Report
 from apps.reports.permissions import CanSendReport
 from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin
 from apps.reports.serializers.status_reports import ReportSendSerializer
-from apps.reports.services.report_signing import CHALLENGE_TTL, build_signing_document
+from apps.reports.services.report_signing import build_signing_challenge
 from apps.logs.drf_mixins import DRFHistoryMixin
 from rest_framework.response import Response
 
@@ -41,8 +41,7 @@ class ReportSignChallengeAPIView(_ReportByIdMixin, ReportScopedQuerysetMixin, Ge
 
     def post(self, request, *args, **kwargs):
         report = self.get_object()
-        document, nonce = build_signing_document(report, request.user)
-        return Response({"document": document, "nonce": nonce, "expires_in": CHALLENGE_TTL})
+        return Response(build_signing_challenge(report, request.user, request))
 
 
 @extend_schema(tags=["Reports Status Update"])

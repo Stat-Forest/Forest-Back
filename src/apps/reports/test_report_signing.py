@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -40,10 +41,41 @@ class FakeEimzo:
     pkcs7 ichidagi hujjatni documentBase64 sifatida qaytaradi.
     """
 
-    def __init__(self, tin=TIN, pinfl=PINFL, status=1, verified=True, tsa_down=False):
+    CHALLENGE = "9b573e40-cefd-42cc-a534-f6e78b27c2ae"
+
+    def __init__(self, tin=TIN, pinfl=PINFL, status=1, verified=True, tsa_down=False, vpn_up=True):
         self.tin, self.pinfl, self.status, self.verified = tin, pinfl, status, verified
         self.tsa_down = tsa_down
+        self.vpn_up = vpn_up
         self.timestamp_calls = 0
+
+    def _subject(self):
+        subject = {"CN": "RAHBAR TEST", report_signing.OID_PINFL: self.pinfl}
+        if self.tin:
+            subject[report_signing.OID_TIN] = self.tin
+        return subject
+
+    # ---- VPN'siz rejim ----
+    def vpn_available(self, request):
+        return self.vpn_up
+
+    def eri_challenge(self, request):
+        return True, 200, {"challenge": self.CHALLENGE, "ttl": 120, "status": 1}
+
+    def eri_backend_auth(self, request, pkcs7):
+        signed_text = base64.b64decode(pkcs7).decode("utf-8")
+        if signed_text != self.CHALLENGE:
+            return False, 200, "Challenge topilmadi yoki muddati o'tdi. Qaytadan urinib ko'ring."
+        status = 1 if self.vpn_up else -1
+        cert = {"serialNumber": "abc123", "validFrom": "2026-01-01 00:00:00", "validTo": "2027-01-01 00:00:00",
+                # OCSP ishlamaganda subjectName bo'sh keladi (login'dagi kabi)
+                "subjectName": self._subject() if self.vpn_up else {}}
+        return True, 200, {"status": status, "subjectCertificateInfo": cert}
+
+    def pkcs7_info(self, pkcs7, request):
+        return 200, FakeResponse({"signers": [{"certificate": [{
+            "subjectInfo": self._subject(), "serialNumber": "abc123",
+            "validFrom": "2026-01-01 00:00:00", "validTo": "2027-01-01 00:00:00"}]}]})
 
     def timestamp_pkcs7(self, pkcs7, request):
         self.timestamp_calls += 1
@@ -52,9 +84,7 @@ class FakeEimzo:
         return 200, FakeResponse({"status": 1, "pkcs7b64": pkcs7, "message": ""})
 
     def eimzo_verify(self, pkcs7, request):
-        subject = {"CN": "RAHBAR TEST", report_signing.OID_PINFL: self.pinfl}
-        if self.tin:
-            subject[report_signing.OID_TIN] = self.tin
+        subject = self._subject()
         return 200, FakeResponse({
             "status": self.status,
             "message": "" if self.status == 1 else "ЭЦП недействительна",
@@ -98,20 +128,26 @@ class ReportSigningTest(APITestCase):
         )
 
     def setUp(self):
+        cache.clear()  # VPN holati va challenge'lar testlar orasida qolmasin
         self.report = Report.objects.create(organization=self.org, statement=self.stmt, deadline=self.deadline)
         self.item = ReportItem.objects.create(report=self.report, statement_column=self.column, value="10")
         self.client.force_authenticate(self.rahbar)
 
-    def _challenge(self, report=None):
-        resp = self.client.post(f"{BASE}/send/challenge/", {"id": str((report or self.report).id)}, format="json")
-        self.assertEqual(resp.status_code, 200, resp.content)
-        return resp.json()["document"]
-
-    def _send(self, pkcs7, report=None, eimzo=None):
+    def _challenge_full(self, report=None, eimzo=None):
         with patch.object(report_signing, "eimzo_api", eimzo or FakeEimzo()):
-            return self.client.post(
-                f"{BASE}/send/", {"id": str((report or self.report).id), "pkcs7": pkcs7}, format="json"
-            )
+            resp = self.client.post(f"{BASE}/send/challenge/", {"id": str((report or self.report).id)}, format="json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return resp.json()
+
+    def _challenge(self, report=None, eimzo=None):
+        return self._challenge_full(report, eimzo)["document"]
+
+    def _send(self, pkcs7, report=None, eimzo=None, nonce=None):
+        body = {"id": str((report or self.report).id), "pkcs7": pkcs7}
+        if nonce:
+            body["nonce"] = nonce
+        with patch.object(report_signing, "eimzo_api", eimzo or FakeEimzo()):
+            return self.client.post(f"{BASE}/send/", body, format="json")
 
     def _assert_not_sent(self):
         self.report.refresh_from_db()
@@ -184,6 +220,72 @@ class ReportSigningTest(APITestCase):
             resp = self._send(fake_sign(document), eimzo=FakeEimzo(tsa_down=True))
         self.assertEqual(resp.status_code, 400)
         self.assertIn("vaqt tamg", resp.content.decode())
+        self._assert_not_sent()
+
+    # ---------------- VPN'siz (challenge) rejim ----------------
+
+    def test_vpn_down_uses_challenge_mode_and_backend_auth(self):
+        eimzo = FakeEimzo(vpn_up=False)
+        ch = self._challenge_full(eimzo=eimzo)
+        self.assertEqual(ch["mode"], "challenge")
+        self.assertEqual(ch["sign_text"], FakeEimzo.CHALLENGE)
+        self.assertNotEqual(ch["sign_text"], ch["document"])
+
+        resp = self._send(fake_sign(ch["sign_text"]), eimzo=eimzo, nonce=ch["nonce"])
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, Report.StatusChoices.SENT)
+
+        sig = ReportSignature.objects.get(report=self.report)
+        self.assertEqual(sig.verify_result["mode"], "challenge")
+        self.assertFalse(sig.verify_result["ocsp_checked"])
+        self.assertEqual(sig.verify_result["challenge"], FakeEimzo.CHALLENGE)
+        self.assertEqual(sig.signer_tin, TIN)
+        self.assertEqual(sig.signer_cn, "RAHBAR TEST")  # subjectName bo'sh -> pkcs7/info dan
+        self.assertEqual(json.loads(sig.document)["report_id"], str(self.report.id))
+
+        self.client.force_authenticate(None)
+        body = self.client.get(f"{BASE}/signatures/{sig.id}/verify/").json()
+        self.assertEqual(body["mode"], "challenge")
+        self.assertFalse(body["ocsp_checked"])
+        self.assertTrue(body["valid"])
+
+    def test_vpn_up_uses_document_mode(self):
+        ch = self._challenge_full()
+        self.assertEqual(ch["mode"], "document")
+        self.assertEqual(ch["sign_text"], ch["document"])
+
+    def test_challenge_mode_wrong_signed_text_is_rejected(self):
+        eimzo = FakeEimzo(vpn_up=False)
+        ch = self._challenge_full(eimzo=eimzo)
+        resp = self._send(fake_sign("boshqa matn"), eimzo=eimzo, nonce=ch["nonce"])
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("Challenge", resp.content.decode())
+        self._assert_not_sent()
+
+    def test_challenge_mode_without_nonce_is_rejected(self):
+        eimzo = FakeEimzo(vpn_up=False)
+        ch = self._challenge_full(eimzo=eimzo)
+        resp = self._send(fake_sign(ch["sign_text"]), eimzo=eimzo)  # nonce yo'q
+        self.assertEqual(resp.status_code, 400)
+        self._assert_not_sent()
+
+    def test_challenge_mode_report_changed_is_rejected(self):
+        eimzo = FakeEimzo(vpn_up=False)
+        ch = self._challenge_full(eimzo=eimzo)
+        self.item.value = "12"
+        self.item.save()
+        resp = self._send(fake_sign(ch["sign_text"]), eimzo=eimzo, nonce=ch["nonce"])
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("o'zgartirilgan", resp.content.decode())
+        self._assert_not_sent()
+
+    def test_challenge_mode_tin_mismatch_is_rejected(self):
+        eimzo = FakeEimzo(vpn_up=False, tin="999999999")
+        ch = self._challenge_full(eimzo=eimzo)
+        resp = self._send(fake_sign(ch["sign_text"]), eimzo=eimzo, nonce=ch["nonce"])
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("STIR", resp.content.decode())
         self._assert_not_sent()
 
     def test_challenge_is_single_use(self):
