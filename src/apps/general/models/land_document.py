@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from apps.general.models.organization import Organization
+from apps.utils.validators import validate_document_file
 
 
 class LandDocument(models.Model):
@@ -51,7 +52,8 @@ class LandDocument(models.Model):
         _("Attached File"),
         upload_to='documents/land/',
         blank=True,
-        null=True
+        null=True,
+        validators=[validate_document_file],
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -18,6 +18,14 @@ PASSWORD_RESET_TOKEN_LIFETIME = timedelta(minutes=10)
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
+# Nginx orqasida: X-Forwarded-Proto ga ishonamiz (nginx uni har doim qo'yadi,
+# app porti tashqariga ochiq emas) — request.is_secure() va absolute URL'lar
+# https bo'ladi; cookie'lar faqat HTTPS orqali yuboriladi.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 CORS_ALLOW_CREDENTIALS = True
 
 DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"

@@ -32,8 +32,7 @@ services:
       - ../../.env:/app/.env
       - ../../backups:/backups
       - /var/log/forest-back:/var/log/forest-back
-    ports:
-      - "8000:8000"
+    # Port tashqariga ochilmaydi — faqat nginx (docker tarmog'i) orqali.
     depends_on:
       - forest_postgres
       - forest_redis
@@ -142,9 +141,9 @@ services:
       context: ../../e-imzo-server
       dockerfile: Dockerfile
     container_name: e_imzo_server_prod
-    ports:
-      - "8080:8080"
-      - "8081:8081"
+    # DIQQAT: port tashqariga ochilmaydi. Ilgari 8080 internetga ochiq edi —
+    # istalgan odam /info (VPN kalit ma'lumoti), /backend/* ni chaqira olardi.
+    # Backend unga docker tarmog'i orqali e_imzo_server:8080 da ulanadi.
     networks:
       - forest_network
     restart: always

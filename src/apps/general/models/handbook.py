@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.utils.validators import validate_document_file
 from django.utils.translation import gettext_lazy as _
 from datetime import datetime
 
@@ -29,7 +31,8 @@ class Handbook(models.Model):
         _("Attached File"),
         upload_to=handbook_upload_path,
         blank=True,
-        null=True
+        null=True,
+        validators=[validate_document_file],
     )
 
     # Controls visibility of handbook in API
