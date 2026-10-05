@@ -6,3 +6,4 @@ from .plan import *
 from .report_item import *
 from .plant import *
 from .report_statistics import *
+from .report_signature import *
