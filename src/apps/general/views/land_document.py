@@ -1,9 +1,10 @@
-from rest_framework import generics,filters
-from django.core.cache import cache
+from rest_framework import generics, filters
+from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 
 from apps.general.models.land_document import LandDocument
+from apps.general.permissions import allowed_organization_for_create, scope_by_organization
 from apps.general.serializers.land_document import LandDocumentSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 
@@ -14,18 +15,14 @@ class LandDocumentListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     API endpoint for Land Documents.
 
     GET:
-        Returns all land documents
+        Foydalanuvchi doirasidagi yer hujjatlari (scope_by_organization):
+        tashkilot xodimi/rahbari — o'z tashkiloti, hududiy boshqarma — o'z
+        hududi, bo'lim admin / rahbariyat / super admin — hammasi.
 
     POST:
-        Creates a new land document (authenticated users only)
-
-    Security:
-        - Accessible only for authenticated users
-
-    Performance:
-        - Uses Redis cache to reduce database queries
-        - select_related prevents N+1 queries
-        - Cache automatically cleared via Django signals
+        Tashkilot xodimi/rahbari faqat o'z tashkiloti nomidan yaratadi
+        (yuborilgan `organization` e'tiborga olinmaydi), hududiy boshqarma —
+        o'z hududidagi tashkilot nomidan.
     """
 
     serializer_class = LandDocumentSerializer
@@ -40,28 +37,22 @@ class LandDocumentListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     filterset_fields = ["organization"]
     ordering_fields = ["date", "created_at"]
 
-    CACHE_TIMEOUT = 60 * 60
-
     def get_queryset(self):
-        """
-        Returns land documents using cache layer.
-        """
+        # Ilgari butun ro'yxat bitta cache kalitida turardi — har kim hammani
+        # ko'rardi. Endi rol bo'yicha cheklanadi, cache ishlatilmaydi.
+        queryset = LandDocument.objects.select_related("organization").order_by("-date")
+        return scope_by_organization(queryset, self.request.user)
 
-        cache_key = "land_documents"
-
-        queryset = cache.get(cache_key)
-
-        if queryset is None:
-            queryset = (
-                LandDocument.objects
-                .select_related("organization")
-                .all()
-                .order_by("-date")
-            )
-
-            cache.set(cache_key, queryset, self.CACHE_TIMEOUT)
-
-        return queryset
+    def perform_create(self, serializer):
+        organization = allowed_organization_for_create(
+            self.request.user, serializer.validated_data.get("organization")
+        )
+        if organization is None:
+            raise PermissionDenied("Bu tashkilot nomidan hujjat yaratishga ruxsat yo'q.")
+        obj = serializer.save(organization=organization)
+        obj._history_user = self.request.user
+        obj.save(update_fields=[])
+        return obj
 
     def get_serializer_context(self):
         """
