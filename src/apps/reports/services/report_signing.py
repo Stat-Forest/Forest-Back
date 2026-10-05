@@ -18,7 +18,10 @@ import json
 import secrets
 from datetime import datetime
 
+import logging
+
 import requests
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -36,6 +39,7 @@ OID_PINFL = "1.2.860.3.16.1.2"
 OID_TIN = "1.2.860.3.16.1.1"
 
 eimzo_api = EimzoServiceApi()
+logger = logging.getLogger(__name__)
 
 
 def _sha256(text: str) -> str:
@@ -154,6 +158,39 @@ def _call_eimzo(func, *args):
         _fail(EIMZO_UNAVAILABLE_MESSAGE, code=503)
 
 
+def _attach_timestamp(pkcs7: str, request) -> tuple[str, bool]:
+    """
+    Imzoga TSA vaqt tamg'asini qo'shadi. TSA xizmati e-imzo VPN orqali
+    ishlaydi va vaqti-vaqti bilan ulanmaydi ("TimeStampTokenProvider
+    UNAVAILABLE"). EIMZO_REQUIRE_TIMESTAMP=False (standart) bo'lsa bunday
+    holatda imzo tamg'asiz qabul qilinadi va signed_at sifatida server
+    qabul qilgan vaqt yoziladi; True bo'lsa yuborish rad etiladi.
+    """
+    require = getattr(settings, "EIMZO_REQUIRE_TIMESTAMP", False)
+    last_error = ""
+    for _attempt in range(2):  # tarmoq uzilishi uchun bitta qayta urinish
+        try:
+            ts_status, ts_resp = eimzo_api.timestamp_pkcs7(pkcs7, request)
+        except requests.RequestException as exc:
+            last_error = str(exc)
+            continue
+        if ts_status == 200:
+            try:
+                ts_data = ts_resp.json()
+            except ValueError:
+                last_error = "javob JSON emas"
+                continue
+            if ts_data.get("status") == 1 and ts_data.get("pkcs7b64"):
+                return ts_data["pkcs7b64"], True
+            last_error = str(ts_data.get("message") or ts_data)
+        else:
+            last_error = (ts_resp.text or "")[:300]
+    logger.warning("E-imzo timestamp olinmadi: %s", last_error)
+    if require:
+        _fail(_("Imzoga vaqt tamg'asi qo'yib bo'lmadi: ") + last_error)
+    return pkcs7, False
+
+
 def verify_and_store_signature(*, report: Report, user, pkcs7: str, request) -> ReportSignature:
     """
     PKCS#7 ni tekshirib, hisobot uchun ReportSignature yaratadi.
@@ -162,17 +199,8 @@ def verify_and_store_signature(*, report: Report, user, pkcs7: str, request) -> 
     if not pkcs7 or not isinstance(pkcs7, str):
         _fail(_("E-imzo imzosi (pkcs7) yuborilmadi."))
 
-    # 1) Vaqt tamg'asi
-    ts_status, ts_resp = _call_eimzo(eimzo_api.timestamp_pkcs7, pkcs7, request)
-    if ts_status != 200:
-        _fail(_("Imzoga vaqt tamg'asi qo'yib bo'lmadi: ") + (ts_resp.text or "")[:300])
-    try:
-        ts_data = ts_resp.json()
-    except ValueError:
-        _fail(_("E-imzo server javobi noto'g'ri (timestamp)."))
-    if ts_data.get("status") != 1:
-        _fail(_("Imzoga vaqt tamg'asi qo'yib bo'lmadi: ") + str(ts_data.get("message") or ""))
-    pkcs7_ts = ts_data.get("pkcs7b64") or pkcs7
+    # 1) Vaqt tamg'asi (TSA ulanmasa — tamg'asiz davom etiladi, pastga qarang)
+    pkcs7_ts, timestamped = _attach_timestamp(pkcs7, request)
 
     # 2) Imzoni tekshirish
     v_status, v_resp = _call_eimzo(eimzo_api.eimzo_verify, pkcs7_ts, request)
@@ -241,12 +269,12 @@ def verify_and_store_signature(*, report: Report, user, pkcs7: str, request) -> 
     if user_pinfl and pinfl and user_pinfl != pinfl:
         _fail(_("Sertifikat tizimga kirgan foydalanuvchiga tegishli emas."))
 
+    # Ishonchli vaqt: TSA tamg'asi; u bo'lmasa server qabul qilgan vaqt
+    # (foydalanuvchi kompyuteridagi signingTime ga ishonib bo'lmaydi).
     tst = signer.get("timeStampInfo") or {}
-    signed_at = (
-        _parse_eimzo_dt(tst.get("time"))
-        or _parse_eimzo_dt(signer.get("signingTime"))
-        or timezone.now()
-    )
+    signed_at = (_parse_eimzo_dt(tst.get("time")) if timestamped else None) or timezone.now()
+    verify_result = _trim_verify_result(info)
+    verify_result["timestamped"] = timestamped
 
     signature = ReportSignature.objects.create(
         report=report,
@@ -264,7 +292,7 @@ def verify_and_store_signature(*, report: Report, user, pkcs7: str, request) -> 
         items_hash=items_hash,
         pkcs7=pkcs7_ts,
         verify_status=status,
-        verify_result=_trim_verify_result(info),
+        verify_result=verify_result,
         is_valid=True,
         created_by=user,
     )

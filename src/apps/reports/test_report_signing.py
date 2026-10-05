@@ -40,10 +40,15 @@ class FakeEimzo:
     pkcs7 ichidagi hujjatni documentBase64 sifatida qaytaradi.
     """
 
-    def __init__(self, tin=TIN, pinfl=PINFL, status=1, verified=True):
+    def __init__(self, tin=TIN, pinfl=PINFL, status=1, verified=True, tsa_down=False):
         self.tin, self.pinfl, self.status, self.verified = tin, pinfl, status, verified
+        self.tsa_down = tsa_down
+        self.timestamp_calls = 0
 
     def timestamp_pkcs7(self, pkcs7, request):
+        self.timestamp_calls += 1
+        if self.tsa_down:
+            return 400, FakeResponse({"status": -1, "message": "TimeStampTokenProvider UNAVAILABLE"}, 400)
         return 200, FakeResponse({"status": 1, "pkcs7b64": pkcs7, "message": ""})
 
     def eimzo_verify(self, pkcs7, request):
@@ -133,6 +138,7 @@ class ReportSigningTest(APITestCase):
         self.assertEqual(sig.signer_tin, TIN)
         self.assertEqual(sig.signer_cn, "RAHBAR TEST")
         self.assertEqual(timezone.localtime(sig.signed_at).strftime("%H:%M:%S"), "12:00:05")  # TSA vaqti
+        self.assertTrue(sig.verify_result["timestamped"])
         self.assertNotIn("OCSPResponse", json.dumps(sig.verify_result))
 
         # Ro'yxatda imzo ko'rinadi
@@ -157,6 +163,28 @@ class ReportSigningTest(APITestCase):
         self.item.value = "999"
         self.item.save()
         self.assertFalse(self.client.get(f"{BASE}/signatures/{sig.id}/verify/").json()["report_unchanged"])
+
+    def test_tsa_down_signature_still_accepted_without_timestamp(self):
+        """TSA ulanmasa imzo tamg'asiz qabul qilinadi, signed_at = server vaqti."""
+        document = self._challenge()
+        eimzo = FakeEimzo(tsa_down=True)
+        before = timezone.now()
+        resp = self._send(fake_sign(document), eimzo=eimzo)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(eimzo.timestamp_calls, 2)  # bitta qayta urinish
+        sig = ReportSignature.objects.get(report=self.report)
+        self.assertFalse(sig.verify_result["timestamped"])
+        self.assertGreaterEqual(sig.signed_at, before)
+        self.client.force_authenticate(None)
+        self.assertFalse(self.client.get(f"{BASE}/signatures/{sig.id}/verify/").json()["timestamped"])
+
+    def test_tsa_down_rejected_when_timestamp_required(self):
+        document = self._challenge()
+        with self.settings(EIMZO_REQUIRE_TIMESTAMP=True):
+            resp = self._send(fake_sign(document), eimzo=FakeEimzo(tsa_down=True))
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("vaqt tamg", resp.content.decode())
+        self._assert_not_sent()
 
     def test_challenge_is_single_use(self):
         document = self._challenge()
