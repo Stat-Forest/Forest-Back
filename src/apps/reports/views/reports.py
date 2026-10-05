@@ -102,6 +102,7 @@ class ReportListAPIView(CustomListAPIView):
                 "sent_by_org",
             )
             .prefetch_related(
+                "signatures",
                 Prefetch(
                     "report_items",
                     queryset=(
