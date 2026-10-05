@@ -208,6 +208,13 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
+    # Swagger/Redoc/schema faqat admin (is_staff) uchun: /admin/ orqali kirilgan
+    # sessiya yoki JWT bilan. Login'siz so'rovlarga 403.
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "SERVE_AUTHENTICATION": [
+        "rest_framework.authentication.SessionAuthentication",
+        "apps.authentications.service.authentication.CustomJWTAuthentication",
+    ],
 }
 
 # ===============================
