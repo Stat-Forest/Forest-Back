@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
 
 from apps.reports.permissions import CanCancelReport
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin
 from apps.reports.models import Report
 from apps.reports.serializers.status_reports import ReportCancelSerializer
 from apps.base.exceptions.exception_files import CustomExceptionError
@@ -11,7 +12,7 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 
 
 @extend_schema(tags=["Reports Status Update"])
-class ReportCancelAPIView(DRFHistoryMixin, UpdateAPIView):
+class ReportCancelAPIView(DRFHistoryMixin, ReportScopedQuerysetMixin, UpdateAPIView):
     queryset = Report.objects.all()
     serializer_class = ReportCancelSerializer
     permission_classes = [CanCancelReport]

@@ -1,4 +1,4 @@
-import random
+import secrets
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -42,7 +42,7 @@ class SendResetCodeSerializer(serializers.Serializer):
         user = User.objects.filter(email__iexact=email, is_active=True).first()
 
         if user:
-            code = f"{random.randint(100000, 999999)}"
+            code = f"{secrets.randbelow(900000) + 100000}"
             hashed_code = hash_reset_code(email, code)
 
             cache.set(f"reset_code_hash:{email}", hashed_code, timeout=self.CODE_TTL)
