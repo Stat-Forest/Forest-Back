@@ -14,11 +14,11 @@ tanlagan bo'ladi. UUID qatoriga faqat importable ustunlar tushadi —
 shu orqali parser qaysi ustunlarni o'qish kerakligini biladi.
 
 Plantlik statement uchun:
-    Col A  — O'simlik nomi / Daromad manbalari (foydalanuvchi o'zi yozadi)
-    Col B+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
+    Col A  — O'simlik nomi / Daromad manbalari (plant nomlari oldindan yoziladi)
+    Col B+ — Leaf ustunlar (faqat importable)
 
 Oddiy statement uchun:
-    Col A+ — Leaf ustunlar (importable = ko'k, avto-hisob = kulrang)
+    Col A+ — Leaf ustunlar (faqat importable)
 """
 
 import openpyxl

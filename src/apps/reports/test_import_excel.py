@@ -225,11 +225,10 @@ class ImportTemplateAPITests(TestCase):
 
         # Barcha sarlavha qatorlaridagi qiymatlar
         all_headers = _all_header_values(ws)
-        # Endi barcha leaf ustunlar sarlavhada ko'rinadi
-        # (reja/avto-hisob ham — kulrang rangda)
-        self.assertIn("Reja ustuni", all_headers)
-        self.assertIn("Avto-hisob", all_headers)
-        # Tashkilot (is_organization=True) sarlavhada emas
+        # Shablonda faqat importable ustunlar: reja (status_plan),
+        # avto-hisob (is_user_input=False) va tashkilot ustunlari kiritilmaydi
+        self.assertNotIn("Reja ustuni", all_headers)
+        self.assertNotIn("Avto-hisob", all_headers)
         self.assertNotIn("Tashkilot", all_headers)
         # Ko'p qatorli sarlavhada alohida qatorlarda turadi
         self.assertIn("Yanvar", all_headers)
@@ -277,8 +276,9 @@ class ImportTemplateAPITests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_plant_based_template_has_plant_name_column(self):
-        """Plantlik shablonda O'simlik nomi ustuni mavjud, lekin
-        plantlar oldindan to'ldirilmaydi — foydalanuvchi o'zi yozadi."""
+        """Plantlik shablonda O'simlik nomi ustuni bor va unga plant nomlari
+        oldindan yozilgan (takrorlanmasdan, alifbo tartibida); qiymat
+        kataklari bo'sh — foydalanuvchi o'zi to'ldiradi."""
         pf = PlantStatementFixture().build()
 
         resp = self.client.get(TEMPLATE_URL, {"statement_id": pf.statement.id})
@@ -288,20 +288,19 @@ class ImportTemplateAPITests(TestCase):
 
         all_headers = _all_header_values(ws)
         self.assertIn("O'simlik nomi", all_headers)
-        # № ustuni olib tashlandi — shablonda yo'q
-        self.assertIn("Tashkilot nomi", all_headers)
+        # Tashkilot nomi ustuni kiritilmaydi — tashkilot saytda tanlanadi
+        self.assertNotIn("Tashkilot nomi", all_headers)
 
         # UUID qatori topilishi kerak
         uuid_row = _find_uuid_row(ws)
         self.assertIsNotNone(uuid_row)
-        # Plantlar oldindan to'ldirilmagan — UUID qatoridan keyin bo'sh bo'lishi kerak
         data_start = _find_data_start_row(ws)
-        has_data = False
-        for col in range(1, ws.max_column + 1):
-            if ws.cell(row=data_start, column=col).value is not None:
-                has_data = True
-                break
-        self.assertFalse(has_data, "Data qatorlarida oldindan hech narsa bo'lmasligi kerak")
+        plant_names = [ws.cell(row=data_start + i, column=1).value for i in range(3)]
+        self.assertEqual(plant_names, ["Archa", "Qayin", None])
+        # Qiymat ustunlari (B+) bo'sh
+        for row in (data_start, data_start + 1):
+            values = [ws.cell(row=row, column=c).value for c in range(2, ws.max_column + 1)]
+            self.assertTrue(all(v is None for v in values), values)
 
 
 class ImportParseAPITests(TestCase):
@@ -828,8 +827,11 @@ class PlantBasedParseAPITests(TestCase):
         archa_values = {i["column"]: i["value"] for i in archa["items"]}
         self.assertEqual(archa_values[str(self.fixture.amount.id)], "77")
 
-    def test_ambiguous_plant_name_reports_error(self):
-        Plant.objects.create(statement=self.fixture.statement, name="Archa")  # duplicate name
+    def test_duplicate_plant_name_is_not_an_error(self):
+        """Bir xil nomli plantlar (turli kategoriyalarda) shablonda bitta qator
+        bo'lib chiqadi va parser ularni xato deb hisoblamaydi — qiymat
+        ulardan bittasiga yoziladi."""
+        duplicate = Plant.objects.create(statement=self.fixture.statement, name="Archa")
         wb = self._download_template_wb()
         ws = wb.active
         uuid_row = _find_uuid_row(ws)
@@ -857,7 +859,17 @@ class PlantBasedParseAPITests(TestCase):
         resp = self._post(wb)
         self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.content)
         body = resp.json()
-        self.assertTrue(body["errors"])
+        self.assertEqual(body["errors"], [])
+        archa_ids = {str(self.fixture.archa.id), str(duplicate.id)}
+        matched = [
+            p for p in body["plants"]
+            if p["plant"] in archa_ids
+            and any(
+                i["column"] == str(self.fixture.amount.id) and i["value"] == "5"
+                for i in p["items"]
+            )
+        ]
+        self.assertEqual(len(matched), 1, body["plants"])
 
     def test_total_row_without_plant_is_skipped(self):
         wb = self._download_template_wb()
