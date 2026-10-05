@@ -41,6 +41,8 @@ class LandDocumentSerializer(serializers.ModelSerializer):
             "file_url",
             "organization_name",
         ]
+        # tashkilot xodimi/rahbari uchun view o'zi qo'yadi
+        extra_kwargs = {"organization": {"required": False, "allow_null": True}}
 
     # ------------------------------------------------------
     # Returns absolute file URL (safe frontend usage)

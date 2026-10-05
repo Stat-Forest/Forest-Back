@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.utils.validators import validate_image_file
 from apps.utils.services import PeriodChoices
 from apps.base.models import AbstractBaseModel
 
@@ -40,6 +42,7 @@ class Statement(AbstractBaseModel):
         upload_to='statements/icons/%Y/%m/%d/',
         blank=True,
         null=True,
+        validators=[validate_image_file],
     )
     use_plant_plan = models.BooleanField(default=False)
     is_used = models.BooleanField(default=True, db_index=True)
