@@ -6,3 +6,4 @@ from .statement_column import *
 from .plan import *
 from .plant_column import *
 from .report_statistics import *
+from .report_signature import *
