@@ -13,12 +13,15 @@ class ReportSendSerializer(serializers.ModelSerializer):
     # Rahbarning E-imzo imzosi: /reports/send/challenge/ bergan matnning
     # attached PKCS#7 (base64) ko'rinishi. Imzosiz yuborib bo'lmaydi.
     pkcs7 = serializers.CharField(write_only=True, required=True, allow_blank=False)
+    # Challenge rejimida (VPN'siz) imzo hujjatni emas, e-imzo challenge'ni
+    # o'z ichiga oladi — hisobot nonce orqali topiladi.
+    nonce = serializers.CharField(write_only=True, required=False, allow_blank=True)
     status = serializers.CharField(read_only=True)
     sent_at = serializers.CharField(read_only=True)
 
     class Meta:
         model = Report
-        fields = ["id", "pkcs7", "status", "sent_at"]
+        fields = ["id", "pkcs7", "nonce", "status", "sent_at"]
 
     def validate(self, attrs):
         instance: Report = self.instance
@@ -76,6 +79,7 @@ class ReportSendSerializer(serializers.ModelSerializer):
             user=user,
             pkcs7=self.validated_data["pkcs7"],
             request=request,
+            nonce=self.validated_data.get("nonce") or "",
         )
 
         instance.sent_by = user

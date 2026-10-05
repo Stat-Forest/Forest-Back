@@ -49,10 +49,14 @@ class ReportSignatureVerifyAPIView(views.APIView):
 
         return Response({
             "id": str(signature.id),
-            "valid": bool(signature.is_valid and signature.verify_status == 1),
+            # is_valid faqat barcha tekshiruvlar o'tganda True bo'ladi
+            # (challenge rejimida verify_status -1 = OCSP'siz, lekin imzo haqiqiy)
+            "valid": bool(signature.is_valid),
             "report_unchanged": unchanged,
             "signed_at": signature.signed_at,
+            "mode": signature.verify_result.get("mode") or "document",
             "timestamped": bool(signature.verify_result.get("timestamped")),
+            "ocsp_checked": bool(signature.verify_result.get("ocsp_checked")),
             "timestamp_tsa": tst.get("tsa"),
             "signer": {
                 "full_name": signature.signer_cn,

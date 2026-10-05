@@ -14,6 +14,7 @@ class EimzoServiceApi:
         self.CHALLENGE_URL = "http://e_imzo_server:8080/frontend/challenge"
         self.BACKEND_AUTH_URL = "http://e_imzo_server:8080/backend/auth"
         self.PKCS7_INFO_URL = "http://e_imzo_server:8080/backend/pkcs7/info"
+        self.PING_URL = "http://e_imzo_server:8080/ping"
 
     @staticmethod
     def get_user_ip(request: Request) -> str:
@@ -21,6 +22,19 @@ class EimzoServiceApi:
 
     def get_headers(self, request: Request) -> dict:
         return {"X-Real-IP": self.get_user_ip(request)}
+
+    def vpn_available(self, request: Request) -> bool:
+        """
+        /ping VPN orqali vpn.e-imzo.uz ga murojaat qiladi. VPN ishlamasa
+        (kalit muddati tugagan va h.k.) TSA ham, OCSP ham, verify/attached
+        ham ishlamaydi — shunda hisobot imzolash challenge rejimiga o'tadi.
+        """
+        try:
+            res = requests.get(self.PING_URL, headers=self.get_headers(request), timeout=(5, 15))
+            data = res.json()
+        except (requests.RequestException, ValueError):
+            return False
+        return res.status_code == 200 and isinstance(data, dict) and "vpnKeyInfo" in data
 
     def timestamp_pkcs7(self, pkcs7: str, request: Request):
         res = requests.post(self.TIME_STAMP_URL, data=pkcs7, headers=self.get_headers(request), timeout=EIMZO_TIMEOUT)
