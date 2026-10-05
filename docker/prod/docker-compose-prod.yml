@@ -69,7 +69,7 @@ services:
   #   docker-compose -f docker/prod/docker-compose-prod.yml run --rm forest_certbot \
   #     certonly --webroot --webroot-path=/var/www/certbot \
   #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
-  #     --cert-name stat-urmon.uz -d stat-urmon.uz
+  #     --cert-name stat-urmon.uz --expand -d stat-urmon.uz -d www.stat-urmon.uz
   #   docker-compose -f docker/prod/docker-compose-prod.yml run --rm forest_certbot \
   #     certonly --webroot --webroot-path=/var/www/certbot \
   #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
