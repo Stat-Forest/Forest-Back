@@ -7,6 +7,7 @@ from rest_framework import serializers
 from apps.utils.services import RegionChoices
 from apps.reports.models import Report, StatementColumn
 from apps.utils.translation import get_lang_code, get_translated_field
+from apps.reports.services.quarter_validator import DaromadQuarterService
 
 
 class ReportListSerializer(serializers.ModelSerializer):
@@ -17,6 +18,7 @@ class ReportListSerializer(serializers.ModelSerializer):
     statement_name = serializers.SerializerMethodField()
     sent_by_full_name = serializers.SerializerMethodField()
     sent_by_org_name = serializers.SerializerMethodField()
+    signature = serializers.SerializerMethodField()
     submit_at = serializers.SerializerMethodField()
     deadline_at = serializers.SerializerMethodField()
     # exporter helpers
@@ -37,7 +39,7 @@ class ReportListSerializer(serializers.ModelSerializer):
             "cancelled_at", "sent_at", "accepted_at",
             "deadline_at",
             "report_items", "time_status", "report_season", "foot_note",
-            "sent_by_full_name", "sent_by_org_name", "sent_by_role",
+            "sent_by_full_name", "sent_by_org_name", "sent_by_role", "signature",
             "is_individual_general", "is_general", "is_republic", "is_plant_based", "row_number",
         )
 
@@ -74,6 +76,25 @@ class ReportListSerializer(serializers.ModelSerializer):
 
     def get_sent_by_full_name(self, obj):
         return obj.sent_by.full_name if obj.sent_by else None
+
+    def get_signature(self, obj):
+        """Joriy yuborishning E-imzo imzosi (Daromadda — joriy chorak uchun)."""
+        if obj.status not in (Report.StatusChoices.SENT, Report.StatusChoices.ACCEPTED) and not (
+            DaromadQuarterService.is_daromad_report(obj) and obj.current_quarter
+        ):
+            return None
+        quarter = obj.current_quarter if DaromadQuarterService.is_daromad_report(obj) else None
+        # signatures -created_at tartibida; prefetch bo'lsa qo'shimcha so'rov yo'q
+        for sig in obj.signatures.all():
+            if sig.is_valid and (sig.quarter or None) == (quarter or None):
+                return {
+                    "id": str(sig.id),
+                    "signer_full_name": sig.signer_cn,
+                    "signer_tin": sig.signer_tin,
+                    "signed_at": sig.signed_at,
+                    "verify_path": f"/verify/{sig.id}",
+                }
+        return None
 
     def get_sent_by_org_name(self, obj):
         lang = get_lang_code(self.context)

@@ -1,22 +1,35 @@
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.base.exceptions.exception_files import CustomExceptionError
 from apps.reports.models import Report
 from apps.reports.services.quarter_validator import DaromadQuarterService
+from apps.reports.services.report_signing import verify_and_store_signature
 
 
 class ReportSendSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField()
+    # Rahbarning E-imzo imzosi: /reports/send/challenge/ bergan matnning
+    # attached PKCS#7 (base64) ko'rinishi. Imzosiz yuborib bo'lmaydi.
+    pkcs7 = serializers.CharField(write_only=True, required=True, allow_blank=False)
     status = serializers.CharField(read_only=True)
     sent_at = serializers.CharField(read_only=True)
 
     class Meta:
         model = Report
-        fields = ["id", "status", "sent_at"]
+        fields = ["id", "pkcs7", "status", "sent_at"]
 
     def validate(self, attrs):
         instance: Report = self.instance
+
+        # View partial_update ishlatadi, partial rejimda `required` tekshirilmaydi —
+        # shuning uchun imzo borligini shu yerda majburlaymiz.
+        if not (attrs.get("pkcs7") or "").strip():
+            raise CustomExceptionError(
+                code=400,
+                detail=_("Hisobotni yuborish uchun E-imzo bilan imzolash shart (pkcs7).")
+            )
 
         if DaromadQuarterService.is_daromad_report(instance):
             # Daromad uchun: current_quarter ning statusini tekshiramiz
@@ -48,8 +61,22 @@ class ReportSendSerializer(serializers.ModelSerializer):
         return attrs
 
     def save(self, **kwargs):
+        # Imzo tekshiruvi va status o'zgarishi bitta tranzaksiyada: imzo
+        # saqlanib, status yangilanmay qolishi (yoki aksi) mumkin emas.
+        with transaction.atomic():
+            return self._sign_and_send()
+
+    def _sign_and_send(self):
         instance: Report = self.instance
-        user = self.context["request"].user
+        request = self.context["request"]
+        user = request.user
+
+        self._signature = verify_and_store_signature(
+            report=instance,
+            user=user,
+            pkcs7=self.validated_data["pkcs7"],
+            request=request,
+        )
 
         instance.sent_by = user
         instance.sent_by_org = getattr(user, "organization", None)
@@ -101,4 +128,6 @@ class ReportSendSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["sent_at"] = instance.sent_at.strftime("%Y-%m-%d %H:%M") if instance.sent_at else None
+        signature = getattr(self, "_signature", None)
+        rep["signature_id"] = str(signature.id) if signature else None
         return rep

@@ -48,6 +48,8 @@ from apps.reports.views.users import (
 )
 
 from apps.reports.views.status_reports import (
+    ReportSignChallengeAPIView,
+    ReportSignatureVerifyAPIView,
     ReportSendAPIView,
     ReportCancelAPIView,
     ReportAcceptAPIView,
@@ -108,6 +110,8 @@ urlpatterns = [
 
     # ====================  REPORT STATUS URL    ====================
     path('send/', ReportSendAPIView.as_view(), name='report-send'),
+    path('send/challenge/', ReportSignChallengeAPIView.as_view(), name='report-send-challenge'),
+    path('signatures/<uuid:signature_id>/verify/', ReportSignatureVerifyAPIView.as_view(), name='report-signature-verify'),
     path('cancel/', ReportCancelAPIView.as_view(), name='report-cancel'),
     path('accept/', ReportAcceptAPIView.as_view(), name='report-accept'),
 
