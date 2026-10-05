@@ -52,6 +52,7 @@ class ReportSignatureVerifyAPIView(views.APIView):
             "valid": bool(signature.is_valid and signature.verify_status == 1),
             "report_unchanged": unchanged,
             "signed_at": signature.signed_at,
+            "timestamped": bool(signature.verify_result.get("timestamped")),
             "timestamp_tsa": tst.get("tsa"),
             "signer": {
                 "full_name": signature.signer_cn,
