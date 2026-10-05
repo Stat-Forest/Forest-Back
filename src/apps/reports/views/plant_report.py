@@ -13,6 +13,7 @@ from apps.reports.serializers.plant.plant_report_delete import PlantReportDelete
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 from apps.reports.services.pagination import ReportPagination
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin, scope_reports_for_user
 
 
 @extend_schema(tags=["Plant-Reports"])
@@ -51,8 +52,7 @@ class PlantListReportAPIView(CustomListAPIView):
 
     def get_queryset(self):
         return (
-            Report.objects
-            .filter(is_plant_based=True)
+            scope_reports_for_user(Report.objects.filter(is_plant_based=True), self.request.user)
             .select_related(
                 "organization",
                 "statement",
@@ -100,7 +100,9 @@ class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
     """
 
     def get_queryset(self):
-        base_qs = Report.objects.filter(is_plant_based=True)
+        base_qs = scope_reports_for_user(
+            Report.objects.filter(is_plant_based=True), self.request.user
+        )
 
         if self.request.method == "GET":
             return base_qs.select_related(
@@ -135,7 +137,7 @@ class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
 
 
 @extend_schema(tags=["Plant-Reports"])
-class PlantDetailReportAPIView(CustomRetrieveAPIView):
+class PlantDetailReportAPIView(ReportScopedQuerysetMixin, CustomRetrieveAPIView):
     queryset = Report.objects.filter(is_plant_based=True).select_related(
         "organization", "statement", "deadline"
     ).prefetch_related("report_items__statement_column__parent",

@@ -44,7 +44,7 @@ class StatementListAPIView(ListAPIView):
 
         # Agar user'ning o'ziga tegishli statement bo'lsa
         if hasattr(user, 'statement') and user.statement:
-            return base_qs.filter(id=user.statement.id)
+            return base_qs.filter(id=user.statement_id)
 
         return base_qs
 

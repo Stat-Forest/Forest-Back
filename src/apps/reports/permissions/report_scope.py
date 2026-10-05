@@ -1,0 +1,88 @@
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+
+from apps.reports.permissions.check_send_report import _get_effective_status
+from apps.users.models import CustomUser
+
+# Barcha hisobotlarni ko'ra oladigan rollar
+FULL_ACCESS_ROLES = {
+    CustomUser.Role.SUPER_ADMIN,
+    CustomUser.Role.RAHBARIYAT,
+}
+
+# Hisobot ma'lumotlarini tahrirlay oladigan rollar
+EDITOR_ROLES = {
+    CustomUser.Role.TASHKILOT_HODIMI,
+    CustomUser.Role.HUDUDIY_BOSHQARMA,
+}
+
+EDITABLE_STATUSES = {"saved", "cancelled"}
+
+
+def scope_reports_for_user(queryset, user):
+    """
+    Report querysetini foydalanuvchi roliga qarab cheklaydi
+    (ReportListAPIView dagi qoidalar bilan bir xil):
+
+    - superuser / super_admin / rahbariyat -> hammasi
+    - tashkilot_hodimi / tashkilot_rahbari -> faqat o'z tashkiloti
+    - bolim_admin -> faqat o'z bo'limi (statement.parent)
+    - hududiy_boshqarma -> faqat biriktirilgan tashkilotlar hududi
+    - boshqalar -> hech narsa
+    """
+    if not user or not user.is_authenticated:
+        return queryset.none()
+
+    if user.is_superuser or user.role in FULL_ACCESS_ROLES:
+        return queryset
+
+    if user.role in (CustomUser.Role.TASHKILOT_HODIMI, CustomUser.Role.TASHKILOT_RAHBARI):
+        if not user.organization_id:
+            return queryset.none()
+        return queryset.filter(organization_id=user.organization_id)
+
+    if user.role == CustomUser.Role.BOLIM_ADMIN:
+        if not user.statement_id:
+            return queryset.none()
+        return queryset.filter(statement__parent_id=user.statement_id)
+
+    if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+        regions = list(
+            user.region_user_orgs.values_list("region", flat=True).distinct()
+        )
+        if not regions:
+            return queryset.none()
+        return queryset.filter(organization__region__in=regions)
+
+    return queryset.none()
+
+
+class ReportScopedQuerysetMixin:
+    """
+    View querysetini scope_reports_for_user orqali cheklaydi.
+    Ruxsatsiz hisobot 404 qaytaradi (mavjudligi oshkor qilinmaydi).
+    """
+
+    def get_queryset(self):
+        return scope_reports_for_user(super().get_queryset(), self.request.user)
+
+
+class CanEditReportData(BasePermission):
+    """
+    Hisobot ma'lumotlarini o'zgartirish: faqat EDITOR_ROLES va faqat
+    hisobot saved/cancelled holatida bo'lsa. O'qish (GET) uchun
+    cheklov querysetdagi scope orqali qo'llanadi.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        user = request.user
+        return bool(
+            user and user.is_authenticated
+            and (user.is_superuser or user.role in EDITOR_ROLES)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        return _get_effective_status(obj) in EDITABLE_STATUSES

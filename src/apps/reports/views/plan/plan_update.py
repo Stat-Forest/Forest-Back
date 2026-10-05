@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema
 # Local imports
 from apps.reports.models import Plan
 from apps.reports.serializers.plan import PlanSerializer
+from apps.reports.permissions import CanManagePlan
 
 # -----------------------------------------------------------------------------
 # Plan Update API
@@ -20,6 +21,7 @@ class PlanUpdateView(generics.UpdateAPIView):
     """
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
+    permission_classes = [CanManagePlan]
 
     def update(self, request, *args, **kwargs):
         """

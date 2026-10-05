@@ -8,7 +8,24 @@ from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFail
 class CustomJWTAuthentication(JWTAuthentication):
     """
     JWT auth + inactivity timeout.
+
+    Parolni tiklash tokeni (`pwd_reset` claim) faqat
+    `allow_password_reset_token = True` bo'lgan view'larda qabul qilinadi,
+    aks holda u 10 daqiqa davomida to'liq access token bo'lib ishlar edi.
     """
+
+    def authenticate(self, request):
+        result = super().authenticate(request)
+        if result is None:
+            return None
+
+        user, validated_token = result
+        if validated_token.get("pwd_reset"):
+            view = (getattr(request, "parser_context", None) or {}).get("view")
+            if not getattr(view, "allow_password_reset_token", False):
+                raise InvalidToken("Parolni tiklash tokeni bu amal uchun yaroqsiz.")
+
+        return user, validated_token
 
     def get_user(self, validated_token):
         user = super().get_user(validated_token)

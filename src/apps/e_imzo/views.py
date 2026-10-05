@@ -18,7 +18,7 @@ class EimzoChallengeView(views.APIView):
 
     def get(self, request):
         ok, status_code, data = eimzo_api.eri_challenge(request)
-        logger.warning(f"=== CHALLENGE === ok={ok}, status={status_code}, data={data}")
+        logger.debug("E-imzo challenge: ok=%s status=%s", ok, status_code)
         if not ok:
             raise exceptions.ValidationError({"success": False, "err_msg": data})
         return Response({"success": True, "challenge": data.get("challenge")})
@@ -42,49 +42,46 @@ class EimzoLoginView(views.APIView):
 
         tin_clean = str(tin).strip()
         if not tin_clean.isdigit():
-            logger.warning(f"=== TIN noto'g'ri formatda === {tin}")
+            logger.warning("E-imzo: TIN noto'g'ri formatda")
             return None
 
         return Organization.objects.filter(stir=int(tin_clean)).first()
 
     def post(self, request):
         pkcs7 = request.data.get("pkcs7")
-        logger.warning(f"=== LOGIN START === pkcs7 keldi: {bool(pkcs7)}")
+        logger.debug("E-imzo login: pkcs7 keldi=%s", bool(pkcs7))
 
         if not pkcs7:
             raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7 field is required"})
 
         # 1. E-Imzo server orqali auth
         ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
-        logger.warning(f"=== BACKEND AUTH === ok={ok}, status={status_code}, data={data}")
+        logger.debug("E-imzo backend auth: ok=%s status=%s", ok, status_code)
 
         if not ok:
             raise exceptions.ValidationError({"success": False, "err_msg": data})
 
         # 2. subjectName olish
         subject_name = data.get("subjectName", {})
-        logger.warning(f"=== SUBJECT NAME (auth dan) === {subject_name}")
 
         # OCSP ishlamasa subjectName bo'sh keladi — pkcs7/info dan olamiz
         if not subject_name:
-            logger.warning("=== subjectName bo'sh — pkcs7/info ga murojaat ===")
+            logger.debug("E-imzo: subjectName bo'sh — pkcs7/info ga murojaat")
             info_status, info_resp = eimzo_api.pkcs7_info(pkcs7, request)
-            logger.warning(f"=== PKCS7 INFO status={info_status} ===")
+            logger.debug("E-imzo pkcs7/info status=%s", info_status)
             if info_status == 200:
                 try:
                     info_data = info_resp.json()
                     subject_name = info_data["signers"][0]["certificate"][0]["subjectInfo"]
-                    logger.warning(f"=== SUBJECT NAME (info dan) === {subject_name}")
                 except (KeyError, IndexError) as e:
-                    logger.warning(f"=== subjectInfo olishda xato === {e}")
+                    logger.warning("E-imzo: subjectInfo olishda xato: %s", e)
                 except ValueError as e:
                     # info_resp.json() JSON bo'lmasa
-                    logger.warning(f"=== pkcs7/info javobi JSON emas === {e}")
+                    logger.warning("E-imzo: pkcs7/info javobi JSON emas: %s", e)
 
         pinfl = subject_name.get("1.2.860.3.16.1.2")
         tin = subject_name.get("1.2.860.3.16.1.1")
         cn = subject_name.get("CN", "")
-        logger.warning(f"=== PINFL={pinfl}, TIN={tin}, CN={cn} ===")
 
         if not pinfl and not tin:
             raise exceptions.AuthenticationFailed({
@@ -103,7 +100,7 @@ class EimzoLoginView(views.APIView):
             })
 
         cert_organization = self._find_organization_by_tin(tin)
-        logger.warning(f"=== TIN={tin} bo'yicha topilgan Organization === {cert_organization}")
+        logger.debug("E-imzo: TIN=%s bo'yicha tashkilot=%s", tin, cert_organization)
 
         if cert_organization is None:
             raise exceptions.AuthenticationFailed({
@@ -117,11 +114,9 @@ class EimzoLoginView(views.APIView):
 
         if pinfl:
             user = CustomUser.objects.filter(pinfl=pinfl).first()
-            logger.warning(f"=== PINFL bo'yicha user === {user}")
 
         if user is None and tin:
             user = CustomUser.objects.filter(tin=tin).first()
-            logger.warning(f"=== TIN bo'yicha user === {user}")
 
         # ----------------------------------------------------------
         # 5. Mavjud user uchun — organization TENGLIK tekshiruvi
@@ -129,8 +124,8 @@ class EimzoLoginView(views.APIView):
         if user is not None:
             if user.organization_id != cert_organization.id:
                 logger.warning(
-                    f"=== ORGANIZATION MOS KELMADI, KIRISH RAD ETILDI === "
-                    f"user={user.email}, eski={user.organization}, sertifikatdan={cert_organization}"
+                    "E-imzo login rad etildi: tashkilot mos emas user_id=%s eski=%s sertifikatdan=%s",
+                    user.id, user.organization_id, cert_organization.id,
                 )
                 raise exceptions.AuthenticationFailed({
                     "success": False,
@@ -143,7 +138,7 @@ class EimzoLoginView(views.APIView):
 
         # 6. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
         if user is None:
-            logger.warning("=== User topilmadi — yangi yaratilmoqda ===")
+            logger.info("E-imzo: yangi foydalanuvchi yaratilmoqda (TIN=%s)", tin)
 
             lookup = {}
             if pinfl:
@@ -175,23 +170,24 @@ class EimzoLoginView(views.APIView):
                 },
             )
 
-            logger.warning(
-                f"=== {'YANGI USER YARATILDI' if created else 'MAVJUD USER (race condition)'} === {user}"
+            logger.info(
+                "E-imzo: %s user_id=%s",
+                "yangi foydalanuvchi yaratildi" if created else "mavjud foydalanuvchi (race condition)",
+                user.id,
             )
 
             # Race condition: get_or_create paytida boshqa so'rov user yaratgan bo'lsa,
             # uning organization'i sertifikatdagi bilan mos kelishini yana tekshiramiz
             if not created and user.organization_id != cert_organization.id:
                 logger.warning(
-                    f"=== RACE CONDITION: ORGANIZATION MOS KELMADI === "
-                    f"user={user.email}, eski={user.organization}, sertifikatdan={cert_organization}"
+                    "E-imzo race condition: tashkilot mos emas user_id=%s eski=%s sertifikatdan=%s",
+                    user.id, user.organization_id, cert_organization.id,
                 )
                 raise exceptions.AuthenticationFailed({
                     "success": False,
                     "err_msg": "Tashkilot mos kelmadi. Qaytadan urinib ko'ring."
                 })
 
-        logger.warning(f"=== FINAL USER === {user}")
 
         if not user.is_active:
             raise exceptions.AuthenticationFailed({
@@ -229,7 +225,7 @@ class EimzoLoginView(views.APIView):
             change_message="E-imzo orqali ro'yxatdan o'tdi" if created else "E-imzo orqali tizimga kirdi"
         )
 
-        logger.warning(f"=== LOGIN MUVAFFAQIYATLI === {user.email}")
+        logger.info("E-imzo login muvaffaqiyatli: user_id=%s", user.id)
         from django.utils import timezone
         user.last_activity = timezone.now()
         user.save(update_fields=["last_activity"])
@@ -244,7 +240,6 @@ class EimzoLoginView(views.APIView):
             "organization": organization_name,
             "is_new_user": created,
         }
-        logger.warning(f"=== FINAL RESPONSE === {response_data}")
 
         return Response(response_data, status=status.HTTP_200_OK)
 

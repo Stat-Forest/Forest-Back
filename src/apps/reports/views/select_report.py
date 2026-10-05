@@ -11,6 +11,7 @@ from apps.reports.models import Report
 from apps.reports.serializers.reports import ReportAggregateSelectSerializer
 from apps.utils.translation import get_lang_code, get_translated_field
 from apps.logs.drf_mixins import DRFHistoryMixin
+from apps.reports.permissions.report_scope import scope_reports_for_user
 
 
 def is_number(val):
@@ -93,7 +94,9 @@ class ReportAggregateSelectedAPIView(DRFHistoryMixin,APIView):
 
         lang = get_lang_code(request)
 
-        reports = Report.objects.filter(id__in=report_ids).select_related('organization').prefetch_related(
+        reports = scope_reports_for_user(
+            Report.objects.filter(id__in=report_ids), request.user
+        ).select_related('organization').prefetch_related(
             'report_items__inners',
             'report_items__statement_column'
         )
