@@ -14,8 +14,12 @@ class CurrentUserMiddleware:
 
     def __call__(self, request):
         _thread_locals.user = getattr(request, "user", None)
-        response = self.get_response(request)
-        return response
+        try:
+            return self.get_response(request)
+        finally:
+            # So'rov tugagach tozalaymiz — aks holda shu thread'dagi keyingi ish
+            # (boshqa so'rov, test) eski foydalanuvchi nomidan log yozib qo'yadi.
+            _thread_locals.user = None
 
 
 def get_history_user(request):
