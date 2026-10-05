@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+
+from apps.utils.validators import validate_document_file
 from django.utils.translation import gettext_lazy as _
 
 from apps.base.models import AbstractBaseModel
@@ -99,7 +101,8 @@ class PersonalInfo(AbstractBaseModel):
     )
     resume = models.FileField(
         upload_to="resumes/%Y/%m/%d/",
-        help_text="Rezyume faylini yuklang (PDF yoki DOC formatda)"
+        help_text="Rezyume faylini yuklang (PDF yoki DOC formatda)",
+        validators=[validate_document_file],
     )
 
     def __str__(self):

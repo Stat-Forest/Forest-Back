@@ -62,7 +62,8 @@ echo "▶ Dumping PostgreSQL database..."
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
-pg_dump \
+# --clean --if-exists: restore'da mavjud jadvallar avval o'chiriladi
+pg_dump --clean --if-exists \
   -h "$DB_HOST" \
   -p "$DB_PORT" \
   -U "$POSTGRES_USER" \
