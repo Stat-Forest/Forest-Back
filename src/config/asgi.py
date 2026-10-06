@@ -20,12 +20,14 @@ from django.core.asgi import get_asgi_application
 django_asgi_app = get_asgi_application()  # django.setup() shu yerda ishlaydi
 
 from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 from apps.chat.websocket.routing import websocket_urlpatterns
 from apps.chat.websocket.middleware import JWTAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": JWTAuthMiddleware(URLRouter(websocket_urlpatterns)),
+    # Faqat ALLOWED_HOSTS dagi domenlardan ochilgan sahifalar ulana oladi
+    "websocket": AllowedHostsOriginValidator(JWTAuthMiddleware(URLRouter(websocket_urlpatterns))),
 })
 
 
