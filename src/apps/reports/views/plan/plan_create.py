@@ -10,6 +10,9 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from django_filters.rest_framework import DjangoFilterBackend
 # Local apps
+from django.http import Http404
+from rest_framework.exceptions import APIException
+from apps.reports.permissions.report_scope import PlanScopedQuerysetMixin
 from apps.reports.serializers.plan import (
     PlanSerializer,
     PlanListSerializer,
@@ -144,7 +147,7 @@ class PlanRetrieveAPIView(generics.RetrieveAPIView):
         ),
     ],
 )
-class PlanListAPIView(generics.ListAPIView):
+class PlanListAPIView(PlanScopedQuerysetMixin, generics.ListAPIView):
     serializer_class = PlanListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["statement", "organization", "year", "season"]
@@ -220,13 +223,16 @@ class PlanListAPIView(generics.ListAPIView):
 # PLAN DELETE
 # =============================================================================
 @extend_schema(tags=["Plan"])
-class PlanDeleteAPIView(DRFHistoryMixin, generics.DestroyAPIView):
+class PlanDeleteAPIView(DRFHistoryMixin, PlanScopedQuerysetMixin, generics.DestroyAPIView):
     queryset = Plan.objects.all()
     permission_classes = [CanManagePlan,]
 
     def delete(self, request, *args, **kwargs):
         try:
             return super().delete(request, *args, **kwargs)
+        except (Http404, APIException):
+            # 404 (doiradan tashqari reja) va 403 o'z holicha qaytsin
+            raise
         except Exception as e:
             raise CustomExceptionError(
                 status_code=400,
