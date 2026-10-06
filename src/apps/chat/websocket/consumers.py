@@ -79,7 +79,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             self.channel_name,
         )
 
-        await self.accept()
+        # Mijoz ["jwt", token] subprotocol'larini yuboradi — brauzer server
+        # ulardan bittasini qaytarishini talab qiladi, aks holda ulanishni uzadi.
+        subprotocols = self.scope.get("subprotocols") or []
+        await self.accept(subprotocol="jwt" if "jwt" in subprotocols else None)
 
     async def disconnect(self, close_code):
         # Leave room group
