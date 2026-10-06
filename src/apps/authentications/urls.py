@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.authentications.views.logins import LoginAPIView
+from apps.authentications.views.logout import LogoutAPIView
 from apps.authentications.views.change_passwords import ChangePasswordAPIView
 from apps.authentications.views.forgot_passwords import (
     SendResetCodeAPIView,
@@ -13,6 +14,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('login/', LoginAPIView.as_view(), name='login'),
+    path('logout/', LogoutAPIView.as_view(), name='logout'),
 
     # Forgot password flow:
     path('forgot-password/send-code/', SendResetCodeAPIView.as_view(), name='send_reset_code'),
