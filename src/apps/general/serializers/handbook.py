@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.general.models.handbook import Handbook
+from apps.general.protected_media import signed_file_url
 
 
 class HandBookSerializer(serializers.ModelSerializer):
@@ -23,18 +24,15 @@ class HandBookSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at", "file_url"]
+        extra_kwargs = {"file": {"write_only": True}}  # faqat imzolangan file_url chiqadi
 
     def get_file_url(self, obj):
         """
         Returns absolute file URL if request context exists.
         Prevents exposing invalid file paths.
         """
-        request = self.context.get('request')
-
-        if obj.file and hasattr(obj.file, 'url'):
-            return request.build_absolute_uri(obj.file.url) if request else obj.file.url
-
-        return None
+        # Imzolangan, muddatli havola — /media/handbooks/ login'siz ochilmaydi
+        return signed_file_url(self.context.get('request'), obj.file)
 
     def validate_name(self, value):
         """
