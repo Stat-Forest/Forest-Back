@@ -4,6 +4,9 @@ from django.utils import timezone
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
 
+from apps.authentications.service.role_access import check_role_path_access
+from apps.authentications.service.token_denylist import is_access_token_revoked
+
 
 class CustomJWTAuthentication(JWTAuthentication):
     """
@@ -20,10 +23,18 @@ class CustomJWTAuthentication(JWTAuthentication):
             return None
 
         user, validated_token = result
+
+        # Logout qilingan token (muddati tugamagan bo'lsa ham) — yaroqsiz
+        if is_access_token_revoked(validated_token):
+            raise InvalidToken("Sessiya tugatilgan. Qayta login qiling.")
+
         if validated_token.get("pwd_reset"):
             view = (getattr(request, "parser_context", None) or {}).get("view")
             if not getattr(view, "allow_password_reset_token", False):
                 raise InvalidToken("Parolni tiklash tokeni bu amal uchun yaroqsiz.")
+
+        # Rol bo'yicha URL cheklovi (support_admin faqat o'z bo'limlariga)
+        check_role_path_access(user, request.path)
 
         return user, validated_token
 
