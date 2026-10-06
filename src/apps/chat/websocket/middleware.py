@@ -1,4 +1,3 @@
-from urllib.parse import parse_qs
 from django.utils import timezone
 from django.conf import settings
 
@@ -14,6 +13,11 @@ from rest_framework_simplejwt.exceptions import (
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.users.models import CustomUser
+from apps.authentications.service.token_denylist import is_access_token_revoked
+
+# Mijoz tokenni `Sec-WebSocket-Protocol: jwt, <access_token>` ko'rinishida
+# yuboradi (URL'da emas — URL'lar proxy/server loglarida saqlanadi, CWE-598).
+JWT_SUBPROTOCOL = "jwt"
 
 
 
@@ -33,8 +37,8 @@ def get_user_from_token(token: str):
         # refresh token bu yerdan o'tolmaydi.
         payload = AccessToken(token)
 
-        # Parolni tiklash tokeni chat uchun yaroqsiz
-        if payload.get("pwd_reset"):
+        # Parolni tiklash tokeni chat uchun yaroqsiz; logout qilingan ham
+        if payload.get("pwd_reset") or is_access_token_revoked(payload):
             return AnonymousUser()
 
         # `.only()` ishlatilmaydi: xabar serializatsiyasi first_name/
@@ -77,13 +81,26 @@ def get_user_from_token(token: str):
         return AnonymousUser()
 
 
+def token_from_subprotocols(scope) -> str | None:
+    """
+    `Sec-WebSocket-Protocol: jwt, <token>` — "jwt" dan keyingi element token.
+    Channels bu header'ni scope["subprotocols"] ro'yxatiga ajratib beradi.
+    """
+    protocols = list(scope.get("subprotocols") or [])
+    if JWT_SUBPROTOCOL in protocols:
+        idx = protocols.index(JWT_SUBPROTOCOL)
+        if idx + 1 < len(protocols):
+            return protocols[idx + 1]
+    return None
+
+
 class JWTAuthMiddleware(BaseMiddleware):
     """
     JWT authentication middleware.
 
-    Expected connection:
+    Expected connection (token in the subprotocol header, not in the URL):
 
-        ws://host/ws/chat/<conversation_id>/?token=<access_token>
+        new WebSocket("wss://host/ws/chat/<conversation_id>/", ["jwt", access_token])
     """
 
     async def __call__(
@@ -92,15 +109,7 @@ class JWTAuthMiddleware(BaseMiddleware):
         receive,
         send,
     ):
-        query_string = scope.get(
-            "query_string",
-            b"",
-        ).decode()
-
-        token = parse_qs(query_string).get(
-            "token",
-            [None],
-        )[0]
+        token = token_from_subprotocols(scope)
 
         if token:
             scope["user"] = await get_user_from_token(token)
