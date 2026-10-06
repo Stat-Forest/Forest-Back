@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -10,6 +10,7 @@ from drf_spectacular.views import (
 )
 
 from apps.base.admin import admin_site
+from apps.general.protected_media import ProtectedMediaView
 
 urlpatterns = [
     path("admin/", admin_site.urls),
@@ -26,6 +27,11 @@ urlpatterns = [
 
 ]
 
+# Himoyalangan media: imzolangan ?t= token yoki admin sessiyasi bilan.
+# static() dan oldin turishi shart (DEBUG'da static() hamma /media/ ni beradi).
+urlpatterns += [
+    re_path(r"^media/(?P<path>(documents|resumes|handbooks)/.+)$", ProtectedMediaView.as_view(), name="protected-media"),
+]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
