@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 
 from apps.general.models.land_document import LandDocument
+from apps.general.protected_media import signed_file_url
 
 
 class LandDocumentSerializer(serializers.ModelSerializer):
@@ -42,20 +43,18 @@ class LandDocumentSerializer(serializers.ModelSerializer):
             "organization_name",
         ]
         # tashkilot xodimi/rahbari uchun view o'zi qo'yadi
-        extra_kwargs = {"organization": {"required": False, "allow_null": True}}
+        extra_kwargs = {
+            "organization": {"required": False, "allow_null": True},
+            # xom /media/ yo'li javobga chiqmaydi — faqat imzolangan file_url
+            "file": {"write_only": True},
+        }
 
     # ------------------------------------------------------
     # Returns absolute file URL (safe frontend usage)
     # ------------------------------------------------------
     def get_file_url(self, obj):
-        request = self.context.get("request")
-
-        if obj.file and hasattr(obj.file, "url"):
-            return (
-                request.build_absolute_uri(obj.file.url)
-                if request else obj.file.url
-            )
-        return None
+        # Imzolangan, muddatli havola — /media/documents/ login'siz ochilmaydi
+        return signed_file_url(self.context.get("request"), obj.file)
 
     # ------------------------------------------------------
     # Avoids extra DB query thanks to select_related
