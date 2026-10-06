@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
+from apps.reports.permissions.report_scope import scope_regional_reports_for_user, scope_reports_for_user
 from apps.reports.models import Report, Statement, Deadline, StatementColumn
 from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
@@ -124,6 +125,8 @@ class IndividualGeneralReport(CustomListAPIView):
             )
         )
 
+        qs = scope_reports_for_user(qs, self.request.user)
+
         # Cache statement_ids for context preload
         self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
         return qs
@@ -174,6 +177,9 @@ class IndividualGeneralReportDetail(CustomRetrieveAPIView):
     )
     serializer_class = ReportListSerializer
 
+    def get_queryset(self):
+        return scope_reports_for_user(super().get_queryset(), self.request.user)
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         lang = self.request.query_params.get("lang", "uz")
@@ -208,20 +214,9 @@ class RegionalGeneralReport(CustomListAPIView):
             )
         )
 
-        user = self.request.user
-
-        # ✅ HUDUDIY_BOSHQARMA — region based filtering
-        if user.is_authenticated and user.role == "hududiy_boshqarma":
-            org_regions = (
-                user.region_user_orgs
-                .values_list("region", flat=True)
-                .distinct()
-            )
-
-            if not org_regions:
-                return qs.none()
-
-            qs = qs.filter(region__in=org_regions)
+        # Rol bo'yicha: tashkilot foydalanuvchisi faqat o'z viloyati,
+        # hududiy boshqarma — o'z hududlari, markaziy rollar — hammasi
+        qs = scope_regional_reports_for_user(qs, self.request.user)
 
         # 🔑 serializer uchun kerakli statement_id lar
         self.statement_ids = list(
@@ -264,22 +259,7 @@ class RegionalGeneralReportDetail(CustomRetrieveAPIView):
     serializer_class = RegionalGeneralReportSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-
-        if user.is_authenticated and user.role == "hududiy_boshqarma":
-            org_regions = (
-                user.region_user_orgs
-                .values_list("region", flat=True)
-                .distinct()
-            )
-
-            if not org_regions:
-                return qs.none()
-
-            return qs.filter(region__in=org_regions)
-
-        return qs
+        return scope_regional_reports_for_user(super().get_queryset(), self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         self._object = self.get_object()

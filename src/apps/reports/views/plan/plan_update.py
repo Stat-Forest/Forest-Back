@@ -7,12 +7,13 @@ from drf_spectacular.utils import extend_schema
 from apps.reports.models import Plan
 from apps.reports.serializers.plan import PlanSerializer
 from apps.reports.permissions import CanManagePlan
+from apps.reports.permissions.report_scope import PlanScopedQuerysetMixin
 
 # -----------------------------------------------------------------------------
 # Plan Update API
 # -----------------------------------------------------------------------------
 @extend_schema(tags=["Plan"])
-class PlanUpdateView(generics.UpdateAPIView):
+class PlanUpdateView(PlanScopedQuerysetMixin, generics.UpdateAPIView):
     """
     Update an existing Plan object.
 
@@ -45,7 +46,7 @@ class PlanUpdateView(generics.UpdateAPIView):
 # Plan Retrieve API
 # -----------------------------------------------------------------------------
 @extend_schema(tags=["Plan"])
-class PlanRetrieveView(generics.RetrieveAPIView):
+class PlanRetrieveView(PlanScopedQuerysetMixin, generics.RetrieveAPIView):
     """
     Retrieve a single Plan object by ID.
     Supports only GET method.

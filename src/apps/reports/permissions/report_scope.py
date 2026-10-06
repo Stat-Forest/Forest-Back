@@ -56,6 +56,58 @@ def scope_reports_for_user(queryset, user):
     return queryset.none()
 
 
+def scope_plans_for_user(queryset, user):
+    """
+    Plan querysetini rol bo'yicha cheklaydi (hisobotlar bilan bir xil qoida):
+    super_admin/rahbariyat -> hammasi; bolim_admin -> o'z bo'limi
+    (statement.parent); tashkilot_* -> o'z tashkiloti; hududiy -> hududi.
+    """
+    if not user or not user.is_authenticated:
+        return queryset.none()
+    if user.is_superuser or user.role in FULL_ACCESS_ROLES:
+        return queryset
+    if user.role == CustomUser.Role.BOLIM_ADMIN:
+        if not user.statement_id:
+            return queryset.none()
+        return queryset.filter(statement__parent_id=user.statement_id)
+    if user.role in (CustomUser.Role.TASHKILOT_HODIMI, CustomUser.Role.TASHKILOT_RAHBARI):
+        if not user.organization_id:
+            return queryset.none()
+        return queryset.filter(organization_id=user.organization_id)
+    if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+        regions = list(user.region_user_orgs.values_list("region", flat=True).distinct())
+        if not regions:
+            return queryset.none()
+        return queryset.filter(organization__region__in=regions)
+    return queryset.none()
+
+
+def scope_regional_reports_for_user(queryset, user):
+    """
+    Viloyat yig'ma hisobotlari (is_general): tashkilot xodimi/rahbari faqat
+    o'z viloyatini, hududiy boshqarma — biriktirilgan hududlarni, markaziy
+    rollar — hammasini ko'radi.
+    """
+    if not user or not user.is_authenticated:
+        return queryset.none()
+    if user.is_superuser or user.role in FULL_ACCESS_ROLES or user.role == CustomUser.Role.BOLIM_ADMIN:
+        return queryset
+    if user.role in (CustomUser.Role.TASHKILOT_HODIMI, CustomUser.Role.TASHKILOT_RAHBARI):
+        region = getattr(user.organization, "region", None) if user.organization_id else None
+        return queryset.filter(region=region) if region else queryset.none()
+    if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+        regions = list(user.region_user_orgs.values_list("region", flat=True).distinct())
+        return queryset.filter(region__in=regions) if regions else queryset.none()
+    return queryset.none()
+
+
+class PlanScopedQuerysetMixin:
+    """Plan view'lari uchun: ruxsatsiz reja 404 qaytaradi."""
+
+    def get_queryset(self):
+        return scope_plans_for_user(super().get_queryset(), self.request.user)
+
+
 class ReportScopedQuerysetMixin:
     """
     View querysetini scope_reports_for_user orqali cheklaydi.
