@@ -94,7 +94,8 @@ INSTALLED_APPS = [
     "apps.information_analytical.apps.InformationAnalyticalConfig",
     "apps.report_admin_stat.apps.ReportAdminStatConfig",
     "apps.ai.apps.AiConfig",
-    "apps.chat.apps.ChatsConfig"
+    "apps.chat.apps.ChatsConfig",
+    "apps.billing.apps.BillingConfig",
 ]
 
 # ===============================

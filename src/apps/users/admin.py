@@ -466,6 +466,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
             CustomUser.Role.TASHKILOT_RAHBARI: "tashkilot_rahbari",
             CustomUser.Role.TASHKILOT_HODIMI: "tashkilot_hodimi",
             CustomUser.Role.HUDUDIY_BOSHQARMA: "hududiy_boshqarma",
+            CustomUser.Role.BILLING_USER: "billing_user",
         }
         group_name = role_group_map.get(obj.role)
         if group_name:
