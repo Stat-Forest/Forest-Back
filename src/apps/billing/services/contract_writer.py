@@ -122,19 +122,24 @@ def resolve_import_references(contract_data: dict) -> None:
     xojalik = None
     inn = _clean(contract_data.pop("xojalik_inn", None))
     raw_xojalik = contract_data.get("xojalik")
+    has_name = raw_xojalik not in (None, "")
     if inn:
         xojalik = Xojalik.objects.filter(inn=inn).first()
-        if xojalik is None:
-            errors["xojalik_inn"] = f"INN '{inn}' bilan xo'jalik topilmadi"
-    elif raw_xojalik not in (None, ""):
+    # INN topilmasa (ma'lumotnomada INN hali to'ldirilmagan bo'lishi mumkin) — nomi bo'yicha
+    if xojalik is None and has_name:
         if is_uuid(raw_xojalik):
             xojalik = Xojalik.objects.filter(id=raw_xojalik).first()
         else:
             xojalik = Xojalik.objects.filter(name__iexact=_clean(raw_xojalik)).first()
-        if xojalik is None:
+    if xojalik is None:
+        if inn and has_name:
+            errors["xojalik_inn"] = f"INN '{inn}' yoki '{raw_xojalik}' nomi bilan xo'jalik topilmadi"
+        elif inn:
+            errors["xojalik_inn"] = f"INN '{inn}' bilan xo'jalik topilmadi"
+        elif has_name:
             errors["xojalik"] = f"'{raw_xojalik}' nomli xo'jalik topilmadi"
-    else:
-        errors["xojalik_inn"] = "Xo'jalik INN yoki nomi to'ldirilishi shart"
+        else:
+            errors["xojalik_inn"] = "Xo'jalik INN yoki nomi to'ldirilishi shart"
     if xojalik is not None:
         contract_data["xojalik"] = xojalik.id
 

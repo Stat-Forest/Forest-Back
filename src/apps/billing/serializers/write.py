@@ -79,6 +79,13 @@ class ContractWriteSerializer(serializers.ModelSerializer):
         for field in ("rent_amount", "paid_amount", "penalty_amount", "rent_area"):
             if attrs.get(field) is not None and attrs[field] < 0:
                 errors[field] = "Manfiy bo'lishi mumkin emas"
+        # Ijara maydoni majburiy (billing-urmon'dagi kabi): yaratishda berilishi,
+        # berilganda esa noldan katta bo'lishi kerak.
+        rent_area = attrs.get("rent_area")
+        if "rent_area" not in errors and (
+            (self.instance is None and not rent_area) or ("rent_area" in attrs and rent_area is not None and rent_area <= 0)
+        ):
+            errors["rent_area"] = "Ijara maydoni kiritilishi shart (0 dan katta)"
 
         contract_number = attrs.get("contract_number")
         if contract_number:

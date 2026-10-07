@@ -1107,7 +1107,7 @@
   {
    "name": "Оролбўйи МТБ",
    "code": "",
-   "inn": "111222333",
+   "inn": null,
    "region_code": "35",
    "account_detail": null
   },
@@ -2978,10 +2978,6 @@
   {
    "name": "Қақрали",
    "xojalik_name": "Хоразм ДЎХ"
-  },
-  {
-   "name": "Test branch",
-   "xojalik_name": "Оролбўйи МТБ"
   }
  ],
  "land_types": [
