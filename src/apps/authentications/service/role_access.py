@@ -35,6 +35,25 @@ DEFAULT_ROLE_PATH_RULES = {
             "/api/v1/statistics/login-stats/",
         ],
     },
+    # Ijara billing foydalanuvchisi: faqat /api/v1/billing/, auth, chat va
+    # interfeys uchun zarur ma'lumotnomalar/bildirishnomalar.
+    "billing_user": {
+        "deny": [
+            "/api/v1/reports/",
+            "/api/v1/statistics/",
+            "/api/v1/sum/",
+            "/api/v1/information-analytical/",
+            "/api/v1/report_admin_stat/",
+            "/api/v1/general/",
+            "/api/v1/e_imzo/",
+            "/api/v1/users/",
+        ],
+        "allow": [
+            "/api/v1/reports/users/",
+            "/api/v1/general/notifications/",
+            "/api/v1/general/announcements/",
+        ],
+    },
 }
 
 

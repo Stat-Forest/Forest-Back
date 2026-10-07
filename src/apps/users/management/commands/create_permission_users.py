@@ -31,6 +31,7 @@ class Command(BaseCommand):
             "bolim_admin": Permission.objects.filter(codename__in=["can_accept_report", "can_return_report", "can_add_plan"]),
             "tashkilot_rahbari": Permission.objects.filter(codename__in=["can_view_report", "can_return_report"]),
             "tashkilot_hodimi": Permission.objects.filter(codename__in=["can_crud_report"]),
+            "billing_user": Permission.objects.none(),
         }
 
         for group_name, perms in group_map.items():

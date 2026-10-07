@@ -21,6 +21,8 @@ ALLOWED_MODELS = [
     "Statement",
     "Plan",
     "Handbook",
+    "Contract",
+    "ContractFile",
 ]
 
 

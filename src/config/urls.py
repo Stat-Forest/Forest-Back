@@ -45,6 +45,7 @@ urlpatterns += [
     path('api/v1/sum/', include('apps.sum.urls')),
     path('api/v1/statistics/', include('apps.report_statistics.urls')),
     path('api/v1/chats/', include('apps.chat.urls')),
+    path('api/v1/billing/', include('apps.billing.urls')),
     # path('api/v1/ai/', include('apps.ai.urls')),
 ]
 
