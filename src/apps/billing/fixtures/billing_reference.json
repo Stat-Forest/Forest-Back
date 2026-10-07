@@ -1,0 +1,3172 @@
+{
+ "regions": [
+  {
+   "billing_id": 1,
+   "code": "35",
+   "name": "Қорақалпоғистон Республикаси"
+  },
+  {
+   "billing_id": 2,
+   "code": "3",
+   "name": "Андижон вилояти"
+  },
+  {
+   "billing_id": 3,
+   "code": "6",
+   "name": "Бухоро вилояти"
+  },
+  {
+   "billing_id": 4,
+   "code": "8",
+   "name": "Жиззах вилояти"
+  },
+  {
+   "billing_id": 5,
+   "code": "10",
+   "name": "Қашқадарё вилояти"
+  },
+  {
+   "billing_id": 6,
+   "code": "12",
+   "name": "Навоий вилояти"
+  },
+  {
+   "billing_id": 7,
+   "code": "14",
+   "name": "Наманган вилояти"
+  },
+  {
+   "billing_id": 8,
+   "code": "18",
+   "name": "Самарқанд вилояти"
+  },
+  {
+   "billing_id": 9,
+   "code": "24",
+   "name": "Сирдарё вилояти"
+  },
+  {
+   "billing_id": 10,
+   "code": "22",
+   "name": "Сурхондарё вилояти"
+  },
+  {
+   "billing_id": 11,
+   "code": "27",
+   "name": "Тошкент вилояти"
+  },
+  {
+   "billing_id": 12,
+   "code": "30",
+   "name": "Фарғона вилояти"
+  },
+  {
+   "billing_id": 13,
+   "code": "33",
+   "name": "Хоразм вилояти"
+  },
+  {
+   "billing_id": 14,
+   "code": "26",
+   "name": "Тошкент шаҳри"
+  }
+ ],
+ "districts": [
+  {
+   "region_code": "35",
+   "code": "1",
+   "name": "Нукус шаҳри"
+  },
+  {
+   "region_code": "35",
+   "code": "8",
+   "name": "Амударё тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "9",
+   "name": "Беруний тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "10",
+   "name": "Бўзатов тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "11",
+   "name": "Кегейли тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "12",
+   "name": "Қўнғирот тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "13",
+   "name": "Қонликўл тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "14",
+   "name": "Мўйноқ тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "15",
+   "name": "Нукус тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "16",
+   "name": "Тахтакўпир тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "17",
+   "name": "Тўрткўл тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "18",
+   "name": "Хўжайли тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "19",
+   "name": "Чимбой тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "20",
+   "name": "Шўманой тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "21",
+   "name": "Элликқалъа тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "22",
+   "name": "Қораўзяк тумани"
+  },
+  {
+   "region_code": "35",
+   "code": "23",
+   "name": "Тахиатош тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "1",
+   "name": "Андижон шаҳар"
+  },
+  {
+   "region_code": "3",
+   "code": "3",
+   "name": "Хонобод шаҳар"
+  },
+  {
+   "region_code": "3",
+   "code": "6",
+   "name": "Олтинкўл тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "7",
+   "name": "Андижон тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "8",
+   "name": "Балиқчи тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "9",
+   "name": "Бўстон тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "10",
+   "name": "Булоқбоши тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "11",
+   "name": "Жалақудуқ тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "12",
+   "name": "Избоскан тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "13",
+   "name": "Улуғнор тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "14",
+   "name": "Қўрғонтепа тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "15",
+   "name": "Асака тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "16",
+   "name": "Марҳамат тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "17",
+   "name": "Шаҳрихон тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "18",
+   "name": "Пахтаобод тумани"
+  },
+  {
+   "region_code": "3",
+   "code": "19",
+   "name": "Хўжаобод тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "1",
+   "name": "Бухоро шаҳар"
+  },
+  {
+   "region_code": "6",
+   "code": "3",
+   "name": "Когон шаҳар"
+  },
+  {
+   "region_code": "6",
+   "code": "4",
+   "name": "Олот тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "5",
+   "name": "Бухоро тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "6",
+   "name": "Вобкент тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "7",
+   "name": "Ғиждувон тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "8",
+   "name": "Жондор тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "9",
+   "name": "Когон тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "10",
+   "name": "Қоракўл тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "11",
+   "name": "Пешку тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "12",
+   "name": "Ромитан тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "13",
+   "name": "Шофиркон тумани"
+  },
+  {
+   "region_code": "6",
+   "code": "14",
+   "name": "Қоровулбозор тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "1",
+   "name": "Арнасой тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "2",
+   "name": "Бахмал тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "3",
+   "name": "Ғаллаорол тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "4",
+   "name": "Шароф Рашидов тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "5",
+   "name": "Дўстлик тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "6",
+   "name": "Зарбдор тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "7",
+   "name": "Зомин тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "8",
+   "name": "Зафаробод тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "9",
+   "name": "Мирзачўл тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "10",
+   "name": "Пахтакор тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "11",
+   "name": "Фориш тумани"
+  },
+  {
+   "region_code": "8",
+   "code": "12",
+   "name": "Жиззах шаҳри"
+  },
+  {
+   "region_code": "8",
+   "code": "13",
+   "name": "Янгиобод тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "1",
+   "name": "Қарши шаҳри"
+  },
+  {
+   "region_code": "10",
+   "code": "2",
+   "name": "Шахрисабз шахар"
+  },
+  {
+   "region_code": "10",
+   "code": "4",
+   "name": "Ғузор тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "5",
+   "name": "Дехқонобод тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "6",
+   "name": "Қамаши тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "7",
+   "name": "Қарши тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "8",
+   "name": "Косон тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "9",
+   "name": "Китоб тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "10",
+   "name": "Муборак тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "11",
+   "name": "Нишон тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "12",
+   "name": "Касби тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "14",
+   "name": "Чироқчи тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "15",
+   "name": "Шахрисабз тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "16",
+   "name": "Яккабоғ тумани"
+  },
+  {
+   "region_code": "10",
+   "code": "17",
+   "name": "Миришкор тумани"
+  },
+  {
+   "region_code": "12",
+   "code": "1",
+   "name": "Навоий шахар"
+  },
+  {
+   "region_code": "12",
+   "code": "2",
+   "name": "Зарафшон шаҳар"
+  },
+  {
+   "region_code": "12",
+   "code": "3",
+   "name": "Учкудук туман"
+  },
+  {
+   "region_code": "12",
+   "code": "4",
+   "name": "Конимех туман"
+  },
+  {
+   "region_code": "12",
+   "code": "5",
+   "name": "Қизилтепа туман"
+  },
+  {
+   "region_code": "12",
+   "code": "7",
+   "name": "Томди туман"
+  },
+  {
+   "region_code": "12",
+   "code": "8",
+   "name": "Навбаҳор туман"
+  },
+  {
+   "region_code": "12",
+   "code": "9",
+   "name": "Хатирчи туман"
+  },
+  {
+   "region_code": "12",
+   "code": "10",
+   "name": "Нурота туман"
+  },
+  {
+   "region_code": "12",
+   "code": "11",
+   "name": "Кармана туман"
+  },
+  {
+   "region_code": "12",
+   "code": "13",
+   "name": "Ғазғон шаҳар"
+  },
+  {
+   "region_code": "14",
+   "code": "1",
+   "name": "Наманган шахар"
+  },
+  {
+   "region_code": "14",
+   "code": "7",
+   "name": "Мингбулок туман"
+  },
+  {
+   "region_code": "14",
+   "code": "8",
+   "name": "Косонсой туман"
+  },
+  {
+   "region_code": "14",
+   "code": "9",
+   "name": "Наманган туман"
+  },
+  {
+   "region_code": "14",
+   "code": "10",
+   "name": "Норин туман"
+  },
+  {
+   "region_code": "14",
+   "code": "11",
+   "name": "Поп туман"
+  },
+  {
+   "region_code": "14",
+   "code": "12",
+   "name": "Туракургон туман"
+  },
+  {
+   "region_code": "14",
+   "code": "13",
+   "name": "Уйчи туман"
+  },
+  {
+   "region_code": "14",
+   "code": "14",
+   "name": "Учкургон туман"
+  },
+  {
+   "region_code": "14",
+   "code": "15",
+   "name": "Чорток туман"
+  },
+  {
+   "region_code": "14",
+   "code": "16",
+   "name": "Чуст туман"
+  },
+  {
+   "region_code": "14",
+   "code": "17",
+   "name": "Янгикургон туман"
+  },
+  {
+   "region_code": "14",
+   "code": "18",
+   "name": "Давлатобод туман"
+  },
+  {
+   "region_code": "18",
+   "code": "1",
+   "name": "Самарқанд шаҳри"
+  },
+  {
+   "region_code": "18",
+   "code": "4",
+   "name": "Тайлоқ тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "6",
+   "name": "Каттақўрғон шаҳри"
+  },
+  {
+   "region_code": "18",
+   "code": "8",
+   "name": "Оқдарё тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "9",
+   "name": "Булунғур тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "11",
+   "name": "Жомбой тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "12",
+   "name": "Иштихон тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "13",
+   "name": "Каттақўрғон тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "14",
+   "name": "Қўшработ тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "15",
+   "name": "Нарпай тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "17",
+   "name": "Пайариқ тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "18",
+   "name": "Пастдарғом тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "19",
+   "name": "Пахтачи тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "20",
+   "name": "Самарқанд тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "21",
+   "name": "Нуробод тумани"
+  },
+  {
+   "region_code": "18",
+   "code": "22",
+   "name": "Ургут тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "1",
+   "name": "Термиз шаҳар"
+  },
+  {
+   "region_code": "22",
+   "code": "3",
+   "name": "Ангор тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "4",
+   "name": "Олтинсой тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "5",
+   "name": "Бойсун тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "6",
+   "name": "Музрабод тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "7",
+   "name": "Денов тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "8",
+   "name": "Жаркургон тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "9",
+   "name": "Кумкургон тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "10",
+   "name": "Кизирик тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "11",
+   "name": "Сариосиё тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "12",
+   "name": "Термиз тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "13",
+   "name": "Шерабад тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "14",
+   "name": "Шурчи тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "15",
+   "name": "Узун тумани"
+  },
+  {
+   "region_code": "22",
+   "code": "16",
+   "name": "Бандихон тумани"
+  },
+  {
+   "region_code": "24",
+   "code": "1",
+   "name": "Оқолтин туман"
+  },
+  {
+   "region_code": "24",
+   "code": "2",
+   "name": "Боёвут туман"
+  },
+  {
+   "region_code": "24",
+   "code": "3",
+   "name": "Гулистон туман"
+  },
+  {
+   "region_code": "24",
+   "code": "5",
+   "name": "Мирзаобод туман"
+  },
+  {
+   "region_code": "24",
+   "code": "6",
+   "name": "Сайхунобод туман"
+  },
+  {
+   "region_code": "24",
+   "code": "7",
+   "name": "Сирдарё туман"
+  },
+  {
+   "region_code": "24",
+   "code": "8",
+   "name": "Ховос туман"
+  },
+  {
+   "region_code": "24",
+   "code": "9",
+   "name": "Сардоба туман"
+  },
+  {
+   "region_code": "24",
+   "code": "10",
+   "name": "Гулистон шаҳар"
+  },
+  {
+   "region_code": "24",
+   "code": "12",
+   "name": "Ширин шаҳар"
+  },
+  {
+   "region_code": "24",
+   "code": "13",
+   "name": "Янгиер шаҳар"
+  },
+  {
+   "region_code": "27",
+   "code": "1",
+   "name": "Бекобод тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "2",
+   "name": "Бўка тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "3",
+   "name": "Бўстонлиқ тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "4",
+   "name": "Зангиота тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "5",
+   "name": "Юқори-Чирчиқ тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "6",
+   "name": "Қибрай тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "7",
+   "name": "Оққўрғон тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "8",
+   "name": "Охангарон тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "9",
+   "name": "Паркент тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "10",
+   "name": "Пскент тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "11",
+   "name": "Тошкент тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "12",
+   "name": "Ўрта-Чирчиқ тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "13",
+   "name": "Чиноз тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "14",
+   "name": "Қуйи-Чирчиқ тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "15",
+   "name": "Янги йўл тумани"
+  },
+  {
+   "region_code": "27",
+   "code": "16",
+   "name": "Ангрен шаҳри"
+  },
+  {
+   "region_code": "27",
+   "code": "17",
+   "name": "Бекобод шаҳри"
+  },
+  {
+   "region_code": "27",
+   "code": "18",
+   "name": "Олмалиқ шаҳри"
+  },
+  {
+   "region_code": "27",
+   "code": "19",
+   "name": "Охангарон шаҳар"
+  },
+  {
+   "region_code": "27",
+   "code": "20",
+   "name": "Чирчиқ шаҳри"
+  },
+  {
+   "region_code": "27",
+   "code": "22",
+   "name": "Янгийул шаҳар"
+  },
+  {
+   "region_code": "27",
+   "code": "23",
+   "name": "Нурафшон шаҳри"
+  },
+  {
+   "region_code": "30",
+   "code": "1",
+   "name": "Қувасой шаҳри"
+  },
+  {
+   "region_code": "30",
+   "code": "3",
+   "name": "Қўқон шаҳри"
+  },
+  {
+   "region_code": "30",
+   "code": "4",
+   "name": "Марғилон шаҳри"
+  },
+  {
+   "region_code": "30",
+   "code": "5",
+   "name": "Фарғона шаҳри"
+  },
+  {
+   "region_code": "30",
+   "code": "6",
+   "name": "Бешариқ тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "7",
+   "name": "Боғдод тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "8",
+   "name": "Бувайда тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "9",
+   "name": "Данғара тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "10",
+   "name": "Ёзёвон тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "11",
+   "name": "Қува тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "12",
+   "name": "Олтиариқ тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "13",
+   "name": "Қуштепа тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "14",
+   "name": "Риштон тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "15",
+   "name": "Сўх тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "16",
+   "name": "Тошлоқ тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "17",
+   "name": "Ўзбекистон тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "18",
+   "name": "Учкўприк тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "19",
+   "name": "Фарғона тумани"
+  },
+  {
+   "region_code": "30",
+   "code": "20",
+   "name": "Фурқат тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "1",
+   "name": "Урганч шаҳар"
+  },
+  {
+   "region_code": "33",
+   "code": "2",
+   "name": "Хива шаҳар"
+  },
+  {
+   "region_code": "33",
+   "code": "4",
+   "name": "Урганч тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "5",
+   "name": "Хива тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "6",
+   "name": "Хазарасп тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "7",
+   "name": "Гурлан тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "8",
+   "name": "Шовот тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "9",
+   "name": "Янгиариқ тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "10",
+   "name": "Қўшкўпир тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "11",
+   "name": "Боғот тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "12",
+   "name": "Ҳонқа тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "13",
+   "name": "Янгибозор тумани"
+  },
+  {
+   "region_code": "33",
+   "code": "14",
+   "name": "Тупроққалъа тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "1",
+   "name": "Миробод тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "2",
+   "name": "Мирзо Улугбек тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "3",
+   "name": "Юнусобод тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "4",
+   "name": "Яккасарой тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "5",
+   "name": "Шайхонтохур тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "6",
+   "name": "Чилонзор тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "7",
+   "name": "Сергели тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "8",
+   "name": "Яшнобод тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "9",
+   "name": "Олмазор тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "10",
+   "name": "Учтепа тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "11",
+   "name": "Бектемир тумани"
+  },
+  {
+   "region_code": "26",
+   "code": "12",
+   "name": "Янгихаёт тумани"
+  }
+ ],
+ "xojaliklar": [
+  {
+   "name": "Оролбўйи МТБ",
+   "code": "",
+   "inn": "111222333",
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Беруний ДЎХ",
+   "code": "23:02:06",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Бўзатов ДЎХ",
+   "code": "23:01:01",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Қипчоқ ДЎХ",
+   "code": "23:01:07",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Қозоқдарё ДЎОХ",
+   "code": "23:05:13",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Қонликўл ИДЎХ",
+   "code": "23:13:15",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Қораўзак ДЎХ",
+   "code": "23:14:11",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Қўнғирот ДЎОХ",
+   "code": "23:15:12",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Мўйноқ ДЎХ",
+   "code": "23:05:02",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Нукус ДЎХ",
+   "code": "23:06:04",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Нукус КИДЎХ",
+   "code": "23:06:14",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Тахтакўпир ДЎХ",
+   "code": "23:07:05",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Тўрткўл ДЎХ",
+   "code": "23:08:10",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Хўжайли ДЎХ",
+   "code": "23:09:03",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Чимбой ДЎХ",
+   "code": "23:10:09",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Шўманой ИДЎХ",
+   "code": "23:11:16",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Элликқалъа ДЎХ",
+   "code": "23:12:08",
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  },
+  {
+   "name": "Андижон ДЎХ",
+   "code": "17:01:01",
+   "inn": null,
+   "region_code": "3",
+   "account_detail": null
+  },
+  {
+   "name": "«Нефтчи» ДЎХ",
+   "code": "20:09:06",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Бухоро ДЎХ",
+   "code": "20:06:01",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Бухоро ИТС",
+   "code": "20:03:12",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Ғиждувон ДЎХ",
+   "code": "20:11:09",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Жондор ДЎХ",
+   "code": "20:03:02",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Когон ИДЎХ",
+   "code": "",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қизилқум ДЎХ",
+   "code": "20:07:05",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қоракўл ДЎХ",
+   "code": "20:10:04",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қоракўл ДЎОХ",
+   "code": "20:10:10",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қоракўл ИДЎХ",
+   "code": "20:10:11",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қоровулбозор ДЎХ",
+   "code": "20:09:08",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Қоровулбозор ДЎОХ",
+   "code": "",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Олот ДЎХ",
+   "code": "20:05:03",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Шофиркон ДЎХ",
+   "code": "20:08:07",
+   "inn": null,
+   "region_code": "6",
+   "account_detail": null
+  },
+  {
+   "name": "Бахмал ДЎХ",
+   "code": "13:02:03",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Ғаллаорол ИДЎХ",
+   "code": "",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Жиззах ДЎХ",
+   "code": "13:04:01",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Зомин ДЎХ",
+   "code": "13:08:02",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Зомин МТБ",
+   "code": "13:08:05",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Пистачилик ИТС",
+   "code": "",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Фориш ДЎХ",
+   "code": "13:11:04",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Фориш ДЎОХ",
+   "code": "13:11:04",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Хўжамушкент ДЎХ",
+   "code": "13:12:06",
+   "inn": null,
+   "region_code": "8",
+   "account_detail": null
+  },
+  {
+   "name": "Деҳқонобод ДЎХ",
+   "code": "",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Жовуз ДЎХ",
+   "code": "18:04:07",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Китоб ДЎХ",
+   "code": "18:04:04",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Қамаши ДЎХ",
+   "code": "18:12:02",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Қашқадарё ДЎХ",
+   "code": "18:01:01",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Қумдарё ДЎХ",
+   "code": "18:09:06",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Муборак ДЎХ",
+   "code": "18:06:03",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Муборак ДЎОХ",
+   "code": "",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Шаҳрисабз ИДЎХ",
+   "code": "18:10:10",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Шўртан ДЎХ",
+   "code": "18:14:08",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Яккабоғ ИДЎХ",
+   "code": "18:12:09",
+   "inn": null,
+   "region_code": "10",
+   "account_detail": null
+  },
+  {
+   "name": "Конимех ДЎХ",
+   "code": "21:01:02",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Навбаҳор ДЎХ",
+   "code": "21:02:07",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Навоий ДЎХ",
+   "code": "21:08:01",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Нурота ДЎХ",
+   "code": "21:04:06",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Нурота ДЎОХ",
+   "code": "21:04:06",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Томди ДЎХ",
+   "code": "21:05:05",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Учқудуқ ДЎХ",
+   "code": "21:06:04",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Хатирчи ДЎХ",
+   "code": "21:07:03",
+   "inn": null,
+   "region_code": "12",
+   "account_detail": null
+  },
+  {
+   "name": "Косонсой ДЎХ",
+   "code": "16:01:02",
+   "inn": null,
+   "region_code": "14",
+   "account_detail": null
+  },
+  {
+   "name": "Наманган КИДЎХ",
+   "code": "16:02:03",
+   "inn": null,
+   "region_code": "14",
+   "account_detail": null
+  },
+  {
+   "name": "Поп ИДЎХ",
+   "code": "16:05:01",
+   "inn": null,
+   "region_code": "14",
+   "account_detail": null
+  },
+  {
+   "name": "Ўртаорол ДЎХ",
+   "code": "16:04:04",
+   "inn": null,
+   "region_code": "14",
+   "account_detail": null
+  },
+  {
+   "name": "Дарғом ДЎИЧК",
+   "code": "14:12:08",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Жомбой ДЎХ",
+   "code": "14:02:05",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Зарафшон МТБ",
+   "code": "14:02:07",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Каттақўрғон ДЎХ",
+   "code": "14:05:04",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Оқдарё ДЎХ",
+   "code": "14:08:06",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Пахтачи ДЎХ",
+   "code": "14:11:02",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Самарқанд ДЎХ",
+   "code": "14:12:01",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Саройқўрғон ДЎХ",
+   "code": "14:07:03",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Ургут ИДЎХ",
+   "code": "",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Фозилмон ИДЎХ",
+   "code": "14:04:08",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Иштихон ДЎХ",
+   "code": "",
+   "inn": null,
+   "region_code": "18",
+   "account_detail": null
+  },
+  {
+   "name": "Қолгансир ДЎОХ",
+   "code": "12:07:01",
+   "inn": null,
+   "region_code": "24",
+   "account_detail": null
+  },
+  {
+   "name": "Сирдарё ДЎХ",
+   "code": "12:11:02",
+   "inn": null,
+   "region_code": "24",
+   "account_detail": null
+  },
+  {
+   "name": "Боботоғ ДЎХ",
+   "code": "19:12:05",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Бойсун ДЎХ",
+   "code": "19:07:02",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Қизириқ ДЎХ",
+   "code": "19:08:03",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Сурхондарё ДЎХ",
+   "code": "19:11:01",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Узун ДЎХ",
+   "code": "19:10:04",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Ҳисор ИДЎХ",
+   "code": "19:10:06",
+   "inn": null,
+   "region_code": "22",
+   "account_detail": null
+  },
+  {
+   "name": "Бекобод ДЎХ",
+   "code": "11:01:02",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Бурчмулла ДЎХ",
+   "code": "11:03:07",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Далварзин ДЎОХ",
+   "code": "11:01:04",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Дархон ИТС",
+   "code": "11:04:06",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Қуйичирчиқ ИДЎХ",
+   "code": "11:06:03",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Оҳангарон ДЎХ",
+   "code": "11:08:08",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Саксонота ДЎИЧК",
+   "code": "11:05:05",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Тошкент ДЎХ",
+   "code": "11:10:01",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Угом-Чотқол ДМТБ",
+   "code": "",
+   "inn": null,
+   "region_code": "27",
+   "account_detail": null
+  },
+  {
+   "name": "Қўқон ДЎХ",
+   "code": "15:02:01",
+   "inn": null,
+   "region_code": "30",
+   "account_detail": null
+  },
+  {
+   "name": "Қўқон ИТС",
+   "code": "15:04:03",
+   "inn": null,
+   "region_code": "30",
+   "account_detail": null
+  },
+  {
+   "name": "Фарғона ДЎХ",
+   "code": "15:13:02",
+   "inn": null,
+   "region_code": "30",
+   "account_detail": null
+  },
+  {
+   "name": "Хоразм ДЎХ",
+   "code": "22:05:01",
+   "inn": null,
+   "region_code": "33",
+   "account_detail": null
+  },
+  {
+   "name": "Хоразм ДЎОХ",
+   "code": "",
+   "inn": null,
+   "region_code": "33",
+   "account_detail": null
+  },
+  {
+   "name": "Қорақум ИТС",
+   "code": "22:05:02",
+   "inn": null,
+   "region_code": "33",
+   "account_detail": null
+  },
+  {
+   "name": "Кегейли ДЎХ",
+   "code": null,
+   "inn": null,
+   "region_code": "35",
+   "account_detail": null
+  }
+ ],
+ "bolimlar": [
+  {
+   "name": "Уоб",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Олтиховуз",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Олмазор",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Пахтакор",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Зарбдор",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Балиқли",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Шахар боғи",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Мирзачўл",
+   "xojalik_name": "Жиззах ДЎХ"
+  },
+  {
+   "name": "Қорақишлоқ",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Бахмалсой",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Кўкжар",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Тўғонбулоқ",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Галдировут",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Узун булоқ",
+   "xojalik_name": "Бахмал ДЎХ"
+  },
+  {
+   "name": "Зомин",
+   "xojalik_name": "Зомин ДЎХ"
+  },
+  {
+   "name": "Бешкуби",
+   "xojalik_name": "Зомин ДЎХ"
+  },
+  {
+   "name": "Пишоғор",
+   "xojalik_name": "Зомин ДЎХ"
+  },
+  {
+   "name": "Боғдон",
+   "xojalik_name": "Фориш ДЎХ"
+  },
+  {
+   "name": "Учма",
+   "xojalik_name": "Фориш ДЎХ"
+  },
+  {
+   "name": "Ухум",
+   "xojalik_name": "Фориш ДЎХ"
+  },
+  {
+   "name": "Арнасой",
+   "xojalik_name": "Фориш ДЎХ"
+  },
+  {
+   "name": "Арнасой-2",
+   "xojalik_name": "Фориш ДЎХ"
+  },
+  {
+   "name": "Хўжамушкент",
+   "xojalik_name": "Хўжамушкент ДЎХ"
+  },
+  {
+   "name": "Каттасой",
+   "xojalik_name": "Хўжамушкент ДЎХ"
+  },
+  {
+   "name": "Ғаллаорол",
+   "xojalik_name": "Ғаллаорол ИДЎХ"
+  },
+  {
+   "name": "Фориш ДЎОХ",
+   "xojalik_name": "Фориш ДЎОХ"
+  },
+  {
+   "name": "Самарқанд",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Элипок",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Омонқўтон",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Бахрин",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Ургут",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Жомбой",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Пастдарғом",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Бахшитепа",
+   "xojalik_name": "Самарқанд ДЎХ"
+  },
+  {
+   "name": "Чўнқаймиш",
+   "xojalik_name": "Саройқўрғон ДЎХ"
+  },
+  {
+   "name": "Олмазор",
+   "xojalik_name": "Саройқўрғон ДЎХ"
+  },
+  {
+   "name": "Калқўрғон",
+   "xojalik_name": "Саройқўрғон ДЎХ"
+  },
+  {
+   "name": "Нов",
+   "xojalik_name": "Саройқўрғон ДЎХ"
+  },
+  {
+   "name": "Хитой",
+   "xojalik_name": "Саройқўрғон ДЎХ"
+  },
+  {
+   "name": "Уйшун",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Дурбеш",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Мирбозор",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Мойбулоқ",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Энамяхши",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Миёнкўл",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Андоқ",
+   "xojalik_name": "Каттақўрғон ДЎХ"
+  },
+  {
+   "name": "Хашдала",
+   "xojalik_name": "Жомбой ДЎХ"
+  },
+  {
+   "name": "Галакапа",
+   "xojalik_name": "Жомбой ДЎХ"
+  },
+  {
+   "name": "Қоровултепа",
+   "xojalik_name": "Жомбой ДЎХ"
+  },
+  {
+   "name": "Бойбута",
+   "xojalik_name": "Оқдарё ДЎХ"
+  },
+  {
+   "name": "Ғалаба",
+   "xojalik_name": "Оқдарё ДЎХ"
+  },
+  {
+   "name": "Оқсулот",
+   "xojalik_name": "Оқдарё ДЎХ"
+  },
+  {
+   "name": "Холдор",
+   "xojalik_name": "Оқдарё ДЎХ"
+  },
+  {
+   "name": "Оқтепа",
+   "xojalik_name": "Пахтачи ДЎХ"
+  },
+  {
+   "name": "Бодой",
+   "xojalik_name": "Пахтачи ДЎХ"
+  },
+  {
+   "name": "Добусия",
+   "xojalik_name": "Пахтачи ДЎХ"
+  },
+  {
+   "name": "Зарафшон",
+   "xojalik_name": "Зарафшон МТБ"
+  },
+  {
+   "name": "Арча ота",
+   "xojalik_name": "Фозилмон ИДЎХ"
+  },
+  {
+   "name": "Окчопсой",
+   "xojalik_name": "Фозилмон ИДЎХ"
+  },
+  {
+   "name": "Устук",
+   "xojalik_name": "Фозилмон ИДЎХ"
+  },
+  {
+   "name": "Жўш",
+   "xojalik_name": "Фозилмон ИДЎХ"
+  },
+  {
+   "name": "Ургут",
+   "xojalik_name": "Ургут ИДЎХ"
+  },
+  {
+   "name": "Аёзқала",
+   "xojalik_name": "Беруний ДЎХ"
+  },
+  {
+   "name": "Таллик",
+   "xojalik_name": "Беруний ДЎХ"
+  },
+  {
+   "name": "Наупир",
+   "xojalik_name": "Бўзатов ДЎХ"
+  },
+  {
+   "name": "Кусхана",
+   "xojalik_name": "Бўзатов ДЎХ"
+  },
+  {
+   "name": "Йўлбарс думи",
+   "xojalik_name": "Мўйноқ ДЎХ"
+  },
+  {
+   "name": "Ахантай",
+   "xojalik_name": "Мўйноқ ДЎХ"
+  },
+  {
+   "name": "Хаким ота",
+   "xojalik_name": "Мўйноқ ДЎХ"
+  },
+  {
+   "name": "Аббаз",
+   "xojalik_name": "Мўйноқ ДЎХ"
+  },
+  {
+   "name": "Мўйноқ",
+   "xojalik_name": "Мўйноқ ДЎХ"
+  },
+  {
+   "name": "Нукус",
+   "xojalik_name": "Нукус ДЎХ"
+  },
+  {
+   "name": "Кегейли",
+   "xojalik_name": "Нукус ДЎХ"
+  },
+  {
+   "name": "Акбугет",
+   "xojalik_name": "Тахтакўпир ДЎХ"
+  },
+  {
+   "name": "Даукара",
+   "xojalik_name": "Тахтакўпир ДЎХ"
+  },
+  {
+   "name": "Қумбоскан",
+   "xojalik_name": "Тўрткўл ДЎХ"
+  },
+  {
+   "name": "Нуримтубек",
+   "xojalik_name": "Қораўзак ДЎХ"
+  },
+  {
+   "name": "Қораўзак",
+   "xojalik_name": "Қораўзак ДЎХ"
+  },
+  {
+   "name": "Абдияб",
+   "xojalik_name": "Чимбой ДЎХ"
+  },
+  {
+   "name": "Қипчоқ",
+   "xojalik_name": "Қипчоқ ДЎХ"
+  },
+  {
+   "name": "Назархон",
+   "xojalik_name": "Қипчоқ ДЎХ"
+  },
+  {
+   "name": "Хўжайли",
+   "xojalik_name": "Хўжайли ДЎХ"
+  },
+  {
+   "name": "Қўнғирот",
+   "xojalik_name": "Қўнғирот ДЎОХ"
+  },
+  {
+   "name": "Қозоқдарё",
+   "xojalik_name": "Қозоқдарё ДЎОХ"
+  },
+  {
+   "name": "1-Участка",
+   "xojalik_name": "Қонликўл ИДЎХ"
+  },
+  {
+   "name": "2-Участка",
+   "xojalik_name": "Қонликўл ИДЎХ"
+  },
+  {
+   "name": "Андижон",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Дамба",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "И.Бакиров",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Асака",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Ниёзботир",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Шарқ",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Бобур",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Балиқчи",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Олимбек",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Бўз",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Шерқўрғон",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Дўлан",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Улуғтоғ",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Имом-ота",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Кўмакай",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Қўштепа",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Лўғумбек",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "С.Холиқов",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Қорадарё",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Қоракўл",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Ойим-1",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Тошохур",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Т.Ахмаджонов",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Ёрқишлоқ",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Ойим-2",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Тешиктош",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Мархамат",
+   "xojalik_name": "Андижон ДЎХ"
+  },
+  {
+   "name": "Хўжадавлат",
+   "xojalik_name": "Олот ДЎХ"
+  },
+  {
+   "name": "Кирлишон",
+   "xojalik_name": "Олот ДЎХ"
+  },
+  {
+   "name": "Толди",
+   "xojalik_name": "Шофиркон ДЎХ"
+  },
+  {
+   "name": "Шофиркон",
+   "xojalik_name": "Шофиркон ДЎХ"
+  },
+  {
+   "name": "Огар",
+   "xojalik_name": "Жондор ДЎХ"
+  },
+  {
+   "name": "Ромитан",
+   "xojalik_name": "Жондор ДЎХ"
+  },
+  {
+   "name": "Кўчатчилик",
+   "xojalik_name": "Ғиждувон ДЎХ"
+  },
+  {
+   "name": "Мингчинор",
+   "xojalik_name": "Ғиждувон ДЎХ"
+  },
+  {
+   "name": "Шўркўл",
+   "xojalik_name": "Ғиждувон ДЎХ"
+  },
+  {
+   "name": "Янгиобод",
+   "xojalik_name": "Ғиждувон ДЎХ"
+  },
+  {
+   "name": "Қорвулбозор",
+   "xojalik_name": "Қоровулбозор ДЎХ"
+  },
+  {
+   "name": "Деволикок",
+   "xojalik_name": "Қоровулбозор ДЎХ"
+  },
+  {
+   "name": "Моханкўл",
+   "xojalik_name": "Қоракўл ДЎХ"
+  },
+  {
+   "name": "Дўрмон",
+   "xojalik_name": "Қоракўл ДЎХ"
+  },
+  {
+   "name": "Калата",
+   "xojalik_name": "Қизилқум ДЎХ"
+  },
+  {
+   "name": "Қизилровот",
+   "xojalik_name": "Қизилқум ДЎХ"
+  },
+  {
+   "name": "Пешку",
+   "xojalik_name": "Бухоро ДЎХ"
+  },
+  {
+   "name": "Ромитан",
+   "xojalik_name": "Бухоро ДЎХ"
+  },
+  {
+   "name": "Вобкент",
+   "xojalik_name": "Бухоро ДЎХ"
+  },
+  {
+   "name": "Навоий",
+   "xojalik_name": "Қоракўл ИДЎХ"
+  },
+  {
+   "name": "Гугуртли",
+   "xojalik_name": "Қоракўл ИДЎХ"
+  },
+  {
+   "name": "Зомонбобо",
+   "xojalik_name": "Қоракўл ИДЎХ"
+  },
+  {
+   "name": "Қорақўл",
+   "xojalik_name": "Қоракўл ДЎОХ"
+  },
+  {
+   "name": "Когон ИДЎХ",
+   "xojalik_name": "Когон ИДЎХ"
+  },
+  {
+   "name": "Бошчорбоғ",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Тўрткўл",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Сарғайота",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Оқбош",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Консой",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Қизилсой",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Обод кўчатчилик",
+   "xojalik_name": "Деҳқонобод ДЎХ"
+  },
+  {
+   "name": "Игрисув",
+   "xojalik_name": "Қамаши ДЎХ"
+  },
+  {
+   "name": "Чимқўрғон",
+   "xojalik_name": "Қамаши ДЎХ"
+  },
+  {
+   "name": "Хазратбашр",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Матмон",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Кавзихона",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Сиёб",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Мингчинор",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Деновбола",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Дуоба",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Макрид",
+   "xojalik_name": "Китоб ДЎХ"
+  },
+  {
+   "name": "Хайитётоқ",
+   "xojalik_name": "Муборак ДЎХ"
+  },
+  {
+   "name": "Янгиариқ",
+   "xojalik_name": "Муборак ДЎХ"
+  },
+  {
+   "name": "Хотам",
+   "xojalik_name": "Муборак ДЎХ"
+  },
+  {
+   "name": "Жейнов",
+   "xojalik_name": "Қашқадарё ДЎХ"
+  },
+  {
+   "name": "Косон",
+   "xojalik_name": "Қашқадарё ДЎХ"
+  },
+  {
+   "name": "Эски анхор",
+   "xojalik_name": "Қашқадарё ДЎХ"
+  },
+  {
+   "name": "Касби",
+   "xojalik_name": "Қашқадарё ДЎХ"
+  },
+  {
+   "name": "Қизилтом",
+   "xojalik_name": "Қашқадарё ДЎХ"
+  },
+  {
+   "name": "Жовуз",
+   "xojalik_name": "Жовуз ДЎХ"
+  },
+  {
+   "name": "Матмон",
+   "xojalik_name": "Жовуз ДЎХ"
+  },
+  {
+   "name": "Марказий кўчатхона",
+   "xojalik_name": "Жовуз ДЎХ"
+  },
+  {
+   "name": "Шўртан",
+   "xojalik_name": "Шўртан ДЎХ"
+  },
+  {
+   "name": "Бешкент",
+   "xojalik_name": "Шўртан ДЎХ"
+  },
+  {
+   "name": "Шўртан",
+   "xojalik_name": "Шўртан ДЎХ"
+  },
+  {
+   "name": "Бешчаўма",
+   "xojalik_name": "Қумдарё ДЎХ"
+  },
+  {
+   "name": "Қалқама",
+   "xojalik_name": "Қумдарё ДЎХ"
+  },
+  {
+   "name": "Шурқудуқ",
+   "xojalik_name": "Қумдарё ДЎХ"
+  },
+  {
+   "name": "Ибн Сино",
+   "xojalik_name": "Қумдарё ДЎХ"
+  },
+  {
+   "name": "Етиитом",
+   "xojalik_name": "Қумдарё ДЎХ"
+  },
+  {
+   "name": "Муборак",
+   "xojalik_name": "Муборак ДЎОХ"
+  },
+  {
+   "name": "Боёвут",
+   "xojalik_name": "Сирдарё ДЎХ"
+  },
+  {
+   "name": "Қолгансир",
+   "xojalik_name": "Қолгансир ДЎОХ"
+  },
+  {
+   "name": "Чингелди",
+   "xojalik_name": "Конимех ДЎХ"
+  },
+  {
+   "name": "Конимех",
+   "xojalik_name": "Конимех ДЎХ"
+  },
+  {
+   "name": "Аксай",
+   "xojalik_name": "Конимех ДЎХ"
+  },
+  {
+   "name": "Томди",
+   "xojalik_name": "Томди ДЎХ"
+  },
+  {
+   "name": "Авангард",
+   "xojalik_name": "Учқудуқ ДЎХ"
+  },
+  {
+   "name": "Дўстлик",
+   "xojalik_name": "Учқудуқ ДЎХ"
+  },
+  {
+   "name": "Кўлқудуқ",
+   "xojalik_name": "Учқудуқ ДЎХ"
+  },
+  {
+   "name": "Мингбулоқ",
+   "xojalik_name": "Учқудуқ ДЎХ"
+  },
+  {
+   "name": "Узунқудуқ",
+   "xojalik_name": "Учқудуқ ДЎХ"
+  },
+  {
+   "name": "Олтинсой",
+   "xojalik_name": "Хатирчи ДЎХ"
+  },
+  {
+   "name": "Зарафшон",
+   "xojalik_name": "Хатирчи ДЎХ"
+  },
+  {
+   "name": "Деҳибаланд",
+   "xojalik_name": "Нурота ДЎХ"
+  },
+  {
+   "name": "Чўя",
+   "xojalik_name": "Нурота ДЎХ"
+  },
+  {
+   "name": "Янгибино",
+   "xojalik_name": "Нурота ДЎХ"
+  },
+  {
+   "name": "Қизилча",
+   "xojalik_name": "Нурота ДЎХ"
+  },
+  {
+   "name": "Нурота",
+   "xojalik_name": "Нурота ДЎХ"
+  },
+  {
+   "name": "Нурота ў.о.б",
+   "xojalik_name": "Нурота ДЎОХ"
+  },
+  {
+   "name": "Каптархона",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Шохимардонобод",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Фарғона",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Қорасув",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Турват",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Тошлоқ",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Дўрмон",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Қизилтепа",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Олтиариқ",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Табиат ёдгорлиги",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Қўштепа",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Табиат ёдгорлиги",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Ёзёвон",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Боғдод",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Қувасой",
+   "xojalik_name": "Фарғона ДЎХ"
+  },
+  {
+   "name": "Абдусамад",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Янгиобод",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Фарход",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Қипчоқ",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Сирдарё",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Орол",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Бешариқ",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Шоберди",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Асад",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Сариққамиш",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Риштон",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Учкўприк",
+   "xojalik_name": "Қўқон ДЎХ"
+  },
+  {
+   "name": "Поп",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Оқтепа",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Парда Турсун",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Қўшховуз",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Космос",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Гулистон",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Оқтов",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Бетагалик",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Ғурумсарой",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Водий",
+   "xojalik_name": "Поп ИДЎХ"
+  },
+  {
+   "name": "Қоратоғ",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Кўкумбой",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Чиндовул",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Сарсон",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Косонсой",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Испарон",
+   "xojalik_name": "Косонсой ДЎХ"
+  },
+  {
+   "name": "Мингбулоқ",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Наманган",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Тўрақўрғон",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Чортоқ",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Чуст",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Уйчи",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Учқўрғон",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Янгиқўрғон",
+   "xojalik_name": "Наманган КИДЎХ"
+  },
+  {
+   "name": "Тамшуш",
+   "xojalik_name": "Узун ДЎХ"
+  },
+  {
+   "name": "Сангардак",
+   "xojalik_name": "Узун ДЎХ"
+  },
+  {
+   "name": "Завар",
+   "xojalik_name": "Узун ДЎХ"
+  },
+  {
+   "name": "Узун",
+   "xojalik_name": "Узун ДЎХ"
+  },
+  {
+   "name": "Файзава",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Духана",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Чагам",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Хазратбобо",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Қоратоғ",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Озод",
+   "xojalik_name": "Боботоғ ДЎХ"
+  },
+  {
+   "name": "Алачопон",
+   "xojalik_name": "Бойсун ДЎХ"
+  },
+  {
+   "name": "Кенгдала",
+   "xojalik_name": "Бойсун ДЎХ"
+  },
+  {
+   "name": "Ҳомкон",
+   "xojalik_name": "Бойсун ДЎХ"
+  },
+  {
+   "name": "Мачай",
+   "xojalik_name": "Бойсун ДЎХ"
+  },
+  {
+   "name": "Қўнғирот",
+   "xojalik_name": "Бойсун ДЎХ"
+  },
+  {
+   "name": "Боғистон",
+   "xojalik_name": "Қизириқ ДЎХ"
+  },
+  {
+   "name": "Хўжааксар",
+   "xojalik_name": "Қизириқ ДЎХ"
+  },
+  {
+   "name": "Хўжақия",
+   "xojalik_name": "Қизириқ ДЎХ"
+  },
+  {
+   "name": "Каттақум",
+   "xojalik_name": "Сурхондарё ДЎХ"
+  },
+  {
+   "name": "Арчазор",
+   "xojalik_name": "Сурхондарё ДЎХ"
+  },
+  {
+   "name": "Сурхон сохили",
+   "xojalik_name": "Сурхондарё ДЎХ"
+  },
+  {
+   "name": "Ангрен",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Дўнгқўрғон",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Туя-бўғиз",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Оққўрғон",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Қибрай",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Янгийўл",
+   "xojalik_name": "Тошкент ДЎХ"
+  },
+  {
+   "name": "Ширинсой",
+   "xojalik_name": "Бекобод ДЎХ"
+  },
+  {
+   "name": "Жийдали",
+   "xojalik_name": "Бекобод ДЎХ"
+  },
+  {
+   "name": "Мўюнқум",
+   "xojalik_name": "Бекобод ДЎХ"
+  },
+  {
+   "name": "Марказ",
+   "xojalik_name": "Қуйичирчиқ ИДЎХ"
+  },
+  {
+   "name": "Холов",
+   "xojalik_name": "Қуйичирчиқ ИДЎХ"
+  },
+  {
+   "name": "Чотқол",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Сижжак",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Пском",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "А.Абдурахмонов",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Қ/Тўқай",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Оқбулоқ",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Саргардон",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Бурчмулла",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Журакбау",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Хумсон",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Айгаин",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Автойўл 4Р12",
+   "xojalik_name": "Бурчмулла ДЎХ"
+  },
+  {
+   "name": "Марказий",
+   "xojalik_name": "Далварзин ДЎОХ"
+  },
+  {
+   "name": "Кривой",
+   "xojalik_name": "Далварзин ДЎОХ"
+  },
+  {
+   "name": "Жийдали",
+   "xojalik_name": "Далварзин ДЎОХ"
+  },
+  {
+   "name": "Пусатов",
+   "xojalik_name": "Далварзин ДЎОХ"
+  },
+  {
+   "name": "Қорақум",
+   "xojalik_name": "Хоразм ДЎХ"
+  },
+  {
+   "name": "Туямўйин",
+   "xojalik_name": "Хоразм ДЎХ"
+  },
+  {
+   "name": "Қақрали",
+   "xojalik_name": "Хоразм ДЎХ"
+  },
+  {
+   "name": "Test branch",
+   "xojalik_name": "Оролбўйи МТБ"
+  }
+ ],
+ "land_types": [
+  {
+   "name": "Чўл",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "Тоғ",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "Водий",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "Тўқай",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "Фойдаланилаётган ерлар (суғориладиган)",
+   "description": null,
+   "parent_name": "Чўл"
+  },
+  {
+   "name": "Фойдаланилмаётган ерлар (суғорилмайдиган лалми)",
+   "description": null,
+   "parent_name": "Тоғ"
+  },
+  {
+   "name": "Ўзлаштирилмаган бошқа ерлар",
+   "description": null,
+   "parent_name": "Водий"
+  }
+ ],
+ "activity_types": [
+  {
+   "name": "ўрмон барпо қилиш",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "қишлоқ хўжалиги экинларини экиш",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "мевали боғлар барпо этиш",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "ёнғоқ мевали боғлар барпо этиш (писта, бодом, ёнғоқ) фаолияти",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "кўчат етиштириш фаолияти",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "лимонарий ва иссиқхоналар ташкил этиш фаолияти",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "пичанзорлардан фойдаланиш (пичан йиғиштириш)",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "доривор ўсимликлар етиштириш фаолияти",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "овчилик фаолияти (овчиларни қабул қилиш пункти)",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "бошқа фаолият турлари",
+   "description": null,
+   "parent_name": null
+  },
+  {
+   "name": "сабзавотчилик йўналиши",
+   "description": null,
+   "parent_name": "қишлоқ хўжалиги экинларини экиш"
+  },
+  {
+   "name": "полизчилик йўналиши",
+   "description": null,
+   "parent_name": "қишлоқ хўжалиги экинларини экиш"
+  },
+  {
+   "name": "дукакли ва мойли экинлар йўналиши",
+   "description": null,
+   "parent_name": "қишлоқ хўжалиги экинларини экиш"
+  },
+  {
+   "name": "башоқли экинлар йўналиши",
+   "description": null,
+   "parent_name": "қишлоқ хўжалиги экинларини экиш"
+  },
+  {
+   "name": "янгидан барпо этилаётган мевали боғлар ва узумзорлар",
+   "description": null,
+   "parent_name": "мевали боғлар барпо этиш"
+  },
+  {
+   "name": "фойдаланилаётган кўп йиллик мевали боғлар ва узумзорлар",
+   "description": null,
+   "parent_name": "мевали боғлар барпо этиш"
+  },
+  {
+   "name": "янгидан барпо этилаётган ёнғоқ мевали боғлар",
+   "description": null,
+   "parent_name": "ёнғоқ мевали боғлар барпо этиш (писта, бодом, ёнғоқ) фаолияти"
+  },
+  {
+   "name": "янгидан барпо этилаётган ёнғоқ мевали боғлар",
+   "description": null,
+   "parent_name": "ёнғоқ мевали боғлар барпо этиш (писта, бодом, ёнғоқ) фаолияти"
+  },
+  {
+   "name": "экологик туризм, рекрация, соғломлаштириш  йўналиши",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  },
+  {
+   "name": "қурилиш майдонлари (чорвачилик,  паррандачилик, омборхона, совутиш камералари ва музлатгичлар, қадоқлаш ва ҳаказо)",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  },
+  {
+   "name": "асаларичилик йўналишига",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  },
+  {
+   "name": "балиқчилик йўналиши",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  },
+  {
+   "name": "ахолига пуллик хизмат кўрсатиш йўналиши (автотураргоҳ, автосервис, ўрмон махсулотларини қайта ишлаш ва ишлаб чиқариш мақсадларига ва бошқалар учун)",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  },
+  {
+   "name": "таббий ресурслар жойлашган майдонлар (туз, тош, қум, шағал, тупроқ, ва бошқа қазилма бойликлар)дан фойдаланиш",
+   "description": null,
+   "parent_name": "бошқа фаолият турлари"
+  }
+ ],
+ "privilege_types": [
+  {
+   "name": "Ёнғоқ мевали боғлар (писта, бодм, ёнғоқ) тез ўсувчи дарахтлар (павлония ва терак) эгалаган майдонлар (га) (5 йил)",
+   "description": null,
+   "parent_name": null,
+   "month": 60
+  },
+  {
+   "name": "чўл ўсимликлари (саксовул, черкез, қандим, қорабуроқ) экиш (га) (10 йил)",
+   "description": null,
+   "parent_name": null,
+   "month": 120
+  },
+  {
+   "name": "Доривор ўсимликлар етиштириш (га) (3 йил)",
+   "description": null,
+   "parent_name": null,
+   "month": 36
+  },
+  {
+   "name": "Қ/Х экинлари экиш (га) (1 йил)",
+   "description": null,
+   "parent_name": null,
+   "month": 12
+  }
+ ]
+}

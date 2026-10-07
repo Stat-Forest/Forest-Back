@@ -61,6 +61,7 @@ referencing==0.36.2
 requests==2.34.2
 rpds-py==0.26.0
 service-identity==26.1.0
+shapely==2.0.7
 six==1.17.0
 smmap==5.0.2
 sqlparse==0.6.0
@@ -136,6 +137,7 @@ referencing==0.36.2
 requests==2.34.2
 rpds-py==0.26.0
 service-identity==26.1.0
+shapely==2.0.7
 six==1.17.0
 smmap==5.0.2
 sqlparse==0.6.0

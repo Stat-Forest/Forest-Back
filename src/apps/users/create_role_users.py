@@ -31,7 +31,8 @@ def setup_roles_permissions_and_users():
         "bolim_admin": ["can_accept_report", "can_return_report", "can_add_plan"],
         "tashkilot_rahbari": ["can_view_report", "can_return_report"],
         "tashkilot_hodimi": ["can_crud_report"],
-        "hududiy_boshqarma": []
+        "hududiy_boshqarma": [],
+        "billing_user": [],
     }
 
     for group_name, codename_list in groups_permissions.items():

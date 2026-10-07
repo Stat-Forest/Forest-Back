@@ -13,6 +13,12 @@ python manage.py makemigrations --noinput || echo "!!! makemigrations FAILED —
 echo "Running migrations..."
 python manage.py migrate --noinput
 
+# Ijara billing ma'lumotnomasi (idempotent) va GIS xo'jalik konturlari
+# (faqat jadval bo'sh bo'lsa — 8 MB fixture har deploy'da qayta o'qilmasin).
+echo "Seeding billing reference data..."
+python manage.py seed_billing || echo "!!! seed_billing FAILED"
+python manage.py import_xojalik_locations --if-empty || echo "!!! import_xojalik_locations FAILED"
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
