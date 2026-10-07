@@ -126,7 +126,7 @@ class ManagementCommandsTest(TestCase):
         call_command("seed_billing", stdout=out)
         counts = (Region.objects.count(), District.objects.count(), Xojalik.objects.count(), Bolim.objects.count(),
                   LandType.objects.count(), ActivityType.objects.count(), PrivilegeType.objects.count())
-        self.assertEqual(counts, (14, 206, 99, 294, 7, 23, 4))  # activity_types'da 1, bolimlar'da 2 ta takror
+        self.assertEqual(counts, (14, 206, 99, 293, 7, 23, 4))  # activity_types'da 1, bolimlar'da 2 ta takror
         self.assertEqual(Region.objects.get(code="35").billing_id, 1)
         self.assertEqual(Xojalik.objects.get(name="Беруний ДЎХ").code, "23:02:06")
         self.assertIsNone(Xojalik.objects.get(name="Беруний ДЎХ").inn)

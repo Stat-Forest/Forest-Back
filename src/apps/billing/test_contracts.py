@@ -85,6 +85,18 @@ class ContractCreateTest(ContractApiTestBase):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("pinfl", resp.data["errors"]["renter"])
 
+    def test_rent_area_required_and_positive(self):
+        for value in ("", "0"):
+            resp = self.client.post(URL, contract_payload(self.ref, rent_area=value), format="json")
+            self.assertEqual(resp.status_code, 400, value)
+            self.assertIn("rent_area", resp.data["errors"]["contract"])
+        payload = contract_payload(self.ref)
+        payload["contract"].pop("rent_area")
+        resp = self.client.post(URL, payload, format="json")
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("rent_area", resp.data["errors"]["contract"])
+        self.assertEqual(Contract.objects.count(), 0)
+
     def test_duplicate_contract_number_rejected(self):
         self.create()
         resp = self.client.post(URL, contract_payload(self.ref, pinfl="22222222222222"), format="json")

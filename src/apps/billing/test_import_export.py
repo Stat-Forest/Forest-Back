@@ -72,6 +72,17 @@ class ImportExcelTest(APITestCase):
         self.assertEqual(contract.history.get().reason, ContractHistory.Reason.IMPORTED)
         self.assertEqual(contract.status, "active")
 
+    def test_import_falls_back_to_xojalik_name_when_inn_unknown(self):
+        row = import_row(self.ref, xojalik_inn="000000000", xojalik=self.ref.xojalik.name.upper())
+        resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
+        self.assertEqual(resp.data["saved"], [0], resp.data)
+        self.assertEqual(Contract.objects.get(contract_number="IMP-1").xojalik, self.ref.xojalik)
+
+        row = import_row(self.ref, xojalik_inn="000000000", xojalik="Yo'q xo'jalik", contract_number="IMP-3")
+        resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
+        self.assertEqual(resp.data["saved"], [])
+        self.assertIn("xojalik_inn", resp.data["errors"]["0"]["contract"])
+
     def test_import_canceled_row_becomes_inactive(self):
         row = import_row(self.ref, canceled_date="2025-12-01", cancel_reason="Bekor")
         resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
