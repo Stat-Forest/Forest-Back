@@ -9,10 +9,23 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.billing.models import ActivityType, Bolim, District, LandType, PrivilegeType, Region, Xojalik
+from apps.billing.models import ActivityType, Bolim, Contract, District, LandType, PrivilegeType, Region, Xojalik
 from apps.billing.services.territory import normalize_district_name, normalize_region_name
 
 DEFAULT_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "billing_reference.json"
+
+# Eski bazadagi imlosi rasmiy MҲОБТ ro'yxatidan farq qiladigan tumanlar:
+# (viloyat kodi, eski nom) -> rasmiy tuman kodi. Eski yozuv rasmiysiga
+# birlashtiriladi (shartnomalari ko'chiriladi).
+DISTRICT_ALIASES = {
+    ("1703", "Бўстон тумани"): "1703209",   # Бўз тумани
+    ("1722", "Шерабад тумани"): "1722223",  # Шеробод тумани
+    ("1727", "Пскент тумани"): "1727250",   # Пискент тумани
+    ("1730", "Боғдод тумани"): "1730209",   # Бағдод тумани
+    ("1733", "Хазарасп тумани"): "1733220",  # Хазорасп тумани
+    ("1735", "Шўманой тумани"): "1735243",  # Шуманай тумани
+    ("1735", "Қораўзяк тумани"): "1735211",  # Қораўзак тумани
+}
 
 
 def _blank_to_none(value):
@@ -82,9 +95,17 @@ class Command(BaseCommand):
         return tuple(counter)
 
     def seed_districts(self, rows):
-        """Tuman (viloyat, kod) yoki (viloyat, normallashgan nom) bo'yicha topilib yangilanadi."""
+        """
+        Tuman (viloyat, kod), (viloyat, normallashgan nom) yoki `DISTRICT_ALIASES`
+        bo'yicha topilib yangilanadi. Rasmiy kodli yozuv bilan bir qatorda eski
+        (alias) yozuv ham bo'lsa — eskisi rasmiysiga birlashtiriladi.
+        """
         counter = [0, 0]
         regions = {r.code: r for r in Region.objects.all()}
+        aliases = {
+            (region_code, normalize_district_name(old_name)): code
+            for (region_code, old_name), code in DISTRICT_ALIASES.items()
+        }
         by_region: dict = {}
         for district in District.objects.all():
             by_region.setdefault(district.region_id, []).append(district)
@@ -96,17 +117,29 @@ class Command(BaseCommand):
             code, name = str(row["code"]).strip(), row["name"].strip()
             norm = normalize_district_name(name)
             pool = by_region.setdefault(region.id, [])
-            district = next((d for d in pool if d.code == code), None) or next(
-                (d for d in pool if normalize_district_name(d.name) == norm), None
-            )
+            by_code = next((d for d in pool if d.code == code), None)
+            legacy = [
+                d for d in pool
+                if d is not by_code and (
+                    normalize_district_name(d.name) == norm
+                    or aliases.get((region.code, normalize_district_name(d.name))) == code
+                )
+            ]
+            district = by_code or (legacy.pop(0) if legacy else None)
             if district is None:
-                pool.append(District.objects.create(region=region, code=code, name=name))
+                district = District.objects.create(region=region, code=code, name=name)
+                pool.append(district)
                 counter[0] += 1
-                continue
-            if (district.code, district.name) != (code, name):
-                district.code, district.name = code, name
-                district.save(update_fields=["code", "name", "updated_at"])
-            counter[1] += 1
+            else:
+                if (district.code, district.name) != (code, name):
+                    district.code, district.name = code, name
+                    district.save(update_fields=["code", "name", "updated_at"])
+                counter[1] += 1
+            for old in legacy:
+                moved = Contract.objects.filter(district=old).update(district=district)
+                self.stdout.write(f"Tuman birlashtirildi: {old.name} ({old.code}) -> {name} ({code}), shartnomalar: {moved}")
+                pool.remove(old)
+                old.delete()
         return tuple(counter)
 
     def seed_xojaliklar(self, rows):
