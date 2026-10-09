@@ -14,10 +14,12 @@ from apps.billing._tests_common import BASE, auth, contract_payload, make_refere
 from apps.billing.models import (
     ActivityType,
     Bolim,
+    Contract,
     District,
     LandType,
     PrivilegeType,
     Region,
+    Renter,
     Xojalik,
     XojalikKontur,
     XojalikLocation,
@@ -144,6 +146,30 @@ class ManagementCommandsTest(TestCase):
         self.assertEqual((district.code, district.name), ("1708209", "Ғаллаорол тумани"))
         self.assertEqual(Region.objects.count(), 14)
         self.assertEqual(District.objects.filter(region=region).count(), 13)
+
+    def test_seed_billing_merges_legacy_spelled_districts(self):
+        call_command("seed_billing", stdout=io.StringIO())
+        surxon = Region.objects.get(code="1722")
+        official = District.objects.get(region=surxon, code="1722223")  # Шеробод тумани
+        legacy = District.objects.create(region=surxon, code="13", name="Шерабад тумани")
+        ref = make_reference(name="Сурхон ДЎХ")
+        contract = Contract.objects.create(
+            renter=Renter.objects.create(pinfl="12345678901234", full_name="Ijarachi"),
+            xojalik=ref.xojalik, region=surxon, district=legacy, contract_date="2026-01-10",
+            number="X-1", rent_area=1,
+        )
+        tashkent = Region.objects.get(code="1727")
+        District.objects.filter(region=tashkent, code="1727250").delete()
+        renamed = District.objects.create(region=tashkent, code="10", name="Пскент тумани")
+
+        call_command("seed_billing", stdout=io.StringIO())
+
+        self.assertFalse(District.objects.filter(pk=legacy.pk).exists())
+        contract.refresh_from_db()
+        self.assertEqual(contract.district, official)
+        renamed.refresh_from_db()
+        self.assertEqual((renamed.code, renamed.name), ("1727250", "Пискент тумани"))
+        self.assertEqual(District.objects.filter(region=tashkent, name="Пискент тумани").count(), 1)
 
     def test_import_xojalik_locations(self):
         ref = make_reference(name="Андижон ДЎХ")
