@@ -72,6 +72,11 @@ class ReportListAPIView(CustomListAPIView):
                 return qs.none()
             return qs.filter(statement__parent_id=user.statement_id)
 
+        # IJARA BILLING ROLLARI — kadastr bo'limi, tashkilot doirasi
+        if user.role in ('billing_user', 'billing_super'):
+            from apps.reports.permissions.report_scope import scope_reports_for_billing_role
+            return scope_reports_for_billing_role(qs, user)
+
         # HUDUDIY_BOSHQARMA
         if user.role == 'hududiy_boshqarma':
             org_regions = list(user.region_user_orgs.values_list('region', flat=True).distinct())

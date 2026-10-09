@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from apps.billing.filters import BillingContractFilter
 from apps.billing.models import Contract, ContractActivity, ContractLand, ContractPrivilege, ContractYearlyAmount
 from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.scope import scope_queryset
 from apps.billing.serializers import (
     ChangeRenterSerializer,
     ContractDetailSerializer,
@@ -28,6 +29,7 @@ from apps.billing.services import contract_writer
 from apps.billing.services.errors import BillingValidationError
 from apps.billing.services.excel_export import build_contracts_workbook
 from apps.billing.services.excel_import import import_rows
+from apps.billing.services.rent_stats import RentStatsParamsError, parse_rent_stats_params, yearly_area_price_stats
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 IMPORT_TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "templates_xlsx" / "import_template.xlsx"
@@ -43,7 +45,9 @@ def _errors_response(exc: BillingValidationError) -> Response:
 class ContractViewSet(viewsets.GenericViewSet):
     """
     GET — har qanday autentifikatsiyalangan foydalanuvchi; POST/PATCH —
-    billing_user yoki super_admin (`BillingReadOrWrite`).
+    billing_user / billing_super / super_admin (`BillingReadOrWrite`).
+    billing_user faqat o'ziga biriktirilgan xo'jaliklarni ko'radi
+    (doiradan tashqari shartnoma — 404).
     """
 
     permission_classes = [BillingReadOrWrite]
@@ -56,6 +60,7 @@ class ContractViewSet(viewsets.GenericViewSet):
         queryset = Contract.objects.select_related(
             "xojalik", "xojalik__region", "bolim", "region", "district", "renter",
         ).order_by("xojalik__name", "-created_at")
+        queryset = scope_queryset(queryset, self.request.user)
         if self.action == "retrieve":
             return self._prefetch_detail(queryset)
         return queryset
@@ -177,6 +182,18 @@ class ContractViewSet(viewsets.GenericViewSet):
         data = {**base, **amounts}
         data["total_debt"] = data["total_rent_amount"] - data["total_paid_amount"]
         return Response({key: str(value) if isinstance(value, Decimal) else value for key, value in data.items()})
+
+    @action(detail=False, methods=["get"], url_path="rent-stats")
+    def rent_stats(self, request, *args, **kwargs):
+        """Ijara tushumi statistikasi (yillar bo'yicha), foydalanuvchi doirasida."""
+        try:
+            from_year, to_year, xojalik_id = parse_rent_stats_params(request.query_params)
+        except RentStatsParamsError as exc:
+            return Response({"errors": exc.errors}, status=status.HTTP_400_BAD_REQUEST)
+        queryset = self.get_queryset()
+        if xojalik_id:
+            queryset = queryset.filter(xojalik_id=xojalik_id)
+        return Response(yearly_area_price_stats(queryset, from_year, to_year))
 
     @action(detail=False, methods=["get"], url_path="counts")
     def counts(self, request, *args, **kwargs):

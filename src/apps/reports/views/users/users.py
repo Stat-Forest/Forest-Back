@@ -68,6 +68,11 @@ class UserListAPIView(generics.ListAPIView):
         if user.is_superuser:
             return qs
 
+        # Ijara billing rollari — faqat o'zi
+        from apps.billing.scope import is_billing_role
+        if is_billing_role(user):
+            return qs.filter(id=user.id)
+
         # HUDUDIY BOSHQARMA (organization ham, statement ham yo‘q)
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
             orgs = user.region_user_orgs.all()

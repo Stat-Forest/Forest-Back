@@ -18,6 +18,27 @@ EDITOR_ROLES = {
 EDITABLE_STATUSES = {"saved", "cancelled"}
 
 
+def scope_reports_for_billing_role(queryset, user):
+    """
+    Ijara billing rollari (billing_user/billing_super): faqat "O'rmon kadastri va
+    monitoringi" bo'limi hisobotlari; tashkilot: billing_super — hammasi,
+    billing_user — o'z tashkiloti ∪ biriktirilgan xo'jaliklar tashkilotlari.
+    """
+    from apps.billing.scope import billing_organization_ids
+    from apps.reports.services.kadastr import get_kadastr_parent_id
+
+    kadastr_id = get_kadastr_parent_id()
+    if not kadastr_id:
+        return queryset.none()
+    queryset = queryset.filter(statement__parent_id=kadastr_id)
+    org_ids = billing_organization_ids(user)
+    if org_ids is None:
+        return queryset
+    if not org_ids:
+        return queryset.none()
+    return queryset.filter(organization_id__in=org_ids)
+
+
 def scope_reports_for_user(queryset, user):
     """
     Report querysetini foydalanuvchi roliga qarab cheklaydi
@@ -27,6 +48,7 @@ def scope_reports_for_user(queryset, user):
     - tashkilot_hodimi / tashkilot_rahbari -> faqat o'z tashkiloti
     - bolim_admin -> faqat o'z bo'limi (statement.parent)
     - hududiy_boshqarma -> faqat biriktirilgan tashkilotlar hududi
+    - billing_user / billing_super -> kadastr bo'limi (scope_reports_for_billing_role)
     - boshqalar -> hech narsa
     """
     if not user or not user.is_authenticated:
@@ -34,6 +56,9 @@ def scope_reports_for_user(queryset, user):
 
     if user.is_superuser or user.role in FULL_ACCESS_ROLES:
         return queryset
+
+    if user.role in (CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER):
+        return scope_reports_for_billing_role(queryset, user)
 
     if user.role in (CustomUser.Role.TASHKILOT_HODIMI, CustomUser.Role.TASHKILOT_RAHBARI):
         if not user.organization_id:

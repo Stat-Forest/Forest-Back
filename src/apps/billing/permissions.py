@@ -1,20 +1,10 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from apps.users.models import CustomUser
-
-WRITER_ROLES = {CustomUser.Role.BILLING_USER, CustomUser.Role.SUPER_ADMIN}
-
-
-def is_billing_writer(user) -> bool:
-    return bool(
-        user
-        and user.is_authenticated
-        and (user.role in WRITER_ROLES or user.is_superuser)
-    )
+from apps.billing.scope import WRITER_ROLES, is_billing_writer  # noqa: F401 — tashqi importlar uchun
 
 
 class IsBillingWriter(BasePermission):
-    """Yozish: faqat billing_user yoki super_admin (is_superuser)."""
+    """Yozish: billing_user (o'z xo'jaliklari doirasida), billing_super, super_admin yoki superuser."""
 
     message = "Bu amal faqat Ijara billing foydalanuvchisi uchun ruxsat etilgan."
 

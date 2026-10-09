@@ -45,10 +45,12 @@ from apps.billing.serializers.write import (
     RenterWriteSerializer,
     YearlyAmountWriteSerializer,
 )
+from apps.billing.scope import NOT_ASSIGNED_MESSAGE, billing_xojalik_ids, can_write_xojalik
 from apps.billing.services import history
 from apps.billing.services.boundary import validate_contract_boundary
 from apps.billing.services.errors import BillingValidationError, uz_errors
 from apps.billing.services.numbering import generate_contract_number
+from apps.billing.services.territory import resolve_district_code, resolve_region_code
 
 TYPE_SECTIONS = (
     ("lands", ContractLand, LandType, LandItemSerializer),
@@ -116,7 +118,13 @@ def _validate(serializer_class, section, data, instance=None, partial=False):
 # ---------------------------------------------------------------------------
 # Import: nom/kod -> ID
 # ---------------------------------------------------------------------------
-def resolve_import_references(contract_data: dict) -> None:
+def ensure_xojalik_allowed(user, xojalik_id) -> None:
+    """billing_user faqat o'ziga biriktirilgan xo'jalik bilan yozadi."""
+    if user is not None and xojalik_id and not can_write_xojalik(user, xojalik_id):
+        raise BillingValidationError.field("contract", "xojalik", NOT_ASSIGNED_MESSAGE)
+
+
+def resolve_import_references(contract_data: dict, user=None) -> None:
     """Excel importdagi `xojalik_inn`/`xojalik` (nom), `bolim` (nom), `region_code`, `district_code` -> UUID."""
     errors = {}
     xojalik = None
@@ -141,14 +149,21 @@ def resolve_import_references(contract_data: dict) -> None:
         else:
             errors["xojalik_inn"] = "Xo'jalik INN yoki nomi to'ldirilishi shart"
     if xojalik is not None:
+        # Doiradan tashqari xo'jalik — bo'lim yaratilmasidan oldin to'xtatiladi
+        ensure_xojalik_allowed(user, xojalik.id)
         contract_data["xojalik"] = xojalik.id
 
     bolim = contract_data.get("bolim")
     if bolim not in (None, "") and not is_uuid(bolim):
-        found = Bolim.objects.filter(name__iexact=_clean(bolim), xojalik=xojalik).first() if xojalik else None
-        if found is None:
-            errors["bolim"] = f"'{bolim}' - bu xo'jalikning bunday bo'limi mavjud emas"
+        bolim_name = _clean(bolim)
+        if xojalik is None:
+            contract_data["bolim"] = None  # xo'jalik xatosi allaqachon qaytariladi
         else:
+            # Ma'lumotnomada hali yo'q bo'lim (billing'da ko'proq bo'lim bor) — shu
+            # xo'jalik ostida yaratiladi, shartnoma ma'lumoti yo'qolmaydi.
+            found = Bolim.objects.filter(name__iexact=bolim_name, xojalik=xojalik).first()
+            if found is None:
+                found = Bolim.objects.create(name=bolim_name, xojalik=xojalik)
             contract_data["bolim"] = found.id
     elif bolim == "":
         contract_data["bolim"] = None
@@ -156,7 +171,7 @@ def resolve_import_references(contract_data: dict) -> None:
     region = None
     region_code = _clean(contract_data.pop("region_code", None))
     if region_code:
-        region = Region.objects.filter(code=region_code).first()
+        region = resolve_region_code(region_code)
         if region is None:
             errors["region_code"] = f"'{region_code}' kodli viloyat mavjud emas"
         else:
@@ -166,10 +181,9 @@ def resolve_import_references(contract_data: dict) -> None:
 
     district_code = _clean(contract_data.pop("district_code", None))
     if district_code:
-        districts = District.objects.filter(code=district_code)
-        if region is not None:
-            districts = districts.filter(region=region)
-        district = districts.first()
+        if region is None and xojalik is not None and not region_code:
+            region = xojalik.region
+        district = resolve_district_code(district_code, region)
         if district is None:
             errors["district_code"] = f"'{district_code}' kodli tuman mavjud emas yoki viloyatga mos kelmaydi"
         else:
@@ -185,6 +199,15 @@ def resolve_import_references(contract_data: dict) -> None:
 # ---------------------------------------------------------------------------
 # Ijarachi
 # ---------------------------------------------------------------------------
+def _renter_in_scope(renter: Renter, instance: Contract | None, user) -> bool:
+    """billing_user faqat o'z xo'jaliklaridagi (yoki shartnomasiz) ijarachini tahrirlaydi."""
+    ids = billing_xojalik_ids(user)
+    if ids is None or (instance is not None and instance.renter_id == renter.id):
+        return True
+    contracts = Contract.objects.filter(renter=renter)
+    return not contracts.exists() or contracts.filter(xojalik_id__in=ids).exists()
+
+
 def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
     """
     `id` berilsa — shu ijarachi yangilanadi; yaratishda pinfl/stir bo'yicha
@@ -214,7 +237,7 @@ def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
 
     if renter_id:
         renter = Renter.objects.filter(id=renter_id).first() if is_uuid(renter_id) else None
-        if renter is None:
+        if renter is None or not _renter_in_scope(renter, instance, user):
             raise BillingValidationError.field("renter", "id", "Ijarachi topilmadi")
         serializer = _validate(RenterWriteSerializer, "renter", data, instance=renter, partial=True)
         return _save(serializer, renter)
@@ -389,9 +412,12 @@ def save_contract(payload, user, *, instance: Contract | None = None, from_impor
             canceled_date = contract_data.pop("canceled_date", None)
             cancel_reason = contract_data.pop("cancel_reason", None)
             if from_import:
-                resolve_import_references(contract_data)
+                resolve_import_references(contract_data, user)
                 if canceled_date or _clean(cancel_reason):
                     import_status = (canceled_date, _clean(cancel_reason) or None)
+            # Doira tekshiruvi boshqa validatsiyadan oldin (masalan, bo'lim boshqa xo'jalikka tegishli xatosi)
+            if is_uuid(contract_data.get("xojalik")):
+                ensure_xojalik_allowed(user, contract_data["xojalik"])
 
         renter = resolve_renter(payload.get("renter"), instance, user)
 
@@ -401,6 +427,8 @@ def save_contract(payload, user, *, instance: Contract | None = None, from_impor
             serializer = _validate(ContractWriteSerializer, "contract", contract_data, instance=instance, partial=not is_create)
             validated = serializer.validated_data
             xojalik = validated.get("xojalik") or (instance.xojalik if instance else None)
+            if xojalik is not None:
+                ensure_xojalik_allowed(user, xojalik.id)
             if validated.get("boundary_geojson"):
                 error = validate_contract_boundary(instance, xojalik, validated["boundary_geojson"])
                 if error:

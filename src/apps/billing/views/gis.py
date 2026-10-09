@@ -5,6 +5,7 @@ from rest_framework import viewsets
 
 from apps.billing.models import XojalikKontur, XojalikLocation
 from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.scope import scope_queryset
 from apps.billing.serializers import (
     XojalikKonturDetailSerializer,
     XojalikKonturSerializer,
@@ -25,7 +26,7 @@ class XojalikLocationViewSet(viewsets.ReadOnlyModelViewSet):
         return XojalikLocationDetailSerializer if self.action == "retrieve" else XojalikLocationSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = scope_queryset(super().get_queryset(), self.request.user)
         if self.action == "list":
             queryset = queryset.defer("boundary_geojson")
         return queryset
@@ -43,7 +44,7 @@ class XojalikKonturViewSet(viewsets.ReadOnlyModelViewSet):
         return XojalikKonturDetailSerializer if self.action == "retrieve" else XojalikKonturSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = scope_queryset(super().get_queryset(), self.request.user, "xojalik_location__xojalik_id")
         if self.action == "retrieve":
             return queryset.select_related("xojalik_location", "xojalik_location__region")
         return queryset.only("id", "kontur_raqami", "area_ga", "xojalik_location_id", "raqami_num", "seq")

@@ -10,10 +10,13 @@ from drf_spectacular.views import (
 )
 
 from apps.base.admin import admin_site
+from apps.billing.admin_site import billing_admin_site
 from apps.general.protected_media import ProtectedMediaView
 
 urlpatterns = [
     path("admin/", admin_site.urls),
+    # Ijara billing adminkasi (billing modellari va billing foydalanuvchilari)
+    path("billing-admin/", billing_admin_site.urls),
     # API hujjatlari faqat admin uchun (SPECTACULAR_SETTINGS["SERVE_PERMISSIONS"]).
     # Sahifalar login'siz ochilsa admin login'ga yo'naltiradi.
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

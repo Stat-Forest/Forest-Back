@@ -1,0 +1,55 @@
+{% extends "admin/base_site.html" %}
+{% load i18n jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {{ billing_admin_header }} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'billing_admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">{{ billing_admin_header }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    {% get_side_menu using="app_list" as dashboard_list %}
+    <div class="col-12">
+        <div class="billing-admin-banner">
+            <i class="fas fa-file-contract mr-2"></i>{{ billing_admin_header }} — shartnomalar, ma'lumotnomalar va billing foydalanuvchilari
+        </div>
+        <div class="row">
+            {% for app in dashboard_list %}
+                <div class="col-md-6 col-sm-12">
+                    <div class="card">
+                        <div class="card-header"><h5 class="m-0">{{ app.name }}</h5></div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                {% for model in app.models %}
+                                    <tr>
+                                        <td>{% if model.url %}<a href="{{ model.url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}</td>
+                                        <td>
+                                            <div class="btn-group float-right">
+                                                {% if model.add_url %}
+                                                    <a href="{{ model.add_url }}" class="btn btn-xs {{ jazzmin_ui.button_classes.success }} addlink">{% trans 'Add' %}</a>
+                                                {% endif %}
+                                                {% if model.url %}
+                                                    <a href="{{ model.url }}" class="btn btn-xs {{ jazzmin_ui.button_classes.info }} changelink">{% if model.view_only %}{% trans 'View' %}{% else %}{% trans 'Change' %}{% endif %}</a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12"><p>{% trans "You don’t have permission to view or edit anything." %}</p></div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

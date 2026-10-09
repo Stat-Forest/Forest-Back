@@ -1,8 +1,21 @@
+"""
+Billing modellari faqat alohida `billing_admin_site`da (`/billing-admin/`) —
+stat `admin_site` va standart `admin.site`da ro'yxatdan o'tkazilmaydi.
+"""
+from django import forms
 from django.contrib import admin
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import BaseUserCreationForm, UserChangeForm
+from django.contrib.auth.models import Group
+from django.db.models import Prefetch
 
-from apps.base.admin import admin_site
+from apps.billing.admin_site import billing_admin_site
 from apps.billing.models import (
+    BILLING_ROLES,
     ActivityType,
+    BillingUser,
+    BillingUserAccess,
     Bolim,
     Contract,
     ContractAction,
@@ -26,11 +39,10 @@ from apps.logs.mixins import AdminHistoryMixin
 
 
 def register(model):
-    """Standart admin va loyihaning `admin_site`iga birdaniga ro'yxatdan o'tkazadi."""
+    """Faqat billing adminkasida ro'yxatdan o'tkazadi."""
 
     def decorator(admin_class):
-        admin.site.register(model, admin_class)
-        admin_site.register(model, admin_class)
+        billing_admin_site.register(model, admin_class)
         return admin_class
 
     return decorator
@@ -55,7 +67,7 @@ class XojalikAdmin(admin.ModelAdmin):
     list_display = ("name", "inn", "code", "region", "organization", "is_active")
     list_filter = ("region", "is_active")
     search_fields = ("name", "inn", "code")
-    autocomplete_fields = ("organization",)
+    list_select_related = ("region", "organization")
 
 
 @register(Bolim)
@@ -192,3 +204,125 @@ class XojalikKonturAdmin(admin.ModelAdmin):
     list_filter = ("xojalik_location__region",)
     search_fields = ("kontur_raqami", "xojalik_location__name")
     exclude = ("geojson",)
+
+
+# ---------------------------------------------------------------------------
+# Billing foydalanuvchilari (proxy CustomUser: billing_user / billing_super)
+# ---------------------------------------------------------------------------
+ROLE_CHOICES = [(role.value, role.label) for role in BILLING_ROLES]
+
+
+def _xojaliklar_field():
+    return forms.ModelMultipleChoiceField(
+        label="Biriktirilgan xo'jaliklar",
+        queryset=Xojalik.objects.select_related("region").order_by("name"),
+        required=False,
+        widget=FilteredSelectMultiple("Xo'jaliklar", is_stacked=False),
+        help_text="billing_user faqat shu xo'jaliklar doirasida ko'radi va yozadi; billing_super uchun ahamiyatsiz.",
+    )
+
+
+class _BillingUserFormMixin:
+    def _init_billing_fields(self):
+        self.fields["role"].choices = ROLE_CHOICES
+        if "organization" in self.fields:
+            self.fields["organization"].required = False
+        if self.instance and self.instance.pk:
+            access = BillingUserAccess.objects.filter(user_id=self.instance.pk).first()
+            self.fields["xojaliklar"].initial = list(access.xojaliklar.values_list("pk", flat=True)) if access else []
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        qs = BillingUser.objects.filter(email__iexact=email)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError("Bu elektron pochta bilan foydalanuvchi allaqachon mavjud.")
+        return email
+
+
+class BillingUserCreationForm(_BillingUserFormMixin, BaseUserCreationForm):
+    """Yaratish: email, ism, familiya, parol x2 (set_password), rol, xo'jaliklar, tashkilot, faol."""
+
+    role = forms.ChoiceField(label="Rol", choices=ROLE_CHOICES, initial=ROLE_CHOICES[0][0])
+    xojaliklar = _xojaliklar_field()
+
+    class Meta:
+        model = BillingUser
+        fields = ("email", "first_name", "last_name", "role", "organization", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_billing_fields()
+
+
+class BillingUserChangeForm(_BillingUserFormMixin, UserChangeForm):
+    """Tahrir: parol maydoni yo'q (faqat o'qiladi) — "Parolni o'zgartirish" havolasi orqali."""
+
+    role = forms.ChoiceField(label="Rol", choices=ROLE_CHOICES)
+    xojaliklar = _xojaliklar_field()
+
+    class Meta:
+        model = BillingUser
+        fields = ("email", "password", "first_name", "last_name", "role", "organization", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_billing_fields()
+
+
+@register(BillingUser)
+class BillingUserAdmin(UserAdmin):
+    form = BillingUserChangeForm
+    add_form = BillingUserCreationForm
+    list_display = ("email", "first_name", "last_name", "role", "organization", "xojaliklar_list", "is_active", "last_login")
+    list_filter = ("role", "is_active")
+    search_fields = ("email", "first_name", "last_name")
+    ordering = ("email",)
+    filter_horizontal = ()
+    readonly_fields = ("last_login", "created_at")
+    list_select_related = ("organization",)
+    fieldsets = (
+        ("Kirish", {"fields": ("email", "password")}),
+        ("Shaxsiy ma'lumot", {"fields": ("first_name", "last_name")}),
+        ("Rol va doira", {"fields": ("role", "xojaliklar", "organization", "is_active")}),
+        ("Sanalar", {"fields": ("last_login", "created_at")}),
+    )
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": (
+                "email", "first_name", "last_name", "password1", "password2",
+                "role", "xojaliklar", "organization", "is_active",
+            ),
+        }),
+    )
+
+    def get_queryset(self, request):
+        return (
+            super().get_queryset(request)
+            .filter(role__in=[role.value for role in BILLING_ROLES])
+            .prefetch_related(Prefetch("billing_access__xojaliklar", queryset=Xojalik.objects.only("id", "name")))
+        )
+
+    @admin.display(description="Xo'jaliklar")
+    def xojaliklar_list(self, obj):
+        access = getattr(obj, "billing_access", None)
+        if obj.role == BILLING_ROLES[1]:
+            return "Barchasi"
+        names = [x.name for x in access.xojaliklar.all()] if access else []
+        return ", ".join(names) or "—"
+
+    def save_model(self, request, obj, form, change):
+        obj.is_staff = False
+        obj.is_superuser = False
+        super().save_model(request, obj, form, change)
+        group, _ = Group.objects.get_or_create(name=obj.role)
+        obj.groups.set([group])
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        access, _ = BillingUserAccess.objects.get_or_create(
+            user_id=form.instance.pk, defaults={"created_by": request.user, "updated_by": request.user},
+        )
+        access.xojaliklar.set(form.cleaned_data.get("xojaliklar") or [])
