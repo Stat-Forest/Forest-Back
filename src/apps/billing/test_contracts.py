@@ -15,7 +15,7 @@ class ContractApiTestBase(APITestCase):
     def setUp(self):
         cache.clear()
         self.ref = make_reference()
-        self.user = make_user("billing", "billing_user")
+        self.user = make_user("billing", "billing_super")
         self.client = auth(self.client, self.user)
 
     def create(self, **overrides):
@@ -291,7 +291,7 @@ class ContractListAndStatsTest(ContractApiTestBase):
         self.assertEqual(resp.data["count"], 2)
         self.assertEqual(resp.data["results"][0]["contracts_count"], 1)
         self.assertIsInstance(self.client.get(f"{BASE}/regions/").data, list)
-        self.assertEqual(self.client.get(f"{BASE}/districts/", {"region": str(self.ref.region.id)}).data[0]["code"], "5")
+        self.assertEqual(self.client.get(f"{BASE}/districts/", {"region": str(self.ref.region.id)}).data[0]["code"], "1703202")
         xojaliklar = self.client.get(f"{BASE}/xojaliklar/", {"search": "Test"}).data
         self.assertEqual(xojaliklar[0]["region_name"], "Андижон вилояти")
         bolimlar = self.client.get(f"{BASE}/bolimlar/", {"region": str(self.ref.region.id)}).data

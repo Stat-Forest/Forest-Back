@@ -3,6 +3,7 @@ from django.forms import widgets
 from django.core.cache import cache
 
 from rest_framework import generics
+from rest_framework.exceptions import PermissionDenied
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.response import Response
 
@@ -11,7 +12,9 @@ import django_filters
 from apps.reports.serializers.statement.statement_column import (
     StatementColumnTreeSerializer
 )
+from apps.billing.scope import is_billing_role
 from apps.reports.models import Statement, StatementColumn
+from apps.reports.services.kadastr import is_kadastr_child
 from apps.utils.translation import get_translated_field
 
 
@@ -79,6 +82,10 @@ class StatementColumnTreeAPIView(generics.ListAPIView):
         lang = request.query_params.get("lang", "uz")
         statement_id = request.query_params.get("statement", "")
         is_user_input = request.query_params.get("is_user_input", "")
+
+        # Ijara billing rollari — faqat "O'rmon kadastri va monitoringi" formalari
+        if is_billing_role(request.user) and not is_kadastr_child(statement_id):
+            raise PermissionDenied("Bu hisobot formasi sizning rolingiz uchun yopiq.")
 
         cache_key = (
             f"{CACHE_KEY_PREFIX}"

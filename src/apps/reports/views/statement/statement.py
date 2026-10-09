@@ -6,7 +6,17 @@ from django.db.models import Prefetch
 
 from apps.reports.models import Statement
 from apps.reports.serializers.statement import StatementSerializer
-from apps.reports.views.statement.cache_keys import get_statement_list_cache_key
+from apps.reports.services.kadastr import get_kadastr_parent_id
+from apps.reports.views.statement.cache_keys import (
+    get_billing_statement_list_cache_key,
+    get_statement_list_cache_key,
+)
+
+
+def _is_billing_role(user) -> bool:
+    from apps.billing.scope import is_billing_role
+
+    return is_billing_role(user)
 
 
 @extend_schema(
@@ -42,6 +52,11 @@ class StatementListAPIView(ListAPIView):
             )
         ).order_by('name')
 
+        # Ijara billing rollari — faqat "O'rmon kadastri va monitoringi" bo'limi
+        if _is_billing_role(user):
+            kadastr_id = get_kadastr_parent_id()
+            return base_qs.filter(id=kadastr_id) if kadastr_id else base_qs.none()
+
         # Agar user'ning o'ziga tegishli statement bo'lsa
         if hasattr(user, 'statement') and user.statement:
             return base_qs.filter(id=user.statement_id)
@@ -58,8 +73,11 @@ class StatementListAPIView(ListAPIView):
         lang = request.query_params.get("lang", "uz")
 
         # Cache key generation
-        user_statement_id = user.statement.id if hasattr(user, 'statement') and user.statement else None
-        cache_key = get_statement_list_cache_key(user_statement_id, lang)
+        if _is_billing_role(user):
+            cache_key = get_billing_statement_list_cache_key(lang)
+        else:
+            user_statement_id = user.statement.id if hasattr(user, 'statement') and user.statement else None
+            cache_key = get_statement_list_cache_key(user_statement_id, lang)
 
         # Try cache first
         cached_data = cache.get(cache_key)

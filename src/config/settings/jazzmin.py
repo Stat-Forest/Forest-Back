@@ -52,6 +52,10 @@ JAZZMIN_SETTINGS = {
         {"app": "reports"},
         {"app": "general"},
         {"app": "ai"},
+
+        # Ijara billing adminkasi (alohida AdminSite: /billing-admin/)
+        {"name": "Ijara billing admin", "url": "/billing-admin/", "icon": "fas fa-file-contract",
+         "permissions": ["billing.view_contract"]},
     ],
 
     #############
@@ -127,6 +131,12 @@ JAZZMIN_SETTINGS = {
 
         "logs.HistoryActionJournal": "fas fa-history",
         "admin.LogEntry": "fas fa-history",
+
+        "billing.Contract": "fas fa-file-contract",
+        "billing.BillingUser": "fas fa-user-shield",
+        "billing.Xojalik": "fas fa-tree",
+        "billing.Renter": "fas fa-user-tie",
+        "billing.XojalikLocation": "fas fa-map-marked-alt",
 
     },
 

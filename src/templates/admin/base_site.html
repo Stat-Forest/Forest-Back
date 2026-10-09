@@ -1,11 +1,14 @@
 {% extends 'admin/base.html' %}
 {% load static %}
 
-{% block title %}{{ title }} | Forest Admin{% endblock %}
+{% block title %}{{ title }} | {% if is_billing_admin %}{{ billing_admin_header }}{% else %}Forest Admin{% endif %}{% endblock %}
 
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" href="{% static 'admin/css/custom.css' %}">
+{% if is_billing_admin %}
+{% include "billing_admin/branding.html" %}
+{% endif %}
 {% endblock %}
 
 {% block blockbots %}

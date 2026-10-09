@@ -1,12 +1,13 @@
 """Ma'lumotnoma ro'yxatlari (sahifalanmagan) va ijarachilar (sahifalangan)."""
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics
 
 from apps.billing.filters import BolimFilter
-from apps.billing.models import ActivityType, Bolim, District, LandType, PrivilegeType, Region, Renter, Xojalik
+from apps.billing.models import ActivityType, Bolim, Contract, District, LandType, PrivilegeType, Region, Renter, Xojalik
 from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.scope import billing_xojalik_ids, scope_queryset
 from apps.billing.serializers import (
     ActivityTypeSerializer,
     BolimSerializer,
@@ -47,6 +48,9 @@ class XojalikListView(_ReferenceListView):
     filterset_fields = ["region", "is_active"]
     search_fields = ["name", "inn", "code"]
 
+    def get_queryset(self):
+        return scope_queryset(super().get_queryset(), self.request.user, "id")
+
 
 @extend_schema(tags=["Billing"])
 class BolimListView(_ReferenceListView):
@@ -54,6 +58,9 @@ class BolimListView(_ReferenceListView):
     serializer_class = BolimSerializer
     filterset_class = BolimFilter
     search_fields = ["name"]
+
+    def get_queryset(self):
+        return scope_queryset(super().get_queryset(), self.request.user)
 
 
 @extend_schema(tags=["Billing"])
@@ -87,3 +94,17 @@ class RenterListView(generics.ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ["full_name", "pinfl", "stir", "legal_name"]
     queryset = Renter.objects.annotate(contracts_count=Count("contracts")).order_by("full_name")
+
+    def get_queryset(self):
+        ids = billing_xojalik_ids(self.request.user)
+        if ids is None:
+            return super().get_queryset()
+        if not ids:
+            return Renter.objects.none()
+        # Faqat o'z xo'jaliklaridagi shartnomalar ijarachilari (soni ham shu doirada)
+        in_scope = Contract.objects.filter(renter=OuterRef("pk"), xojalik_id__in=ids)
+        return (
+            Renter.objects.filter(Exists(in_scope))
+            .annotate(contracts_count=Count("contracts", filter=Q(contracts__xojalik_id__in=ids)))
+            .order_by("full_name")
+        )

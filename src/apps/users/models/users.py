@@ -23,6 +23,7 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         HUDUDIY_BOSHQARMA = "hududiy_boshqarma", _("Hududiy boshqarma")
         SUPPORT_ADMIN = "support_admin", "Support Admin"
         BILLING_USER = "billing_user", "Ijara billing foydalanuvchisi"
+        BILLING_SUPER = "billing_super", "Ijara billing super foydalanuvchisi"
 
     class Gender(models.TextChoices):
         MALE = "male", _("Male")
