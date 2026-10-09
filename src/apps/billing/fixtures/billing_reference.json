@@ -2,1105 +2,1119 @@
  "regions": [
   {
    "billing_id": 1,
-   "code": "35",
-   "name": "Қорақалпоғистон Республикаси"
+   "code": "1735",
+   "name": "Қорақалпоғистон Республикаси",
+   "old_code": "35"
   },
   {
    "billing_id": 2,
-   "code": "3",
-   "name": "Андижон вилояти"
+   "code": "1703",
+   "name": "Андижон вилояти",
+   "old_code": "3"
   },
   {
    "billing_id": 3,
-   "code": "6",
-   "name": "Бухоро вилояти"
+   "code": "1706",
+   "name": "Бухоро вилояти",
+   "old_code": "6"
   },
   {
    "billing_id": 4,
-   "code": "8",
-   "name": "Жиззах вилояти"
+   "code": "1708",
+   "name": "Жиззах вилояти",
+   "old_code": "8"
   },
   {
    "billing_id": 5,
-   "code": "10",
-   "name": "Қашқадарё вилояти"
+   "code": "1710",
+   "name": "Қашқадарё вилояти",
+   "old_code": "10"
   },
   {
    "billing_id": 6,
-   "code": "12",
-   "name": "Навоий вилояти"
+   "code": "1712",
+   "name": "Навоий вилояти",
+   "old_code": "12"
   },
   {
    "billing_id": 7,
-   "code": "14",
-   "name": "Наманган вилояти"
+   "code": "1714",
+   "name": "Наманган вилояти",
+   "old_code": "14"
   },
   {
    "billing_id": 8,
-   "code": "18",
-   "name": "Самарқанд вилояти"
-  },
-  {
-   "billing_id": 9,
-   "code": "24",
-   "name": "Сирдарё вилояти"
+   "code": "1718",
+   "name": "Самарқанд вилояти",
+   "old_code": "18"
   },
   {
    "billing_id": 10,
-   "code": "22",
-   "name": "Сурхондарё вилояти"
+   "code": "1722",
+   "name": "Сурхондарё вилояти",
+   "old_code": "22"
+  },
+  {
+   "billing_id": 9,
+   "code": "1724",
+   "name": "Сирдарё вилояти",
+   "old_code": "24"
   },
   {
    "billing_id": 11,
-   "code": "27",
-   "name": "Тошкент вилояти"
+   "code": "1727",
+   "name": "Тошкент вилояти",
+   "old_code": "27"
   },
   {
    "billing_id": 12,
-   "code": "30",
-   "name": "Фарғона вилояти"
+   "code": "1730",
+   "name": "Фарғона вилояти",
+   "old_code": "30"
   },
   {
    "billing_id": 13,
-   "code": "33",
-   "name": "Хоразм вилояти"
+   "code": "1733",
+   "name": "Хоразм вилояти",
+   "old_code": "33"
   },
   {
    "billing_id": 14,
-   "code": "26",
-   "name": "Тошкент шаҳри"
+   "code": "1726",
+   "name": "Тошкент шаҳри",
+   "old_code": "26"
   }
  ],
  "districts": [
   {
-   "region_code": "35",
-   "code": "1",
-   "name": "Нукус шаҳри"
-  },
-  {
-   "region_code": "35",
-   "code": "8",
+   "region_code": "1735",
+   "code": "1735204",
    "name": "Амударё тумани"
   },
   {
-   "region_code": "35",
-   "code": "9",
+   "region_code": "1735",
+   "code": "1735207",
    "name": "Беруний тумани"
   },
   {
-   "region_code": "35",
-   "code": "10",
+   "region_code": "1735",
+   "code": "1735209",
    "name": "Бўзатов тумани"
   },
   {
-   "region_code": "35",
-   "code": "11",
+   "region_code": "1735",
+   "code": "1735212",
    "name": "Кегейли тумани"
   },
   {
-   "region_code": "35",
-   "code": "12",
-   "name": "Қўнғирот тумани"
-  },
-  {
-   "region_code": "35",
-   "code": "13",
+   "region_code": "1735",
+   "code": "1735218",
    "name": "Қонликўл тумани"
   },
   {
-   "region_code": "35",
-   "code": "14",
+   "region_code": "1735",
+   "code": "1735211",
+   "name": "Қораўзак тумани"
+  },
+  {
+   "region_code": "1735",
+   "code": "1735222",
    "name": "Мўйноқ тумани"
   },
   {
-   "region_code": "35",
-   "code": "15",
+   "region_code": "1735",
+   "code": "1735225",
    "name": "Нукус тумани"
   },
   {
-   "region_code": "35",
-   "code": "16",
+   "region_code": "1735",
+   "code": "1735230",
    "name": "Тахтакўпир тумани"
   },
   {
-   "region_code": "35",
-   "code": "17",
+   "region_code": "1735",
+   "code": "1735233",
    "name": "Тўрткўл тумани"
   },
   {
-   "region_code": "35",
-   "code": "18",
+   "region_code": "1735",
+   "code": "1735236",
    "name": "Хўжайли тумани"
   },
   {
-   "region_code": "35",
-   "code": "19",
+   "region_code": "1735",
+   "code": "1735240",
    "name": "Чимбой тумани"
   },
   {
-   "region_code": "35",
-   "code": "20",
-   "name": "Шўманой тумани"
+   "region_code": "1735",
+   "code": "1735243",
+   "name": "Шуманай тумани"
   },
   {
-   "region_code": "35",
-   "code": "21",
+   "region_code": "1735",
+   "code": "1735250",
    "name": "Элликқалъа тумани"
   },
   {
-   "region_code": "35",
-   "code": "22",
-   "name": "Қораўзяк тумани"
+   "region_code": "1735",
+   "code": "1735401",
+   "name": "Нукус шаҳри"
   },
   {
-   "region_code": "35",
-   "code": "23",
-   "name": "Тахиатош тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "1",
-   "name": "Андижон шаҳар"
-  },
-  {
-   "region_code": "3",
-   "code": "3",
-   "name": "Хонобод шаҳар"
-  },
-  {
-   "region_code": "3",
-   "code": "6",
-   "name": "Олтинкўл тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "7",
+   "region_code": "1703",
+   "code": "1703203",
    "name": "Андижон тумани"
   },
   {
-   "region_code": "3",
-   "code": "8",
-   "name": "Балиқчи тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "9",
-   "name": "Бўстон тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "10",
-   "name": "Булоқбоши тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "11",
-   "name": "Жалақудуқ тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "12",
-   "name": "Избоскан тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "13",
-   "name": "Улуғнор тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "14",
-   "name": "Қўрғонтепа тумани"
-  },
-  {
-   "region_code": "3",
-   "code": "15",
+   "region_code": "1703",
+   "code": "1703224",
    "name": "Асака тумани"
   },
   {
-   "region_code": "3",
-   "code": "16",
+   "region_code": "1703",
+   "code": "1703206",
+   "name": "Балиқчи тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703209",
+   "name": "Бўз тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703210",
+   "name": "Булоқбоши тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703211",
+   "name": "Жалақудуқ тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703214",
+   "name": "Избоскан тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703220",
+   "name": "Қўрғонтепа тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703227",
    "name": "Марҳамат тумани"
   },
   {
-   "region_code": "3",
-   "code": "17",
-   "name": "Шаҳрихон тумани"
+   "region_code": "1703",
+   "code": "1703202",
+   "name": "Олтинкўл тумани"
   },
   {
-   "region_code": "3",
-   "code": "18",
+   "region_code": "1703",
+   "code": "1703232",
    "name": "Пахтаобод тумани"
   },
   {
-   "region_code": "3",
-   "code": "19",
+   "region_code": "1703",
+   "code": "1703217",
+   "name": "Улуғнор тумани"
+  },
+  {
+   "region_code": "1703",
+   "code": "1703236",
    "name": "Хўжаобод тумани"
   },
   {
-   "region_code": "6",
-   "code": "1",
-   "name": "Бухоро шаҳар"
+   "region_code": "1703",
+   "code": "1703230",
+   "name": "Шаҳрихон тумани"
   },
   {
-   "region_code": "6",
-   "code": "3",
-   "name": "Когон шаҳар"
+   "region_code": "1703",
+   "code": "1703401",
+   "name": "Андижон шаҳри"
   },
   {
-   "region_code": "6",
-   "code": "4",
-   "name": "Олот тумани"
+   "region_code": "1703",
+   "code": "1703408",
+   "name": "Хонобод шаҳри"
   },
   {
-   "region_code": "6",
-   "code": "5",
+   "region_code": "1706",
+   "code": "1706207",
    "name": "Бухоро тумани"
   },
   {
-   "region_code": "6",
-   "code": "6",
+   "region_code": "1706",
+   "code": "1706212",
    "name": "Вобкент тумани"
   },
   {
-   "region_code": "6",
-   "code": "7",
+   "region_code": "1706",
+   "code": "1706215",
    "name": "Ғиждувон тумани"
   },
   {
-   "region_code": "6",
-   "code": "8",
+   "region_code": "1706",
+   "code": "1706246",
    "name": "Жондор тумани"
   },
   {
-   "region_code": "6",
-   "code": "9",
+   "region_code": "1706",
+   "code": "1706219",
    "name": "Когон тумани"
   },
   {
-   "region_code": "6",
-   "code": "10",
+   "region_code": "1706",
+   "code": "1706230",
    "name": "Қоракўл тумани"
   },
   {
-   "region_code": "6",
-   "code": "11",
-   "name": "Пешку тумани"
-  },
-  {
-   "region_code": "6",
-   "code": "12",
-   "name": "Ромитан тумани"
-  },
-  {
-   "region_code": "6",
-   "code": "13",
-   "name": "Шофиркон тумани"
-  },
-  {
-   "region_code": "6",
-   "code": "14",
+   "region_code": "1706",
+   "code": "1706232",
    "name": "Қоровулбозор тумани"
   },
   {
-   "region_code": "8",
-   "code": "1",
+   "region_code": "1706",
+   "code": "1706204",
+   "name": "Олот тумани"
+  },
+  {
+   "region_code": "1706",
+   "code": "1706240",
+   "name": "Пешку тумани"
+  },
+  {
+   "region_code": "1706",
+   "code": "1706242",
+   "name": "Ромитан тумани"
+  },
+  {
+   "region_code": "1706",
+   "code": "1706258",
+   "name": "Шофиркон тумани"
+  },
+  {
+   "region_code": "1706",
+   "code": "1706401",
+   "name": "Бухоро шаҳри"
+  },
+  {
+   "region_code": "1706",
+   "code": "1706403",
+   "name": "Когон шаҳри"
+  },
+  {
+   "region_code": "1708",
+   "code": "1708201",
    "name": "Арнасой тумани"
   },
   {
-   "region_code": "8",
-   "code": "2",
+   "region_code": "1708",
+   "code": "1708204",
    "name": "Бахмал тумани"
   },
   {
-   "region_code": "8",
-   "code": "3",
-   "name": "Ғаллаорол тумани"
-  },
-  {
-   "region_code": "8",
-   "code": "4",
-   "name": "Шароф Рашидов тумани"
-  },
-  {
-   "region_code": "8",
-   "code": "5",
+   "region_code": "1708",
+   "code": "1708215",
    "name": "Дўстлик тумани"
   },
   {
-   "region_code": "8",
-   "code": "6",
+   "region_code": "1708",
+   "code": "1708209",
+   "name": "Ғаллаорол тумани"
+  },
+  {
+   "region_code": "1708",
+   "code": "1708220",
    "name": "Зарбдор тумани"
   },
   {
-   "region_code": "8",
-   "code": "7",
-   "name": "Зомин тумани"
-  },
-  {
-   "region_code": "8",
-   "code": "8",
+   "region_code": "1708",
+   "code": "1708225",
    "name": "Зафаробод тумани"
   },
   {
-   "region_code": "8",
-   "code": "9",
+   "region_code": "1708",
+   "code": "1708223",
    "name": "Мирзачўл тумани"
   },
   {
-   "region_code": "8",
-   "code": "10",
+   "region_code": "1708",
+   "code": "1708228",
    "name": "Пахтакор тумани"
   },
   {
-   "region_code": "8",
-   "code": "11",
+   "region_code": "1708",
+   "code": "1708235",
    "name": "Фориш тумани"
   },
   {
-   "region_code": "8",
-   "code": "12",
-   "name": "Жиззах шаҳри"
+   "region_code": "1708",
+   "code": "1708212",
+   "name": "Шароф Рашидов тумани"
   },
   {
-   "region_code": "8",
-   "code": "13",
+   "region_code": "1708",
+   "code": "1708237",
    "name": "Янгиобод тумани"
   },
   {
-   "region_code": "10",
-   "code": "1",
-   "name": "Қарши шаҳри"
+   "region_code": "1708",
+   "code": "1708401",
+   "name": "Жиззах шаҳри"
   },
   {
-   "region_code": "10",
-   "code": "2",
-   "name": "Шахрисабз шахар"
-  },
-  {
-   "region_code": "10",
-   "code": "4",
+   "region_code": "1710",
+   "code": "1710207",
    "name": "Ғузор тумани"
   },
   {
-   "region_code": "10",
-   "code": "5",
-   "name": "Дехқонобод тумани"
+   "region_code": "1710",
+   "code": "1710212",
+   "name": "Деҳқонобод тумани"
   },
   {
-   "region_code": "10",
-   "code": "6",
+   "region_code": "1710",
+   "code": "1710220",
    "name": "Қамаши тумани"
   },
   {
-   "region_code": "10",
-   "code": "7",
+   "region_code": "1710",
+   "code": "1710224",
    "name": "Қарши тумани"
   },
   {
-   "region_code": "10",
-   "code": "8",
-   "name": "Косон тумани"
-  },
-  {
-   "region_code": "10",
-   "code": "9",
-   "name": "Китоб тумани"
-  },
-  {
-   "region_code": "10",
-   "code": "10",
-   "name": "Муборак тумани"
-  },
-  {
-   "region_code": "10",
-   "code": "11",
-   "name": "Нишон тумани"
-  },
-  {
-   "region_code": "10",
-   "code": "12",
+   "region_code": "1710",
+   "code": "1710237",
    "name": "Касби тумани"
   },
   {
-   "region_code": "10",
-   "code": "14",
-   "name": "Чироқчи тумани"
+   "region_code": "1710",
+   "code": "1710232",
+   "name": "Китоб тумани"
   },
   {
-   "region_code": "10",
-   "code": "15",
-   "name": "Шахрисабз тумани"
+   "region_code": "1710",
+   "code": "1710229",
+   "name": "Косон тумани"
   },
   {
-   "region_code": "10",
-   "code": "16",
-   "name": "Яккабоғ тумани"
+   "region_code": "1710",
+   "code": "1710240",
+   "name": "Кўкдала тумани"
   },
   {
-   "region_code": "10",
-   "code": "17",
+   "region_code": "1710",
+   "code": "1710233",
    "name": "Миришкор тумани"
   },
   {
-   "region_code": "12",
-   "code": "1",
-   "name": "Навоий шахар"
+   "region_code": "1710",
+   "code": "1710234",
+   "name": "Муборак тумани"
   },
   {
-   "region_code": "12",
-   "code": "2",
-   "name": "Зарафшон шаҳар"
+   "region_code": "1710",
+   "code": "1710235",
+   "name": "Нишон тумани"
   },
   {
-   "region_code": "12",
-   "code": "3",
-   "name": "Учкудук туман"
+   "region_code": "1710",
+   "code": "1710242",
+   "name": "Чироқчи тумани"
   },
   {
-   "region_code": "12",
-   "code": "4",
-   "name": "Конимех туман"
+   "region_code": "1710",
+   "code": "1710245",
+   "name": "Шаҳрисабз тумани"
   },
   {
-   "region_code": "12",
-   "code": "5",
-   "name": "Қизилтепа туман"
+   "region_code": "1710",
+   "code": "1710250",
+   "name": "Яккабоғ тумани"
   },
   {
-   "region_code": "12",
-   "code": "7",
-   "name": "Томди туман"
+   "region_code": "1710",
+   "code": "1710401",
+   "name": "Қарши шаҳри"
   },
   {
-   "region_code": "12",
-   "code": "8",
-   "name": "Навбаҳор туман"
+   "region_code": "1710",
+   "code": "1710405",
+   "name": "Шаҳрисабз шаҳри"
   },
   {
-   "region_code": "12",
-   "code": "9",
-   "name": "Хатирчи туман"
+   "region_code": "1712",
+   "code": "1712211",
+   "name": "Конимех тумани"
   },
   {
-   "region_code": "12",
-   "code": "10",
-   "name": "Нурота туман"
+   "region_code": "1712",
+   "code": "1712234",
+   "name": "Кармана тумани"
   },
   {
-   "region_code": "12",
-   "code": "11",
-   "name": "Кармана туман"
+   "region_code": "1712",
+   "code": "1712216",
+   "name": "Қизилтепа тумани"
   },
   {
-   "region_code": "12",
-   "code": "13",
-   "name": "Ғазғон шаҳар"
+   "region_code": "1712",
+   "code": "1712230",
+   "name": "Навбаҳор тумани"
   },
   {
-   "region_code": "14",
-   "code": "1",
-   "name": "Наманган шахар"
+   "region_code": "1712",
+   "code": "1712238",
+   "name": "Нурота тумани"
   },
   {
-   "region_code": "14",
-   "code": "7",
-   "name": "Мингбулок туман"
+   "region_code": "1712",
+   "code": "1712244",
+   "name": "Томди тумани"
   },
   {
-   "region_code": "14",
-   "code": "8",
-   "name": "Косонсой туман"
+   "region_code": "1712",
+   "code": "1712248",
+   "name": "Учқудуқ тумани"
   },
   {
-   "region_code": "14",
-   "code": "9",
-   "name": "Наманган туман"
+   "region_code": "1712",
+   "code": "1712251",
+   "name": "Хатирчи тумани"
   },
   {
-   "region_code": "14",
-   "code": "10",
-   "name": "Норин туман"
+   "region_code": "1712",
+   "code": "1712401",
+   "name": "Навоий шаҳри"
   },
   {
-   "region_code": "14",
-   "code": "11",
-   "name": "Поп туман"
+   "region_code": "1712",
+   "code": "1712408",
+   "name": "Зарафшон шаҳри"
   },
   {
-   "region_code": "14",
-   "code": "12",
-   "name": "Туракургон туман"
+   "region_code": "1712",
+   "code": "1712412",
+   "name": "Ғозғон шаҳри"
   },
   {
-   "region_code": "14",
-   "code": "13",
-   "name": "Уйчи туман"
+   "region_code": "1714",
+   "code": "1714207",
+   "name": "Косонсой тумани"
   },
   {
-   "region_code": "14",
-   "code": "14",
-   "name": "Учкургон туман"
+   "region_code": "1714",
+   "code": "1714204",
+   "name": "Мингбулоқ тумани"
   },
   {
-   "region_code": "14",
-   "code": "15",
-   "name": "Чорток туман"
+   "region_code": "1714",
+   "code": "1714212",
+   "name": "Наманган тумани"
   },
   {
-   "region_code": "14",
-   "code": "16",
-   "name": "Чуст туман"
+   "region_code": "1714",
+   "code": "1714216",
+   "name": "Норин тумани"
   },
   {
-   "region_code": "14",
-   "code": "17",
-   "name": "Янгикургон туман"
+   "region_code": "1714",
+   "code": "1714219",
+   "name": "Поп тумани"
   },
   {
-   "region_code": "14",
-   "code": "18",
-   "name": "Давлатобод туман"
+   "region_code": "1714",
+   "code": "1714224",
+   "name": "Тўрақўрғон тумани"
   },
   {
-   "region_code": "18",
-   "code": "1",
-   "name": "Самарқанд шаҳри"
+   "region_code": "1714",
+   "code": "1714229",
+   "name": "Уйчи тумани"
   },
   {
-   "region_code": "18",
-   "code": "4",
-   "name": "Тайлоқ тумани"
+   "region_code": "1714",
+   "code": "1714234",
+   "name": "Учқўрғон тумани"
   },
   {
-   "region_code": "18",
-   "code": "6",
-   "name": "Каттақўрғон шаҳри"
+   "region_code": "1714",
+   "code": "1714236",
+   "name": "Чортоқ тумани"
   },
   {
-   "region_code": "18",
-   "code": "8",
-   "name": "Оқдарё тумани"
+   "region_code": "1714",
+   "code": "1714237",
+   "name": "Чуст тумани"
   },
   {
-   "region_code": "18",
-   "code": "9",
+   "region_code": "1714",
+   "code": "1714242",
+   "name": "Янгиқўрғон тумани"
+  },
+  {
+   "region_code": "1714",
+   "code": "1714401",
+   "name": "Наманган шаҳри"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718206",
    "name": "Булунғур тумани"
   },
   {
-   "region_code": "18",
-   "code": "11",
+   "region_code": "1718",
+   "code": "1718209",
    "name": "Жомбой тумани"
   },
   {
-   "region_code": "18",
-   "code": "12",
+   "region_code": "1718",
+   "code": "1718212",
    "name": "Иштихон тумани"
   },
   {
-   "region_code": "18",
-   "code": "13",
+   "region_code": "1718",
+   "code": "1718215",
    "name": "Каттақўрғон тумани"
   },
   {
-   "region_code": "18",
-   "code": "14",
+   "region_code": "1718",
+   "code": "1718216",
    "name": "Қўшработ тумани"
   },
   {
-   "region_code": "18",
-   "code": "15",
+   "region_code": "1718",
+   "code": "1718218",
    "name": "Нарпай тумани"
   },
   {
-   "region_code": "18",
-   "code": "17",
-   "name": "Пайариқ тумани"
-  },
-  {
-   "region_code": "18",
-   "code": "18",
-   "name": "Пастдарғом тумани"
-  },
-  {
-   "region_code": "18",
-   "code": "19",
-   "name": "Пахтачи тумани"
-  },
-  {
-   "region_code": "18",
-   "code": "20",
-   "name": "Самарқанд тумани"
-  },
-  {
-   "region_code": "18",
-   "code": "21",
+   "region_code": "1718",
+   "code": "1718235",
    "name": "Нуробод тумани"
   },
   {
-   "region_code": "18",
-   "code": "22",
+   "region_code": "1718",
+   "code": "1718203",
+   "name": "Оқдарё тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718227",
+   "name": "Пастдарғом тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718224",
+   "name": "Пайариқ тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718230",
+   "name": "Пахтачи тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718233",
+   "name": "Самарқанд тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718238",
+   "name": "Тайлоқ тумани"
+  },
+  {
+   "region_code": "1718",
+   "code": "1718236",
    "name": "Ургут тумани"
   },
   {
-   "region_code": "22",
-   "code": "1",
-   "name": "Термиз шаҳар"
+   "region_code": "1718",
+   "code": "1718401",
+   "name": "Самарқанд шаҳри"
   },
   {
-   "region_code": "22",
-   "code": "3",
+   "region_code": "1718",
+   "code": "1718406",
+   "name": "Каттақўрғон шаҳри"
+  },
+  {
+   "region_code": "1722",
+   "code": "1722202",
    "name": "Ангор тумани"
   },
   {
-   "region_code": "22",
-   "code": "4",
-   "name": "Олтинсой тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "5",
-   "name": "Бойсун тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "6",
-   "name": "Музрабод тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "7",
-   "name": "Денов тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "8",
-   "name": "Жаркургон тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "9",
-   "name": "Кумкургон тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "10",
-   "name": "Кизирик тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "11",
-   "name": "Сариосиё тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "12",
-   "name": "Термиз тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "13",
-   "name": "Шерабад тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "14",
-   "name": "Шурчи тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "15",
-   "name": "Узун тумани"
-  },
-  {
-   "region_code": "22",
-   "code": "16",
+   "region_code": "1722",
+   "code": "1722203",
    "name": "Бандихон тумани"
   },
   {
-   "region_code": "24",
-   "code": "1",
-   "name": "Оқолтин туман"
+   "region_code": "1722",
+   "code": "1722204",
+   "name": "Бойсун тумани"
   },
   {
-   "region_code": "24",
-   "code": "2",
-   "name": "Боёвут туман"
+   "region_code": "1722",
+   "code": "1722210",
+   "name": "Денов тумани"
   },
   {
-   "region_code": "24",
-   "code": "3",
-   "name": "Гулистон туман"
+   "region_code": "1722",
+   "code": "1722212",
+   "name": "Жарқўрғон тумани"
   },
   {
-   "region_code": "24",
-   "code": "5",
-   "name": "Мирзаобод туман"
+   "region_code": "1722",
+   "code": "1722215",
+   "name": "Қизириқ тумани"
   },
   {
-   "region_code": "24",
-   "code": "6",
-   "name": "Сайхунобод туман"
+   "region_code": "1722",
+   "code": "1722214",
+   "name": "Қумқўрғон тумани"
   },
   {
-   "region_code": "24",
-   "code": "7",
-   "name": "Сирдарё туман"
+   "region_code": "1722",
+   "code": "1722207",
+   "name": "Музрабод тумани"
   },
   {
-   "region_code": "24",
-   "code": "8",
-   "name": "Ховос туман"
+   "region_code": "1722",
+   "code": "1722201",
+   "name": "Олтинсой тумани"
   },
   {
-   "region_code": "24",
-   "code": "9",
-   "name": "Сардоба туман"
+   "region_code": "1722",
+   "code": "1722217",
+   "name": "Сариосиё тумани"
   },
   {
-   "region_code": "24",
-   "code": "10",
-   "name": "Гулистон шаҳар"
+   "region_code": "1722",
+   "code": "1722220",
+   "name": "Термиз тумани"
   },
   {
-   "region_code": "24",
-   "code": "12",
-   "name": "Ширин шаҳар"
+   "region_code": "1722",
+   "code": "1722221",
+   "name": "Узун тумани"
   },
   {
-   "region_code": "24",
-   "code": "13",
-   "name": "Янгиер шаҳар"
+   "region_code": "1722",
+   "code": "1722223",
+   "name": "Шеробод тумани"
   },
   {
-   "region_code": "27",
-   "code": "1",
+   "region_code": "1722",
+   "code": "1722226",
+   "name": "Шўрчи тумани"
+  },
+  {
+   "region_code": "1722",
+   "code": "1722401",
+   "name": "Термиз шаҳри"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724212",
+   "name": "Боёвут тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724220",
+   "name": "Гулистон тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724228",
+   "name": "Мирзаобод тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724206",
+   "name": "Оқолтин тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724216",
+   "name": "Сайхунобод тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724226",
+   "name": "Сардоба тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724231",
+   "name": "Сирдарё тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724235",
+   "name": "Ховос тумани"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724401",
+   "name": "Гулистон шаҳри"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724410",
+   "name": "Ширин шаҳри"
+  },
+  {
+   "region_code": "1724",
+   "code": "1724413",
+   "name": "Янгиер шаҳри"
+  },
+  {
+   "region_code": "1727",
+   "code": "1727220",
    "name": "Бекобод тумани"
   },
   {
-   "region_code": "27",
-   "code": "2",
+   "region_code": "1727",
+   "code": "1727228",
    "name": "Бўка тумани"
   },
   {
-   "region_code": "27",
-   "code": "3",
+   "region_code": "1727",
+   "code": "1727224",
    "name": "Бўстонлиқ тумани"
   },
   {
-   "region_code": "27",
-   "code": "4",
+   "region_code": "1727",
+   "code": "1727237",
    "name": "Зангиота тумани"
   },
   {
-   "region_code": "27",
-   "code": "5",
-   "name": "Юқори-Чирчиқ тумани"
-  },
-  {
-   "region_code": "27",
-   "code": "6",
+   "region_code": "1727",
+   "code": "1727248",
    "name": "Қибрай тумани"
   },
   {
-   "region_code": "27",
-   "code": "7",
+   "region_code": "1727",
+   "code": "1727233",
+   "name": "Қуйичирчиқ тумани"
+  },
+  {
+   "region_code": "1727",
+   "code": "1727206",
    "name": "Оққўрғон тумани"
   },
   {
-   "region_code": "27",
-   "code": "8",
-   "name": "Охангарон тумани"
+   "region_code": "1727",
+   "code": "1727212",
+   "name": "Оҳангарон тумани"
   },
   {
-   "region_code": "27",
-   "code": "9",
+   "region_code": "1727",
+   "code": "1727249",
    "name": "Паркент тумани"
   },
   {
-   "region_code": "27",
-   "code": "10",
-   "name": "Пскент тумани"
+   "region_code": "1727",
+   "code": "1727250",
+   "name": "Пискент тумани"
   },
   {
-   "region_code": "27",
-   "code": "11",
-   "name": "Тошкент тумани"
+   "region_code": "1727",
+   "code": "1727253",
+   "name": "Ўрта Чирчиқ тумани"
   },
   {
-   "region_code": "27",
-   "code": "12",
-   "name": "Ўрта-Чирчиқ тумани"
-  },
-  {
-   "region_code": "27",
-   "code": "13",
+   "region_code": "1727",
+   "code": "1727256",
    "name": "Чиноз тумани"
   },
   {
-   "region_code": "27",
-   "code": "14",
-   "name": "Қуйи-Чирчиқ тумани"
+   "region_code": "1727",
+   "code": "1727239",
+   "name": "Юқори Чирчиқ тумани"
   },
   {
-   "region_code": "27",
-   "code": "15",
-   "name": "Янги йўл тумани"
+   "region_code": "1727",
+   "code": "1727259",
+   "name": "Янгийўл тумани"
   },
   {
-   "region_code": "27",
-   "code": "16",
-   "name": "Ангрен шаҳри"
-  },
-  {
-   "region_code": "27",
-   "code": "17",
-   "name": "Бекобод шаҳри"
-  },
-  {
-   "region_code": "27",
-   "code": "18",
+   "region_code": "1727",
+   "code": "1727404",
    "name": "Олмалиқ шаҳри"
   },
   {
-   "region_code": "27",
-   "code": "19",
-   "name": "Охангарон шаҳар"
+   "region_code": "1727",
+   "code": "1727407",
+   "name": "Ангрен шаҳри"
   },
   {
-   "region_code": "27",
-   "code": "20",
+   "region_code": "1727",
+   "code": "1727413",
+   "name": "Бекобод шаҳри"
+  },
+  {
+   "region_code": "1727",
+   "code": "1727419",
    "name": "Чирчиқ шаҳри"
   },
   {
-   "region_code": "27",
-   "code": "22",
-   "name": "Янгийул шаҳар"
-  },
-  {
-   "region_code": "27",
-   "code": "23",
+   "region_code": "1727",
+   "code": "1727401",
    "name": "Нурафшон шаҳри"
   },
   {
-   "region_code": "30",
-   "code": "1",
-   "name": "Қувасой шаҳри"
+   "region_code": "1727",
+   "code": "1727415",
+   "name": "Оҳангарон шаҳри"
   },
   {
-   "region_code": "30",
-   "code": "3",
-   "name": "Қўқон шаҳри"
+   "region_code": "1727",
+   "code": "1727424",
+   "name": "Янгийўл шаҳри"
   },
   {
-   "region_code": "30",
-   "code": "4",
-   "name": "Марғилон шаҳри"
-  },
-  {
-   "region_code": "30",
-   "code": "5",
-   "name": "Фарғона шаҳри"
-  },
-  {
-   "region_code": "30",
-   "code": "6",
-   "name": "Бешариқ тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "7",
-   "name": "Боғдод тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "8",
-   "name": "Бувайда тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "9",
-   "name": "Данғара тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "10",
-   "name": "Ёзёвон тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "11",
-   "name": "Қува тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "12",
+   "region_code": "1730",
+   "code": "1730203",
    "name": "Олтиариқ тумани"
   },
   {
-   "region_code": "30",
-   "code": "13",
-   "name": "Қуштепа тумани"
+   "region_code": "1730",
+   "code": "1730209",
+   "name": "Бағдод тумани"
   },
   {
-   "region_code": "30",
-   "code": "14",
+   "region_code": "1730",
+   "code": "1730215",
+   "name": "Бешариқ тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730212",
+   "name": "Бувайда тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730236",
+   "name": "Данғара тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730242",
+   "name": "Ёзёвон тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730218",
+   "name": "Қува тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730206",
+   "name": "Қўштепа тумани"
+  },
+  {
+   "region_code": "1730",
+   "code": "1730224",
    "name": "Риштон тумани"
   },
   {
-   "region_code": "30",
-   "code": "15",
+   "region_code": "1730",
+   "code": "1730226",
    "name": "Сўх тумани"
   },
   {
-   "region_code": "30",
-   "code": "16",
+   "region_code": "1730",
+   "code": "1730227",
    "name": "Тошлоқ тумани"
   },
   {
-   "region_code": "30",
-   "code": "17",
-   "name": "Ўзбекистон тумани"
-  },
-  {
-   "region_code": "30",
-   "code": "18",
+   "region_code": "1730",
+   "code": "1730221",
    "name": "Учкўприк тумани"
   },
   {
-   "region_code": "30",
-   "code": "19",
+   "region_code": "1730",
+   "code": "1730233",
    "name": "Фарғона тумани"
   },
   {
-   "region_code": "30",
-   "code": "20",
+   "region_code": "1730",
+   "code": "1730238",
    "name": "Фурқат тумани"
   },
   {
-   "region_code": "33",
-   "code": "1",
-   "name": "Урганч шаҳар"
+   "region_code": "1730",
+   "code": "1730230",
+   "name": "Ўзбекистон тумани"
   },
   {
-   "region_code": "33",
-   "code": "2",
-   "name": "Хива шаҳар"
+   "region_code": "1730",
+   "code": "1730401",
+   "name": "Фарғона шаҳри"
   },
   {
-   "region_code": "33",
-   "code": "4",
-   "name": "Урганч тумани"
+   "region_code": "1730",
+   "code": "1730412",
+   "name": "Марғилон шаҳри"
   },
   {
-   "region_code": "33",
-   "code": "5",
-   "name": "Хива тумани"
+   "region_code": "1730",
+   "code": "1730405",
+   "name": "Қўқон шаҳри"
   },
   {
-   "region_code": "33",
-   "code": "6",
-   "name": "Хазарасп тумани"
+   "region_code": "1730",
+   "code": "1730408",
+   "name": "Қувасой шаҳри"
   },
   {
-   "region_code": "33",
-   "code": "7",
-   "name": "Гурлан тумани"
-  },
-  {
-   "region_code": "33",
-   "code": "8",
-   "name": "Шовот тумани"
-  },
-  {
-   "region_code": "33",
-   "code": "9",
-   "name": "Янгиариқ тумани"
-  },
-  {
-   "region_code": "33",
-   "code": "10",
-   "name": "Қўшкўпир тумани"
-  },
-  {
-   "region_code": "33",
-   "code": "11",
+   "region_code": "1733",
+   "code": "1733204",
    "name": "Боғот тумани"
   },
   {
-   "region_code": "33",
-   "code": "12",
-   "name": "Ҳонқа тумани"
+   "region_code": "1733",
+   "code": "1733208",
+   "name": "Гурлан тумани"
   },
   {
-   "region_code": "33",
-   "code": "13",
-   "name": "Янгибозор тумани"
+   "region_code": "1733",
+   "code": "1733212",
+   "name": "Қўшкўпир тумани"
   },
   {
-   "region_code": "33",
-   "code": "14",
+   "region_code": "1733",
+   "code": "1733221",
    "name": "Тупроққалъа тумани"
   },
   {
-   "region_code": "26",
-   "code": "1",
-   "name": "Миробод тумани"
+   "region_code": "1733",
+   "code": "1733217",
+   "name": "Урганч тумани"
   },
   {
-   "region_code": "26",
-   "code": "2",
-   "name": "Мирзо Улугбек тумани"
+   "region_code": "1733",
+   "code": "1733220",
+   "name": "Хазорасп тумани"
   },
   {
-   "region_code": "26",
-   "code": "3",
-   "name": "Юнусобод тумани"
+   "region_code": "1733",
+   "code": "1733226",
+   "name": "Хива тумани"
   },
   {
-   "region_code": "26",
-   "code": "4",
-   "name": "Яккасарой тумани"
+   "region_code": "1733",
+   "code": "1733223",
+   "name": "Хонқа тумани"
   },
   {
-   "region_code": "26",
-   "code": "5",
-   "name": "Шайхонтохур тумани"
+   "region_code": "1733",
+   "code": "1733230",
+   "name": "Шовот тумани"
   },
   {
-   "region_code": "26",
-   "code": "6",
-   "name": "Чилонзор тумани"
+   "region_code": "1733",
+   "code": "1733233",
+   "name": "Янгиариқ тумани"
   },
   {
-   "region_code": "26",
-   "code": "7",
-   "name": "Сергели тумани"
+   "region_code": "1733",
+   "code": "1733236",
+   "name": "Янгибозор тумани"
   },
   {
-   "region_code": "26",
-   "code": "8",
-   "name": "Яшнобод тумани"
+   "region_code": "1733",
+   "code": "1733401",
+   "name": "Урганч шаҳри"
   },
   {
-   "region_code": "26",
-   "code": "9",
-   "name": "Олмазор тумани"
+   "region_code": "1733",
+   "code": "1733406",
+   "name": "Хива шаҳри"
   },
   {
-   "region_code": "26",
-   "code": "10",
-   "name": "Учтепа тумани"
-  },
-  {
-   "region_code": "26",
-   "code": "11",
+   "region_code": "1726",
+   "code": "1726264",
    "name": "Бектемир тумани"
   },
   {
-   "region_code": "26",
-   "code": "12",
-   "name": "Янгихаёт тумани"
+   "region_code": "1726",
+   "code": "1726269",
+   "name": "Мирзо Улуғбек тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726273",
+   "name": "Миробод тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726280",
+   "name": "Олмазор тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726283",
+   "name": "Сергели тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726262",
+   "name": "Учтепа тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726294",
+   "name": "Чилонзор тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726277",
+   "name": "Шайхонтоҳур тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726266",
+   "name": "Юнусобод тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726287",
+   "name": "Яккасарой тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726290",
+   "name": "Яшнобод тумани"
+  },
+  {
+   "region_code": "1726",
+   "code": "1726292",
+   "name": "Янгиҳаёт тумани"
+  },
+  {
+   "region_code": "1708",
+   "code": "1708218",
+   "name": "Зомин тумани"
+  },
+  {
+   "region_code": "1727",
+   "code": "1727265",
+   "name": "Тошкент тумани"
+  },
+  {
+   "region_code": "1735",
+   "code": "1735215",
+   "name": "Қўнғирот тумани"
+  },
+  {
+   "region_code": "1735",
+   "code": "1735228",
+   "name": "Тахиатош тумани"
   }
  ],
  "xojaliklar": [
@@ -1108,693 +1122,693 @@
    "name": "Оролбўйи МТБ",
    "code": "",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Беруний ДЎХ",
    "code": "23:02:06",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Бўзатов ДЎХ",
    "code": "23:01:01",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Қипчоқ ДЎХ",
    "code": "23:01:07",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Қозоқдарё ДЎОХ",
    "code": "23:05:13",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Қонликўл ИДЎХ",
    "code": "23:13:15",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Қораўзак ДЎХ",
    "code": "23:14:11",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Қўнғирот ДЎОХ",
    "code": "23:15:12",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Мўйноқ ДЎХ",
    "code": "23:05:02",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Нукус ДЎХ",
    "code": "23:06:04",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Нукус КИДЎХ",
    "code": "23:06:14",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Тахтакўпир ДЎХ",
    "code": "23:07:05",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Тўрткўл ДЎХ",
    "code": "23:08:10",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Хўжайли ДЎХ",
    "code": "23:09:03",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Чимбой ДЎХ",
    "code": "23:10:09",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Шўманой ИДЎХ",
    "code": "23:11:16",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Элликқалъа ДЎХ",
    "code": "23:12:08",
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   },
   {
    "name": "Андижон ДЎХ",
    "code": "17:01:01",
    "inn": null,
-   "region_code": "3",
+   "region_code": "1703",
    "account_detail": null
   },
   {
    "name": "«Нефтчи» ДЎХ",
    "code": "20:09:06",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Бухоро ДЎХ",
    "code": "20:06:01",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Бухоро ИТС",
    "code": "20:03:12",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Ғиждувон ДЎХ",
    "code": "20:11:09",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Жондор ДЎХ",
    "code": "20:03:02",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Когон ИДЎХ",
    "code": "",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қизилқум ДЎХ",
    "code": "20:07:05",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қоракўл ДЎХ",
    "code": "20:10:04",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қоракўл ДЎОХ",
    "code": "20:10:10",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қоракўл ИДЎХ",
    "code": "20:10:11",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қоровулбозор ДЎХ",
    "code": "20:09:08",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Қоровулбозор ДЎОХ",
    "code": "",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Олот ДЎХ",
    "code": "20:05:03",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Шофиркон ДЎХ",
    "code": "20:08:07",
    "inn": null,
-   "region_code": "6",
+   "region_code": "1706",
    "account_detail": null
   },
   {
    "name": "Бахмал ДЎХ",
    "code": "13:02:03",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Ғаллаорол ИДЎХ",
    "code": "",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Жиззах ДЎХ",
    "code": "13:04:01",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Зомин ДЎХ",
    "code": "13:08:02",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Зомин МТБ",
    "code": "13:08:05",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Пистачилик ИТС",
    "code": "",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Фориш ДЎХ",
    "code": "13:11:04",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Фориш ДЎОХ",
    "code": "13:11:04",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Хўжамушкент ДЎХ",
    "code": "13:12:06",
    "inn": null,
-   "region_code": "8",
+   "region_code": "1708",
    "account_detail": null
   },
   {
    "name": "Деҳқонобод ДЎХ",
    "code": "",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Жовуз ДЎХ",
    "code": "18:04:07",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Китоб ДЎХ",
    "code": "18:04:04",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Қамаши ДЎХ",
    "code": "18:12:02",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Қашқадарё ДЎХ",
    "code": "18:01:01",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Қумдарё ДЎХ",
    "code": "18:09:06",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Муборак ДЎХ",
    "code": "18:06:03",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Муборак ДЎОХ",
    "code": "",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Шаҳрисабз ИДЎХ",
    "code": "18:10:10",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Шўртан ДЎХ",
    "code": "18:14:08",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Яккабоғ ИДЎХ",
    "code": "18:12:09",
    "inn": null,
-   "region_code": "10",
+   "region_code": "1710",
    "account_detail": null
   },
   {
    "name": "Конимех ДЎХ",
    "code": "21:01:02",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Навбаҳор ДЎХ",
    "code": "21:02:07",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Навоий ДЎХ",
    "code": "21:08:01",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Нурота ДЎХ",
    "code": "21:04:06",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Нурота ДЎОХ",
    "code": "21:04:06",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Томди ДЎХ",
    "code": "21:05:05",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Учқудуқ ДЎХ",
    "code": "21:06:04",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Хатирчи ДЎХ",
    "code": "21:07:03",
    "inn": null,
-   "region_code": "12",
+   "region_code": "1712",
    "account_detail": null
   },
   {
    "name": "Косонсой ДЎХ",
    "code": "16:01:02",
    "inn": null,
-   "region_code": "14",
+   "region_code": "1714",
    "account_detail": null
   },
   {
    "name": "Наманган КИДЎХ",
    "code": "16:02:03",
    "inn": null,
-   "region_code": "14",
+   "region_code": "1714",
    "account_detail": null
   },
   {
    "name": "Поп ИДЎХ",
    "code": "16:05:01",
    "inn": null,
-   "region_code": "14",
+   "region_code": "1714",
    "account_detail": null
   },
   {
    "name": "Ўртаорол ДЎХ",
    "code": "16:04:04",
    "inn": null,
-   "region_code": "14",
+   "region_code": "1714",
    "account_detail": null
   },
   {
    "name": "Дарғом ДЎИЧК",
    "code": "14:12:08",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Жомбой ДЎХ",
    "code": "14:02:05",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Зарафшон МТБ",
    "code": "14:02:07",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Каттақўрғон ДЎХ",
    "code": "14:05:04",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Оқдарё ДЎХ",
    "code": "14:08:06",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Пахтачи ДЎХ",
    "code": "14:11:02",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Самарқанд ДЎХ",
    "code": "14:12:01",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Саройқўрғон ДЎХ",
    "code": "14:07:03",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Ургут ИДЎХ",
    "code": "",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Фозилмон ИДЎХ",
    "code": "14:04:08",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Иштихон ДЎХ",
    "code": "",
    "inn": null,
-   "region_code": "18",
+   "region_code": "1718",
    "account_detail": null
   },
   {
    "name": "Қолгансир ДЎОХ",
    "code": "12:07:01",
    "inn": null,
-   "region_code": "24",
+   "region_code": "1724",
    "account_detail": null
   },
   {
    "name": "Сирдарё ДЎХ",
    "code": "12:11:02",
    "inn": null,
-   "region_code": "24",
+   "region_code": "1724",
    "account_detail": null
   },
   {
    "name": "Боботоғ ДЎХ",
    "code": "19:12:05",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Бойсун ДЎХ",
    "code": "19:07:02",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Қизириқ ДЎХ",
    "code": "19:08:03",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Сурхондарё ДЎХ",
    "code": "19:11:01",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Узун ДЎХ",
    "code": "19:10:04",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Ҳисор ИДЎХ",
    "code": "19:10:06",
    "inn": null,
-   "region_code": "22",
+   "region_code": "1722",
    "account_detail": null
   },
   {
    "name": "Бекобод ДЎХ",
    "code": "11:01:02",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Бурчмулла ДЎХ",
    "code": "11:03:07",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Далварзин ДЎОХ",
    "code": "11:01:04",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Дархон ИТС",
    "code": "11:04:06",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Қуйичирчиқ ИДЎХ",
    "code": "11:06:03",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Оҳангарон ДЎХ",
    "code": "11:08:08",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Саксонота ДЎИЧК",
    "code": "11:05:05",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Тошкент ДЎХ",
    "code": "11:10:01",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Угом-Чотқол ДМТБ",
    "code": "",
    "inn": null,
-   "region_code": "27",
+   "region_code": "1727",
    "account_detail": null
   },
   {
    "name": "Қўқон ДЎХ",
    "code": "15:02:01",
    "inn": null,
-   "region_code": "30",
+   "region_code": "1730",
    "account_detail": null
   },
   {
    "name": "Қўқон ИТС",
    "code": "15:04:03",
    "inn": null,
-   "region_code": "30",
+   "region_code": "1730",
    "account_detail": null
   },
   {
    "name": "Фарғона ДЎХ",
    "code": "15:13:02",
    "inn": null,
-   "region_code": "30",
+   "region_code": "1730",
    "account_detail": null
   },
   {
    "name": "Хоразм ДЎХ",
    "code": "22:05:01",
    "inn": null,
-   "region_code": "33",
+   "region_code": "1733",
    "account_detail": null
   },
   {
    "name": "Хоразм ДЎОХ",
    "code": "",
    "inn": null,
-   "region_code": "33",
+   "region_code": "1733",
    "account_detail": null
   },
   {
    "name": "Қорақум ИТС",
    "code": "22:05:02",
    "inn": null,
-   "region_code": "33",
+   "region_code": "1733",
    "account_detail": null
   },
   {
    "name": "Кегейли ДЎХ",
    "code": null,
    "inn": null,
-   "region_code": "35",
+   "region_code": "1735",
    "account_detail": null
   }
  ],

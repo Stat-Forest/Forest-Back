@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -10,7 +11,10 @@ from django.http import FileResponse, Http404
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from apps.billing.scope import is_billing_role
 from apps.reports.models import Report
+from apps.reports.permissions.report_scope import scope_reports_for_user
+from apps.reports.services.kadastr import is_kadastr_child
 from apps.logs.models import HistoryActionJournal
 from apps.reports.serializers.reports.list_reports import ReportListSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
@@ -66,7 +70,7 @@ class ReportExcelExportAPIView(APIView):
 
         try:
             return self._do_export(request, report_ids, lang, respond_json)
-        except Http404:
+        except (Http404, PermissionDenied):
             raise
         except Exception as e:
             return Response({"detail": "Export xatosi", "error": str(e)}, status=500)
@@ -96,7 +100,7 @@ class ReportExcelExportAPIView(APIView):
 
         try:
             return self._do_export(request, report_ids, lang, respond_json)
-        except Http404:
+        except (Http404, PermissionDenied):
             raise
         except Exception as e:
             return Response({"detail": "Export xatosi", "error": str(e)}, status=500)
@@ -112,6 +116,13 @@ class ReportExcelExportAPIView(APIView):
                 "report_items__inners",
             )
         )
+
+        # Ijara billing rollari: faqat kadastr formalari va o'z ko'lamidagi hisobotlar
+        if is_billing_role(request.user):
+            requested_statement_ids = set(reports.values_list("statement_id", flat=True))
+            if not all(is_kadastr_child(sid) for sid in requested_statement_ids):
+                raise PermissionDenied("Bu hisobot formasi sizning rolingiz uchun yopiq.")
+            reports = scope_reports_for_user(reports, request.user)
 
         if not reports.exists():
             raise Http404("Tanlangan reportlar topilmadi.")

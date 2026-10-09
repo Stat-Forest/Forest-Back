@@ -33,6 +33,7 @@ def setup_roles_permissions_and_users():
         "tashkilot_hodimi": ["can_crud_report"],
         "hududiy_boshqarma": [],
         "billing_user": [],
+        "billing_super": [],
     }
 
     for group_name, codename_list in groups_permissions.items():

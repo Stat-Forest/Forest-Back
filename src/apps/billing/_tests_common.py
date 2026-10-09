@@ -4,7 +4,16 @@ from dataclasses import dataclass
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.billing.models import ActivityType, Bolim, District, LandType, PrivilegeType, Region, Xojalik
+from apps.billing.models import (
+    ActivityType,
+    BillingUserAccess,
+    Bolim,
+    District,
+    LandType,
+    PrivilegeType,
+    Region,
+    Xojalik,
+)
 
 User = get_user_model()
 BASE = "/api/v1/billing"
@@ -15,6 +24,17 @@ def make_user(name: str, role: str, **extra):
         email=f"{name}@example.com", password="TestPassword123!",
         first_name="T", last_name=name.title(), role=role, **extra,
     )
+
+
+def grant(user, *xojaliklar):
+    """billing_user'ga xo'jalik(lar) biriktirish."""
+    access, _ = BillingUserAccess.objects.get_or_create(user=user)
+    access.xojaliklar.add(*xojaliklar)
+    return user
+
+
+def make_billing_user(name: str, *xojaliklar, **extra):
+    return grant(make_user(name, "billing_user", **extra), *xojaliklar)
 
 
 def auth(client, user):
@@ -34,8 +54,8 @@ class Reference:
 
 
 def make_reference(code="23:02:06", inn="123456789", name="Test DÒX") -> Reference:
-    region, _ = Region.objects.get_or_create(code="3", defaults={"name": "Андижон вилояти", "billing_id": 2})
-    district, _ = District.objects.get_or_create(region=region, code="5", defaults={"name": "Андижон тумани"})
+    region, _ = Region.objects.get_or_create(code="1703", defaults={"name": "Андижон вилояти", "billing_id": 2})
+    district, _ = District.objects.get_or_create(region=region, code="1703202", defaults={"name": "Андижон тумани"})
     xojalik = Xojalik.objects.create(name=name, region=region, code=code, inn=inn)
     bolim = Bolim.objects.create(name="Markaziy", xojalik=xojalik)
     land_type, _ = LandType.objects.get_or_create(name="Чўл")

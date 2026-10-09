@@ -2,6 +2,8 @@ from django.db.models import Exists, OuterRef
 
 from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineSerializer
+from apps.billing.scope import is_billing_role
+from apps.reports.services.kadastr import get_kadastr_parent_id
 from apps.users.models import CustomUser
 
 from rest_framework import generics
@@ -39,8 +41,14 @@ class DeadlineListAPIView(generics.ListAPIView):
             .distinct()
         )
 
+        # ================= IJARA BILLING ROLLARI =================
+        # Faqat "O'rmon kadastri va monitoringi" bo'limi muddatlari
+        if is_billing_role(user):
+            kadastr_id = get_kadastr_parent_id()
+            qs = qs.filter(statement__parent_id=kadastr_id) if kadastr_id else qs.none()
+
         # ================= HUDUDIY_BOSHQARMA =================
-        if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+        elif user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
             orgs = user.region_user_orgs.all()
 
             qs = qs.filter(

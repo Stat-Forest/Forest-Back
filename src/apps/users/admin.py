@@ -448,8 +448,23 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     # ================================
     # SAVE / HUDUDIY BOSHQA LOGIKA
     # ================================
+    # Ijara billing foydalanuvchilari alohida adminkada (/billing-admin/) boshqariladi
+    BILLING_ROLES = (CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER)
+
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("organization", "statement")
+        return (
+            super().get_queryset(request)
+            .exclude(role__in=self.BILLING_ROLES)
+            .select_related("organization", "statement")
+        )
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "role":
+            kwargs["choices"] = [
+                choice for choice in db_field.get_choices(include_blank=True)
+                if choice[0] not in self.BILLING_ROLES
+            ]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if form.cleaned_data.get("password") and not change:
@@ -467,6 +482,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
             CustomUser.Role.TASHKILOT_HODIMI: "tashkilot_hodimi",
             CustomUser.Role.HUDUDIY_BOSHQARMA: "hududiy_boshqarma",
             CustomUser.Role.BILLING_USER: "billing_user",
+            CustomUser.Role.BILLING_SUPER: "billing_super",
         }
         group_name = role_group_map.get(obj.role)
         if group_name:

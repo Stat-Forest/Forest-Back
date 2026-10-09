@@ -74,7 +74,7 @@ class BoundaryValidationTest(APITestCase):
     def setUp(self):
         cache.clear()
         self.ref = make_reference()
-        self.client = auth(self.client, make_user("billing", "billing_user"))
+        self.client = auth(self.client, make_user("billing", "billing_super"))
 
     def post(self, boundary, **overrides):
         payload = contract_payload(self.ref, boundary_geojson=boundary, **overrides)
@@ -127,11 +127,23 @@ class ManagementCommandsTest(TestCase):
         counts = (Region.objects.count(), District.objects.count(), Xojalik.objects.count(), Bolim.objects.count(),
                   LandType.objects.count(), ActivityType.objects.count(), PrivilegeType.objects.count())
         self.assertEqual(counts, (14, 206, 99, 293, 7, 23, 4))  # activity_types'da 1, bolimlar'da 2 ta takror
-        self.assertEqual(Region.objects.get(code="35").billing_id, 1)
+        self.assertEqual(Region.objects.get(code="1735").billing_id, 1)
+        self.assertEqual(District.objects.get(code="1708209").name, "Ғаллаорол тумани")
         self.assertEqual(Xojalik.objects.get(name="Беруний ДЎХ").code, "23:02:06")
         self.assertIsNone(Xojalik.objects.get(name="Беруний ДЎХ").inn)
         call_command("seed_billing", stdout=io.StringIO())
         self.assertEqual((Xojalik.objects.count(), ActivityType.objects.count()), (99, 23))
+
+    def test_seed_billing_migrates_old_short_codes_in_place(self):
+        region = Region.objects.create(code="8", name="Жиззах вилояти", billing_id=4)
+        district = District.objects.create(region=region, code="12", name="Ғаллаорол туман")
+        call_command("seed_billing", stdout=io.StringIO())
+        region.refresh_from_db()
+        district.refresh_from_db()
+        self.assertEqual(region.code, "1708")
+        self.assertEqual((district.code, district.name), ("1708209", "Ғаллаорол тумани"))
+        self.assertEqual(Region.objects.count(), 14)
+        self.assertEqual(District.objects.filter(region=region).count(), 13)
 
     def test_import_xojalik_locations(self):
         ref = make_reference(name="Андижон ДЎХ")

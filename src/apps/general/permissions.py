@@ -10,6 +10,11 @@ ORGANIZATION_ROLES = {
     CustomUser.Role.TASHKILOT_HODIMI,
     CustomUser.Role.TASHKILOT_RAHBARI,
 }
+# Ijara billing rollari — kadastr bo'limidagi yer hujjatlarini o'qiydi (faqat o'qish)
+BILLING_ROLES = {
+    CustomUser.Role.BILLING_USER,
+    CustomUser.Role.BILLING_SUPER,
+}
 
 
 def scope_by_organization(queryset, user, org_field: str = "organization"):
@@ -18,6 +23,7 @@ def scope_by_organization(queryset, user, org_field: str = "organization"):
     - super_admin / rahbariyat / bolim_admin -> hammasi
     - tashkilot_hodimi / tashkilot_rahbari -> faqat o'z tashkiloti
     - hududiy_boshqarma -> biriktirilgan tashkilotlar hududi
+    - billing_super -> hammasi; billing_user -> o'z tashkiloti va xo'jaliklari tashkilotlari
     - boshqalar -> hech narsa
     """
     if not user or not user.is_authenticated:
@@ -33,6 +39,16 @@ def scope_by_organization(queryset, user, org_field: str = "organization"):
         if not regions:
             return queryset.none()
         return queryset.filter(**{f"{org_field}__region__in": regions})
+    if user.role in BILLING_ROLES:
+        # billing_super -> hammasi; billing_user -> o'z tashkiloti ∪ xo'jaliklari tashkilotlari
+        from apps.billing.scope import billing_organization_ids
+
+        org_ids = billing_organization_ids(user)
+        if org_ids is None:
+            return queryset
+        if not org_ids:
+            return queryset.none()
+        return queryset.filter(**{f"{org_field}_id__in": org_ids})
     return queryset.none()
 
 

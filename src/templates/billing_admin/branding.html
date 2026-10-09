@@ -1,0 +1,12 @@
+{% comment %}
+Ijara billing adminkasi brendi. Jazzmin site_header/site_brand ni global
+JAZZMIN_SETTINGS dan oladi (AdminSite qiymatlarini e'tiborsiz qoldiradi) — shu
+sababli brend matni va rangi CSS bilan almashtiriladi.
+{% endcomment %}
+<style>
+    .main-header.navbar { background-color: #1b5e20 !important; border-bottom-color: #1b5e20 !important; }
+    .main-sidebar .brand-link { background-color: #1b5e20; }
+    .main-sidebar .brand-link .brand-text { font-size: 0 !important; }
+    .main-sidebar .brand-link .brand-text::after { content: "{{ billing_admin_header }}"; font-size: 1.05rem; font-weight: 600; }
+    .billing-admin-banner { background: #e8f5e9; border-left: 4px solid #1b5e20; color: #1b5e20; padding: .5rem 1rem; margin-bottom: 1rem; font-weight: 600; }
+</style>
