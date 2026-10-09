@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.billing.models import ActivityType, Bolim, District, LandType, PrivilegeType, Region, Xojalik
+from apps.billing.services.territory import normalize_district_name, normalize_region_name
 
 DEFAULT_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "billing_reference.json"
 
@@ -51,27 +52,61 @@ class Command(BaseCommand):
         counter[0 if created_flag else 1] += 1
 
     def seed_regions(self, rows):
+        """
+        Mavjud viloyat billing_id, nomi yoki eski kodi bo'yicha topiladi va kodi
+        MҲОБТ kodiga yangilanadi (eski qisqa kodlardan o'tish dublikat yaratmaydi).
+        """
         counter = [0, 0]
+        existing = list(Region.objects.all())
         for row in rows:
-            _, created = Region.objects.update_or_create(
-                code=str(row["code"]).strip(),
-                defaults={"name": row["name"].strip(), "billing_id": row.get("billing_id")},
+            code = str(row["code"]).strip()
+            name = row["name"].strip()
+            old_code = str(row.get("old_code") or "").strip()
+            norm = normalize_region_name(name)
+            region = (
+                next((r for r in existing if r.code == code), None)
+                or next((r for r in existing if row.get("billing_id") and r.billing_id == row.get("billing_id")), None)
+                or next((r for r in existing if normalize_region_name(r.name) == norm), None)
+                or next((r for r in existing if old_code and r.code == old_code), None)
             )
-            self._count(created, counter)
+            if region is None:
+                region = Region.objects.create(code=code, name=name, billing_id=row.get("billing_id"))
+                existing.append(region)
+                counter[0] += 1
+                continue
+            region.code, region.name = code, name
+            if row.get("billing_id"):
+                region.billing_id = row["billing_id"]
+            region.save(update_fields=["code", "name", "billing_id", "updated_at"])
+            counter[1] += 1
         return tuple(counter)
 
     def seed_districts(self, rows):
+        """Tuman (viloyat, kod) yoki (viloyat, normallashgan nom) bo'yicha topilib yangilanadi."""
         counter = [0, 0]
         regions = {r.code: r for r in Region.objects.all()}
+        by_region: dict = {}
+        for district in District.objects.all():
+            by_region.setdefault(district.region_id, []).append(district)
         for row in rows:
             region = regions.get(str(row["region_code"]).strip())
             if region is None:
                 self.stdout.write(self.style.WARNING(f"Tuman o'tkazib yuborildi (viloyat yo'q): {row}"))
                 continue
-            _, created = District.objects.update_or_create(
-                region=region, code=str(row["code"]).strip(), defaults={"name": row["name"].strip()},
+            code, name = str(row["code"]).strip(), row["name"].strip()
+            norm = normalize_district_name(name)
+            pool = by_region.setdefault(region.id, [])
+            district = next((d for d in pool if d.code == code), None) or next(
+                (d for d in pool if normalize_district_name(d.name) == norm), None
             )
-            self._count(created, counter)
+            if district is None:
+                pool.append(District.objects.create(region=region, code=code, name=name))
+                counter[0] += 1
+                continue
+            if (district.code, district.name) != (code, name):
+                district.code, district.name = code, name
+                district.save(update_fields=["code", "name", "updated_at"])
+            counter[1] += 1
         return tuple(counter)
 
     def seed_xojaliklar(self, rows):

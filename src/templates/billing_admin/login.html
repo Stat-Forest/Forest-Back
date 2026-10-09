@@ -1,0 +1,11 @@
+{% extends "admin/login.html" %}
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .billing-admin-login-title { color: #1b5e20; font-weight: 700; text-align: center; font-size: 1.25rem; margin-bottom: .5rem; }
+</style>
+{% endblock %}
+{% block content %}
+<p class="billing-admin-login-title">{{ billing_admin_header|default:"Ijara billing boshqaruvi" }}</p>
+{{ block.super }}
+{% endblock %}

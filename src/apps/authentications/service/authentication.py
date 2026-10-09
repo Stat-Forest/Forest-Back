@@ -33,8 +33,8 @@ class CustomJWTAuthentication(JWTAuthentication):
             if not getattr(view, "allow_password_reset_token", False):
                 raise InvalidToken("Parolni tiklash tokeni bu amal uchun yaroqsiz.")
 
-        # Rol bo'yicha URL cheklovi (support_admin faqat o'z bo'limlariga)
-        check_role_path_access(user, request.path)
+        # Rol bo'yicha URL (va metod) cheklovi: support_admin, billing rollari
+        check_role_path_access(user, request.path, request.method)
 
         return user, validated_token
 

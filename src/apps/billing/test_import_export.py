@@ -22,8 +22,8 @@ def import_row(ref, **overrides):
             "contract_number": "IMP-1",
             "xojalik_inn": ref.xojalik.inn,
             "bolim": "markaziy",
-            "region_code": "3",
-            "district_code": "5",
+            "region_code": "1703",
+            "district_code": "1703202",
             "rent_area": "3,5",
             "rent_amount": "",
             "latitude": 40.71,
@@ -45,7 +45,7 @@ class ImportExcelTest(APITestCase):
     def setUp(self):
         cache.clear()
         self.ref = make_reference()
-        self.client = auth(self.client, make_user("billing", "billing_user"))
+        self.client = auth(self.client, make_user("billing", "billing_super"))
 
     def test_import_valid_and_invalid_rows(self):
         rows = [import_row(self.ref), import_row(self.ref, xojalik_inn="000000000", contract_number="IMP-2")]
@@ -82,6 +82,20 @@ class ImportExcelTest(APITestCase):
         resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
         self.assertEqual(resp.data["saved"], [])
         self.assertIn("xojalik_inn", resp.data["errors"]["0"]["contract"])
+
+    def test_import_accepts_short_codes_and_creates_missing_bolim(self):
+        row = import_row(self.ref, region_code="3", district_code="202", bolim="Булоқбоши")
+        resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
+        self.assertEqual(resp.data["saved"], [0], resp.data)
+        contract = Contract.objects.get(contract_number="IMP-1")
+        self.assertEqual(contract.region, self.ref.region)
+        self.assertEqual(contract.district, self.ref.district)
+        self.assertEqual(contract.bolim.name, "Булоқбоши")
+        self.assertEqual(contract.bolim.xojalik, self.ref.xojalik)
+
+        row = import_row(self.ref, region_code="1799", district_code="1799999", contract_number="IMP-2")
+        resp = self.client.post(f"{URL}import-excel/", {"rows": [row]}, format="json")
+        self.assertIn("region_code", resp.data["errors"]["0"]["contract"])
 
     def test_import_canceled_row_becomes_inactive(self):
         row = import_row(self.ref, canceled_date="2025-12-01", cancel_reason="Bekor")
@@ -126,7 +140,7 @@ class ExportExcelTest(APITestCase):
     def setUp(self):
         cache.clear()
         self.ref = make_reference()
-        self.client = auth(self.client, make_user("billing", "billing_user"))
+        self.client = auth(self.client, make_user("billing", "billing_super"))
         self.client.post(URL, contract_payload(self.ref), format="json")
         resp = self.client.post(URL, contract_payload(self.ref, contract_number="SH-2", pinfl="22222222222222"), format="json")
         self.client.post(f"{URL}{resp.data['id']}/status/", {"status": "inactive", "cancel_reason": "x"}, format="json")
@@ -142,7 +156,7 @@ class ExportExcelTest(APITestCase):
         self.assertEqual(ws["J5"].value, "Жисмоний")
         self.assertEqual(ws["K5"].value, "12345678901234")
         self.assertEqual(ws["P5"].value, "Markaziy")
-        self.assertEqual(ws["R5"].value, "3")
+        self.assertEqual(ws["R5"].value, "1703")
         self.assertEqual(float(ws["Y5"].value), 12.50)
         self.assertEqual(float(ws["Z5"].value), 7.50)   # faoliyat: ўрмон барпо қилиш
         self.assertEqual(float(ws["AS5"].value), 5.00)  # yer turi: Чўл
@@ -165,7 +179,7 @@ class ContractFilesTest(APITestCase):
     def setUp(self):
         cache.clear()
         self.ref = make_reference()
-        self.user = make_user("billing", "billing_user")
+        self.user = make_user("billing", "billing_super")
         self.client = auth(self.client, self.user)
         self.contract_id = self.client.post(URL, contract_payload(self.ref), format="json").data["id"]
         self.media = tempfile.TemporaryDirectory()

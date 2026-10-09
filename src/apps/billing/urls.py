@@ -9,6 +9,8 @@ from apps.billing.views import (
     DistrictListView,
     LandTypeListView,
     PrivilegeTypeListView,
+    PublicRentStatsView,
+    PublicXojalikListView,
     RegionListView,
     RenterListView,
     XojalikKonturViewSet,
@@ -23,6 +25,9 @@ router.register("xojalik-locations", XojalikLocationViewSet, basename="billing-x
 router.register("xojalik-konturs", XojalikKonturViewSet, basename="billing-xojalik-kontur")
 
 urlpatterns = [
+    # Ochiq (landing) statistika — autentifikatsiyasiz
+    path("public/rent-stats/", PublicRentStatsView.as_view(), name="billing-public-rent-stats"),
+    path("public/xojaliklar/", PublicXojalikListView.as_view(), name="billing-public-xojalik-list"),
     path("regions/", RegionListView.as_view(), name="billing-region-list"),
     path("districts/", DistrictListView.as_view(), name="billing-district-list"),
     path("xojaliklar/", XojalikListView.as_view(), name="billing-xojalik-list"),
