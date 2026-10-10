@@ -16,6 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.general.models import Organization
 from apps.reports.models import Deadline, Report, Statement
+from apps.reports.views.dashboard.dashboard_stat_service import DashboardStatService
 from apps.reports.services.dashboard_overview import DashboardOverviewService
 
 User = get_user_model()
@@ -171,15 +172,26 @@ class DashboardOverviewTest(APITestCase):
 
     # ---------------- calculations ----------------
 
-    def test_deadline_discipline_categories(self):
-        Report.objects.filter(pk=self.r4.pk).update(status=S.SENT)  # org_b: ko'rib chiqilmoqda
+    def test_deadline_discipline_matches_home_cards(self):
+        """Bajarilgan / Muddatidan kech bajarilgan / Bajarilmagan — /reports/dashboard/ kartalari bilan bir xil."""
         disc = self._data(self.super_admin)["discipline"]
         self.assertEqual(
-            {k: disc[k] for k in ("total", "on_time", "late", "in_review", "missing")},
-            {"total": 3, "on_time": 1, "late": 1, "in_review": 1, "missing": 0},
+            {k: disc[k] for k in ("total", "on_time", "late", "missing")},
+            {"total": 3, "on_time": 1, "late": 1, "missing": 1},
         )
-        self.assertEqual(disc["on_time_rate"], 33.3)
+        self.assertEqual(disc["on_time_rate"], 50.0)
         self.assertEqual(disc["completion_rate"], 66.7)
+
+        cards = DashboardStatService(self.super_admin)._calculate_stats()
+        self.assertEqual(
+            (disc["on_time"], disc["late"], disc["missing"]),
+            (cards["on_time_reports"], cards["late_reports"], cards["expired_deadlines"]),
+        )
+        kpis = self._data(self.super_admin)["kpis"]
+        self.assertEqual(
+            (kpis["sent"]["value"], kpis["cancelled"]["value"], kpis["accepted"]["value"], kpis["saved"]["value"]),
+            (cards["sent_reports"], cards["returned_reports"], cards["accepted_reports"], cards["draft_reports"]),
+        )
 
     def test_monthly_trend_has_12_months_and_buckets_by_created_month(self):
         Report.objects.filter(pk=self.r1.pk).update(created_at=timezone.now() - timedelta(days=100))
@@ -203,8 +215,9 @@ class DashboardOverviewTest(APITestCase):
         self.assertIsNone(data["kpis"]["total"]["change_pct"])
         self.assertIsNone(data["period_start"])
 
-    def test_invalid_period_falls_back_to_year(self):
-        self.assertEqual(self._data(self.super_admin, period="bogus")["period"], "year")
+    def test_default_and_invalid_period_is_all_time(self):
+        self.assertEqual(self._data(self.super_admin)["period"], "all")
+        self.assertEqual(self._data(self.super_admin, period="bogus")["period"], "all")
 
     def test_statement_names_follow_lang(self):
         data = self._data(self.super_admin, lang="ru")
