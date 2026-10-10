@@ -180,13 +180,18 @@ class IndividualGeneralReportDetail(CustomRetrieveAPIView):
     def get_queryset(self):
         return scope_reports_for_user(super().get_queryset(), self.request.user)
 
+    def retrieve(self, request, *args, **kwargs):
+        self._object = self.get_object()
+        serializer = self.get_serializer(self._object)
+        return Response(serializer.data)
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         lang = self.request.query_params.get("lang", "uz")
         context["lang"] = lang
 
         # Preload columns for this statement to avoid repeated queries in serializer
-        report: Report = self.get_object()
+        report: Report = getattr(self, "_object", None) or self.get_object()
         cols = (
             StatementColumn.objects
             .filter(statement_id=report.statement_id)

@@ -37,30 +37,86 @@ class DeadlineReportListSerializer(serializers.ModelSerializer):
             return [d for d in all_deadlines if d.submit_at == obj.submit_at]
         return [obj]
 
+    def _stats(self, obj):
+        """
+        Davr (submit_at) bo'yicha {"total", "submitted"}.
+
+        View `period_stats` ni bitta so'rov bilan tayyorlab beradi; u bo'lmasa
+        davr uchun bir marta hisoblanadi va context'da keshlanadi. Ilgari har
+        qator uchun bu hisob 3 marta, har bir muddat uchun alohida so'rovlar
+        bilan qilinardi (10 qator ≈ 900 so'rov).
+        """
+        stats = self.context.get("period_stats")
+        if stats is not None and obj.submit_at in stats:
+            return stats[obj.submit_at]
+        fallback = self.context.setdefault("_period_stats_fallback", {})
+        if obj.submit_at not in fallback:
+            fallback[obj.submit_at] = compute_period_stats(self._get_deadlines_for_period(obj))
+        return fallback[obj.submit_at]
+
     def get_total_organizations(self, obj):
-        deadlines = self._get_deadlines_for_period(obj)
-        org_ids = set()
-        for d in deadlines:
-            for org_id in d.organizations.values_list('id', flat=True):
-                org_ids.add(org_id)
-        return len(org_ids)
+        return self._stats(obj)["total"]
 
     def get_submitted_organizations(self, obj):
-        deadlines = self._get_deadlines_for_period(obj)
-        return Report.objects.filter(
+        return self._stats(obj)["submitted"]
+
+    def get_pending_organizations(self, obj):
+        stats = self._stats(obj)
+        return stats["total"] - stats["submitted"]
+
+    def get_submission_percentage(self, obj):
+        stats = self._stats(obj)
+        if stats["total"] == 0:
+            return 0
+        return round((stats["submitted"] / stats["total"]) * 100, 2)
+
+
+def compute_period_stats(deadlines):
+    """Bir davrdagi muddatlar uchun tashkilotlar soni va topshirganlar soni (1 so'rov)."""
+    org_ids = set()
+    for d in deadlines:
+        org_ids.update(o.id for o in d.organizations.all())  # prefetch bo'lsa so'rovsiz
+    submitted = (
+        Report.objects.filter(
             deadline__in=deadlines,
             status=Report.StatusChoices.ACCEPTED,
             is_report=True,
-        ).values('organization').distinct().count()
+        )
+        .values("organization").distinct().count()
+    )
+    return {"total": len(org_ids), "submitted": submitted}
 
-    def get_pending_organizations(self, obj):
-        total = self.get_total_organizations(obj)
-        submitted = self.get_submitted_organizations(obj)
-        return total - submitted
 
-    def get_submission_percentage(self, obj):
-        total = self.get_total_organizations(obj)
-        if total == 0:
-            return 0
-        submitted = self.get_submitted_organizations(obj)
-        return round((submitted / total) * 100, 2)
+def build_period_stats(deadlines):
+    """
+    Barcha muddatlar uchun davr → {"total", "submitted"} xaritasi, 1 so'rov bilan.
+    Tashkilotlar prefetch'dan olinadi.
+    """
+    from collections import defaultdict
+
+    by_period = defaultdict(list)
+    for d in deadlines:
+        by_period[d.submit_at].append(d)
+    if not by_period:
+        return {}
+
+    submitted = defaultdict(set)
+    accepted = (
+        Report.objects.filter(
+            deadline__in=deadlines,
+            status=Report.StatusChoices.ACCEPTED,
+            is_report=True,
+        )
+        .values_list("deadline__submit_at", "organization_id")
+        .distinct()
+    )
+    for submit_at, org_id in accepted:
+        submitted[submit_at].add(org_id)
+
+    return {
+        submit_at: {
+            "total": len({o.id for d in ds for o in d.organizations.all()}),
+            "submitted": len(submitted[submit_at]),
+        }
+        for submit_at, ds in by_period.items()
+    }

@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from apps.reports.models import Deadline, Report
 from apps.reports.serializers.deadline import DeadlineReportListSerializer
+from apps.reports.serializers.deadline.login_stat_deadline import build_period_stats
 from rest_framework.permissions import AllowAny
 
 MONTHLY_STATEMENTS = [
@@ -69,12 +70,16 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         period_type = request.query_params.get("period_type")
 
         # ✅ submit_at bo'yicha dedupe
+        all_deadlines = list(queryset)
         seen = set()
         unique_deadlines = []
-        for deadline in queryset:
+        for deadline in all_deadlines:
             if deadline.submit_at not in seen:
                 seen.add(deadline.submit_at)
                 unique_deadlines.append(deadline)
+
+        # Davr statistikasi — barcha qatorlar uchun bitta so'rov
+        period_stats = build_period_stats(all_deadlines)
 
         # ✅ Pagination — count/next/previous saqlanadi
         page = self.paginate_queryset(unique_deadlines)
@@ -85,7 +90,8 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
                 context={
                     **self.get_serializer_context(),
                     "period_type": period_type,
-                    "all_deadlines": list(queryset),
+                    "all_deadlines": all_deadlines,
+                    "period_stats": period_stats,
                 }
             )
             return self.get_paginated_response(serializer.data)
@@ -97,7 +103,8 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
             context={
                 **self.get_serializer_context(),
                 "period_type": period_type,
-                "all_deadlines": list(queryset),
+                "all_deadlines": all_deadlines,
+                "period_stats": period_stats,
             }
         )
         return Response(serializer.data)

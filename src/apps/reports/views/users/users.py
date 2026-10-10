@@ -61,8 +61,9 @@ class UserListAPIView(generics.ListAPIView):
 
         qs = CustomUser.objects.select_related(
             "organization",
-            "statement"
-        )
+            "statement",
+            "personal_info",
+        ).prefetch_related("region_user_orgs")
 
         # SUPERUSER – hammasi
         if user.is_superuser:
