@@ -89,34 +89,40 @@ def compute_period_stats(deadlines):
 
 def build_period_stats(deadlines):
     """
-    Barcha muddatlar uchun davr → {"total", "submitted"} xaritasi, 1 so'rov bilan.
-    Tashkilotlar prefetch'dan olinadi.
+    Berilgan muddatlar uchun davr → {"total", "submitted"} xaritasi, 2 ta
+    GROUP BY so'rov bilan (tashkilotlar prefetch qilinmaydi).
     """
-    from collections import defaultdict
+    from django.db.models import Count
+    from apps.reports.models import Deadline
 
-    by_period = defaultdict(list)
-    for d in deadlines:
-        by_period[d.submit_at].append(d)
-    if not by_period:
+    if not deadlines:
         return {}
 
-    submitted = defaultdict(set)
-    accepted = (
-        Report.objects.filter(
-            deadline__in=deadlines,
-            status=Report.StatusChoices.ACCEPTED,
-            is_report=True,
+    totals = {
+        row["deadline__submit_at"]: row["n"]
+        for row in (
+            Deadline.organizations.through.objects
+            .filter(deadline__in=deadlines)
+            .order_by()
+            .values("deadline__submit_at")
+            .annotate(n=Count("organization_id", distinct=True))
         )
-        .values_list("deadline__submit_at", "organization_id")
-        .distinct()
-    )
-    for submit_at, org_id in accepted:
-        submitted[submit_at].add(org_id)
-
+    }
+    submitted = {
+        row["deadline__submit_at"]: row["n"]
+        for row in (
+            Report.objects
+            .filter(
+                deadline__in=deadlines,
+                status=Report.StatusChoices.ACCEPTED,
+                is_report=True,
+            )
+            .order_by()
+            .values("deadline__submit_at")
+            .annotate(n=Count("organization_id", distinct=True))
+        )
+    }
     return {
-        submit_at: {
-            "total": len({o.id for d in ds for o in d.organizations.all()}),
-            "submitted": len(submitted[submit_at]),
-        }
-        for submit_at, ds in by_period.items()
+        submit_at: {"total": totals.get(submit_at, 0), "submitted": submitted.get(submit_at, 0)}
+        for submit_at in {d.submit_at for d in deadlines}
     }
