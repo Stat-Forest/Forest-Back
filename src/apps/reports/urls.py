@@ -29,6 +29,7 @@ from apps.reports.views.deadline import (
     DeadlineLoginStatListAPIView
 )
 from apps.reports.views.dashboard import (
+    DashboardOverviewAPIView,
     DashboardStatListView,
 )
 from apps.reports.views.plant_report import PlantListReportAPIView, UniversalPlantReportCreateAPIView, \
@@ -83,6 +84,7 @@ urlpatterns = [
     # ====================  DASHBOARD URL   ====================
     path('dashboard/', DashboardStatListView.as_view(), name='dashboard'),
     path('dashboard/statement-stats/', StatementReportStatView.as_view(), name='statement-stats'),
+    path('dashboard/overview/', DashboardOverviewAPIView.as_view(), name='dashboard-overview'),
 
 
     # ====================  DEADLINE URL    ====================

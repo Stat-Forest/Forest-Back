@@ -107,6 +107,50 @@ def scope_plans_for_user(queryset, user):
     return queryset.none()
 
 
+def scope_deadline_assignments_for_user(queryset, user):
+    """
+    `Deadline.organizations.through` (muddat ↔ tashkilot) querysetini
+    scope_reports_for_user bilan bir xil qoida bo'yicha cheklaydi — "qaysi
+    tashkilot qaysi muddatda hisobot topshirishi kerak" ro'yxati.
+    """
+    if not user or not user.is_authenticated:
+        return queryset.none()
+
+    if user.is_superuser or user.role in FULL_ACCESS_ROLES:
+        return queryset
+
+    if user.role in (CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER):
+        from apps.billing.scope import billing_organization_ids
+        from apps.reports.services.kadastr import get_kadastr_parent_id
+
+        kadastr_id = get_kadastr_parent_id()
+        if not kadastr_id:
+            return queryset.none()
+        queryset = queryset.filter(deadline__statement__parent_id=kadastr_id)
+        org_ids = billing_organization_ids(user)
+        if org_ids is None:
+            return queryset
+        return queryset.filter(organization_id__in=org_ids) if org_ids else queryset.none()
+
+    if user.role in (CustomUser.Role.TASHKILOT_HODIMI, CustomUser.Role.TASHKILOT_RAHBARI):
+        if not user.organization_id:
+            return queryset.none()
+        return queryset.filter(organization_id=user.organization_id)
+
+    if user.role == CustomUser.Role.BOLIM_ADMIN:
+        if not user.statement_id:
+            return queryset.none()
+        return queryset.filter(deadline__statement__parent_id=user.statement_id)
+
+    if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+        regions = list(user.region_user_orgs.values_list("region", flat=True).distinct())
+        if not regions:
+            return queryset.none()
+        return queryset.filter(organization__region__in=regions)
+
+    return queryset.none()
+
+
 def scope_regional_reports_for_user(queryset, user):
     """
     Viloyat yig'ma hisobotlari (is_general): tashkilot xodimi/rahbari faqat
