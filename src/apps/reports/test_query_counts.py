@@ -81,17 +81,48 @@ class LoginStatDeadlinesQueryTest(_Base):
     def test_query_count_does_not_grow_with_periods(self):
         self._period("2026-01")
         self.client.logout()
+        cache.clear()
         with CaptureQueriesContext(connection) as a:
             r1 = self.client.get(self.URL)
         self.assertEqual(r1.status_code, 200)
         self._period("2026-02")
         self._period("2026-03")
+        cache.clear()
         with CaptureQueriesContext(connection) as b:
             r2 = self.client.get(self.URL)
         self.assertEqual(r2.status_code, 200)
         self.assertEqual(len(r2.json()["results"]), 3)
         self.assertEqual(len(a.captured_queries), len(b.captured_queries),
                          "\n".join(q["sql"][:120] for q in b.captured_queries))
+
+    def test_only_page_periods_are_loaded_and_orgs_are_not_prefetched(self):
+        for m in range(1, 13):
+            self._period(f"2025-{m:02d}", n_forms=1, n_orgs=2, accepted=1)
+        cache.clear()
+        with CaptureQueriesContext(connection) as ctx:
+            r = self.client.get(self.URL)
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["count"], 12)
+        self.assertEqual(len(body["results"]), 10)
+        self.assertEqual(body["results"][0]["submit_at"], "2025-12")
+        self.assertEqual(body["results"][0]["total_organizations"], 2)
+        self.assertEqual(body["results"][0]["submitted_organizations"], 1)
+        prefetch = [q["sql"] for q in ctx.captured_queries if "_prefetch_related_val_deadline_id" in q["sql"]]
+        self.assertEqual(prefetch, [], "tashkilotlar prefetch bilan to'liq yuklanmasligi kerak")
+        deadline_selects = [q["sql"] for q in ctx.captured_queries
+                            if 'FROM "reports_deadline"' in q["sql"] and '"reports_deadline"."submit_at" IN' in q["sql"]]
+        self.assertTrue(deadline_selects, "muddatlar faqat sahifadagi davrlar uchun yuklanishi kerak")
+        page2 = self.client.get(self.URL, {"page": 2}).json()
+        self.assertEqual(len(page2["results"]), 2)
+
+    def test_response_is_cached(self):
+        self._period("2026-05")
+        cache.clear()
+        self.client.get(self.URL)
+        with self.assertNumQueries(0):
+            r = self.client.get(self.URL)
+        self.assertEqual(len(r.json()["results"]), 1)
 
     def test_row_values(self):
         self._period("2026-01", n_forms=2, n_orgs=3, accepted=2)
