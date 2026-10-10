@@ -2,14 +2,15 @@ from datetime import date
 # pyrefly: ignore [missing-import]
 from django.core.cache import cache
 # pyrefly: ignore [missing-import]
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Q
 
 # pyrefly: ignore [missing-import]
 from apps.reports.models import Report, Deadline, Plan, Statement
 # pyrefly: ignore [missing-import]
 from apps.users.models import CustomUser
 
-DASHBOARD_CACHE_TTL = 10
+# Report saqlanganda dashboard_signal keshni tozalaydi, shuning uchun uzoq TTL xavfsiz.
+DASHBOARD_CACHE_TTL = 300
 
 
 class DashboardStatService:
@@ -113,21 +114,29 @@ class DashboardStatService:
         raise ValueError("Invalid user context")
 
     # ================= EXPIRED DEADLINES =================
-    def _deadline_has_missing_report(self, deadline, orgs):
+    def _count_deadlines_with_missing_report(self, expired_qs, org_ids=None):
         """
-        Berilgan deadline uchun orgs ichidan
-        kamida bittasi ACCEPTED report topshirmagan bo'lsa True qaytaradi.
+        Kamida bitta (doiradagi) tashkiloti ACCEPTED hisobot topshirmagan
+        muddatlar soni. 3 ta so'rov — muddatlar va tashkilotlar soniga bog'liq
+        emas (ilgari har bir muddat × tashkilot uchun exists() edi).
         """
-        for org in orgs:
-            report_exists = Report.objects.filter(
-                deadline=deadline,
-                organization=org,
+        deadline_ids = list(expired_qs.values_list("id", flat=True).distinct())
+        if not deadline_ids:
+            return 0
+
+        pairs = Deadline.organizations.through.objects.filter(deadline_id__in=deadline_ids)
+        if org_ids is not None:
+            pairs = pairs.filter(organization_id__in=org_ids)
+        pairs = pairs.values_list("deadline_id", "organization_id")
+
+        accepted = set(
+            Report.objects.filter(
+                deadline_id__in=deadline_ids,
                 is_report=True,
                 status=Report.StatusChoices.ACCEPTED,
-            ).exists()
-            if not report_exists:
-                return True
-        return False
+            ).values_list("deadline_id", "organization_id")
+        )
+        return len({d for d, o in pairs if (d, o) not in accepted})
 
     def _get_expired_deadlines_count(self, deadlines_qs):
         user = self.user
@@ -138,12 +147,7 @@ class DashboardStatService:
             CustomUser.Role.SUPER_ADMIN,
             CustomUser.Role.RAHBARIYAT,
         }:
-            expired_count = 0
-            for deadline in expired_qs.prefetch_related("organizations"):
-                orgs = deadline.organizations.all()
-                if self._deadline_has_missing_report(deadline, orgs):
-                    expired_count += 1
-            return expired_count
+            return self._count_deadlines_with_missing_report(expired_qs)
 
         # SUPPORT ADMIN
         if user.role == CustomUser.Role.SUPPORT_ADMIN:
@@ -166,15 +170,10 @@ class DashboardStatService:
 
         # HUDUDIY BOSHQARMA — o'z mintaqasidagi orglar bo'yicha
         if user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-            orgs = list(user.region_user_orgs.all())
-            if not orgs:
+            org_ids = list(user.region_user_orgs.values_list("id", flat=True))
+            if not org_ids:
                 return 0
-
-            expired_count = 0
-            for deadline in expired_qs.distinct().prefetch_related("organizations"):
-                if self._deadline_has_missing_report(deadline, orgs):
-                    expired_count += 1
-            return expired_count
+            return self._count_deadlines_with_missing_report(expired_qs, org_ids)
 
         # OTHER ROLES
         base_report_qs = Report.objects.filter(
@@ -195,32 +194,35 @@ class DashboardStatService:
         users = ctx["users"]
         plans = ctx["plans"]
 
+        S = Report.StatusChoices
+        T = Report.TimeStatus
+        # Hisobotlar bo'yicha barcha sonlar — bitta so'rov (ilgari 10 ta COUNT)
+        r = reports.order_by().aggregate(
+            total=Count("id"),
+            sent=Count("id", filter=Q(status=S.SENT)),
+            returned=Count("id", filter=Q(status=S.CANCELLED)),
+            accepted=Count("id", filter=Q(status=S.ACCEPTED)),
+            draft=Count("id", filter=Q(status=S.SAVED)),
+            on_time=Count("id", filter=Q(status=S.ACCEPTED, time_status=T.ON_TIME)),
+            late=Count("id", filter=Q(status=S.ACCEPTED, time_status=T.LATE)),
+        )
+        st = Statement.objects.order_by().aggregate(
+            father=Count("id", filter=Q(parent__isnull=True)),
+            child=Count("id", filter=Q(parent__isnull=False)),
+        )
+
         return {
-            "total_reports": reports.count(),
-            "sent_reports": reports.filter(
-                status=Report.StatusChoices.SENT
-            ).count(),
-            "returned_reports": reports.filter(
-                status=Report.StatusChoices.CANCELLED
-            ).count(),
-            "accepted_reports": reports.filter(
-                status=Report.StatusChoices.ACCEPTED
-            ).count(),
-            "draft_reports": reports.filter(
-                status=Report.StatusChoices.SAVED
-            ).count(),
+            "total_reports": r["total"] or 0,
+            "sent_reports": r["sent"] or 0,
+            "returned_reports": r["returned"] or 0,
+            "accepted_reports": r["accepted"] or 0,
+            "draft_reports": r["draft"] or 0,
             "responsible_users": users.count(),
             "deadlines": deadlines.count(),
             "plans": plans.count(),
-            "on_time_reports": reports.filter(
-                status=Report.StatusChoices.ACCEPTED,
-                time_status=Report.TimeStatus.ON_TIME
-            ).count(),
-            "late_reports": reports.filter(
-                status=Report.StatusChoices.ACCEPTED,
-                time_status=Report.TimeStatus.LATE
-            ).count(),
+            "on_time_reports": r["on_time"] or 0,
+            "late_reports": r["late"] or 0,
             "expired_deadlines": self._get_expired_deadlines_count(deadlines),
-            "father_statements": Statement.objects.filter(parent__isnull=True).count(),
-            "child_statements": Statement.objects.filter(parent__isnull=False).count(),
+            "father_statements": st["father"] or 0,
+            "child_statements": st["child"] or 0,
         }

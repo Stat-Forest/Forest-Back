@@ -11,7 +11,7 @@ from apps.reports.permissions import CanCreateReport
 from apps.reports.filters.report_region import ReportFilter
 from apps.reports.permissions.check_delete_report import CanDeleteReport
 from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin, CanEditReportData
-from apps.reports.models import Report, Plant, ReportItem, StatementColumn
+from apps.reports.models import Report, ReportItem, StatementColumn
 from apps.reports.serializers.reports import (
     ReportListSerializer,
     ReportCreateSerializer,
@@ -138,12 +138,6 @@ class ReportListAPIView(CustomListAPIView):
             lang = "uz"
 
         context["lang"] = lang
-        context["lang"] = lang
-
-        # Plant map: tezkor (1 query)
-        context["plant_map"] = {
-            str(pid): name for pid, name in Plant.objects.values_list("id", "name")
-        }
 
         # StatementColumn preload: statement_ids oldindan hisoblangan
         statement_ids = getattr(self, "_statement_ids", [])

@@ -37,45 +37,71 @@ class StatementReportStatService:
 
         return Report.objects.none()
 
-    def _get_all_children(self, statement):
-        """Rekursiv barcha child statementlarni olish"""
-        children = []
-        direct_children = Statement.objects.filter(parent=statement)
-        for child in direct_children:
-            children.append(child)
-            children.extend(self._get_all_children(child))
-        return children
+    @staticmethod
+    def _empty_stat():
+        return {"saved": 0, "sent": 0, "cancelled": 0, "accepted": 0, "total": 0}
 
-    def _build_stat(self, reports_qs):
-        return {
-            "saved":     reports_qs.filter(status=Report.StatusChoices.SAVED).count(),
-            "sent":      reports_qs.filter(status=Report.StatusChoices.SENT).count(),
-            "cancelled": reports_qs.filter(status=Report.StatusChoices.CANCELLED).count(),
-            "accepted":  reports_qs.filter(status=Report.StatusChoices.ACCEPTED).count(),
-            "total":     reports_qs.count(),
-        }
+    def _stat_for(self, counts, statement_ids):
+        stat = self._empty_stat()
+        for sid in statement_ids:
+            row = counts.get(sid)
+            if row:
+                for key in stat:
+                    stat[key] += row[key]
+        return stat
+
+    @staticmethod
+    def _collect_children(children_by_parent, statement_id):
+        """Rekursiv barcha avlodlar (xotiradagi daraxt bo'yicha, so'rovsiz)."""
+        result = []
+        for child in children_by_parent.get(statement_id, []):
+            result.append(child)
+            result.extend(StatementReportStatService._collect_children(children_by_parent, child.id))
+        return result
 
     def get_statistics(self):
-        base_qs = self._get_base_reports_qs()
-        parent_statements = Statement.objects.filter(
-            parent__isnull=True,
-            is_used=True
-        ).order_by('name')
+        """
+        3 ta so'rov: statement'lar daraxti, statement bo'yicha status sonlari
+        (bitta GROUP BY). Ilgari har bir statement uchun ~7 so'rov edi.
+        """
+        from collections import defaultdict
+        from django.db.models import Count, Q
+
+        S = Report.StatusChoices
+        counts = {
+            row["statement_id"]: row
+            for row in (
+                self._get_base_reports_qs()
+                .order_by()
+                .values("statement_id")
+                .annotate(
+                    saved=Count("id", filter=Q(status=S.SAVED)),
+                    sent=Count("id", filter=Q(status=S.SENT)),
+                    cancelled=Count("id", filter=Q(status=S.CANCELLED)),
+                    accepted=Count("id", filter=Q(status=S.ACCEPTED)),
+                    total=Count("id"),
+                )
+            )
+        }
+
+        statements = list(Statement.objects.order_by("name"))
+        children_by_parent = defaultdict(list)
+        for st in statements:
+            children_by_parent[st.parent_id].append(st)
 
         result = []
-
-        for parent in parent_statements:
-            children = self._get_all_children(parent)
-            all_ids = [parent.id] + [c.id for c in children]
-
-            parent_reports = base_qs.filter(statement_id__in=all_ids)
-            parent_stat = self._build_stat(parent_reports)
+        for parent in statements:
+            if parent.parent_id is not None or not parent.is_used:
+                continue
+            children = self._collect_children(children_by_parent, parent.id)
+            parent_stat = self._stat_for(counts, [parent.id] + [c.id for c in children])
 
             children_data = []
             for child in children:
-                child_reports = base_qs.filter(statement_id=child.id)
-                child_stat = self._build_stat(child_reports)
-                child_children_count = Statement.objects.filter(parent=child, is_used=True).count()
+                child_stat = self._stat_for(counts, [child.id])
+                child_children_count = sum(
+                    1 for c in children_by_parent.get(child.id, []) if c.is_used
+                )
                 children_data.append({
                     "id":    child.id,
                     "name":  getattr(child, 'name_uz', child.name),

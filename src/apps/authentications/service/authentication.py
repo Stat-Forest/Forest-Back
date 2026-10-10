@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
+from rest_framework_simplejwt.settings import api_settings
 
 from apps.authentications.service.role_access import check_role_path_access
 from apps.authentications.service.token_denylist import is_access_token_revoked
@@ -39,7 +40,22 @@ class CustomJWTAuthentication(JWTAuthentication):
         return user, validated_token
 
     def get_user(self, validated_token):
-        user = super().get_user(validated_token)
+        # simplejwt'dagi get_user bilan bir xil, faqat organization/statement
+        # bitta JOIN bilan yuklanadi — ko'p view'lar har so'rovda ularga murojaat
+        # qiladi (ilgari har biri alohida so'rov edi).
+        try:
+            user_id = validated_token[api_settings.USER_ID_CLAIM]
+        except KeyError as e:
+            raise InvalidToken("Token contained no recognizable user identification") from e
+
+        try:
+            user = (
+                self.user_model.objects
+                .select_related("organization", "statement")
+                .get(**{api_settings.USER_ID_FIELD: user_id})
+            )
+        except self.user_model.DoesNotExist as e:
+            raise AuthenticationFailed("User not found", code="user_not_found") from e
 
         if not user.is_active:
             raise AuthenticationFailed("Foydalanuvchi faol emas.", code="user_inactive")
