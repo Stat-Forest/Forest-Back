@@ -42,4 +42,8 @@ class Deadline(AbstractBaseModel):
     class Meta:
         verbose_name = "Muddat"
         verbose_name_plural = "Muddatlar"
+        indexes = [
+            models.Index(fields=["deadline_at"]),
+            models.Index(fields=["submit_at"]),
+        ]
 

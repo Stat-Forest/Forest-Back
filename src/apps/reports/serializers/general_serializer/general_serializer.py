@@ -149,7 +149,9 @@ class RegionalGeneralReportSerializer(CustomModelSerializer):
         }]
 
     def get_children_reports(self, report):
-        if not report.region:
+        # Respublika qatori uchun children baribir to_representation'da olib
+        # tashlanadi — so'rov qilmaymiz.
+        if not report.region or report.is_republic:
             return []
 
         lang = get_lang_code(self.context)
