@@ -9,20 +9,28 @@ services:
     env_file:
       - ../../.env
     entrypoint: ["/entrypoint.sh"]
-    # ⚠️ MUAMMO: gunicorn --workers 4 + UvicornWorker WebSocket uchun
-    # channel_layer.group_add() da event loop conflict → 500 xatosi.
-    # Daphne bilan almashtirildi (Django Channels rasmiy ASGI serveri).
-    # command: >
-    #   gunicorn config.asgi:application
-    #   -k uvicorn.workers.UvicornWorker
-    #   --bind 0.0.0.0:8000
-    #   --workers 4
-    #   --access-logfile /var/log/forest-back/gunicorn-access.log
-    #   --error-logfile /var/log/forest-back/gunicorn-error.log
-    command: >
-      daphne -b 0.0.0.0 -p 8000
-      --access-log /var/log/forest-back/daphne-access.log
-      config.asgi:application
+    # HTTP: gunicorn (WSGI) bir nechta worker bilan. Ilgari bitta daphne jarayoni
+    # ishlardi — DRF view'lari sinxron, Daphne ularni BITTA thread'da navbat bilan
+    # bajaradi (6 ta parallel so'rov 1 s o'rniga 3.5 s olardi). WebSocket (chat)
+    # endi alohida forest_ws konteynerida (daphne), nginx /ws/ ni unga yo'naltiradi.
+    # Worker soni: .env dagi GUNICORN_WORKERS (odatda 2*CPU+1), har worker 2 thread.
+    # ($$ — compose interpolyatsiyasi emas, konteyner ichidagi sh o'qiydi; .env
+    # env_file orqali konteynerga kiradi.)
+    command:
+      - sh
+      - -c
+      - >-
+        exec gunicorn config.wsgi:application
+        --bind 0.0.0.0:8000
+        --workers "$${GUNICORN_WORKERS:-4}"
+        --threads 2
+        --worker-class gthread
+        --timeout 120
+        --graceful-timeout 30
+        --max-requests 2000
+        --max-requests-jitter 200
+        --access-logfile /var/log/forest-back/gunicorn-access.log
+        --error-logfile /var/log/forest-back/gunicorn-error.log
 
     volumes:
       - ../../staticfiles:/app/staticfiles
@@ -37,6 +45,31 @@ services:
       - forest_postgres
       - forest_redis
       - e_imzo_server        # ← qo'shildi
+    restart: always
+    networks:
+      - forest_network
+
+  # WebSocket (chat): daphne, faqat /ws/ trafigi. Migratsiya/collectstatic
+  # forest_app entrypoint'ida bajariladi — bu yerda takrorlanmaydi.
+  forest_ws:
+    build:
+      context: ../..
+      dockerfile: docker/prod/Dockerfile
+    container_name: forest_ws_prod
+    env_file:
+      - ../../.env
+    command: >
+      daphne -b 0.0.0.0 -p 8001
+      --access-log /var/log/forest-back/daphne-access.log
+      config.asgi:application
+    volumes:
+      - ../../media:/app/media
+      - ../../src:/app
+      - ../../.env:/app/.env
+      - /var/log/forest-back:/var/log/forest-back
+    depends_on:
+      - forest_app
+      - forest_redis
     restart: always
     networks:
       - forest_network

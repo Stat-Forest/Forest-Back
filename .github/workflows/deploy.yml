@@ -69,8 +69,8 @@ jobs:
 
           COMPOSE="docker-compose -f docker/prod/docker-compose-prod.yml"
 
-          APP_SERVICES="forest_app forest_celery_worker forest_celery_beat"
-          APP_CONTAINERS="forest_app_prod forest_celery_worker_prod forest_celery_beat_prod"
+          APP_SERVICES="forest_app forest_ws forest_celery_worker forest_celery_beat"
+          APP_CONTAINERS="forest_app_prod forest_ws_prod forest_celery_worker_prod forest_celery_beat_prod"
           DEPS="forest_postgres forest_redis e_imzo_server"
 
           # 1) Dependency'lar ishlab tursin. --no-recreate => recreate yo'q => xato yo'q.
