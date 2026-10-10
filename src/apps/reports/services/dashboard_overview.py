@@ -25,6 +25,7 @@ from apps.reports.permissions.report_scope import (
     scope_reports_for_user,
 )
 from apps.reports.services.report_cache import get_report_list_version
+from apps.reports.views.dashboard.dashboard_stat_service import DashboardStatService
 from apps.users.models import CustomUser
 from apps.utils.cache_list import cache_get_or_set
 from apps.utils.services import RegionChoices
@@ -32,7 +33,7 @@ from apps.utils.translation import get_lang_code, get_translated_field
 
 OVERVIEW_CACHE_TTL = 300  # 5 daqiqa
 PERIOD_DAYS = {"month": 30, "quarter": 90, "year": 365, "all": None}
-DEFAULT_PERIOD = "year"
+DEFAULT_PERIOD = "all"
 STATUSES = ("accepted", "sent", "saved", "cancelled")
 TREND_MONTHS = 12
 UPCOMING_DAYS = 14
@@ -90,7 +91,29 @@ class DashboardOverviewService:
             return "region", "region:" + ",".join(regions)
         return "none", f"none:{user.role}"
 
+    def _is_billing_role(self) -> bool:
+        return self.user.role in (CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER)
+
+    def _base_context(self):
+        """
+        Bosh sahifadagi mavjud kartalar bilan bir xil doira (DashboardStatService),
+        shunda statistika sonlari pastdagi kartalardagi sonlar bilan mos keladi.
+        Billing rollari (va kontekstsiz rollar) — `scope_reports_for_user`.
+        """
+        if not hasattr(self, "_ctx"):
+            ctx = None
+            if not self._is_billing_role():
+                try:
+                    ctx = DashboardStatService(self.user)._get_base_context()
+                except ValueError:
+                    ctx = None
+            self._ctx = ctx
+        return self._ctx
+
     def _reports(self):
+        ctx = self._base_context()
+        if ctx is not None:
+            return ctx["reports"]
         return scope_reports_for_user(Report.objects.filter(is_report=True), self.user)
 
     def _assignments(self):
@@ -101,7 +124,9 @@ class DashboardOverviewService:
     # ================= PUBLIC =================
     def cache_key(self) -> str:
         _, signature = self._scope()
-        raw = f"{signature}|{self.lang}|{self.period}|{self.today.isoformat()}"
+        # Bosh sahifa kartalari (DashboardStatService) foydalanuvchining tashkiloti/
+        # bo'limiga bog'liq — kesh ham foydalanuvchi bo'yicha.
+        raw = f"user:{self.user.pk}|{signature}|{self.lang}|{self.period}|{self.today.isoformat()}"
         return "dashboard:overview:" + hashlib.sha1(raw.encode()).hexdigest()
 
     def get(self) -> dict:
@@ -130,7 +155,7 @@ class DashboardOverviewService:
             "kpis": kpis,
             "acceptance_rate": _pct(kpis["accepted"]["value"], kpis["total"]["value"]),
             "monthly": self._monthly(reports),
-            "discipline": self._discipline(start),
+            "discipline": self._discipline(reports, start),
             "top_forms": self._top_forms(reports, start),
             "regions": regions if len(regions) > 1 else [],
             "upcoming_deadlines": self._upcoming(),
@@ -204,22 +229,50 @@ class DashboardOverviewService:
             sent_any=self._report_exists(status=Report.StatusChoices.SENT),
         )
 
-    def _discipline(self, start):
+    def _expired_deadlines(self, start) -> int:
+        """
+        "Bajarilmagan" — bosh sahifa kartasi bilan bir xil ta'rif: muddati o'tgan,
+        lekin (doiradagi tashkilotlardan biri) qabul qilingan hisobot topshirmagan muddatlar.
+        """
+        ctx = self._base_context()
+        if ctx is not None:
+            deadlines = ctx["deadlines"]
+            if start:
+                deadlines = deadlines.filter(deadline_at__gte=start)
+            return DashboardStatService(self.user)._get_expired_deadlines_count(deadlines)
         qs = self._assignments().filter(deadline__deadline_at__lt=self.today)
         if start:
             qs = qs.filter(deadline__deadline_at__gte=start)
-        row = self._annotated_assignments(qs).aggregate(
-            total=Count("id"),
-            on_time=Count("id", filter=Q(acc_any=True, acc_late=False)),
-            late=Count("id", filter=Q(acc_late=True)),
-            in_review=Count("id", filter=Q(acc_any=False, sent_any=True)),
-            missing=Count("id", filter=Q(acc_any=False, sent_any=False)),
+        return (
+            self._annotated_assignments(qs)
+            .filter(acc_any=False)
+            .values("deadline_id")
+            .distinct()
+            .count()
         )
-        total = row["total"]
+
+    def _discipline(self, reports, start):
+        """
+        Muddat intizomi — stat'ning o'z ko'rsatkichlari:
+        Bajarilgan (qabul qilingan, o'z vaqtida), Muddatidan kech bajarilgan
+        (qabul qilingan, kechikkan), Bajarilmagan (muddati o'tgan muddatlar).
+        """
+        qs = reports.filter(created_at__gte=_start_of_day(start)) if start else reports
+        accepted = Report.StatusChoices.ACCEPTED
+        row = qs.aggregate(
+            on_time=Count("id", filter=Q(status=accepted, time_status=Report.TimeStatus.ON_TIME)),
+            late=Count("id", filter=Q(status=accepted, time_status=Report.TimeStatus.LATE)),
+        )
+        missing = self._expired_deadlines(start)
+        done = row["on_time"] + row["late"]
+        total = done + missing
         return {
-            **row,
-            "on_time_rate": _pct(row["on_time"], total),
-            "completion_rate": _pct(row["on_time"] + row["late"], total),
+            "on_time": row["on_time"],
+            "late": row["late"],
+            "missing": missing,
+            "total": total,
+            "on_time_rate": _pct(row["on_time"], done),
+            "completion_rate": _pct(done, total),
         }
 
     # ================= TOP FORMS =================
