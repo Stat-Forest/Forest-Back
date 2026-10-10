@@ -1,5 +1,7 @@
 # views.py
+from django.core.cache import cache
 from django.db.models import Exists, OuterRef
+from django.utils.translation import get_language
 from rest_framework import generics
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -42,12 +44,7 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        qs = (
-            Deadline.objects
-            .select_related("statement", "statement__parent")
-            .prefetch_related("organizations")
-            .distinct()
-        )
+        qs = Deadline.objects.distinct()
 
         period_type = self.request.query_params.get("period_type")
 
@@ -63,48 +60,59 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         )
         qs = qs.annotate(has_report=Exists(report_exists_qs)).filter(has_report=True)
 
-        return qs.order_by("-submit_at", "-created_at")
+        return qs
+
+    LIST_CACHE_TTL = 300
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        """
+        Davrlar (submit_at) ro'yxati sahifalanadi; muddatlar va statistika
+        faqat sahifadagi davrlar uchun yuklanadi. Ilgari barcha muddatlar
+        tashkilotlari bilan (prod'da ~19 000 qator) har so'rovda yuklanardi.
+        Ochiq (login sahifasi) endpoint — javob 5 daqiqa keshlanadi.
+        """
+        cache_key = f"login_stat_deadlines:{get_language()}:{request.query_params.urlencode()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        base = self.get_queryset()
         period_type = request.query_params.get("period_type")
 
-        # ✅ submit_at bo'yicha dedupe
-        all_deadlines = list(queryset)
+        periods = list(
+            base.order_by("-submit_at").values_list("submit_at", flat=True).distinct()
+        )
+        page = self.paginate_queryset(periods)
+        page_periods = page if page is not None else periods
+
+        deadlines = list(
+            base.filter(submit_at__in=page_periods)
+            .select_related("statement", "statement__parent")
+            .order_by("-submit_at", "-created_at")
+        )
+
+        # Har davr uchun bitta vakil qator (eng so'nggi yaratilgan muddat)
         seen = set()
-        unique_deadlines = []
-        for deadline in all_deadlines:
+        rows = []
+        for deadline in deadlines:
             if deadline.submit_at not in seen:
                 seen.add(deadline.submit_at)
-                unique_deadlines.append(deadline)
+                rows.append(deadline)
 
-        # Davr statistikasi — barcha qatorlar uchun bitta so'rov
-        period_stats = build_period_stats(all_deadlines)
-
-        # ✅ Pagination — count/next/previous saqlanadi
-        page = self.paginate_queryset(unique_deadlines)
-        if page is not None:
-            serializer = self.get_serializer(
-                page,
-                many=True,
-                context={
-                    **self.get_serializer_context(),
-                    "period_type": period_type,
-                    "all_deadlines": all_deadlines,
-                    "period_stats": period_stats,
-                }
-            )
-            return self.get_paginated_response(serializer.data)
-
-        # ✅ Pagination bo'lmasa oddiy response
         serializer = self.get_serializer(
-            unique_deadlines,
+            rows,
             many=True,
             context={
                 **self.get_serializer_context(),
                 "period_type": period_type,
-                "all_deadlines": all_deadlines,
-                "period_stats": period_stats,
+                "all_deadlines": deadlines,
+                "period_stats": build_period_stats(deadlines),
             }
         )
-        return Response(serializer.data)
+        if page is not None:
+            data = self.get_paginated_response(serializer.data).data
+        else:
+            data = serializer.data
+
+        cache.set(cache_key, data, self.LIST_CACHE_TTL)
+        return Response(data)
