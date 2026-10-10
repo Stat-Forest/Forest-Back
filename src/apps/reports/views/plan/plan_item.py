@@ -70,7 +70,7 @@ class PlanItemDetailAPIView(APIView):
         # ===============================
         # ✅ COLUMN CACHE
         # ===============================
-        columns = StatementColumn.objects.all()
+        columns = StatementColumn.objects.filter(statement_id=plan.statement_id)
         column_map = {c.id: c for c in columns}
 
         context = {

@@ -15,7 +15,7 @@ class OrganizationListAPIView(CustomListAPIView):
     serializer_class = OrganizationListSerializer
     pagination_class = None
     filterset_fields = ['name', 'region']
-    CACHE_TIMEOUT = 1
+    CACHE_TIMEOUT = 60
 
     def get_cache_key(self, request):
         query_params = request.GET.urlencode() or "no_query"

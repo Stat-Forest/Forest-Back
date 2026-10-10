@@ -51,8 +51,11 @@ class PlantListReportAPIView(CustomListAPIView):
     serializer_class = PlantReportListSerializer
 
     def get_queryset(self):
+        qs = scope_reports_for_user(Report.objects.filter(is_plant_based=True), self.request.user)
+        # Ustunlar faqat shu ro'yxatdagi statement'lar uchun yuklanadi
+        self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
         return (
-            scope_reports_for_user(Report.objects.filter(is_plant_based=True), self.request.user)
+            qs
             .select_related(
                 "organization",
                 "statement",
@@ -73,8 +76,9 @@ class PlantListReportAPIView(CustomListAPIView):
         lang = self.request.query_params.get("lang", "uz").lower()
         context["lang"] = lang if lang in ("uz", "ru") else "uz"
 
-        # Barcha statement columnlarni bir marta olib, serializerga uzatamiz
-        columns = StatementColumn.objects.select_related("parent").only(
+        # Ro'yxatdagi statement'larning ustunlari bir marta olinadi (ilgari butun jadval)
+        statement_ids = getattr(self, "_statement_ids", [])
+        columns = StatementColumn.objects.filter(statement_id__in=statement_ids).select_related("parent").only(
             "id",
             "statement_id",
             "parent_id",

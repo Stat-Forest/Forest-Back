@@ -37,21 +37,19 @@ REPUBLIC_QS = (
     .only("id", "name")
 )
 
-# submit_at values cache (process-level)
-_SUBMIT_AT_CHOICES_CACHE = None
-
-
 def get_submit_at_choices():
-    global _SUBMIT_AT_CHOICES_CACHE
-    if _SUBMIT_AT_CHOICES_CACHE is None:
-        values = (
-            Deadline.objects
-            .order_by("submit_at")
-            .values_list("submit_at", flat=True)
-            .distinct()
-        )
-        _SUBMIT_AT_CHOICES_CACHE = [("", "Hammasi")] + [(v, v) for v in values]
-    return _SUBMIT_AT_CHOICES_CACHE
+    """
+    Deadline.submit_at qiymatlari (indeksli, kichik jadval — 1 arzon so'rov).
+    Ilgari jarayon darajasida abadiy keshlanardi: yangi muddatlar filtrda
+    jarayon qayta ishga tushguncha rad etilardi.
+    """
+    values = (
+        Deadline.objects
+        .order_by("submit_at")
+        .values_list("submit_at", flat=True)
+        .distinct()
+    )
+    return [("", "Hammasi")] + [(v, v) for v in values]
 
 
 class ReportFilter(django_filters.FilterSet):

@@ -116,40 +116,40 @@ class DeadlineExpiredListAPIView(generics.ListAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         user: CustomUser = request.user
 
+        deadlines = list(queryset)
+        if not deadlines:
+            return Response([])
+
+        # Rol doirasidagi tashkilotlar (None = hammasi)
+        if user.role in {
+            CustomUser.Role.TASHKILOT_RAHBARI,
+            CustomUser.Role.TASHKILOT_HODIMI
+        }:
+            allowed_org_ids = {user.organization_id}
+        elif user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
+            allowed_org_ids = set(user.region_user_orgs.values_list("id", flat=True))
+        else:
+            allowed_org_ids = None
+
+        # Topshirilgan (deadline, tashkilot) juftliklari — bitta so'rov.
+        # Ilgari har bir muddat × tashkilot uchun alohida exists() so'rovi edi.
+        accepted = set(
+            Report.objects.filter(
+                deadline__in=deadlines,
+                is_report=True,
+                status=Report.StatusChoices.ACCEPTED,
+            ).values_list("deadline_id", "organization_id")
+        )
+
         valid_deadlines = []
+        for deadline in deadlines:
+            orgs = deadline.organizations.all()  # prefetch'dan
+            if allowed_org_ids is not None:
+                orgs = [org for org in orgs if org.id in allowed_org_ids]
 
-        for deadline in queryset:
-
-            # ===== organization scope =====
-            if user.role in {
-                CustomUser.Role.TASHKILOT_RAHBARI,
-                CustomUser.Role.TASHKILOT_HODIMI
-            }:
-                orgs = deadline.organizations.filter(
-                    id=user.organization_id
-                )
-
-            elif user.role == CustomUser.Role.HUDUDIY_BOSHQARMA:
-                orgs = deadline.organizations.filter(
-                    id__in=user.region_user_orgs.values_list("id", flat=True)
-                )
-
-            else:
-                orgs = deadline.organizations.all()
-
-            valid_organizations = []
-
-            for org in orgs:
-                report_exists = Report.objects.filter(
-                    organization=org,
-                    deadline=deadline,
-                    is_report=True,
-                    status=Report.StatusChoices.ACCEPTED,
-                ).exists()
-
-                if not report_exists:
-                    valid_organizations.append(org)
-
+            valid_organizations = [
+                org for org in orgs if (deadline.id, org.id) not in accepted
+            ]
             if valid_organizations:
                 deadline._filtered_organizations = valid_organizations
                 valid_deadlines.append(deadline)

@@ -134,6 +134,7 @@ class Report(AbstractBaseModel):
     )
     is_individual_general = models.BooleanField(
         default=False,
+        db_index=True,
         help_text=_("Tashkilot bo'yicha individual umumiy hisobot (UniqueConstraint dan ozod)"),
     )
     is_report = models.BooleanField(
@@ -143,6 +144,7 @@ class Report(AbstractBaseModel):
     )
     is_republic = models.BooleanField(
         default=False,
+        db_index=True,
         help_text=_("Respublika darajasidagi hisobot"),
     )
     is_plant_based = models.BooleanField(
@@ -315,4 +317,6 @@ class Report(AbstractBaseModel):
             models.Index(fields=["organization", "statement", "status", "-created_at"]),
             models.Index(fields=["statement", "status"]),
             models.Index(fields=["organization", "status"]),
+            # signal'lar va yig'ma hisobotlar: (statement, deadline, status) bo'yicha
+            models.Index(fields=["statement", "deadline", "status"]),
         ]
