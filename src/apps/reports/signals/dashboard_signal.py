@@ -3,49 +3,34 @@ from django.dispatch import receiver
 from django.core.cache import cache
 
 from apps.reports.models import Report
-from apps.users.models import CustomUser
+from apps.reports.services.report_cache import bump_report_list_version
+
+DASHBOARD_VERSION_KEY = "dashboard:stats:ver"
 
 
-def clear_dashboard_cache_for_users(users):
-    for user in users:
-        cache.delete(f"dashboard:stats:user:{user.id}")
+def get_dashboard_version() -> int:
+    v = cache.get(DASHBOARD_VERSION_KEY)
+    if v is None:
+        cache.set(DASHBOARD_VERSION_KEY, 1, timeout=None)
+        return 1
+    return int(v)
 
 
-@receiver(post_save, sender=Report)
-@receiver(post_delete, sender=Report)
+def bump_dashboard_version():
+    try:
+        cache.incr(DASHBOARD_VERSION_KEY)
+    except Exception:
+        cache.set(DASHBOARD_VERSION_KEY, 2, timeout=None)
+
+
+@receiver(post_save, sender=Report, dispatch_uid="reports.dashboard_cache.save")
+@receiver(post_delete, sender=Report, dispatch_uid="reports.dashboard_cache.delete")
 def invalidate_dashboard_cache(sender, instance, **kwargs):
-    users = set()
-
-    # ORGANIZATION USERS
-    if instance.organization:
-        users.update(
-            CustomUser.objects.filter(
-                organization=instance.organization
-            )
-        )
-
-        # HUDUDIY BOSHQARMA users
-        users.update(
-            CustomUser.objects.filter(
-                role=CustomUser.Role.HUDUDIY_BOSHQARMA,
-                region_user_orgs=instance.organization
-            )
-        )
-
-    # STATEMENT USERS
-    if instance.statement:
-        users.update(
-            CustomUser.objects.filter(
-                statement=instance.statement
-            )
-        )
-
-    # SUPER / MARKAZIY USERS
-    users.update(
-        CustomUser.objects.filter(
-            organization__isnull=True,
-            statement__isnull=True
-        )
-    )
-
-    clear_dashboard_cache_for_users(users)
+    """
+    Versiya kaliti: barcha foydalanuvchilar keshi bir zumda eskiradi (TTL bilan
+    o'zi o'chadi). Ilgari har Report save'ida 4 ta CustomUser so'rovi va har
+    foydalanuvchi uchun alohida DELETE edi.
+    """
+    bump_dashboard_version()
+    # Bosh sahifa overview keshi ham shu versiyaga bog'liq (dashboard_overview)
+    bump_report_list_version()

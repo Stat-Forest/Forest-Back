@@ -233,13 +233,53 @@ class Report(AbstractBaseModel):
         """
         super().clean()
 
+    # full_clean'da FK mavjudligi tekshirilmaydi: har biri alohida SELECT edi
+    # (organization, statement, deadline, sent_by, ...), DB baribir FK'ni tekshiradi.
+    _CLEAN_EXCLUDE = (
+        "republic", "organization", "statement", "deadline",
+        "source_report", "sent_by", "sent_by_org",
+    )
+    # Unikallik faqat shu maydonlar o'zgarganda tekshiriladi
+    _UNIQUE_FIELDS = frozenset({"organization", "statement", "deadline", "report_season", "is_individual_general"})
+
     def save(self, *args, **kwargs):
         """
         Save minimal bo'lishi kerak.
         Quarter defaultlarini bu yerda emas, service qatlamida boshqaramiz.
         """
-        self.full_clean()
+        self._clean_for_save(kwargs.get("update_fields"))
         super().save(*args, **kwargs)
+
+    def _clean_for_save(self, update_fields):
+        """
+        full_clean'ning arzon varianti: FK mavjudligi tekshirilmaydi (DB
+        tekshiradi), pk unikalligi tekshirilmaydi (UUID default), unikallik
+        cheklovi faqat unga kiruvchi maydon o'zgarganda tekshiriladi.
+        """
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+        for step in (
+            lambda: self.clean_fields(exclude=self._CLEAN_EXCLUDE),
+            self.clean,
+        ):
+            try:
+                step()
+            except ValidationError as e:
+                errors = e.update_error_dict(errors)
+
+        if update_fields is None or (set(update_fields) & self._UNIQUE_FIELDS):
+            for step in (
+                lambda: self.validate_unique(exclude=["id"]),
+                lambda: self.validate_constraints(exclude=["id"]),
+            ):
+                try:
+                    step()
+                except ValidationError as e:
+                    errors = e.update_error_dict(errors)
+
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def is_daromad(self) -> bool:
