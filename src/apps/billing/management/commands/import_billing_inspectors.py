@@ -148,6 +148,7 @@ class Command(BaseCommand):
 
             first_name = (rec.get("first_name") or "").strip() or username
             last_name = (rec.get("sur_name") or "").strip() or "-"
+            father_name = (rec.get("mid_name") or "").strip()
             phone = (rec.get("phone") or "").strip() or None
             password_hash = rec.get("password") or ""
 
@@ -164,7 +165,7 @@ class Command(BaseCommand):
                 if not update:
                     continue
                 if not dry:
-                    self._apply(existing, first_name, last_name, phone, password_hash, xojaliklar, group)
+                    self._apply(existing, username, first_name, last_name, father_name, phone, password_hash, xojaliklar, group)
                 updated += 1
                 continue
 
@@ -176,13 +177,13 @@ class Command(BaseCommand):
                     email=email, first_name=first_name, last_name=last_name,
                     role=CustomUser.Role.BILLING_USER, is_active=True,
                 )
-                self._apply(user, first_name, last_name, phone, password_hash, xojaliklar, group)
+                self._apply(user, username, first_name, last_name, father_name, phone, password_hash, xojaliklar, group)
 
         # ---------- hisobot ----------
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS(
             f"Natija: yaratildi: {created}, mavjud: {existed} (yangilandi: {updated}), o'tkazib yuborildi: {skipped}"))
-        self.stdout.write("Login (username -> stat email):")
+        self.stdout.write("Login (billing username -> stat email; ikkalasi bilan ham kirish mumkin):")
         for username, email in mapping:
             self.stdout.write(f"  {username} -> {email}")
         if no_xojalik:
@@ -193,9 +194,18 @@ class Command(BaseCommand):
             for username, name in unmatched:
                 self.stdout.write(f"  {username}: {name}")
 
-    def _apply(self, user, first_name, last_name, phone, password_hash, xojaliklar, group):
+    def _apply(self, user, username, first_name, last_name, father_name, phone, password_hash, xojaliklar, group):
         user.first_name = first_name
         user.last_name = last_name
+        user.father_name = father_name
+        # Eski login saqlanadi — stat'ga shu login bilan ham kiradi (EmailBackend)
+        if username:
+            clash = CustomUser.objects.filter(username__iexact=username).exclude(pk=user.pk).first()
+            if clash is None:
+                user.username = username.lower()
+            else:
+                self.stdout.write(self.style.WARNING(
+                    f"  login '{username}' boshqa foydalanuvchida ({clash.email}) — {user.email} faqat email bilan kiradi"))
         if phone:
             try:
                 user.phone_number = phone

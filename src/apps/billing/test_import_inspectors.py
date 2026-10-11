@@ -60,7 +60,8 @@ class ImportInspectorsTest(TestCase):
         out = self._run()
         u1 = User.objects.get(email="insp1@example.uz")
         self.assertEqual(u1.role, "billing_user")
-        self.assertEqual((u1.first_name, u1.last_name), ("Akmal", "Karimov"))
+        self.assertEqual((u1.first_name, u1.last_name, u1.father_name), ("Akmal", "Karimov", "Baxtiyorovich"))
+        self.assertEqual(u1.username, "andijon_insp")
         self.assertTrue(u1.check_password("Inspektor123!"))
         self.assertEqual(set(u1.billing_access.xojaliklar.values_list("name", flat=True)), {"Андижон ДЎХ", "Шаҳрихон ДЎХ"})
 
