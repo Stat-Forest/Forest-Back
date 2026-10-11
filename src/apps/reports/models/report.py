@@ -335,12 +335,10 @@ class Report(AbstractBaseModel):
             self.save(update_fields=["status", "cancel_reason", "cancelled_at"])
 
             if prev_status == Report.StatusChoices.ACCEPTED:
-                from apps.reports.services.general_report import aggregate_general_report
+                # Viloyat/Respublika Jami Celery'da, commit'dan keyin
+                from apps.reports.tasks.aggregation import schedule_statement_totals
 
-                aggregate_general_report(
-                    statement=self.statement,
-                    deadline=self.deadline,
-                )
+                schedule_statement_totals(self.statement_id, self.deadline_id, self.region)
 
     class Meta:
         verbose_name = "Hisobot"

@@ -3,11 +3,7 @@ import logging
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from apps.reports.models import Report
-from apps.reports.services import (
-    aggregate_general_report,
-    aggregate_national_report,
-)
-from apps.utils.services import RegionChoices
+from apps.reports.tasks.aggregation import schedule_statement_totals
 
 logger = logging.getLogger(__name__)
 
@@ -93,13 +89,10 @@ def _handle_delete_report_inner(instance: Report):
                 is_general=True,
             ).delete()
 
-        # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
+        # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya (Celery, commit'dan keyin)
         if viloyat_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():
-            aggregate_general_report(
-                statement=instance.statement,
-                deadline=instance.deadline,
-                region=instance.region,
-            )
+            schedule_statement_totals(instance.statement_id, instance.deadline_id, instance.region)
+            return
 
     # ========================
     # ✅ Respublika Jami check
@@ -117,10 +110,6 @@ def _handle_delete_report_inner(instance: Report):
             is_republic=True,
         ).delete()
 
-    # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
+    # ✅ Faqat agar yana ACCEPTED report bo‘lsa, Respublika Jami qayta hisoblanadi (Celery)
     if resp_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():
-        aggregate_national_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=RegionChoices.REPUBLIC,
-        )
+        schedule_statement_totals(instance.statement_id, instance.deadline_id, "")
