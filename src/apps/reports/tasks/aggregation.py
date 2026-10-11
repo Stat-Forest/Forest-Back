@@ -40,13 +40,38 @@ def aggregate_report_totals(report_id: str):
         aggregate_national_report(statement=report.statement, deadline=report.deadline, region=RegionChoices.REPUBLIC)
 
 
+@shared_task(name="reports.aggregate_statement_totals", ignore_result=True)
+def aggregate_statement_totals(statement_id: str, deadline_id: str, region: str):
+    """Bekor qilish / o'chirishdan keyin Viloyat va Respublika Jami qayta hisoblanadi."""
+    from apps.reports.models import Deadline, Statement
+    from apps.reports.services import aggregate_general_report, aggregate_national_report
+    from apps.utils.services import RegionChoices
+
+    statement = Statement.objects.filter(id=statement_id).first()
+    deadline = Deadline.objects.filter(id=deadline_id).first()
+    if statement is None or deadline is None:
+        logger.info("aggregate_statement_totals: statement/deadline topilmadi (%s, %s)", statement_id, deadline_id)
+        return
+    if region:
+        aggregate_general_report(statement=statement, deadline=deadline, region=region)
+    aggregate_national_report(statement=statement, deadline=deadline, region=RegionChoices.REPUBLIC)
+
+
+def _schedule(task, args):
+    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+        task.apply(args=args)
+        return
+    transaction.on_commit(lambda: task.delay(*args))
+
+
+def schedule_statement_totals(statement_id: str, deadline_id: str, region: str):
+    _schedule(aggregate_statement_totals, (str(statement_id), str(deadline_id), region))
+
+
 def schedule_report_totals(report_id: str):
     """
     Eager rejimda (testlar, CELERY_TASK_ALWAYS_EAGER) darhol shu yerda bajariladi;
     aks holda tranzaksiya commit bo'lgach worker'ga yuboriladi (worker commit'dan
     oldingi eski ma'lumotni o'qimasligi uchun).
     """
-    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
-        aggregate_report_totals.apply(args=(report_id,))
-        return
-    transaction.on_commit(lambda: aggregate_report_totals.delay(report_id))
+    _schedule(aggregate_report_totals, (report_id,))

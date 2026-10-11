@@ -22,9 +22,30 @@ def bump_report_list_version():
         cache.set(REPORT_LIST_VERSION_KEY, DEFAULT_VERSION + 1, timeout=None)
 
 
+def _filtered_version_key(statement_id) -> str:
+    return f"{FILTERED_CACHE_PREFIX}:ver:{statement_id}"
+
+
+def get_filtered_version(statement_id) -> int:
+    v = cache.get(_filtered_version_key(statement_id))
+    return int(v) if v is not None else DEFAULT_VERSION
+
+
+def bump_filtered_version(statement_id):
+    """Shu statement'ning filtered-general keshi eskiradi (Report save/delete'da)."""
+    key = _filtered_version_key(statement_id)
+    try:
+        cache.incr(key)
+    except Exception:
+        cache.set(key, DEFAULT_VERSION + 1, timeout=None)
+
+
 def get_filtered_cache_key(statement_id, deadline_id, lang, quarter=None):
-    """Cache key for build_filtered_payload results."""
-    return f"{FILTERED_CACHE_PREFIX}:{statement_id}:{deadline_id}:{lang}:{quarter or 'all'}"
+    """Cache key for build_filtered_payload results (statement versiyasi bilan)."""
+    return (
+        f"{FILTERED_CACHE_PREFIX}:v{get_filtered_version(statement_id)}:"
+        f"{statement_id}:{deadline_id}:{lang}:{quarter or 'all'}"
+    )
 
 
 def get_cached_filtered_payload(statement_id, deadline_id, lang, quarter=None):
@@ -40,22 +61,5 @@ def set_cached_filtered_payload(statement_id, deadline_id, lang, quarter, payloa
 
 
 def invalidate_filtered_cache_for_statement(statement_id):
-    """
-    Signal-triggered: o'zgarish bo'lganda shu statementga oid
-    barcha filtered cache'larni tozalash.
-    Pattern-based delete — language va quarter kombinatsiyalari ko'p
-    bo'lganligi uchun, kalitlarni Redis'dan pattern bilan topamiz.
-    """
-    try:
-        from django_redis import get_redis_connection
-        conn = get_redis_connection("default")
-        # Redis key pattern: ":1:filtered:<statement_id>:*"
-        # django_redis default prefix ":1:" qo'shadi
-        pattern = f"*{FILTERED_CACHE_PREFIX}:{statement_id}:*"
-        keys = conn.keys(pattern)
-        if keys:
-            conn.delete(*keys)
-    except Exception:
-        # Agar django_redis yo'q yoki Redis muammo — xatolikni yutamiz
-        pass
-
+    """Eski nom — endi versiya oshiriladi (Redis KEYS pattern'siz)."""
+    bump_filtered_version(statement_id)
