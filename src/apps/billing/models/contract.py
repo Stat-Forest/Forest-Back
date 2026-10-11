@@ -205,7 +205,10 @@ class ContractActionProduct(AbstractBaseModel):
 
 class ContractFile(AbstractBaseModel):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="files", verbose_name="Shartnoma")
-    file = models.FileField(upload_to="documents/billing/contracts/%Y/%m/", validators=[validate_document_file], verbose_name="Fayl")
+    # max_length=500: eski billing'dan ko'chirilgan uzun fayl yo'llari (documents/billing/contracts/legacy/...)
+    file = models.FileField(
+        upload_to="documents/billing/contracts/%Y/%m/", max_length=500, validators=[validate_document_file], verbose_name="Fayl",
+    )
     description = models.CharField(max_length=500, null=True, blank=True, verbose_name="Izoh")
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
