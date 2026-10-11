@@ -204,7 +204,7 @@ class Command(BaseCommand):
                 obj = model.objects.filter(name__iexact=name).first()
             if obj is None:
                 defaults = {f: row.get(f) for f in extra_fields}
-                obj = model.objects.create(name=name, parent=parent, description=row.get("description") or None, **defaults)
+                obj = model.objects.create(name=name[:255], parent=parent, description=(row.get("description") or None) and row["description"][:1024], **defaults)
                 self.stats["type_created"] += 1
             out[row["id"]] = obj
         return out
@@ -377,7 +377,7 @@ class Command(BaseCommand):
                 os.makedirs(os.path.dirname(dest), exist_ok=True)
                 if not os.path.exists(dest):
                     shutil.copy2(source, dest)
-            obj = ContractFile(contract=contract, description=(r.get("description") or None),
+            obj = ContractFile(contract=contract, description=(r.get("description") or "")[:500] or None,
                                uploaded_by=users.get((r.get("uploaded_by") or "").lower()))
             obj.file.name = target_name
             obj.save()

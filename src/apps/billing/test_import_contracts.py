@@ -169,6 +169,18 @@ class ImportContractsTest(TestCase):
         self.assertFalse(os.path.exists(os.path.join(settings.MEDIA_ROOT, "documents/billing/contracts/legacy")))
         self.assertIn("DRY RUN", out)
 
+    def test_long_legacy_file_path_is_stored(self):
+        long_name = "contracts/2020/03/" + "Shartnoma_Andijon_DUX_ijarachi_Yuldashev_Dilshodbek_Adhamjon_ogli_" * 2 + "nusxa.pdf"
+        os.makedirs(os.path.join(self.media, "contracts/2020/03"), exist_ok=True)
+        with open(os.path.join(self.media, long_name), "wb") as f:
+            f.write(b"%PDF-1.4 long")
+        data = _export()
+        data["contracts"][0]["files"] = [{"id": 9, "file": long_name, "description": "x" * 1200, "uploaded_by": None, "created_at": None}]
+        self._run(data)
+        f = Contract.objects.get(number="1235/43").files.get()
+        self.assertEqual(f.file.name, f"documents/billing/contracts/legacy/{long_name}")
+        self.assertEqual(len(f.description), 500)
+
     def test_renters_deduplicated_by_pinfl(self):
         data = _export()
         data["renters"].append({**data["renters"][0], "id": 102, "username": "u102", "full_name": "Yuldashev D."})
