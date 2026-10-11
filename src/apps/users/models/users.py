@@ -123,6 +123,15 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Foydalanuvchining elektron pochtasi"
     )
 
+    # Eski billing (billing-urmon.uz) logini: inspektorlar email o'rniga shu bilan ham kiradi.
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Login (ixtiyoriy). Email o'rniga shu bilan ham kirish mumkin.",
+    )
+
     phone_number = models.CharField(
         max_length=13,
         blank=True,

@@ -6,12 +6,14 @@ UserModel = get_user_model()
 
 class EmailBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
-        email = (username or kwargs.get("email") or "").strip().lower()
-        if not email or not password:
+        ident = (username or kwargs.get("email") or "").strip().lower()
+        if not ident or not password:
             return None
 
+        # "@" bo'lsa email, aks holda login (CustomUser.username — eski billing inspektorlari)
+        lookup = {"email__iexact": ident} if "@" in ident else {"username__iexact": ident}
         try:
-            user = UserModel.objects.get(email__iexact=email)
+            user = UserModel.objects.get(**lookup)
         except UserModel.DoesNotExist:
             return None
 

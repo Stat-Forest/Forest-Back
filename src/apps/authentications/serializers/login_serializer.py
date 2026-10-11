@@ -14,14 +14,15 @@ User = get_user_model()
 
 
 class LoginSerializer(CustomSerializer):
-    email = serializers.EmailField()
+    # Email yoki login (eski billing inspektorlari username bilan kiradi)
+    email = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
 
     MAX_ATTEMPTS = 5
     ATTEMPT_WINDOW = 60 * 10
     BLOCK_TIMEOUT = 60 * 15
 
-    default_error_message = _("Email yoki parol noto‘g‘ri.")
+    default_error_message = _("Email/login yoki parol noto‘g‘ri.")
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -29,7 +30,7 @@ class LoginSerializer(CustomSerializer):
         password = attrs.get("password") or ""
 
         if not email or not password:
-            raise CustomExceptionError(code=400, detail=_("Email va parol majburiy."))
+            raise CustomExceptionError(code=400, detail=_("Email/login va parol majburiy."))
 
         block_key = self._block_key(email, request)
         if cache.get(block_key):
