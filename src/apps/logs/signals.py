@@ -5,6 +5,8 @@ from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils import timezone
 
+from django.apps import apps as django_apps
+
 from .middleware import get_current_user
 from apps.logs.models import HistoryActionJournal
 
@@ -47,7 +49,6 @@ def _create_log(user, action, model_name, instance=None, message=None):
     )
 
 
-@receiver(post_save)
 def log_create_or_update(sender, instance, created, **kwargs):
     model_name = sender.__name__
     if model_name not in ALLOWED_MODELS:
@@ -61,7 +62,6 @@ def log_create_or_update(sender, instance, created, **kwargs):
     _create_log(user, action, model_name, instance, message)
 
 
-@receiver(post_delete)
 def log_delete(sender, instance, **kwargs):
     model_name = sender.__name__
     if model_name not in ALLOWED_MODELS:
@@ -81,3 +81,16 @@ def log_user_login(sender, request, user, **kwargs):
 @receiver(user_logged_out)
 def log_user_logout(sender, request, user, **kwargs):
     _create_log(user, "logout", "User", message="Foydalanuvchi tizimdan chiqdi.")
+
+
+def connect_history_signals():
+    """
+    post_save/post_delete faqat ALLOWED_MODELS uchun ulanadi (LogsConfig.ready).
+    Ilgari sender'siz @receiver edi: barcha modellar (ReportItem, ReportItemInner,
+    ...) uchun signal yuborilar, shu sababli Django ularni tez (bitta DELETE)
+    o'chira olmas, har qatorni yuklab signal yuborardi.
+    """
+    for model in django_apps.get_models():
+        if model.__name__ in ALLOWED_MODELS:
+            post_save.connect(log_create_or_update, sender=model, dispatch_uid=f"logs.save.{model._meta.label}")
+            post_delete.connect(log_delete, sender=model, dispatch_uid=f"logs.delete.{model._meta.label}")

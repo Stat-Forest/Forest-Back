@@ -6,4 +6,5 @@ class LogsConfig(AppConfig):
     name = "apps.logs"
 
     def ready(self):
-        import apps.logs.signals
+        from apps.logs.signals import connect_history_signals
+        connect_history_signals()

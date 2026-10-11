@@ -10,6 +10,8 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -231,7 +233,12 @@ class DashboardOverviewTest(APITestCase):
 
     def test_result_is_cached_per_scope(self):
         self._data(self.super_admin)
+        # Kesh ishlatiladi: ikkinchi so'rovda hisobot jadvaliga murojaat yo'q
+        with CaptureQueriesContext(connection) as ctx:
+            self.assertEqual(self._data(self.super_admin)["kpis"]["total"]["value"], 5)
+        self.assertEqual([q for q in ctx.captured_queries if '"reports_report"' in q["sql"]], [])
+        # Hisobot saqlanganda kesh versiyasi oshadi — yangi qiymat ko'rinadi
         self._report(self.org_a, self.form_a, self.far, S.SAVED)
-        self.assertEqual(self._data(self.super_admin)["kpis"]["total"]["value"], 5)  # kesh
+        self.assertEqual(self._data(self.super_admin)["kpis"]["total"]["value"], 6)
         # boshqa doira — alohida kalit
         self.assertEqual(self._data(self.hodim_a)["kpis"]["total"]["value"], 3)
