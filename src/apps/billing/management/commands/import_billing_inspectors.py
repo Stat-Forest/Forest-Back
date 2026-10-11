@@ -33,7 +33,21 @@ BILLING_ROLES = {CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER}
 def _norm(name: str) -> str:
     s = (name or "").strip().lower()
     s = s.replace("ʻ", "'").replace("ʼ", "'").replace("’", "'").replace("‘", "'").replace("`", "'")
+    s = s.replace("«", "").replace("»", "").replace('"', "")
     return re.sub(r"\s+", " ", s)
+
+
+# Xo'jalik nomidagi tur/shakl so'zlari — "Узун КИДЎХ" va "Узун ДЎХ" bitta xo'jalik
+_SUFFIX_WORDS = {
+    "дўх", "кидўх", "идўх", "дўичк", "дўох", "дмтб", "итс", "мтб", "дух", "ду'х",
+    "давлат", "ўрмон", "урмон", "хўжалиги", "хужалиги", "ижара", "кўп", "тармоқли",
+}
+
+
+def _base(name: str) -> str:
+    """Nomning asosi: tur so'zlari va bo'sh joylarsiz ("Ўрта орол КИДЎХ" -> "ўртаорол")."""
+    words = [w for w in _norm(name).split(" ") if w and w not in _SUFFIX_WORDS]
+    return "".join(words)
 
 
 class Command(BaseCommand):
@@ -60,21 +74,15 @@ class Command(BaseCommand):
         return data
 
     def _xojalik_index(self):
-        by_name, by_inn = {}, {}
+        by_name, by_inn, by_base = {}, {}, {}
         for x in Xojalik.objects.all():
             by_name[_norm(x.name)] = x
             if x.inn:
                 by_inn[x.inn.strip()] = x
-        return by_name, by_inn
+            by_base.setdefault(_base(x.name), []).append(x)
+        return by_name, by_inn, by_base
 
-    def _resolve_email(self, rec, domain):
-        email = (rec.get("email") or "").strip().lower()
-        if email:
-            try:
-                validate_email(email)
-                return email
-            except ValidationError:
-                pass
+    def _synthetic_email(self, rec, domain):
         username = (rec.get("username") or "").strip().lower()
         if not username:
             return None
@@ -87,7 +95,17 @@ class Command(BaseCommand):
         local = re.sub(r"[^a-z0-9._-]", "_", username).strip("._-") or f"user{rec.get('id', '')}"
         return f"{local}@{domain}"
 
-    def _match_xojaliklar(self, rec, by_name, by_inn):
+    def _resolve_email(self, rec, domain):
+        email = (rec.get("email") or "").strip().lower()
+        if email:
+            try:
+                validate_email(email)
+                return email
+            except ValidationError:
+                pass
+        return self._synthetic_email(rec, domain)
+
+    def _match_xojaliklar(self, rec, by_name, by_inn, by_base):
         found, missing = {}, []
         candidates = []
         for d in rec.get("departments") or []:
@@ -102,6 +120,8 @@ class Command(BaseCommand):
                 x = by_inn[str(inn).strip()]
             elif name and _norm(name) in by_name:
                 x = by_name[_norm(name)]
+            elif name and len(by_base.get(_base(name), [])) == 1:
+                x = by_base[_base(name)][0]  # tur so'zlarisiz yagona moslik
             if x is not None:
                 found[x.id] = x
             elif name and name not in missing:
@@ -117,7 +137,8 @@ class Command(BaseCommand):
         dry = options["dry_run"]
         update = options["update"]
 
-        by_name, by_inn = self._xojalik_index()
+        by_name, by_inn, by_base = self._xojalik_index()
+        used_emails = set()
         group = None if dry else Group.objects.get_or_create(name=CustomUser.Role.BILLING_USER.value)[0]
 
         created = updated = existed = skipped = 0
@@ -140,7 +161,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"  o'tkazib yuborildi (username ham email ham yo'q): id={rec.get('id')}"))
                 continue
 
-            xojaliklar, missing = self._match_xojaliklar(rec, by_name, by_inn)
+            xojaliklar, missing = self._match_xojaliklar(rec, by_name, by_inn, by_base)
             for m in missing:
                 unmatched.append((username, m))
             if not xojaliklar:
@@ -152,12 +173,30 @@ class Command(BaseCommand):
             phone = (rec.get("phone") or "").strip() or None
             password_hash = rec.get("password") or ""
 
+            # Email boshqa roldagi foydalanuvchiniki, boshqa billing logini bilan band yoki shu
+            # faylda boshqa inspektor ishlatgan bo'lsa — <username>@domen ishlatiladi
+            # (inspektor baribir username bilan kiradi).
             existing = CustomUser.objects.filter(email__iexact=email).first()
-            if existing is not None and existing.role not in BILLING_ROLES:
-                skipped += 1
-                self.stdout.write(self.style.WARNING(
-                    f"  o'tkazib yuborildi: {username} -> {email} boshqa roldagi ({existing.role}) foydalanuvchiniki"))
-                continue
+            taken_by_other = existing is not None and (
+                existing.role not in BILLING_ROLES
+                or (existing.username and existing.username != username.lower())
+            )
+            if taken_by_other or email in used_emails:
+                fallback = self._synthetic_email(rec, domain)
+                if fallback and fallback != email:
+                    reason = "boshqa foydalanuvchiniki" if existing is not None else "shu faylda takror"
+                    self.stdout.write(self.style.WARNING(f"  {username}: email {email} {reason} -> {fallback}"))
+                    email = fallback
+                    existing = CustomUser.objects.filter(email__iexact=email).first()
+                    if existing is not None and existing.role not in BILLING_ROLES:
+                        skipped += 1
+                        self.stdout.write(self.style.WARNING(f"  o'tkazib yuborildi: {username} ({email} ham band)"))
+                        continue
+                else:
+                    skipped += 1
+                    self.stdout.write(self.style.WARNING(f"  o'tkazib yuborildi: {username} -> {email} band"))
+                    continue
+            used_emails.add(email)
 
             mapping.append((username, email))
             if existing is not None:
