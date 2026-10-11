@@ -18,7 +18,7 @@ from apps.reports.services.kadastr import is_kadastr_child
 from apps.logs.models import HistoryActionJournal
 from apps.reports.serializers.reports.list_reports import ReportListSerializer
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
-from apps.reports.models import ReportItemInner
+from apps.reports.models import ReportItemInner, StatementColumn
 from apps.reports.exports.excel_export import export_universal_report_to_excel_v2
 from apps.reports.services.report_import.columns import is_plant_based_statement
 from apps.reports.serializers.export.export_serializers import ReportExcelExportRequestSerializer
@@ -109,11 +109,12 @@ class ReportExcelExportAPIView(APIView):
         # Optimallashtirilgan queryset
         reports = (
             Report.objects.filter(id__in=report_ids)
-            .select_related("organization", "statement")
+            .select_related("organization", "statement", "deadline", "sent_by", "sent_by_org")
             .prefetch_related(
                 "report_items__statement_column",
                 "report_items__statement_column__parent",
                 "report_items__inners",
+                "signatures",
             )
         )
 
@@ -171,23 +172,28 @@ class ReportExcelExportAPIView(APIView):
             # In aggregated mode we mirror rows exactly; no extra individual_general rows are appended
             combined_reports = base_reports
         else:
+            # Tashkilot jami (individual_general) hisobotlari — bitta so'rov
+            individual_by_key = {}
+            for ind in (
+                Report.objects.filter(
+                    statement=statement,
+                    is_individual_general=True,
+                    organization_id__in={r.organization_id for r in base_reports},
+                    deadline_id__in={r.deadline_id for r in base_reports},
+                )
+                .select_related("organization", "statement", "deadline", "sent_by", "sent_by_org")
+                .prefetch_related(
+                    "report_items__statement_column",
+                    "report_items__statement_column__parent",
+                    "report_items__inners",
+                    "signatures",
+                )
+                .order_by("-created_at")
+            ):
+                individual_by_key.setdefault((ind.organization_id, ind.deadline_id), ind)
             for r in base_reports:
                 combined_reports.append(r)
-                ind = (
-                    Report.objects.filter(
-                        organization=r.organization,
-                        statement=r.statement,
-                        deadline=r.deadline,
-                        is_individual_general=True,
-                    )
-                    .select_related("organization", "statement")
-                    .prefetch_related(
-                        "report_items__statement_column",
-                        "report_items__statement_column__parent",
-                        "report_items__inners",
-                    )
-                    .first()
-                )
+                ind = individual_by_key.get((r.organization_id, r.deadline_id))
                 if ind:
                     combined_reports.append(ind)
 
@@ -207,10 +213,19 @@ class ReportExcelExportAPIView(APIView):
         SerializerCls = PlantReportListSerializer if is_plant else ReportListSerializer
         # Pass row number map for hierarchical numbering if provided
         row_numbers_map = request.data.get("row_numbers", {}) if hasattr(request, 'data') else {}
+        # Statement ustunlari bir marta (serializer'lar har hisobot uchun so'ramasin)
+        columns = list(
+            StatementColumn.objects.filter(statement_id=statement.id).select_related("parent")
+        )
         serializer = SerializerCls(
             combined_reports,
             many=True,
-            context={"request": request, "lang": lang, "aggregated_mode": aggregated_mode, "row_number_map": row_numbers_map}
+            context={
+                "request": request, "lang": lang, "aggregated_mode": aggregated_mode,
+                "row_number_map": row_numbers_map,
+                "columns_by_statement_id": {str(statement.id): columns},
+                "statement_columns": {str(c.id): c for c in columns},
+            }
         )
 
         file_path, filename = export_universal_report_to_excel_v2(
@@ -229,9 +244,9 @@ class ReportExcelExportAPIView(APIView):
                 model_name="ReportExport",
                 object_repr=filename,
                 change_message=(
-                    f"Exported {reports.count()} reports from '{statement_name}'; "
+                    f"Exported {len(base_reports)} reports from '{statement_name}'; "
                     f"lang={lang}; date={date_str} {time_str}; "
-                    f"report_ids={[str(r.id) for r in reports]}"
+                    f"report_ids={[str(r.id) for r in base_reports]}"
                 ),
             )
         except Exception:

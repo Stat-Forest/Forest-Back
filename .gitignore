@@ -100,3 +100,5 @@ docker/prod/certbot/etc/
 docker/prod/certbot/var/
 
 src/celerybeat-schedule
+# Excel eksport fayllari (runtime/testlar)
+src/exports/*.xlsx

@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from django.core.cache import cache
 
 from apps.reports.models import Report
-from apps.reports.services.report_cache import bump_report_list_version
+from apps.reports.services.report_cache import bump_filtered_version, bump_report_list_version
 
 DASHBOARD_VERSION_KEY = "dashboard:stats:ver"
 
@@ -34,3 +34,6 @@ def invalidate_dashboard_cache(sender, instance, **kwargs):
     bump_dashboard_version()
     # Bosh sahifa overview keshi ham shu versiyaga bog'liq (dashboard_overview)
     bump_report_list_version()
+    # filtered-general (viloyat/respublika jami) keshi — shu statement uchun
+    if instance.statement_id:
+        bump_filtered_version(instance.statement_id)
