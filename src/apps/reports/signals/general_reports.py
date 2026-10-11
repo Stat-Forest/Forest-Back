@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from apps.reports.models import Report
@@ -5,74 +7,39 @@ from apps.reports.services import (
     aggregate_general_report,
     aggregate_national_report,
 )
-from apps.reports.services.individual_general_report import aggregate_individual_report
 from apps.utils.services import RegionChoices
 
+logger = logging.getLogger(__name__)
 
-@receiver(post_save, sender=Report)
+
+@receiver(post_save, sender=Report, dispatch_uid="reports.handle_accepted_report")
 def handle_accepted_report(sender, instance: Report, created, **kwargs):
-    print(">>> SIGNAL ISHLADI:", instance.id)
-
     if instance.status != Report.StatusChoices.ACCEPTED:
         return
     if not instance.is_report:
         return
-
-    # 🎯 Individual reports only (not general/republic)
-    if not instance.is_general and not instance.is_republic:
-        # Avvalo individual umumlashtirishni yangilaymiz
-        print(">>> [Individual] Individual Jami (org-level) yangilanmoqda")
-        aggregate_individual_report(instance)
-
-        print(">>> [Individual] Viloyat Jami chaqirilyapti")
-        aggregate_general_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=instance.region
-        )
-
-        print(">>> [Individual] Respublika Jami chaqirilyapti")
-        aggregate_national_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=RegionChoices.REPUBLIC
-        )
-        return
-
-    # 🎯 If regional (viloyat) jami
-    if instance.region and instance.is_general:
-        print(">>> [General] Viloyat Jami chaqirilyapti")
-        aggregate_general_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=instance.region
-        )
-
-        print(">>> [General] Respublika Jami chaqirilyapti")
-        aggregate_national_report(
-            statement=instance.statement,
-            deadline=instance.deadline,
-            region=RegionChoices.REPUBLIC
-        )
-        return
+    # Yig'ma hisobotlar Celery'da (apps.reports.tasks.aggregation); qaysi
+    # turdagi yig'ma kerakligi task ichida hal qilinadi.
+    if (not instance.is_general and not instance.is_republic) or (instance.region and instance.is_general):
+        from apps.reports.tasks.aggregation import schedule_report_totals
+        schedule_report_totals(str(instance.id))
 
 
-
-@receiver(pre_delete, sender=Report)
+@receiver(pre_delete, sender=Report, dispatch_uid="reports.handle_delete_report")
 def handle_delete_report(sender, instance: Report, **kwargs):
-    print(">>>> REPORT DELETE SIGNAL", instance.id)
+    logger.debug("report delete signal %s", instance.id)
 
     if not instance.is_report:
         return
 
     # Signal ni vaqtincha o'chiramiz — ichki .delete() chaqiruvlari
     # yana shu signalni ishga tushirib, RecursionError keltirib chiqarmasligi uchun.
-    pre_delete.disconnect(handle_delete_report, sender=Report)
+    pre_delete.disconnect(sender=Report, dispatch_uid="reports.handle_delete_report")
     try:
         _handle_delete_report_inner(instance)
     finally:
         # Har qanday holatda signalni qayta ulaymiz
-        pre_delete.connect(handle_delete_report, sender=Report)
+        pre_delete.connect(handle_delete_report, sender=Report, dispatch_uid="reports.handle_delete_report")
 
 
 def _handle_delete_report_inner(instance: Report):
@@ -106,7 +73,6 @@ def _handle_delete_report_inner(instance: Report):
                 organization=instance.organization,
                 is_individual_general=True,
             ).delete()
-            print("🗑️ Individual Jami o‘chirildi")
 
     # ====================
     # ✅ Viloyat Jami check
@@ -126,7 +92,6 @@ def _handle_delete_report_inner(instance: Report):
                 region=instance.region,
                 is_general=True,
             ).delete()
-            print("🗑️ Viloyat Jami o‘chirildi")
 
         # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
         if viloyat_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():
@@ -151,7 +116,6 @@ def _handle_delete_report_inner(instance: Report):
             deadline=instance.deadline,
             is_republic=True,
         ).delete()
-        print("🗑️ Respublika Jami o‘chirildi")
 
     # ✅ Faqat agar yana ACCEPTED report bo‘lsa, qayta aggregatsiya qilamiz
     if resp_qs.filter(status=Report.StatusChoices.ACCEPTED).exists():

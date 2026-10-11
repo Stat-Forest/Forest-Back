@@ -17,7 +17,11 @@ class DashboardStatService:
 
     def __init__(self, user):
         self.user = user
-        self.cache_key = f"dashboard:stats:user:{user.id}"
+
+    @property
+    def cache_key(self):
+        from apps.reports.signals.dashboard_signal import get_dashboard_version
+        return f"dashboard:stats:v{get_dashboard_version()}:user:{self.user.id}"
 
     # ================= PUBLIC API =================
     def get_stats(self):

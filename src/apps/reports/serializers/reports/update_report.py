@@ -77,54 +77,59 @@ class ReportUpdateSerializer(serializers.ModelSerializer):
         organization_name = instance.organization.name
 
         with transaction.atomic():
+            # Mavjud item'lar va inner'lar — ikkita so'rov (ilgari har ustun
+            # uchun get_or_create + inners + har inner uchun save/create edi).
+            wanted = [columns_map[str(i["statement_column"])] for i in items_data
+                      if columns_map.get(str(i["statement_column"]))]
+            existing_items = {
+                it.statement_column_id: it
+                for it in ReportItem.objects.filter(report=instance, statement_column__in=wanted)
+            }
+            missing = [
+                ReportItem(report=instance, statement_column=col)
+                for col in wanted if col.id not in existing_items
+            ]
+            if missing:
+                for it in ReportItem.objects.bulk_create(missing):
+                    existing_items[it.statement_column_id] = it
+
+            inners_by_item = {}
+            for inner in ReportItemInner.objects.filter(report_item__in=existing_items.values()):
+                inners_by_item.setdefault(inner.report_item_id, {})[str(inner.id)] = inner
+
+            to_update, to_create, to_delete = [], [], []
+            seen_columns = set()
             for item in items_data:
-                col_id = item["statement_column"]
-                column = columns_map.get(col_id)
-
-                if not column:
+                column = columns_map.get(str(item["statement_column"]))
+                if not column or column.id in seen_columns:
                     continue
-
-                inners_data = item.get("inners", [])
-
-                # 1. ReportItem-ni olish yoki yaratish
-                report_item, _ = ReportItem.objects.get_or_create(
-                    report=instance,
-                    statement_column=column
-                )
-
-                # 2. Mavjud inners-ni olish (dict: id → obj)
-                existing_inners = {
-                    str(inner.id): inner
-                    for inner in report_item.inners.all()
-                }
-
-                existing_inner_ids = set(existing_inners.keys())
+                seen_columns.add(column.id)
+                report_item = existing_items[column.id]
+                existing_inners = inners_by_item.get(report_item.id, {})
                 received_inner_ids = set()
 
-                for inner_data in inners_data:
+                for inner_data in item.get("inners", []):
                     inner_id = str(inner_data.get("id", ""))
                     value = inner_data["value"]
-
                     if column.title_uz.strip().lower() == "tashkilot nomi":
                         value = organization_name
 
-                    # 2a. Update bor bo‘lsa
                     if inner_id and inner_id in existing_inners:
                         inner_obj = existing_inners[inner_id]
                         inner_obj.value = value
-                        inner_obj.save()
+                        to_update.append(inner_obj)
                         received_inner_ids.add(inner_id)
                     else:
-                        # 2b. Yangi obyekt yaratish
-                        ReportItemInner.objects.create(
-                            report_item=report_item,
-                            value=value
-                        )
+                        to_create.append(ReportItemInner(report_item=report_item, value=value))
 
-                # 3. Ortiqcha (frontenddan kelmagan) `inners` ni o‘chirish
-                to_delete_ids = existing_inner_ids - received_inner_ids
-                if to_delete_ids:
-                    ReportItemInner.objects.filter(id__in=to_delete_ids).delete()
+                to_delete.extend(set(existing_inners) - received_inner_ids)
+
+            if to_update:
+                ReportItemInner.objects.bulk_update(to_update, ["value"])
+            if to_create:
+                ReportItemInner.objects.bulk_create(to_create)
+            if to_delete:
+                ReportItemInner.objects.filter(id__in=to_delete).delete()
 
             # 4. Eski hisoblangan ustunlarni o‘chirish (CALCULATED_COLUMNS asosida)
             statement_name = instance.statement.name_uz
