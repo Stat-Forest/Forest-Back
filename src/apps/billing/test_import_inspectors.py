@@ -60,7 +60,8 @@ class ImportInspectorsTest(TestCase):
         out = self._run()
         u1 = User.objects.get(email="insp1@example.uz")
         self.assertEqual(u1.role, "billing_user")
-        self.assertEqual((u1.first_name, u1.last_name), ("Akmal", "Karimov"))
+        self.assertEqual((u1.first_name, u1.last_name, u1.father_name), ("Akmal", "Karimov", "Baxtiyorovich"))
+        self.assertEqual(u1.username, "andijon_insp")
         self.assertTrue(u1.check_password("Inspektor123!"))
         self.assertEqual(set(u1.billing_access.xojaliklar.values_list("name", flat=True)), {"Андижон ДЎХ", "Шаҳрихон ДЎХ"})
 
@@ -93,9 +94,40 @@ class ImportInspectorsTest(TestCase):
         self.assertEqual(User.objects.filter(role="billing_user").count(), 0)
         self.assertIn("DRY RUN", out)
 
-    def test_existing_non_billing_email_is_skipped(self):
+    def test_existing_non_billing_email_falls_back_to_username_email(self):
         User.objects.create_user(email="insp1@example.uz", password="x", first_name="A", last_name="B", role="tashkilot_hodimi")
         out = self._run()
-        self.assertIn("o'tkazib yuborildi", out)
         self.assertEqual(User.objects.get(email="insp1@example.uz").role, "tashkilot_hodimi")
-        self.assertEqual(BillingUserAccess.objects.count(), 1)
+        u = User.objects.get(username="andijon_insp")
+        self.assertEqual(u.email, "andijon_insp@billing-urmon.uz")
+        self.assertIn("andijon_insp -> andijon_insp@billing-urmon.uz", out)
+        self.assertEqual(BillingUserAccess.objects.count(), 2)
+
+    def test_duplicate_email_between_inspectors_gets_username_email(self):
+        records = self._records()[:2]
+        records[1]["email"] = "insp1@example.uz"  # ikkinchi inspektor ham shu email
+        self._run(records)
+        self.assertEqual(User.objects.get(username="andijon_insp").email, "insp1@example.uz")
+        self.assertEqual(User.objects.get(username="insp2").email, "insp2@billing-urmon.uz")
+        # qayta ishga tushirish: ikkalasi "mavjud", yangi user yo'q
+        out = self._run(records)
+        self.assertIn("mavjud: 2", out)
+        self.assertEqual(User.objects.filter(role="billing_user").count(), 2)
+
+    def test_xojalik_matched_by_base_name_without_suffix(self):
+        Xojalik.objects.create(name="Узун ДЎХ", region=self.region)
+        Xojalik.objects.create(name="Ўртаорол ДЎХ", region=self.region)
+        Xojalik.objects.create(name="«Нефтчи» ДЎХ", region=self.region)
+        Xojalik.objects.create(name="Саксонота ДЎИЧК", region=self.region)
+        records = [{
+            "id": 20, "username": "insp3", "email": "insp3@example.uz", "first_name": "A", "sur_name": "B",
+            "mid_name": "", "phone": "", "status": 1, "password": self.hash1,
+            "departments": [{"id": 1, "name": "Узун КИДЎХ", "inn": None}, {"id": 2, "name": "Ўрта орол КИДЎХ", "inn": None},
+                            {"id": 3, "name": "Нефтчи давлат ўрмон хўжалиги", "inn": None},
+                            {"id": 4, "name": "Саксонота  КИДЎХ", "inn": None}, {"id": 5, "name": "Булунғур ДЎХ", "inn": None}],
+            "xojaliklar": [],
+        }]
+        out = self._run(records)
+        names = set(User.objects.get(username="insp3").billing_access.xojaliklar.values_list("name", flat=True))
+        self.assertEqual(names, {"Узун ДЎХ", "Ўртаорол ДЎХ", "«Нефтчи» ДЎХ", "Саксонота ДЎИЧК"})
+        self.assertIn("Булунғур ДЎХ", out)
