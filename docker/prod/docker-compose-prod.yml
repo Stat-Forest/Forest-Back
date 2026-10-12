@@ -124,6 +124,18 @@ services:
     container_name: forest_postgres_prod
     env_file:
       - ../../.env
+    # Standart sozlama (shared_buffers 128 MB) 7.7 GB serverda kam: GeoJSON/hisobot
+    # jadvallari diskdan o'qiladi. Deploy skripti bu servisni QAYTA YARATMAYDI —
+    # serverda qo'lda: compose stop/rm -f/up -d --no-deps forest_postgres
+    # (ma'lumotlar volume'da, ~10 s uzilish).
+    command: >-
+      postgres
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c random_page_cost=1.1
+      -c max_connections=120
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

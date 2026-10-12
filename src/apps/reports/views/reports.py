@@ -23,6 +23,7 @@ from apps.base.views import (
 )
 from apps.logs.drf_mixins import DRFHistoryMixin
 from apps.reports.services.pagination import ReportPagination
+from apps.reports.services.report_items_loader import load_report_items
 
 
 @extend_schema(
@@ -96,6 +97,9 @@ class ReportListAPIView(CustomListAPIView):
         if not hasattr(self, "_statement_ids"):
             self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
 
+        # report_items prefetch QILINMAYDI: item/qiymatlar list() da sahifadagi
+        # hisobotlar uchun values() bilan yuklanadi (load_report_items) —
+        # 200 hisobot x 120 ustun uchun ~100 000 model obyekti o'rniga lug'atlar.
         qs = (
             qs.select_related(
                 "organization",
@@ -106,17 +110,7 @@ class ReportListAPIView(CustomListAPIView):
                 "sent_by",
                 "sent_by_org",
             )
-            .prefetch_related(
-                "signatures",
-                Prefetch(
-                    "report_items",
-                    queryset=(
-                        ReportItem.objects
-                        .select_related("statement_column", "statement_column__parent")
-                        .prefetch_related("inners")  # inners ham prefetched
-                    )
-                )
-            )
+            .prefetch_related("signatures")
             .order_by("-created_at")
         )
         return qs
@@ -124,7 +118,14 @@ class ReportListAPIView(CustomListAPIView):
     def list(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response([])
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        reports = page if page is not None else list(queryset)
+        self._items_by_report = load_report_items([r.id for r in reports])
+        serializer = self.get_serializer(reports, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     def get_serializer_context(self):
         """
@@ -138,6 +139,7 @@ class ReportListAPIView(CustomListAPIView):
             lang = "uz"
 
         context["lang"] = lang
+        context["items_by_report"] = getattr(self, "_items_by_report", None)
 
         # StatementColumn preload: statement_ids oldindan hisoblangan
         statement_ids = getattr(self, "_statement_ids", [])

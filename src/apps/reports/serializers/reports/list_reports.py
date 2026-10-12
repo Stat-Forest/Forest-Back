@@ -1,6 +1,5 @@
 import re
 
-from celery.bin.celery import report
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -8,6 +7,7 @@ from apps.utils.services import RegionChoices
 from apps.reports.models import Report, StatementColumn
 from apps.utils.translation import get_lang_code, get_translated_field
 from apps.reports.services.quarter_validator import DaromadQuarterService
+from apps.reports.services.report_items_loader import items_from_prefetch
 
 
 class ReportListSerializer(serializers.ModelSerializer):
@@ -120,15 +120,18 @@ class ReportListSerializer(serializers.ModelSerializer):
     def get_report_items(self, report: Report):
         lang = get_lang_code(self.context)
 
-        # ✅ MUHIM: Prefetch cache’dan foydalanamiz — bu query qilmaydi!
-        items = list(report.report_items.all())
+        # View sahifadagi hisobotlar uchun item'larni values() bilan yuklab bergan bo'lsa
+        # (items_by_report) — model obyektlari yaratilmaydi; aks holda prefetch'dan.
+        preloaded = self.context.get("items_by_report")
+        if preloaded is not None:
+            items = preloaded.get(str(report.id), [])
+        else:
+            items = items_from_prefetch(report)
 
         def ordering_key(ordering: str):
             if not ordering:
                 return []
             return [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", ordering)]
-
-        items.sort(key=lambda i: ordering_key(i.statement_column.ordering or ""))
 
         def get_top_level_ordering(ordering: str) -> str:
             return ordering.split(".")[0] if ordering else "0"
@@ -160,48 +163,44 @@ class ReportListSerializer(serializers.ModelSerializer):
 
         column_map = {str(col.id): col for col in all_columns}
 
-        # Group by top-level ordering (ilova)
-        grouped_by_ilova = {}
+        # Ustun bo'yicha tartiblash va ilova (yuqori daraja) bo'yicha guruhlash
+        resolved = []
         for item in items:
-            column = item.statement_column
-            if not column:
+            column = column_map.get(item["statement_column_id"]) if item["statement_column_id"] else None
+            if column is None:
                 continue
-            top_level = get_top_level_ordering(column.ordering)
-            grouped_by_ilova.setdefault(top_level, []).append(item)
+            resolved.append((column, item))
+        resolved.sort(key=lambda pair: ordering_key(pair[0].ordering or ""))
 
+        grouped_by_ilova = {}
+        for column, item in resolved:
+            top_level = get_top_level_ordering(column.ordering)
+            grouped_by_ilova.setdefault(top_level, []).append((column, item))
+
+        org_name_titles = {"tashkilot nomi", "наименование организации", "название организации"}
         statement_columns = []
 
-        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x)):
-            for item in grouped_by_ilova[ilova_ordering]:
-                column = item.statement_column
-                if not column:
-                    continue
-
+        for ilova_ordering in sorted(grouped_by_ilova.keys(), key=lambda x: int(x) if x.isdigit() else 0):
+            for column, item in grouped_by_ilova[ilova_ordering]:
                 inner_values = []
-                # ✅ inners ham prefetched -> bu query qilmaydi
-                # Tartib MUHIM: exportda qator raqami shu ro'yxatning
-                # indeksidan olinadi. ReportItemInner da ordering yo'q,
-                # shuning uchun qiymat tahrirlansa DB uni oxiriga surib
-                # yuboradi va qiymat boshqa qatorga "sakrab" ketadi.
-                for inner in sorted(item.inners.all(),
-                                    key=lambda i: (i.created_at, str(i.id))):
-                    val = inner.value
-
-                    if column.is_organization:
-                        col_title = getattr(column, f"title_{lang}", "").strip().lower()
-                        if col_title in ["tashkilot nomi", "наименование организации", "название организации"]:
-                            # org name replacement logic o‘zgarmaydi
-                            val = get_translated_field(report.organization, "name", lang)
-
-                            if report.is_individual_general:
-                                val = f"{_('Tashkilot Jami')}"
-                            elif report.is_general:
-                                region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
-                                val = f"{region_label} – {_('Viloyat Jami')}"
-                            elif report.is_republic:
-                                val = {"uz": "Respublika Jami", "ru": "Республиканский итог"}.get(lang, "Respublika Jami")
-
-                    inner_values.append({"id": str(inner.id), "value": val})
+                replace_org = column.is_organization and (
+                    (getattr(column, f"title_{lang}", "") or "").strip().lower() in org_name_titles
+                )
+                # Tartib MUHIM: eksportda qator raqami shu ro'yxatning indeksidan olinadi
+                # (loader (created_at, id) bo'yicha tartiblab beradi).
+                for inner in item["inners"]:
+                    val = inner["value"]
+                    if replace_org:
+                        # org name replacement logic o‘zgarmaydi
+                        val = get_translated_field(report.organization, "name", lang)
+                        if report.is_individual_general:
+                            val = f"{_('Tashkilot Jami')}"
+                        elif report.is_general:
+                            region_label = dict(RegionChoices.choices).get(report.region, "Nomaʼlum")
+                            val = f"{region_label} – {_('Viloyat Jami')}"
+                        elif report.is_republic:
+                            val = {"uz": "Respublika Jami", "ru": "Республиканский итог"}.get(lang, "Respublika Jami")
+                    inner_values.append({"id": inner["id"], "value": val})
 
                 statement_columns.append({
                     "statement_column_id": str(column.id),
@@ -209,20 +208,11 @@ class ReportListSerializer(serializers.ModelSerializer):
                     "inners": inner_values,
                 })
 
-        data = [{
+        return [{
             "organization_id": organization_id,
             "organization_name": organization_name,
             "statement_columns": statement_columns,
         }]
-
-        data.sort(key=lambda item: (
-            0 if item["organization_id"] not in ["individual", "general", "republic"]
-            else 1 if item["organization_id"] == "individual"
-            else 2 if item["organization_id"] == "general"
-            else 3
-        ))
-
-        return data
 
     # ---------------------
     # Exporter helper fields
