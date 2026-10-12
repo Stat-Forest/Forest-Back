@@ -149,7 +149,7 @@ def build_contracts_workbook(queryset: QuerySet) -> bytes:
     template_height = ws.row_dimensions[FIRST_DATA_ROW].height
 
     row = FIRST_DATA_ROW
-    for index, contract in enumerate(export_queryset(queryset).order_by("xojalik__name", "contract_date"), start=1):
+    for index, contract in enumerate(export_queryset(queryset).order_by("xojalik__name", "contract_date", "number"), start=1):
         renter = contract.renter
         _write_typed(ws, row, contract.activities.all(), ACTIVITY_COLUMNS)
         _write_typed(ws, row, contract.lands.all(), LAND_COLUMNS)
