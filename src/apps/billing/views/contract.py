@@ -30,6 +30,7 @@ from apps.billing.services.errors import BillingValidationError
 from apps.billing.services.excel_export import build_contracts_workbook
 from apps.billing.services.excel_import import import_rows
 from apps.billing.services.rent_stats import RentStatsParamsError, parse_rent_stats_params, yearly_area_price_stats
+from apps.billing.services.geo import slim_geojson
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 IMPORT_TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "templates_xlsx" / "import_template.xlsx"
@@ -237,7 +238,7 @@ class ContractViewSet(viewsets.GenericViewSet):
                 "status": contract.status,
                 "latitude": float(contract.latitude) if contract.latitude is not None else None,
                 "longitude": float(contract.longitude) if contract.longitude is not None else None,
-                "boundary_geojson": contract.boundary_geojson,
+                "boundary_geojson": slim_geojson(contract.boundary_geojson),
                 "rent_area": float(contract.rent_area or 0),
                 "debt": float(contract.debt),
                 "xojalik_name": contract.xojalik.name,

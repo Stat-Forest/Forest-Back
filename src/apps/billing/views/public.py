@@ -22,6 +22,7 @@ from apps.billing.serializers import (
     XojalikLocationSerializer,
 )
 from apps.billing.services.rent_stats import RentStatsParamsError, parse_rent_stats_params, yearly_area_price_stats
+from apps.billing.services.geo import slim_geojson
 
 PUBLIC_CACHE_TIMEOUT = 300
 
@@ -119,7 +120,7 @@ class PublicGeoListView(_PublicView):
                 "contract_number": contract.contract_number,
                 "latitude": float(contract.latitude) if contract.latitude is not None else None,
                 "longitude": float(contract.longitude) if contract.longitude is not None else None,
-                "boundary_geojson": contract.boundary_geojson,
+                "boundary_geojson": slim_geojson(contract.boundary_geojson),
                 "rent_area": float(contract.rent_area or 0),
                 "xojalik_name": contract.xojalik.name,
                 "activity_name": ", ".join(a.type.name for a in contract.activities.all()),
