@@ -21,6 +21,9 @@ class LoginSerializer(CustomSerializer):
     MAX_ATTEMPTS = 5
     ATTEMPT_WINDOW = 60 * 10
     BLOCK_TIMEOUT = 60 * 15
+    # Email bo'yicha (IP'dan qat'i nazar) xatolar chegarasi: IP almashtirib
+    # 5-urinish blokini aylanib o'tib bo'lmasin (audit C2)
+    EMAIL_MAX_FAILURES = 10
 
     default_error_message = _("Email/login yoki parol noto‘g‘ri.")
 
@@ -33,7 +36,7 @@ class LoginSerializer(CustomSerializer):
             raise CustomExceptionError(code=400, detail=_("Email/login va parol majburiy."))
 
         block_key = self._block_key(email, request)
-        if cache.get(block_key):
+        if cache.get(block_key) or cache.get(self._email_block_key(email)):
             raise CustomExceptionError(
                 code=429,
                 detail=_("Juda ko‘p xato urinish. 15 daqiqadan keyin qayta urinib ko‘ring.")
@@ -47,6 +50,7 @@ class LoginSerializer(CustomSerializer):
         if user is None:
             attempts += 1
             cache.set(attempt_key, attempts, timeout=self.ATTEMPT_WINDOW)
+            self._register_email_failure(email)
             self._check_attempts_limit(email, request, attempts)
             raise CustomExceptionError(code=401, detail=self.default_error_message)
 
@@ -89,6 +93,16 @@ class LoginSerializer(CustomSerializer):
             return x_forwarded_for.split(",")[0].strip()
 
         return request.META.get("REMOTE_ADDR", "unknown")
+
+    def _email_block_key(self, email):
+        return f"login_block_email:{email}"
+
+    def _register_email_failure(self, email):
+        key = f"login_failures_email:{email}"
+        failures = cache.get(key, 0) + 1
+        cache.set(key, failures, timeout=self.ATTEMPT_WINDOW)
+        if failures >= self.EMAIL_MAX_FAILURES:
+            cache.set(self._email_block_key(email), True, timeout=self.BLOCK_TIMEOUT)
 
     def _attempt_key(self, email, request):
         ident = self._client_ident(request)

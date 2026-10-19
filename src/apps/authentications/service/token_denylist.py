@@ -29,6 +29,27 @@ def revoke_access_token(token) -> None:
     cache.set(_key(jti), True, ttl)
 
 
+def revoke_user_tokens_issued_before(user_id, cutoff_ts: int | None = None, ttl: int | None = None) -> None:
+    """Parol o'zgarganda foydalanuvchining shu paytgacha berilgan BARCHA access
+    tokenlari yaroqsiz bo'ladi (audit C3) — boshqa qurilmadagi sessiya ham."""
+    # +1: iat soniyalarda — shu soniyada berilgan tokenlar ham yaroqsiz bo'lsin
+    cutoff = int(cutoff_ts if cutoff_ts is not None else timezone.now().timestamp()) + 1
+    if ttl is None:
+        from django.conf import settings
+        lifetime = settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME")
+        ttl = int(lifetime.total_seconds()) if lifetime else 900
+    cache.set(f"{PREFIX}user_cutoff:{user_id}", cutoff, ttl + 60)
+
+
 def is_access_token_revoked(token) -> bool:
-    jti = token.get("jti") if hasattr(token, "get") else None
-    return bool(jti and cache.get(_key(jti)))
+    if not hasattr(token, "get"):
+        return False
+    jti = token.get("jti")
+    if jti and cache.get(_key(jti)):
+        return True
+    user_id, iat = token.get("user_id"), token.get("iat")
+    if user_id and iat is not None:
+        cutoff = cache.get(f"{PREFIX}user_cutoff:{user_id}")
+        if cutoff is not None and int(iat) < int(cutoff):
+            return True
+    return False

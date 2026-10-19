@@ -7,8 +7,9 @@ from django.utils import timezone
 
 from rest_framework import serializers
 
-from apps.authentications.service.send_reset_password import send_reset_password_email
+from apps.authentications.tasks import send_reset_password_email_task
 from apps.utils.services.security import hash_reset_code, constant_time_equal
+from apps.authentications.service.token_denylist import revoke_user_tokens_issued_before
 from apps.utils.services.tokens import (
     create_password_reset_access_token,
     blacklist_user_refresh_tokens,
@@ -46,7 +47,7 @@ class SendResetCodeSerializer(serializers.Serializer):
             hashed_code = hash_reset_code(email, code)
 
             cache.set(f"reset_code_hash:{email}", hashed_code, timeout=self.CODE_TTL)
-            send_reset_password_email(email, code)
+            send_reset_password_email_task.delay(email, code)
 
         cache.set(throttle_key, True, timeout=self.SEND_TIMEOUT)
 
@@ -148,6 +149,8 @@ class NewPasswordSerializer(serializers.Serializer):
         user.save(update_fields=["password", "last_activity"])
 
         blacklist_user_refresh_tokens(user)
+        # Oldin berilgan access tokenlar ham (boshqa qurilmalar) yaroqsiz (audit C3)
+        revoke_user_tokens_issued_before(user.id)
 
         HistoryActionJournal.objects.create(
             user=user,
