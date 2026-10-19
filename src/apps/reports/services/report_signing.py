@@ -24,6 +24,7 @@ Ikki rejim:
                 tanlanadi (/ping, 5 daqiqa cache).
 """
 import base64
+import binascii
 import hashlib
 import json
 import secrets
@@ -254,14 +255,33 @@ def _check_signer_matches(report: Report, user, subject: dict) -> tuple[str, str
         _fail(_("Tashkilotning STIR raqami tizimda kiritilmagan. Administratorga murojaat qiling."))
     if str(org.stir) != tin:
         _fail(_("Sertifikat STIR'i hisobot tashkilotiga mos kelmaydi."))
-    user_pinfl = str(getattr(user, "pinfl", "") or "").strip()
-    if user_pinfl and pinfl and user_pinfl != pinfl:
+    # Imzo har doim tizimga kirgan foydalanuvchiga bog'lanadi (audit B3): profil
+    # PINFL'i (yoki JSHSHIR) bo'sh bo'lsa — tashkilot kalitiga ega istalgan xodim
+    # rahbar nomidan imzolay olardi.
+    user_pinfl = str(getattr(user, "pinfl", "") or getattr(user, "jshshr", "") or "").strip()
+    if not user_pinfl:
+        _fail(_("Profilingizda PINFL (JSHSHIR) kiritilmagan. Administratorga murojaat qiling."))
+    if not pinfl:
+        _fail(_("Sertifikatda PINFL yo'q. Shaxsiy kalit bilan imzolang."))
+    if user_pinfl != pinfl:
         _fail(_("Sertifikat tizimga kirgan foydalanuvchiga tegishli emas."))
     return tin, pinfl, cn
 
 
 def _verify_challenge_mode(*, report, user, pkcs7, request, entry, nonce) -> ReportSignature:
     """VPN'siz rejim: pkcs7 = imzolangan e-imzo challenge; /backend/auth tekshiradi."""
+    # Imzolangan matn aynan shu so'rov uchun berilgan challenge ekanini server
+    # tomonida ham tekshiramiz (audit B2): e-imzo-server muddati o'tmagan boshqa
+    # challenge imzosini ham qabul qilishi mumkin — u bilan boshqa hisobotni
+    # "imzolab" bo'lmasin. Attached PKCS#7 ichida imzolangan matn ochiq turadi.
+    challenge = str(entry.get("challenge") or "")
+    try:
+        pkcs7_raw = base64.b64decode(pkcs7)
+    except (ValueError, binascii.Error):
+        _fail(_("Imzo (pkcs7) formati noto'g'ri."))
+    if not challenge or challenge.encode("utf-8") not in pkcs7_raw:
+        _fail(_("Challenge mos emas: imzolangan matn shu so'rov uchun berilgan challenge emas. Qaytadan imzolang."))
+
     ok, _status, data = _call_eimzo(eimzo_api.eri_backend_auth, request, pkcs7)
     if not ok:
         _fail(_("Imzoni tekshirib bo'lmadi: ") + str(data))
@@ -283,6 +303,8 @@ def _verify_challenge_mode(*, report, user, pkcs7, request, entry, nonce) -> Rep
 
     document = entry["document"]
     payload = json.loads(document)
+    if payload.get("signer_user_id") != str(user.id):
+        _fail(_("Imzolash so'rovi boshqa foydalanuvchi uchun berilgan."))
     items_hash = compute_items_hash(report)
     if payload.get("items_hash") != items_hash:
         _fail(_("Hisobot imzolangandan keyin o'zgartirilgan. Qaytadan imzolang."))
@@ -376,6 +398,8 @@ def verify_and_store_signature(*, report: Report, user, pkcs7: str, request, non
         _fail(_("Imzolangan hujjat hisobot yuborish hujjati emas."))
     if payload.get("report_id") != str(report.id):
         _fail(_("Imzo boshqa hisobotga tegishli."))
+    if payload.get("signer_user_id") != str(user.id):
+        _fail(_("Imzolash so'rovi boshqa foydalanuvchi uchun berilgan."))
 
     nonce = payload.get("nonce")
     key = _cache_key(report.id, nonce) if nonce else None
