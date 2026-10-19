@@ -1,6 +1,10 @@
+import logging
 from decimal import Decimal, ROUND_HALF_UP
 from apps.reports.models import ReportItem, ReportItemInner, StatementColumn
 from apps.utils.translation import get_translated_field, get_lang_code
+from apps.reports.services.manual_repots.formula import FormulaError, evaluate_formula, parse_formula_lines, source_orderings as _source_orderings
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_normal_by_expressions(report):
@@ -86,42 +90,23 @@ def calculate_normal_by_expressions(report):
         # Cache yangilaymiz
         report_inners_cache[ordering] = inners[:len(values)] + to_create
 
-    # === Formula bajarish ===
-    for line in expr_text.splitlines():
-        line = line.strip()
-        if "=" not in line:
-            continue
+    # === Formula bajarish (xavfsiz parser, eval emas — audit A8) ===
+    try:
+        formula_lines = parse_formula_lines(expr_text)
+    except FormulaError as e:
+        logger.warning("Statement %s formulasi noto'g'ri: %s", report.statement_id, e)
+        return
 
-        expression, target = line.split("=")
-        expression = expression.strip()
-        target = target.strip()
-
-        parts = expression.split("column(")
-        source_orderings = []
-        for p in parts[1:]:
-            o = p.split(")")[0].replace('"', '').replace("'", "").strip()
-            source_orderings.append(o)
-
-        max_len = max(len(get_inners(o)) for o in source_orderings)
+    for expression, target_ordering in formula_lines:
+        source_orderings = _source_orderings(expression)
+        max_len = max((len(get_inners(o)) for o in source_orderings), default=0)
 
         results = []
         for i in range(max_len):
             try:
-                res = eval(
-                    expression,
-                    {"__builtins__": {}, "Decimal": Decimal},
-                    {"column": lambda ordering: column(ordering, i)}
-                )
+                res = evaluate_formula(expression, lambda ordering: column(ordering, i))
             except Exception:
                 res = Decimal("0")
             results.append(res)
-
-        target_ordering = (
-            target.replace("column(", "")
-                  .replace(")", "")
-                  .replace('"', "")
-                  .replace("'", "")
-                  .strip()
-        )
 
         assign(target_ordering, results)

@@ -6,7 +6,7 @@ from rest_framework import filters, generics
 
 from apps.billing.filters import BolimFilter
 from apps.billing.models import ActivityType, Bolim, Contract, District, LandType, PrivilegeType, Region, Renter, Xojalik
-from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.permissions import BillingReadOrWrite, BillingPIIReadOrWrite
 from apps.billing.scope import billing_xojalik_ids, scope_queryset
 from apps.billing.serializers import (
     ActivityTypeSerializer,
@@ -89,7 +89,7 @@ class PrivilegeTypeListView(_ReferenceListView):
 
 @extend_schema(tags=["Billing"])
 class RenterListView(generics.ListAPIView):
-    permission_classes = [BillingReadOrWrite]
+    permission_classes = [BillingPIIReadOrWrite]
     serializer_class = RenterSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["full_name", "pinfl", "stir", "legal_name"]

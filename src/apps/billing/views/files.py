@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from apps.billing.models import ContractFile, ContractHistory
-from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.permissions import BillingPIIReadOrWrite
 from apps.billing.scope import NOT_ASSIGNED_MESSAGE, can_write_xojalik, scope_queryset
 from apps.billing.serializers import ContractFileSerializer
 from apps.billing.services import history
@@ -21,7 +21,7 @@ class ContractFileViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    permission_classes = [BillingReadOrWrite]
+    permission_classes = [BillingPIIReadOrWrite]  # fayllar (pasport/shartnoma skanlari) — faqat PII rollari
     serializer_class = ContractFileSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [DjangoFilterBackend]

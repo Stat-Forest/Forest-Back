@@ -14,7 +14,7 @@ from rest_framework.response import Response
 
 from apps.billing.filters import BillingContractFilter
 from apps.billing.models import Contract, ContractActivity, ContractLand, ContractPrivilege, ContractYearlyAmount
-from apps.billing.permissions import BillingReadOrWrite
+from apps.billing.permissions import BillingReadOrWrite, BillingPIIReadOrWrite
 from apps.billing.scope import scope_queryset
 from apps.billing.serializers import (
     ChangeRenterSerializer,
@@ -147,7 +147,12 @@ class ContractViewSet(viewsets.GenericViewSet):
         serializer = ChangeRenterSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"errors": {"renter": serializer.errors}}, status=status.HTTP_400_BAD_REQUEST)
-        contract_writer.change_renter(contract, request.user, serializer.validated_data["renter"])
+        renter = serializer.validated_data["renter"]
+        if not contract_writer.renter_in_scope(renter, contract, request.user):
+            # billing_user o'z doirasidan tashqaridagi ijarachini biriktirib, uning
+            # to'liq ma'lumotini ko'ra olmasin (audit B7)
+            return Response({"errors": {"renter": ["Ijarachi topilmadi"]}}, status=status.HTTP_400_BAD_REQUEST)
+        contract_writer.change_renter(contract, request.user, renter)
         return self._detail(contract)
 
     @action(detail=True, methods=["get"], url_path="history")
@@ -247,7 +252,7 @@ class ContractViewSet(viewsets.GenericViewSet):
             })
         return Response({"count": len(results), "results": results})
 
-    @action(detail=False, methods=["get"], url_path="export-excel")
+    @action(detail=False, methods=["get"], url_path="export-excel", permission_classes=[BillingPIIReadOrWrite])
     def export_excel(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         content = build_contracts_workbook(queryset)

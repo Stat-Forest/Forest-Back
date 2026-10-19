@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -22,6 +23,8 @@ from apps.reports.models import ReportItemInner, StatementColumn
 from apps.reports.exports.excel_export import export_universal_report_to_excel_v2
 from apps.reports.services.report_import.columns import is_plant_based_statement
 from apps.reports.serializers.export.export_serializers import ReportExcelExportRequestSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def _is_safe_export_filename(filename: str) -> bool:
@@ -72,8 +75,10 @@ class ReportExcelExportAPIView(APIView):
             return self._do_export(request, report_ids, lang, respond_json)
         except (Http404, PermissionDenied):
             raise
-        except Exception as e:
-            return Response({"detail": "Export xatosi", "error": str(e)}, status=500)
+        except Exception:
+            # Istisno matni mijozga qaytarilmaydi (ichki yo'llar/so'rovlar oshkor bo'lmasin)
+            logger.exception("Excel eksport xatosi")
+            return Response({"detail": "Export xatosi"}, status=500)
 
     def get(self, request, *args, **kwargs):
         """
@@ -102,8 +107,10 @@ class ReportExcelExportAPIView(APIView):
             return self._do_export(request, report_ids, lang, respond_json)
         except (Http404, PermissionDenied):
             raise
-        except Exception as e:
-            return Response({"detail": "Export xatosi", "error": str(e)}, status=500)
+        except Exception:
+            # Istisno matni mijozga qaytarilmaydi (ichki yo'llar/so'rovlar oshkor bo'lmasin)
+            logger.exception("Excel eksport xatosi")
+            return Response({"detail": "Export xatosi"}, status=500)
 
     def _do_export(self, request, report_ids, lang, respond_json: bool = False):
         # Optimallashtirilgan queryset
@@ -118,12 +125,15 @@ class ReportExcelExportAPIView(APIView):
             )
         )
 
-        # Ijara billing rollari: faqat kadastr formalari va o'z ko'lamidagi hisobotlar
+        # Ijara billing rollari: faqat kadastr formalari
         if is_billing_role(request.user):
             requested_statement_ids = set(reports.values_list("statement_id", flat=True))
             if not all(is_kadastr_child(sid) for sid in requested_statement_ids):
                 raise PermissionDenied("Bu hisobot formasi sizning rolingiz uchun yopiq.")
-            reports = scope_reports_for_user(reports, request.user)
+
+        # Har qanday rol uchun foydalanuvchi ko'lami (tashkilot / bo'lim / hudud) —
+        # boshqa tashkilot hisobotini UUID bilan eksport qilib bo'lmaydi (audit A3).
+        reports = scope_reports_for_user(reports, request.user)
 
         if not reports.exists():
             raise Http404("Tanlangan reportlar topilmadi.")

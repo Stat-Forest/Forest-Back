@@ -17,6 +17,9 @@ from apps.users.models import CustomUser
 
 WRITER_ROLES = {CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER, CustomUser.Role.SUPER_ADMIN}
 BILLING_ROLES = {CustomUser.Role.BILLING_USER, CustomUser.Role.BILLING_SUPER}
+# Ijarachi shaxsiy ma'lumotlari (PINFL, pasport, telefon, manzil) ko'rinadigan rollar (audit A4).
+# Qolgan rollar billing monitoringini maskalangan holda ko'radi; ro'yxat/eksport/fayllar yopiq.
+PII_ROLES = BILLING_ROLES | {CustomUser.Role.SUPER_ADMIN, CustomUser.Role.RAHBARIYAT}
 NOT_ASSIGNED_MESSAGE = "Bu xo'jalik sizga biriktirilmagan"
 
 _CACHE_ATTR = "_billing_xojalik_ids_cache"
@@ -29,6 +32,10 @@ def _is_authenticated(user) -> bool:
 def is_billing_role(user) -> bool:
     """`billing_user` yoki `billing_super` (stat'da kadastr bo'limi bilan cheklangan rollar)."""
     return _is_authenticated(user) and getattr(user, "role", None) in BILLING_ROLES
+
+
+def can_view_renter_pii(user) -> bool:
+    return _is_authenticated(user) and (getattr(user, "role", None) in PII_ROLES or bool(user.is_superuser))
 
 
 def is_scoped_billing_user(user) -> bool:

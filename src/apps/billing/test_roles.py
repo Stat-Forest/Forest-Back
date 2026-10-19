@@ -32,8 +32,9 @@ class BillingRoleAccessTest(APITestCase):
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(Contract.objects.count(), 0)
 
-    def test_support_admin_can_read_billing(self):
-        self.assertEqual(auth(self.client, self.support).get(f"{BASE}/contracts/").status_code, 200)
+    def test_support_admin_cannot_read_billing(self):
+        # Audit B11: ijarachilar PINFL/pasporti support_admin uchun yopiq
+        self.assertEqual(auth(self.client, self.support).get(f"{BASE}/contracts/").status_code, 403)
 
     def test_billing_user_can_write(self):
         resp = auth(self.client, self.billing).post(f"{BASE}/contracts/", contract_payload(self.ref), format="json")
@@ -94,5 +95,5 @@ class RoleAccessRulesUnitTest(APITestCase):
     def test_support_admin_rules_unchanged_and_default_method(self):
         self.assertFalse(is_path_allowed_for_role("support_admin", "/api/v1/reports/"))
         self.assertTrue(is_path_allowed_for_role("support_admin", "/api/v1/reports/statements/"))
-        self.assertTrue(is_path_allowed_for_role("support_admin", "/api/v1/billing/contracts/"))
+        self.assertFalse(is_path_allowed_for_role("support_admin", "/api/v1/billing/contracts/"))
         self.assertTrue(is_path_allowed_for_role("rahbariyat", "/api/v1/reports/create/", "POST"))

@@ -1,15 +1,50 @@
+import base64
+import binascii
+import hashlib
 import logging
+
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import views, permissions, exceptions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
 from apps.logs.models import HistoryActionJournal
+from apps.authentications.service.refresh_cookie import set_refresh_cookie
 from .services import EimzoServiceApi
 from drf_spectacular.utils import extend_schema
 
 logger = logging.getLogger(__name__)
 eimzo_api = EimzoServiceApi()
+
+# Login challenge'lari: server bergan, bir martalik (audit B1). Ilgari frontend
+# tasodifiy matn imzolardi va backend uni hech narsaga bog'lamasdi — istalgan
+# eski PKCS#7 (masalan hisobot imzosi) bilan login qilish mumkin edi.
+LOGIN_CHALLENGE_TTL = 180
+
+
+def _challenge_key(challenge: str) -> str:
+    return "eimzo:login_challenge:" + hashlib.sha256(challenge.encode("utf-8")).hexdigest()
+
+
+def consume_login_challenge(challenge: str, pkcs7: str) -> None:
+    """Challenge biz bergan va ishlatilmagan ekanini, pkcs7 ichida aynan shu matn
+    borligini tekshiradi; muvaffaqiyatda challenge bir martalik bo'lib o'chiriladi."""
+    if not challenge or not isinstance(challenge, str):
+        raise exceptions.AuthenticationFailed({"success": False, "err_msg": "Login challenge yuborilmadi."})
+    key = _challenge_key(challenge)
+    if not cache.get(key):
+        raise exceptions.AuthenticationFailed({
+            "success": False, "err_msg": "Challenge topilmadi yoki muddati o'tdi. Qaytadan urinib ko'ring."})
+    try:
+        raw = base64.b64decode(pkcs7)
+    except (ValueError, binascii.Error):
+        raise exceptions.AuthenticationFailed({"success": False, "err_msg": "pkcs7 formati noto'g'ri."})
+    if challenge.encode("utf-8") not in raw:
+        raise exceptions.AuthenticationFailed({
+            "success": False, "err_msg": "Imzolangan matn berilgan challenge'ga mos emas."})
+    cache.delete(key)
 
 
 @extend_schema(tags=["E-imzo"])
@@ -21,7 +56,10 @@ class EimzoChallengeView(views.APIView):
         logger.debug("E-imzo challenge: ok=%s status=%s", ok, status_code)
         if not ok:
             raise exceptions.ValidationError({"success": False, "err_msg": data})
-        return Response({"success": True, "challenge": data.get("challenge")})
+        challenge = data.get("challenge")
+        if challenge:
+            cache.set(_challenge_key(str(challenge)), 1, LOGIN_CHALLENGE_TTL)
+        return Response({"success": True, "challenge": challenge})
 
 
 @extend_schema(tags=["E-imzo"])
@@ -54,6 +92,12 @@ class EimzoLoginView(views.APIView):
         if not pkcs7:
             raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7 field is required"})
 
+        # 0. Imzolangan matn — biz bergan bir martalik challenge (audit B1).
+        #    EIMZO_LOGIN_REQUIRE_CHALLENGE=False faqat eski frontend bilan
+        #    vaqtinchalik moslik uchun.
+        if getattr(settings, "EIMZO_LOGIN_REQUIRE_CHALLENGE", True):
+            consume_login_challenge(request.data.get("challenge"), pkcs7)
+
         # 1. E-Imzo server orqali auth
         ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
         logger.debug("E-imzo backend auth: ok=%s status=%s", ok, status_code)
@@ -83,10 +127,13 @@ class EimzoLoginView(views.APIView):
         tin = subject_name.get("1.2.860.3.16.1.1")
         cn = subject_name.get("CN", "")
 
-        if not pinfl and not tin:
+        # PINFL majburiy: foydalanuvchi faqat PINFL bilan aniqlanadi. TIN yuridik
+        # shaxs sertifikatida tashkilot STIR'i bo'lib, bir tashkilotdagi hamma
+        # xodimda bir xil — u bilan akkaunt topib bo'lmaydi (audit A1).
+        if not pinfl:
             raise exceptions.AuthenticationFailed({
                 "success": False,
-                "err_msg": "Sertifikatda PINFL yoki TIN mavjud emas."
+                "err_msg": "Sertifikatda PINFL mavjud emas. Kirish rad etildi."
             })
 
         # ----------------------------------------------------------
@@ -108,15 +155,10 @@ class EimzoLoginView(views.APIView):
                 "err_msg": f"TIN={tin} bo'yicha tizimda tashkilot topilmadi. Kirish rad etildi."
             })
 
-        # 4. Userni topish — PINFL ustunlik qiladi, keyin TIN
-        user = None
+        # 4. Userni topish — faqat PINFL bo'yicha (TIN fallback yo'q)
+        pinfl = pinfl.strip()
+        user = CustomUser.objects.filter(pinfl=pinfl).first()
         created = False
-
-        if pinfl:
-            user = CustomUser.objects.filter(pinfl=pinfl).first()
-
-        if user is None and tin:
-            user = CustomUser.objects.filter(tin=tin).first()
 
         # ----------------------------------------------------------
         # 5. Mavjud user uchun — organization TENGLIK tekshiruvi
@@ -136,39 +178,40 @@ class EimzoLoginView(views.APIView):
                 })
             # mos kelsa — hech narsa qilmaymiz, davom etamiz
 
-        # 6. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
+        # 6. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi).
+        #    Tashkilot kalitiga ega har kim avtomatik rahbar bo'lib qolmasligi uchun
+        #    (audit A2) user FAOL EMAS va oddiy xodim rolida yaratiladi — admin
+        #    tekshirib faollashtiradi va kerak bo'lsa rolni ko'taradi.
         if user is None:
             logger.info("E-imzo: yangi foydalanuvchi yaratilmoqda (TIN=%s)", tin)
 
-            lookup = {}
-            if pinfl:
-                lookup["pinfl"] = pinfl.strip()
-            elif tin:
-                lookup["tin"] = tin.strip()
-            else:
-                raise ValueError("PINFL yoki TIN mavjud emas")
-
-            generated_email = f"{pinfl or tin}@eimzo.local"
-
             user, created = CustomUser.objects.get_or_create(
-                **lookup,
+                pinfl=pinfl,
                 defaults={
-                    "email": generated_email,
+                    "email": f"{pinfl}@eimzo.local",
                     "first_name": subject_name.get("Name", ""),
                     "last_name": subject_name.get("SURNAME", ""),
                     "father_name": "",
-                    "passport_number": "AA0000000",
+                    "passport_number": "",
                     "date_of_place": "",
                     "address": "",
                     "gender": CustomUser.Gender.MALE,
-                    "role": CustomUser.Role.TASHKILOT_RAHBARI,
+                    "role": CustomUser.Role.TASHKILOT_HODIMI,
                     "organization": cert_organization,  # <-- majburiy, TIN orqali tasdiqlangan
-                    "pinfl": pinfl,
                     "tin": tin,
-                    "is_active": True,
+                    "is_active": False,
                     "full_name": cn,
                 },
             )
+            if created:
+                HistoryActionJournal.objects.create(
+                    user=user,
+                    action='add',
+                    model_name='CustomUser',
+                    object_repr=str(user),
+                    object_id=str(user.id),
+                    change_message="E-imzo orqali ro'yxatdan o'tdi (faollashtirish kutilmoqda)",
+                )
 
             logger.info(
                 "E-imzo: %s user_id=%s",
@@ -190,9 +233,13 @@ class EimzoLoginView(views.APIView):
 
 
         if not user.is_active:
-            raise exceptions.AuthenticationFailed({
+            raise exceptions.PermissionDenied({
                 "success": False,
-                "err_msg": "Foydalanuvchi bloklangan."
+                "err_msg": (
+                    "Hisobingiz yaratildi, administrator tasdig'i kutilmoqda."
+                    if created else
+                    "Foydalanuvchi faol emas. Administratorga murojaat qiling."
+                ),
             })
 
         # 7. full_name yangilash (agar bo'sh bo'lsa)
@@ -218,11 +265,11 @@ class EimzoLoginView(views.APIView):
         # 10. Journal
         HistoryActionJournal.objects.create(
             user=user,
-            action='add' if created else 'login',
+            action='login',
             model_name='CustomUser',
             object_repr=str(user),
             object_id=str(user.id),
-            change_message="E-imzo orqali ro'yxatdan o'tdi" if created else "E-imzo orqali tizimga kirdi"
+            change_message="E-imzo orqali tizimga kirdi",
         )
 
         logger.info("E-imzo login muvaffaqiyatli: user_id=%s", user.id)
@@ -241,7 +288,9 @@ class EimzoLoginView(views.APIView):
             "is_new_user": created,
         }
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        # Refresh token HttpOnly cookie'da ham (audit A5)
+        return set_refresh_cookie(Response(response_data, status=status.HTTP_200_OK), str(refresh))
+
 
 @extend_schema(tags=["E-imzo"])
 class SavePkcsView(views.APIView):

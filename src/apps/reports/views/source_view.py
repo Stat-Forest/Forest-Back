@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.generics import ListAPIView
 
 from apps.reports.models import Report
+from apps.reports.permissions.report_scope import scope_reports_for_user
 from apps.reports.serializers.source_serializers import SourceReportSerializer
 
 
@@ -35,7 +36,8 @@ class AcceptedKochatNiholSourceReportsAPIView(ListAPIView):
     )
 
     def get_queryset(self):
-        qs = self.queryset
+        # Foydalanuvchi ko'lami (tashkilot / bo'lim / hudud) — audit B8
+        qs = scope_reports_for_user(self.queryset, self.request.user)
 
         organization_id = self.request.query_params.get("organization")
         if organization_id:
