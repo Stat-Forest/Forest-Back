@@ -26,3 +26,11 @@ RUN pip install --upgrade pip && \
 
 # Copy project source
 COPY src /app
+
+# Konteyner root'da ishlamaydi (audit B14). Bind-mount qilingan papkalar
+# (src, media, staticfiles, backups, /var/log/forest-back, .env) deploy skriptida
+# shu UID'ga chown qilinadi (deploy.yml).
+RUN useradd --system --uid 1000 --create-home app \
+    && mkdir -p /var/log/forest-back /app/media /app/staticfiles /backups \
+    && chown -R app:app /app /var/log/forest-back /backups
+USER app
