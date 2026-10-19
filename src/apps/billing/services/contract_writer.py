@@ -199,6 +199,10 @@ def resolve_import_references(contract_data: dict, user=None) -> None:
 # ---------------------------------------------------------------------------
 # Ijarachi
 # ---------------------------------------------------------------------------
+def renter_in_scope(renter: Renter, instance: Contract | None, user) -> bool:
+    return _renter_in_scope(renter, instance, user)
+
+
 def _renter_in_scope(renter: Renter, instance: Contract | None, user) -> bool:
     """billing_user faqat o'z xo'jaliklaridagi (yoki shartnomasiz) ijarachini tahrirlaydi."""
     ids = billing_xojalik_ids(user)
