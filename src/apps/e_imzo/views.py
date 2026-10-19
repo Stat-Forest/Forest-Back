@@ -83,10 +83,13 @@ class EimzoLoginView(views.APIView):
         tin = subject_name.get("1.2.860.3.16.1.1")
         cn = subject_name.get("CN", "")
 
-        if not pinfl and not tin:
+        # PINFL majburiy: foydalanuvchi faqat PINFL bilan aniqlanadi. TIN yuridik
+        # shaxs sertifikatida tashkilot STIR'i bo'lib, bir tashkilotdagi hamma
+        # xodimda bir xil — u bilan akkaunt topib bo'lmaydi (audit A1).
+        if not pinfl:
             raise exceptions.AuthenticationFailed({
                 "success": False,
-                "err_msg": "Sertifikatda PINFL yoki TIN mavjud emas."
+                "err_msg": "Sertifikatda PINFL mavjud emas. Kirish rad etildi."
             })
 
         # ----------------------------------------------------------
@@ -108,15 +111,10 @@ class EimzoLoginView(views.APIView):
                 "err_msg": f"TIN={tin} bo'yicha tizimda tashkilot topilmadi. Kirish rad etildi."
             })
 
-        # 4. Userni topish — PINFL ustunlik qiladi, keyin TIN
-        user = None
+        # 4. Userni topish — faqat PINFL bo'yicha (TIN fallback yo'q)
+        pinfl = pinfl.strip()
+        user = CustomUser.objects.filter(pinfl=pinfl).first()
         created = False
-
-        if pinfl:
-            user = CustomUser.objects.filter(pinfl=pinfl).first()
-
-        if user is None and tin:
-            user = CustomUser.objects.filter(tin=tin).first()
 
         # ----------------------------------------------------------
         # 5. Mavjud user uchun — organization TENGLIK tekshiruvi
@@ -136,39 +134,40 @@ class EimzoLoginView(views.APIView):
                 })
             # mos kelsa — hech narsa qilmaymiz, davom etamiz
 
-        # 6. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi)
+        # 6. Topilmasa — yangi user yaratish (qayta create bo'lmasligi uchun get_or_create ishlatiladi).
+        #    Tashkilot kalitiga ega har kim avtomatik rahbar bo'lib qolmasligi uchun
+        #    (audit A2) user FAOL EMAS va oddiy xodim rolida yaratiladi — admin
+        #    tekshirib faollashtiradi va kerak bo'lsa rolni ko'taradi.
         if user is None:
             logger.info("E-imzo: yangi foydalanuvchi yaratilmoqda (TIN=%s)", tin)
 
-            lookup = {}
-            if pinfl:
-                lookup["pinfl"] = pinfl.strip()
-            elif tin:
-                lookup["tin"] = tin.strip()
-            else:
-                raise ValueError("PINFL yoki TIN mavjud emas")
-
-            generated_email = f"{pinfl or tin}@eimzo.local"
-
             user, created = CustomUser.objects.get_or_create(
-                **lookup,
+                pinfl=pinfl,
                 defaults={
-                    "email": generated_email,
+                    "email": f"{pinfl}@eimzo.local",
                     "first_name": subject_name.get("Name", ""),
                     "last_name": subject_name.get("SURNAME", ""),
                     "father_name": "",
-                    "passport_number": "AA0000000",
+                    "passport_number": "",
                     "date_of_place": "",
                     "address": "",
                     "gender": CustomUser.Gender.MALE,
-                    "role": CustomUser.Role.TASHKILOT_RAHBARI,
+                    "role": CustomUser.Role.TASHKILOT_HODIMI,
                     "organization": cert_organization,  # <-- majburiy, TIN orqali tasdiqlangan
-                    "pinfl": pinfl,
                     "tin": tin,
-                    "is_active": True,
+                    "is_active": False,
                     "full_name": cn,
                 },
             )
+            if created:
+                HistoryActionJournal.objects.create(
+                    user=user,
+                    action='add',
+                    model_name='CustomUser',
+                    object_repr=str(user),
+                    object_id=str(user.id),
+                    change_message="E-imzo orqali ro'yxatdan o'tdi (faollashtirish kutilmoqda)",
+                )
 
             logger.info(
                 "E-imzo: %s user_id=%s",
@@ -190,9 +189,13 @@ class EimzoLoginView(views.APIView):
 
 
         if not user.is_active:
-            raise exceptions.AuthenticationFailed({
+            raise exceptions.PermissionDenied({
                 "success": False,
-                "err_msg": "Foydalanuvchi bloklangan."
+                "err_msg": (
+                    "Hisobingiz yaratildi, administrator tasdig'i kutilmoqda."
+                    if created else
+                    "Foydalanuvchi faol emas. Administratorga murojaat qiling."
+                ),
             })
 
         # 7. full_name yangilash (agar bo'sh bo'lsa)
@@ -218,11 +221,11 @@ class EimzoLoginView(views.APIView):
         # 10. Journal
         HistoryActionJournal.objects.create(
             user=user,
-            action='add' if created else 'login',
+            action='login',
             model_name='CustomUser',
             object_repr=str(user),
             object_id=str(user.id),
-            change_message="E-imzo orqali ro'yxatdan o'tdi" if created else "E-imzo orqali tizimga kirdi"
+            change_message="E-imzo orqali tizimga kirdi",
         )
 
         logger.info("E-imzo login muvaffaqiyatli: user_id=%s", user.id)
