@@ -11,6 +11,7 @@ from apps.reports.models import (
     PlantPlanItem,
     StatementColumn,
 )
+from apps.reports.permissions.report_scope import scope_plans_for_user
 from apps.reports.serializers.plan import FlatPlanItemSerializer
 
 
@@ -63,7 +64,8 @@ class PlanItemDetailAPIView(APIView):
             plan_filters["season"] = season
 
         try:
-            plan = Plan.objects.select_related("statement").get(**plan_filters)
+            # Boshqa tashkilot rejasi ko'rinmasin (audit B8)
+            plan = scope_plans_for_user(Plan.objects.select_related("statement"), request.user).get(**plan_filters)
         except Plan.DoesNotExist:
             return Response([], status=status.HTTP_200_OK)
 
