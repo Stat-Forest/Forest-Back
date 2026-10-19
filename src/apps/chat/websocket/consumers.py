@@ -5,6 +5,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from apps.chat.websocket.chat_serializers import SendMessageSerializer
+from apps.chat.websocket.middleware import get_user_from_token
 from apps.chat.websocket.events import (
     CONVERSATION_ASSIGNED,
     CONVERSATION_CLOSED,
@@ -133,6 +134,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if not isinstance(content, dict):
             await self._send_error("Payload must be a JSON object.")
             return
+
+        # Token faqat handshake'da emas, har xabarda tekshiriladi: logout
+        # (denylist), muddati tugagan yoki harakatsiz sessiya bilan ochiq
+        # soket orqali yozib bo'lmaydi (audit B4).
+        if "jwt_token" in self.scope:
+            user = await get_user_from_token(self.scope.get("jwt_token") or "")
+            if user.is_anonymous:
+                await self._send_error("Sessiya tugagan. Qaytadan kiring.")
+                await self.close(code=4401)
+                return
+            self.user = user
 
         serializer = SendMessageSerializer(data=content)
 

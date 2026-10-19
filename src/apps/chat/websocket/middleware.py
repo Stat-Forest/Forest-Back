@@ -110,6 +110,9 @@ class JWTAuthMiddleware(BaseMiddleware):
         send,
     ):
         token = token_from_subprotocols(scope)
+        # Consumer har xabarda tokenni qayta tekshiradi (logout / muddat /
+        # harakatsizlik) — audit B4
+        scope["jwt_token"] = token
 
         if token:
             scope["user"] = await get_user_from_token(token)
