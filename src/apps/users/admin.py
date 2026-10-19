@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef, Subquery, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +12,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from apps.users.models import CustomUser, PersonalInfo
 from apps.logs.models import HistoryActionJournal
 from apps.logs.mixins import AdminHistoryMixin
-from apps.users.admin_forms import CustomUserAdminForm
+from apps.users.admin_forms import CustomUserAdminForm, CustomUserCreationForm
 
 
 # ================================
@@ -98,7 +98,28 @@ class LoginStatusFilter(admin.SimpleListFilter):
 class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     model = CustomUser
     form = CustomUserAdminForm
+    add_form = CustomUserCreationForm
     inlines = [PersonalInfoInline]
+
+    # Faqat superuser huquq maydonlarini o'zgartira oladi (audit A9): aks holda
+    # is_staff bo'lgan har qanday xodim o'zini superuser qilib qo'yishi mumkin edi.
+    PRIVILEGE_FIELDS = ("is_superuser", "is_staff", "groups", "user_permissions")
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            kwargs["form"] = self.add_form
+        return super().get_form(request, obj, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return self.add_fieldsets
+        return super().get_fieldsets(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = tuple(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            fields += self.PRIVILEGE_FIELDS
+        return fields
     filter_horizontal = ("region_user_orgs",)
 
     list_display = (
@@ -137,7 +158,7 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
     actions = ["export_to_excel"]
 
     fieldsets = (
-        (_("Login Credentials"), {"fields": ("email", "password")}),
+        (_("Login Credentials"), {"fields": ("email", "password", "new_password")}),
         (_("Personal Info"), {
             "fields": (
                 "first_name",
@@ -467,10 +488,14 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
         return super().formfield_for_choice_field(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
-        if form.cleaned_data.get("password") and not change:
-            obj.set_password(form.cleaned_data["password"])
-        elif "password" in form.changed_data:
-            obj.set_password(obj.password)
+        if not request.user.is_superuser and (
+            obj.is_superuser or obj.role == CustomUser.Role.SUPER_ADMIN
+        ):
+            raise PermissionDenied("Superuser / super_admin huquqini faqat superuser bera oladi.")
+
+        new_password = form.cleaned_data.get("password1") if not change else form.cleaned_data.get("new_password")
+        if new_password:
+            obj.set_password(new_password)
 
         super().save_model(request, obj, form, change)
 
