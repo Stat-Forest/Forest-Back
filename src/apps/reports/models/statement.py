@@ -63,6 +63,16 @@ class Statement(AbstractBaseModel):
 
     objects = StatementManager()
 
+    def clean(self):
+        super().clean()
+        if self.calculate_expression:
+            from apps.reports.services.manual_repots.formula import FormulaError, parse_formula_lines
+            try:
+                parse_formula_lines(self.calculate_expression)
+            except FormulaError as e:
+                from django.core.exceptions import ValidationError
+                raise ValidationError({"calculate_expression": str(e)})
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         if is_new and hasattr(self, "name_uz") and self.name_uz:

@@ -1,5 +1,9 @@
+import logging
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from apps.reports.models import ReportItem, ReportItemInner, StatementColumn, Plant
+from apps.reports.services.manual_repots.formula import FormulaError, evaluate_formula, parse_formula_lines
+
+logger = logging.getLogger(__name__)
 
 
 def normalize(val) -> Decimal:
@@ -94,46 +98,23 @@ def calculate_plant_by_expressions(report):
         if to_create:
             ReportItemInner.objects.bulk_create(to_create)
 
-    # === Eval-safe context
-    safe_globals = {
-        "__builtins__": {},
-        "Decimal": Decimal,
-    }
+    # === Expressionlarni bajarish (xavfsiz parser, eval emas — audit A8)
+    try:
+        formula_lines = parse_formula_lines(expr_text)
+    except FormulaError as e:
+        logger.warning("Statement %s formulasi noto'g'ri: %s", report.statement_id, e)
+        return
 
-    # === Expressionlarni bajarish
-    for line in expr_text.splitlines():
-        line = line.strip()
-        if "=" not in line:
-            continue
-
-        expression, target = map(str.strip, line.split("="))
+    for expression, target_ordering in formula_lines:
         result_map = {}
 
         for plant_id in plant_ids:
-
-            # ✅ FIX: plant_id closure-ni muzlatib qo'yamiz
-            def column_fn(ordering, pid=plant_id):
-                return column(ordering, pid)
-
             try:
-                result = eval(
-                    expression,
-                    safe_globals,
-                    {"column": column_fn}
-                )
+                result = evaluate_formula(expression, lambda ordering, pid=plant_id: column(ordering, pid))
             except Exception as e:
-                print(f"❌ Eval error for {plant_id}: {e}")
+                logger.debug("Formula xatosi plant=%s: %s", plant_id, e)
                 result = Decimal("0")
 
             result_map[plant_id] = normalize(result)
-
-        # Target ordering maydonini tozalash
-        target_ordering = (
-            target.replace("column(", "")
-            .replace(")", "")
-            .replace("'", "")
-            .replace('"', "")
-            .strip()
-        )
 
         assign(target_ordering, result_map)
