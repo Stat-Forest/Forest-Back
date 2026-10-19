@@ -1,3 +1,4 @@
+from apps.reports.exports.excel_export import purge_old_exports
 from apps.utils.excel_safe import set_safe
 import os
 from datetime import datetime
@@ -201,6 +202,7 @@ def export_monitoring_to_excel(data: Dict[str, Any], lang: str = "uz") -> Tuple[
 
     export_dir = getattr(settings, "EXPORT_ROOT", os.path.join(settings.BASE_DIR, "exports"))
     os.makedirs(export_dir, exist_ok=True)
+    purge_old_exports(export_dir)
     file_path = os.path.join(export_dir, filename)
 
     wb = Workbook()

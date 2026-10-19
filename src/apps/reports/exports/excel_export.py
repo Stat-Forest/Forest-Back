@@ -1,5 +1,6 @@
 from apps.utils.excel_safe import append_safe
 import os
+import time
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import List, Dict, Any, Tuple, Optional, Set
@@ -182,6 +183,28 @@ def _sheet_title(raw_title: str, used: Set[str], fallback: str) -> str:
     return candidate
 
 
+EXPORT_RETENTION_SECONDS = 24 * 3600
+
+
+def purge_old_exports(export_dir: str, max_age: int = EXPORT_RETENTION_SECONDS) -> None:
+    """Eksport fayllari diskda to'planib qolmasin (audit C6): 24 soatdan eski
+    .xlsx fayllar yangi eksport paytida o'chiriladi (yuklab olish havolasi
+    baribir shu muddatgacha ishlatiladi)."""
+    try:
+        now = time.time()
+        for name in os.listdir(export_dir):
+            if not name.lower().endswith(".xlsx"):
+                continue
+            path = os.path.join(export_dir, name)
+            try:
+                if os.path.isfile(path) and now - os.path.getmtime(path) > max_age:
+                    os.remove(path)
+            except OSError:
+                pass
+    except OSError:
+        pass
+
+
 def export_universal_report_to_excel_v2(
     reports: List[Dict[str, Any]],
     *,
@@ -205,6 +228,7 @@ def export_universal_report_to_excel_v2(
     filename = f"{filename_prefix}_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
     export_dir = getattr(settings, "EXPORT_ROOT", os.path.join(settings.BASE_DIR, "exports"))
     os.makedirs(export_dir, exist_ok=True)
+    purge_old_exports(export_dir)
     file_path = os.path.join(export_dir, filename)
 
     wb = Workbook()
