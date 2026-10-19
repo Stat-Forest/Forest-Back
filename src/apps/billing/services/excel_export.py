@@ -5,6 +5,7 @@ billing'dagi ustun xaritasi + oxirida "ЖАМИ" qatori (=SUM formulalar).
 Faoliyat/yer/imtiyoz turlari ustunlarga tur nomi bo'yicha (katta-kichik harf
 va ortiqcha bo'sh joylarsiz) joylashtiriladi.
 """
+from apps.utils.excel_safe import set_safe
 from io import BytesIO
 from pathlib import Path
 
@@ -203,7 +204,7 @@ def build_contracts_workbook(queryset: QuerySet) -> bytes:
                 values["product_amount"] = product.product_amount
                 values["export_amount"] = product.export_amount
         for name, value in values.items():
-            ws.cell(row=row, column=COL[name], value=value)
+            set_safe(ws.cell(row=row, column=COL[name]), value)
 
         yearly_by_year = {ya.year: ya for ya in contract.yearly_amounts.all()}
         for i, year in enumerate(YEARS):

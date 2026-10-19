@@ -1,3 +1,4 @@
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from apps.users.models import CustomUser
 
 # Barcha tashkilotlarning ma'lumotini ko'radigan rollar
@@ -67,3 +68,19 @@ def allowed_organization_for_create(user, organization):
         regions = set(user.region_user_orgs.values_list("region", flat=True))
         return organization if organization.region in regions else None
     return None
+
+
+class HandbookReadOrAdminWrite(BasePermission):
+    """Ma'lumotnomalar: o'qish — har qanday autentifikatsiyalangan foydalanuvchi;
+    yuklash — faqat super_admin/rahbariyat (audit B5: ilgari har qanday xodim
+    cheksiz fayl yuklab diskni to'ldira olardi)."""
+
+    UPLOAD_ROLES = ("super_admin", "rahbariyat")
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return bool(user.is_superuser) or getattr(user, "role", None) in self.UPLOAD_ROLES

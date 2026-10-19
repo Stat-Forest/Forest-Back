@@ -1,3 +1,4 @@
+from apps.utils.excel_safe import set_safe
 import os
 from datetime import datetime
 from typing import Dict, Any, Tuple, List, Optional
@@ -186,7 +187,7 @@ def _write_header(ws, root_nodes: List[HeaderNode], start_row: int, start_col: i
             value = header_grid[level][col]
             if value:  # Only write non-empty cells
                 cell = ws.cell(row=start_row + level, column=start_col + col + 1)
-                cell.value = value
+                set_safe(cell, value)
 
     return max_depth, col_index
 
@@ -280,13 +281,13 @@ def export_monitoring_to_excel(data: Dict[str, Any], lang: str = "uz") -> Tuple[
 
         # Row yozish
         ws.cell(row=row_num, column=1, value=level)
-        ws.cell(row=row_num, column=2, value=hudud)
+        set_safe(ws.cell(row=row_num, column=2), hudud)
 
         # Har bir path uchun qiymatni topish
         for col_idx, path in enumerate(all_paths):
             path_key = tuple(path)
             value = flattened.get(path_key, "")
-            ws.cell(row=row_num, column=fixed_cols + col_idx + 1, value=value)
+            set_safe(ws.cell(row=row_num, column=fixed_cols + col_idx + 1), value)
 
         next_row = row_num + 1
 

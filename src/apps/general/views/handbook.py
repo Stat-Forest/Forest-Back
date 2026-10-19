@@ -1,3 +1,4 @@
+from apps.general.permissions import HandbookReadOrAdminWrite
 from rest_framework import generics,filters
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
@@ -28,6 +29,7 @@ class HandbookListCreateView(DRFHistoryMixin, generics.ListCreateAPIView):
     """
 
     serializer_class = HandBookSerializer
+    permission_classes = [HandbookReadOrAdminWrite]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

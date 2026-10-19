@@ -1,3 +1,4 @@
+from apps.utils.excel_safe import append_safe
 import os
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -223,7 +224,7 @@ def export_universal_report_to_excel_v2(
     def _empty_file():
         ws = wb.active
         ws.title = "Reports"
-        ws.append(["№", "Tashkilot nomi"])
+        append_safe(ws, ["№", "Tashkilot nomi"])
         wb.save(file_path)
         return file_path, filename
 
@@ -393,7 +394,7 @@ def export_universal_report_to_excel_v2(
         place(root, 0, fixed_cols)
 
         for row in header_grid:
-            ws.append(row)
+            append_safe(ws, row)
 
         for fixed_col in range(1, fixed_cols + 1):
             ws.merge_cells(
@@ -451,7 +452,7 @@ def export_universal_report_to_excel_v2(
                     if not any(v not in (None, "") for v in row_values[2:]):
                         continue
 
-                    ws.append(row_values)
+                    append_safe(ws, row_values)
                     for cell in ws[ws.max_row]:
                         cell.font = Font(bold=True)
                         cell.border = thin_border
@@ -480,7 +481,7 @@ def export_universal_report_to_excel_v2(
 
                     if not any(v not in (None, "") for v in row_values[2:]):
                         continue
-                    ws.append(row_values)
+                    append_safe(ws, row_values)
 
             _finish_sheet(ws, data_start_row, total_cols, thin_border, bold_jami=True)
             return
@@ -524,7 +525,7 @@ def export_universal_report_to_excel_v2(
                     # Butunlay bo'sh qator yozilmasin — saytda bunday qator yo'q
                     if not any(v not in (None, "") for v in row_values[2:]):
                         continue
-                    ws.append(row_values)
+                    append_safe(ws, row_values)
 
                 total_row = [display_index, jami_label]
                 totals_by_col = _totals_from_ind_report(
@@ -543,7 +544,7 @@ def export_universal_report_to_excel_v2(
                     total_row.append(_format_excel_display_value(col_total) if seen else "")
 
                 if any(v not in (None, "") for v in total_row[2:]):
-                    ws.append(total_row)
+                    append_safe(ws, total_row)
                 continue
 
             # ----- Plantlik ilova -----
@@ -579,7 +580,7 @@ def export_universal_report_to_excel_v2(
 
                 if not any(v not in (None, "") for v in row[3:]):
                     continue
-                ws.append(row)
+                append_safe(ws, row)
 
             # Tashkilot darajasidagi qiymat. Tartib:
             #   1) "Tashkilot Jami" hisobotidagi qiymat
@@ -605,7 +606,7 @@ def export_universal_report_to_excel_v2(
                 jami_row.append(_format_excel_display_value(value))
 
             if any(v not in (None, "") for v in jami_row[3:]):
-                ws.append(jami_row)
+                append_safe(ws, jami_row)
 
         _finish_sheet(ws, data_start_row, total_cols, thin_border)
 
