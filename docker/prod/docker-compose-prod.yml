@@ -192,8 +192,15 @@ services:
     networks:
       - forest_network
     restart: always
+    # VPN_KEY_PASSWORD .env dan (audit A7: parol va kalitlar gitda emas).
+    # Kalit fayllari (vpn.jks, truststore.jks, *.key) serverda
+    # /root/Forest-Back/e-imzo-server/keys/ da turadi — gitignore'da.
+    env_file:
+      - ../../.env
     environment:
       - TZ=Asia/Tashkent
+    volumes:
+      - ../../e-imzo-server/keys:/opt/e-imzo-server/keys:ro
 
 
 volumes:
