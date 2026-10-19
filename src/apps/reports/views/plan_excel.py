@@ -1,4 +1,5 @@
 # apps/reports/views/plan_excel.py
+from apps.reports.views.imports.import_excel import MAX_FILE_SIZE
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 
@@ -123,6 +124,11 @@ class PlanExcelImportAPIView(APIView):
         statement_id = request.query_params.get("statement") or request.data.get("statement")
         year = request.query_params.get("year") or request.data.get("year")
         season = request.query_params.get("season") or request.data.get("season") or None
+
+        if file_obj is not None and file_obj.size and file_obj.size > MAX_FILE_SIZE:
+            # Audit B15: openpyxl butun faylni xotiraga oladi — hajm chegarasi
+            return Response({"detail": f"Fayl hajmi {MAX_FILE_SIZE // (1024 * 1024)} MB dan oshmasligi kerak."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         missing = [
             name for name, val in (

@@ -3,7 +3,8 @@ from django.utils import timezone
 #
 def backup_upload_path(instance, filename):
     date = timezone.now()
-    return f"backups/{date.year}/{date.month:02d}/{date.day:02d}/{filename}"
+    # documents/ — himoyalangan prefiks (audit C14): DB dump ochiq /media/ ostida bo'lmasin
+    return f"documents/backups/{date.year}/{date.month:02d}/{date.day:02d}/{filename}"
 
 class Backup(models.Model):
     file = models.FileField(upload_to=backup_upload_path, null=True, blank=True)

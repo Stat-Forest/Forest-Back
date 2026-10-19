@@ -23,7 +23,8 @@ from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidd
 from django.views import View
 
 SALT = "protected-media"
-DEFAULT_PREFIXES = ("documents/", "resumes/", "handbooks/")
+# legacy_billing/: eski billing importi manbasi (ijarachilar PII) — ochiq bo'lmasin (audit C14)
+DEFAULT_PREFIXES = ("documents/", "resumes/", "handbooks/", "legacy_billing/")
 # nginx: location /protected-media/ { internal; alias /app/media/; }
 ACCEL_PREFIX = "/protected-media/"
 

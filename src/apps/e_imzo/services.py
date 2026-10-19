@@ -1,3 +1,4 @@
+import logging
 import requests
 from rest_framework.request import Request
 
@@ -5,6 +6,9 @@ from rest_framework.request import Request
 # worker cheksiz kutib qolmasligi uchun.
 EIMZO_TIMEOUT = (5, 30)
 EIMZO_UNAVAILABLE_MESSAGE = "E-imzo server javob bermadi. Birozdan keyin qayta urinib ko'ring."
+
+logger = logging.getLogger(__name__)
+
 
 class EimzoServiceApi:
     def __init__(self):
@@ -74,6 +78,9 @@ class EimzoServiceApi:
 
         # 1  = to'liq muvaffaqiyat (OCSP ishladi)
         # -1 = OCSP ishlamadi, lekin imzo va sertifikat VERIFIED — qabul qilamiz
+        if success_status == -1:
+            # Audit C4: OCSP ishlamadi — bekor qilingan sertifikat ham o'tishi mumkin; log'da ko'rinsin
+            logger.warning("E-imzo backend/auth: OCSP tekshirilmadi (status -1), imzo qabul qilindi")
         if success_status not in (1, -1):
             err_messages = {
                 -5: "Imzo vaqti noto'g'ri. Kompyuter vaqtini tekshiring.",

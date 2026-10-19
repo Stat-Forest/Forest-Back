@@ -33,7 +33,7 @@ urlpatterns = [
 # Himoyalangan media: imzolangan ?t= token yoki admin sessiyasi bilan.
 # static() dan oldin turishi shart (DEBUG'da static() hamma /media/ ni beradi).
 urlpatterns += [
-    re_path(r"^media/(?P<path>(documents|resumes|handbooks)/.+)$", ProtectedMediaView.as_view(), name="protected-media"),
+    re_path(r"^media/(?P<path>(documents|resumes|handbooks|legacy_billing)/.+)$", ProtectedMediaView.as_view(), name="protected-media"),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
