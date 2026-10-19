@@ -50,6 +50,8 @@ class LandManagementSummaryAPIView(APIView):
     )
     def get(self, request):
         lang = request.GET.get("lang", "uz")
+        if lang not in ("uz", "ru"):
+            lang = "uz"  # ixtiyoriy matn kesh kalitiga tushmasin (audit C5)
         cache_key = f"land_management_summary:{lang}"
 
         # ======================================================

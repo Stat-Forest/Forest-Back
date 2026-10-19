@@ -60,7 +60,7 @@ class ReportSignatureVerifyAPIView(views.APIView):
             "timestamp_tsa": tst.get("tsa"),
             "signer": {
                 "full_name": signature.signer_cn,
-                "tin": signature.signer_tin,
+                "tin": _mask_pinfl(signature.signer_tin),  # ochiq sahifada to'liq STIR ham ko'rsatilmaydi (audit C16)
                 "pinfl_masked": _mask_pinfl(signature.signer_pinfl),
                 "cert_serial": signature.cert_serial,
                 "cert_valid_from": signature.cert_valid_from,
