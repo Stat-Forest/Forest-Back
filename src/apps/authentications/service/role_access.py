@@ -54,6 +54,7 @@ BILLING_ROLE_RULES = {
 DEFAULT_ROLE_PATH_RULES = {
     "support_admin": {
         "deny": [
+            "/api/v1/billing/",   # ijarachilar PINFL/pasporti, shartnoma fayllari (audit B11)
             "/api/v1/reports/",
             "/api/v1/statistics/",
             "/api/v1/sum/",
