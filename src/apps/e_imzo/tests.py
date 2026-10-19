@@ -1,7 +1,11 @@
+import base64
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APITestCase
+
+from apps.authentications.service.refresh_cookie import REFRESH_COOKIE
 
 from apps.general.models import Organization
 
@@ -36,14 +40,58 @@ class EimzoLoginAccountBindingTest(APITestCase):
             organization=self.org, pinfl=RAHBAR_PINFL, tin=ORG_TIN,
         )
 
-    def _login(self, pinfl, tin=ORG_TIN):
+    def _challenge(self, value="9b573e40-cefd-42cc-a534-f6e78b27c2ae"):
+        with patch("apps.e_imzo.views.eimzo_api.eri_challenge", return_value=(True, 200, {"challenge": value})):
+            resp = self.client.get("/api/v1/e_imzo/challenge/")
+        self.assertEqual(resp.status_code, 200)
+        return resp.data["challenge"]
+
+    def _login(self, pinfl, tin=ORG_TIN, challenge=None, pkcs7=None):
+        # Testda "imzo" = imzolangan matnning base64'i (attached PKCS#7 ichida matn ochiq turadi)
+        if challenge is None:
+            challenge = self._challenge()
+        body = {"pkcs7": pkcs7 or base64.b64encode(challenge.encode()).decode(), "challenge": challenge}
         with patch("apps.e_imzo.views.eimzo_api.eri_backend_auth", return_value=_auth_ok(pinfl, tin)):
-            return self.client.post(URL, {"pkcs7": "dummy"}, format="json")
+            return self.client.post(URL, body, format="json")
 
     def test_known_pinfl_logs_in_as_that_user(self):
         resp = self._login(RAHBAR_PINFL)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["user_id"], self.rahbar.id)
+        # Audit A5: refresh HttpOnly cookie'da ham
+        self.assertTrue(resp.cookies[REFRESH_COOKIE]["httponly"])
+
+
+class EimzoLoginChallengeBindingTest(EimzoLoginAccountBindingTest):
+    """Audit B1: login'da imzolanadigan matn server bergan, bir martalik challenge bo'lishi shart."""
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def test_client_made_challenge_is_rejected(self):
+        resp = self._login(RAHBAR_PINFL, challenge="client-random-123")
+        self.assertIn(resp.status_code, (400, 401, 403))
+        self.assertNotIn("access", resp.data)
+
+    def test_missing_challenge_is_rejected(self):
+        ch = self._challenge()
+        with patch("apps.e_imzo.views.eimzo_api.eri_backend_auth", return_value=_auth_ok(RAHBAR_PINFL, ORG_TIN)):
+            resp = self.client.post(URL, {"pkcs7": base64.b64encode(ch.encode()).decode()}, format="json")
+        self.assertIn(resp.status_code, (400, 401, 403))
+        self.assertNotIn("access", resp.data)
+
+    def test_pkcs7_not_containing_challenge_is_rejected(self):
+        ch = self._challenge()
+        resp = self._login(RAHBAR_PINFL, challenge=ch, pkcs7=base64.b64encode(b"boshqa matn").decode())
+        self.assertIn(resp.status_code, (400, 401, 403))
+        self.assertNotIn("access", resp.data)
+
+    def test_challenge_is_single_use(self):
+        ch = self._challenge()
+        self.assertEqual(self._login(RAHBAR_PINFL, challenge=ch).status_code, 200)
+        resp = self._login(RAHBAR_PINFL, challenge=ch)
+        self.assertIn(resp.status_code, (400, 401, 403))
 
     def test_unknown_pinfl_with_same_organization_tin_does_not_get_rahbar_account(self):
         resp = self._login(OTHER_PINFL)
