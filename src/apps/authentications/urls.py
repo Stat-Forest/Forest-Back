@@ -9,7 +9,7 @@ from apps.authentications.views.forgot_passwords import (
     NewPasswordAPIView,
 )
 # from apps.e_imzo.views import EimzoJWTLoginView
-from rest_framework_simplejwt.views import TokenRefreshView
+from apps.authentications.views.token_refresh import CookieTokenRefreshView
 
 
 urlpatterns = [
@@ -24,5 +24,5 @@ urlpatterns = [
     path("change-password/", ChangePasswordAPIView.as_view(), name="change-password"),
     # path("login/eimzo/", EimzoJWTLoginView.as_view(), name="eimzo-jwt-login"),
 
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh")
+    path("token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh")
 ]

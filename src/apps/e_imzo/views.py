@@ -1,15 +1,50 @@
+import base64
+import binascii
+import hashlib
 import logging
+
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import views, permissions, exceptions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
 from apps.logs.models import HistoryActionJournal
+from apps.authentications.service.refresh_cookie import set_refresh_cookie
 from .services import EimzoServiceApi
 from drf_spectacular.utils import extend_schema
 
 logger = logging.getLogger(__name__)
 eimzo_api = EimzoServiceApi()
+
+# Login challenge'lari: server bergan, bir martalik (audit B1). Ilgari frontend
+# tasodifiy matn imzolardi va backend uni hech narsaga bog'lamasdi — istalgan
+# eski PKCS#7 (masalan hisobot imzosi) bilan login qilish mumkin edi.
+LOGIN_CHALLENGE_TTL = 180
+
+
+def _challenge_key(challenge: str) -> str:
+    return "eimzo:login_challenge:" + hashlib.sha256(challenge.encode("utf-8")).hexdigest()
+
+
+def consume_login_challenge(challenge: str, pkcs7: str) -> None:
+    """Challenge biz bergan va ishlatilmagan ekanini, pkcs7 ichida aynan shu matn
+    borligini tekshiradi; muvaffaqiyatda challenge bir martalik bo'lib o'chiriladi."""
+    if not challenge or not isinstance(challenge, str):
+        raise exceptions.AuthenticationFailed({"success": False, "err_msg": "Login challenge yuborilmadi."})
+    key = _challenge_key(challenge)
+    if not cache.get(key):
+        raise exceptions.AuthenticationFailed({
+            "success": False, "err_msg": "Challenge topilmadi yoki muddati o'tdi. Qaytadan urinib ko'ring."})
+    try:
+        raw = base64.b64decode(pkcs7)
+    except (ValueError, binascii.Error):
+        raise exceptions.AuthenticationFailed({"success": False, "err_msg": "pkcs7 formati noto'g'ri."})
+    if challenge.encode("utf-8") not in raw:
+        raise exceptions.AuthenticationFailed({
+            "success": False, "err_msg": "Imzolangan matn berilgan challenge'ga mos emas."})
+    cache.delete(key)
 
 
 @extend_schema(tags=["E-imzo"])
@@ -21,7 +56,10 @@ class EimzoChallengeView(views.APIView):
         logger.debug("E-imzo challenge: ok=%s status=%s", ok, status_code)
         if not ok:
             raise exceptions.ValidationError({"success": False, "err_msg": data})
-        return Response({"success": True, "challenge": data.get("challenge")})
+        challenge = data.get("challenge")
+        if challenge:
+            cache.set(_challenge_key(str(challenge)), 1, LOGIN_CHALLENGE_TTL)
+        return Response({"success": True, "challenge": challenge})
 
 
 @extend_schema(tags=["E-imzo"])
@@ -53,6 +91,12 @@ class EimzoLoginView(views.APIView):
 
         if not pkcs7:
             raise exceptions.ValidationError({"success": False, "err_msg": "pkcs7 field is required"})
+
+        # 0. Imzolangan matn — biz bergan bir martalik challenge (audit B1).
+        #    EIMZO_LOGIN_REQUIRE_CHALLENGE=False faqat eski frontend bilan
+        #    vaqtinchalik moslik uchun.
+        if getattr(settings, "EIMZO_LOGIN_REQUIRE_CHALLENGE", True):
+            consume_login_challenge(request.data.get("challenge"), pkcs7)
 
         # 1. E-Imzo server orqali auth
         ok, status_code, data = eimzo_api.eri_backend_auth(request, pkcs7)
@@ -244,7 +288,9 @@ class EimzoLoginView(views.APIView):
             "is_new_user": created,
         }
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        # Refresh token HttpOnly cookie'da ham (audit A5)
+        return set_refresh_cookie(Response(response_data, status=status.HTTP_200_OK), str(refresh))
+
 
 @extend_schema(tags=["E-imzo"])
 class SavePkcsView(views.APIView):

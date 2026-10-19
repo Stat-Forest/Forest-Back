@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.authentications.service.refresh_cookie import clear_refresh_cookie, refresh_from_request
 from apps.authentications.service.token_denylist import revoke_access_token
 
 
@@ -20,11 +21,11 @@ class LogoutAPIView(APIView):
     def post(self, request):
         revoke_access_token(request.auth)
 
-        refresh = request.data.get("refresh")
+        refresh = refresh_from_request(request)  # body yoki HttpOnly cookie (audit A5)
         if refresh:
             try:
                 RefreshToken(refresh).blacklist()
             except TokenError:
                 pass  # allaqachon yaroqsiz / blacklist'da — baribir chiqamiz
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return clear_refresh_cookie(Response(status=status.HTTP_204_NO_CONTENT))
