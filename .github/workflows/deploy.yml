@@ -87,6 +87,13 @@ jobs:
           for c in $APP_CONTAINERS; do
             docker rm -f "$c" >/dev/null 2>&1 || true
           done
+          # Yiqilgan deploy'dan qolgan "<hash>_<nom>" konteynerlar yuqoridagi nom
+          # bo'yicha o'chirishga tushmaydi, lekin compose ularni label bo'yicha
+          # topib recreate yo'liga kiradi (2026-10-26, #1116 deploy'i shu sababli
+          # yiqilgan). Shuning uchun servis label'i bo'yicha ham o'chiriladi.
+          for s in $APP_SERVICES; do
+            docker ps -aq --filter "label=com.docker.compose.service=$s" | xargs -r docker rm -f >/dev/null 2>&1 || true
+          done
 
           # 3) Dangling (nomi yo'q) imagelarni tozalash — disk joy bo'shatish.
           #    DIQQAT: volume'lar TEGIB BO'LMAYDI (postgres data!)
