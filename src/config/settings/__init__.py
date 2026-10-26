@@ -7,5 +7,6 @@ from .redis_setup import *
 from .rest_framework import *
 from .database import *
 from .celery import *
+from .mib_push import *
 from .jazzmin import *
 from .ai_setup import *

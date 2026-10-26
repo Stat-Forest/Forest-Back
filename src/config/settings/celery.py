@@ -17,3 +17,11 @@ CELERY_TASK_ALWAYS_EAGER = (
     or (len(_sys.argv) > 1 and _sys.argv[1] == 'test')
 )
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Davriy vazifalar (forest_celery_beat konteyneri)
+CELERY_BEAT_SCHEDULE = {
+    "billing-mib-push-retry": {
+        "task": "billing.mib_push_retry_failed",
+        "schedule": 15 * 60,
+    },
+}
