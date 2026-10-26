@@ -40,6 +40,8 @@ services:
       - ../../.env:/app/.env
       - ../../backups:/backups
       - /var/log/forest-back:/var/log/forest-back
+      # MIB Push Service kaliti (gitda emas) — `mib_push` buyrug'i va adminkadagi qayta yuborish uchun
+      - ../../keys/mib:/etc/mib-push:ro
     # Port tashqariga ochilmaydi — faqat nginx (docker tarmog'i) orqali.
     depends_on:
       - forest_postgres
@@ -159,6 +161,9 @@ services:
     env_file:
       - ../../.env
     command: celery -A config worker --loglevel=info
+    # MIB Push Service kaliti: shartnomalar shu worker'dan yuboriladi
+    volumes:
+      - ../../keys/mib:/etc/mib-push:ro
     depends_on:
       - forest_redis
       - forest_postgres

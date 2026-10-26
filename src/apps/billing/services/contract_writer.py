@@ -46,7 +46,7 @@ from apps.billing.serializers.write import (
     YearlyAmountWriteSerializer,
 )
 from apps.billing.scope import NOT_ASSIGNED_MESSAGE, billing_xojalik_ids, can_write_xojalik
-from apps.billing.services import history
+from apps.billing.services import history, mib_push
 from apps.billing.services.boundary import validate_contract_boundary
 from apps.billing.services.errors import BillingValidationError, uz_errors
 from apps.billing.services.numbering import generate_contract_number
@@ -482,6 +482,7 @@ def save_contract(payload, user, *, instance: Contract | None = None, from_impor
         else:
             reason, data = ContractHistory.Reason.UPDATED, {"changes": history.diff(old_snapshot, new_snapshot)}
         history.record(contract, user, reason, data)
+        mib_push.schedule_contract_push(contract.id)
     return contract
 
 
@@ -501,6 +502,7 @@ def change_status(contract: Contract, user, status: str, cancel_reason: str | No
     contract._history_user = user
     contract.save(update_fields=["status", "cancel_reason", "canceled_date", "updated_by", "updated_at"])
     history.record(contract, user, ContractHistory.Reason.STATUS_CHANGED, {"changes": history.diff(old, history.snapshot(contract))})
+    mib_push.schedule_contract_push(contract.id)
     return contract
 
 
@@ -512,6 +514,7 @@ def change_renter(contract: Contract, user, renter: Renter) -> Contract:
     contract._history_user = user
     contract.save(update_fields=["renter", "is_entity", "updated_by", "updated_at"])
     history.record(contract, user, ContractHistory.Reason.RENTER_CHANGED, {"changes": history.diff(old, history.snapshot(contract))})
+    mib_push.schedule_contract_push(contract.id)
     return contract
 
 
@@ -522,4 +525,5 @@ def update_yearly_amounts(contract: Contract, user, rows) -> Contract:
         sync_contract_totals(contract.id)
         contract.refresh_from_db()
         history.record(contract, user, ContractHistory.Reason.YEARLY_UPDATED, {"changes": history.diff(old, history.snapshot(contract))})
+        mib_push.schedule_contract_push(contract.id)
     return contract

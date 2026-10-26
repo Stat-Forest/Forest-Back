@@ -105,6 +105,8 @@ src/exports/*.xlsx
 
 # E-imzo VPN kalitlari — hech qachon gitga tushmasin (serverda volume orqali)
 e-imzo-server/keys/
+# MIB Push Service RSA kaliti (serverda /root/Forest-Back/keys/mib/)
+/keys/
 
 # Repoga tegishli bo'lmagan yordamchi/eksport fayllar
 exports/

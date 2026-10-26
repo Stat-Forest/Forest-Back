@@ -28,6 +28,7 @@ from apps.billing.models import (
     ContractYearlyAmount,
     District,
     LandType,
+    MibPushLog,
     PrivilegeType,
     Region,
     Renter,
@@ -35,6 +36,7 @@ from apps.billing.models import (
     XojalikKontur,
     XojalikLocation,
 )
+from apps.billing.services import mib_push
 from apps.logs.mixins import AdminHistoryMixin
 
 
@@ -141,6 +143,10 @@ class ContractAdmin(AdminHistoryMixin, admin.ModelAdmin):
     autocomplete_fields = ("renter", "xojalik", "bolim", "region", "district")
     readonly_fields = ("number", "created_at", "updated_at", "created_by", "updated_by")
     inlines = (ContractYearlyAmountInline, ContractLandInline, ContractActivityInline, ContractPrivilegeInline, ContractFileInline)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        mib_push.schedule_contract_push(form.instance.id)
 
 
 class ContractActionProductInline(admin.TabularInline):
@@ -326,3 +332,25 @@ class BillingUserAdmin(UserAdmin):
             user_id=form.instance.pk, defaults={"created_by": request.user, "updated_by": request.user},
         )
         access.xojaliklar.set(form.cleaned_data.get("xojaliklar") or [])
+
+
+@register(MibPushLog)
+class MibPushLogAdmin(admin.ModelAdmin):
+    list_display = ("contract_number", "status", "attempts", "http_status", "sent_at", "created_at")
+    list_filter = ("status",)
+    search_fields = ("contract_number", "correlation_id")
+    readonly_fields = [f.name for f in MibPushLog._meta.fields]
+    actions = ("resend",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.action(description="Shartnomaning joriy holatini MIB'ga qayta yuborish")
+    def resend(self, request, queryset):
+        contract_ids = {log.contract_id for log in queryset if log.contract_id}
+        for contract_id in contract_ids:
+            mib_push.push_contract(contract_id, force=True)
+        self.message_user(request, f"{len(contract_ids)} ta shartnoma qayta yuborildi")
