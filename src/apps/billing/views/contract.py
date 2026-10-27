@@ -2,7 +2,7 @@
 from decimal import Decimal
 from pathlib import Path
 
-from django.db.models import Count, DecimalField, Prefetch, Q, Sum, Value
+from django.db.models import BooleanField, Count, DecimalField, ExpressionWrapper, IntegerField, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, HttpResponse
 from django.utils import timezone
@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.billing.filters import BillingContractFilter
-from apps.billing.models import Contract, ContractActivity, ContractLand, ContractPrivilege, ContractYearlyAmount
+from apps.billing.models import Contract, ContractActivity, ContractFile, ContractLand, ContractPrivilege, ContractYearlyAmount
 from apps.billing.permissions import BillingReadOrWrite, BillingPIIReadOrWrite
 from apps.billing.scope import scope_queryset
 from apps.billing.serializers import (
@@ -90,7 +90,23 @@ class ContractViewSet(viewsets.GenericViewSet):
 
     # ------------------------------------------------------------------ CRUD
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset()).annotate(files_count=Count("files", distinct=True))
+        # Ro'yxatda chegara GeoJSON'ining o'zi kerak emas (faqat bor/yo'qligi) — har qatorda
+        # KMZ'dan kelgan katta JSON yuklanmaydi. Fayllar soni GROUP BY o'rniga subquery
+        # (paginator COUNT'i ham yengil).
+        files_count = (
+            ContractFile.objects.filter(contract=OuterRef("pk")).order_by()
+            .values("contract").annotate(c=Count("id")).values("c")[:1]
+        )
+        queryset = (
+            self.filter_queryset(self.get_queryset())
+            .defer("boundary_geojson")
+            .annotate(
+                files_count=Coalesce(Subquery(files_count, output_field=IntegerField()), 0),
+                boundary_present=ExpressionWrapper(
+                    Q(boundary_geojson__isnull=False) & ~Q(boundary_geojson={}), output_field=BooleanField(),
+                ),
+            )
+        )
         page = self.paginate_queryset(queryset)
         serializer = ContractListSerializer(page, many=True, context=self.get_serializer_context())
         return self.get_paginated_response(serializer.data)

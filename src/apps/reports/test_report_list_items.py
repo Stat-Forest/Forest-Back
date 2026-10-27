@@ -69,3 +69,42 @@ class ReportListItemsTest(APITestCase):
             self.assertNotIn('"reports_statementcolumn"', sql, "item'lar ustun bilan JOIN qilinmasligi kerak")
             self.assertNotIn('"reports_reportitem"."created_by_id"', sql, "faqat kerakli maydonlar (values)")
             self.assertEqual(sql.count("::uuid"), 1, "faqat sahifadagi hisobot uchun")
+
+
+class ReportListCompactTest(ReportListItemsTest):
+    """compact=1: ro'yxat jadvali uchun report_items'siz; ?id= — bitta to'liq hisobot."""
+
+    def test_compact_has_no_items_and_no_item_queries(self):
+        data, queries = self._get(compact=1)
+        self.assertEqual(data["count"], 2)
+        self.assertTrue(all(row["report_items"] == [] for row in data["results"]))
+        self.assertEqual(data["results"][0]["statement_name"], "Shakl L")
+        sqls = [q["sql"] for q in queries]
+        self.assertFalse([s for s in sqls if 'FROM "reports_reportitem"' in s])
+        self.assertFalse([s for s in sqls if 'FROM "reports_statementcolumn"' in s])
+
+    def test_id_returns_single_full_report_same_as_list(self):
+        full, _ = self._get()
+        report = self.reports[0]
+        one, _ = self._get(id=str(report.id))
+        self.assertEqual(one["count"], 1)
+        listed = next(row for row in full["results"] if row["id"] == str(report.id))
+        self.assertEqual(one["results"][0], listed)
+
+    def test_bad_id_is_empty(self):
+        data, _ = self._get(id="not-a-uuid")
+        self.assertEqual(data["count"], 0)
+
+    def test_compact_page_size_limit(self):
+        from apps.reports.services.pagination import ReportCompactPagination, ReportPagination
+        self.assertEqual(ReportPagination.max_page_size, 200)
+        self.assertEqual(ReportCompactPagination.max_page_size, 2000)
+
+    def test_columns_loaded_only_for_page_statements(self):
+        other_dept = Statement.objects.create(name="Bo'lim M", name_uz="Bo'lim M", name_ru="Отдел M")
+        other = Statement.objects.create(name="Shakl M", name_uz="Shakl M", name_ru="Форма M", parent=other_dept)
+        StatementColumn.objects.create(statement=other, title="X", title_uz="X", title_ru="X", ordering="1")
+        _, queries = self._get()
+        col_sqls = [q["sql"] for q in queries if 'FROM "reports_statementcolumn"' in q["sql"]]
+        self.assertTrue(col_sqls)
+        self.assertTrue(all(str(other.id).replace("-", "") not in s.replace("-", "") for s in col_sqls))

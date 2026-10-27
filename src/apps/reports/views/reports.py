@@ -1,3 +1,4 @@
+import uuid
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -22,7 +23,7 @@ from apps.base.views import (
     CustomCreateAPIView, CustomRetrieveAPIView, CustomDestroyAPIView, CustomRetrieveUpdateAPIView,
 )
 from apps.logs.drf_mixins import DRFHistoryMixin
-from apps.reports.services.pagination import ReportPagination
+from apps.reports.services.pagination import ReportCompactPagination, ReportPagination
 from apps.reports.services.report_items_loader import load_report_items
 
 
@@ -93,10 +94,6 @@ class ReportListAPIView(CustomListAPIView):
         """
         qs = self._base_queryset()
 
-        # statement_ids - context uchun 1 marta
-        if not hasattr(self, "_statement_ids"):
-            self._statement_ids = list(qs.values_list("statement_id", flat=True).distinct())
-
         # report_items prefetch QILINMAYDI: item/qiymatlar list() da sahifadagi
         # hisobotlar uchun values() bilan yuklanadi (load_report_items) —
         # 200 hisobot x 120 ustun uchun ~100 000 model obyekti o'rniga lug'atlar.
@@ -115,13 +112,39 @@ class ReportListAPIView(CustomListAPIView):
         )
         return qs
 
+    def _is_compact(self) -> bool:
+        return str(self.request.query_params.get("compact", "")).lower() in ("1", "true")
+
+    @property
+    def paginator(self):
+        # compact=1: report_items yo'q — 2000 tagacha qator arzon (ro'yxat jadvali uchun).
+        if not hasattr(self, "_paginator"):
+            self._paginator = ReportCompactPagination() if self._is_compact() else self.pagination_class()
+        return self._paginator
+
     def list(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response([])
         queryset = self.filter_queryset(self.get_queryset())
+        # ?id=<uuid> — bitta hisobot (doira _base_queryset'da), ro'yxat bilan bir xil formatda
+        report_id = request.query_params.get("id")
+        if report_id:
+            try:
+                queryset = queryset.filter(id=uuid.UUID(str(report_id)))
+            except ValueError:
+                queryset = queryset.none()
         page = self.paginate_queryset(queryset)
         reports = page if page is not None else list(queryset)
-        self._items_by_report = load_report_items([r.id for r in reports])
+        if self._is_compact():
+            # Jadval faqat nom/shakl/davr/sana/holatni ko'rsatadi; ustun qiymatlari
+            # qator bosilganda ?id= bilan olinadi (avval 200 hisobot x ~120 ustun — bir necha MB).
+            self._items_by_report = {}
+            self._statement_ids = []
+        else:
+            self._items_by_report = load_report_items([r.id for r in reports])
+            # StatementColumn faqat sahifadagi hisobotlarning shakllari uchun (avval butun
+            # doira bo'yicha DISTINCT so'rov edi)
+            self._statement_ids = list({r.statement_id for r in reports})
         serializer = self.get_serializer(reports, many=True)
         if page is not None:
             return self.get_paginated_response(serializer.data)
@@ -140,6 +163,7 @@ class ReportListAPIView(CustomListAPIView):
 
         context["lang"] = lang
         context["items_by_report"] = getattr(self, "_items_by_report", None)
+        context["compact"] = self._is_compact()
 
         # StatementColumn preload: statement_ids oldindan hisoblangan
         statement_ids = getattr(self, "_statement_ids", [])
