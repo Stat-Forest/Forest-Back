@@ -46,6 +46,8 @@ class NotificationListCreateAPIView(generics.ListAPIView):
         Cache key is language dependent to handle translations.
         """
         lang = self.request.query_params.get("lang", "uz")
+        if lang not in ("uz", "ru"):
+            lang = "uz"  # audit C5
         cache_key = f"notifications:{lang}"
 
         queryset = cache.get(cache_key)
@@ -63,5 +65,7 @@ class NotificationListCreateAPIView(generics.ListAPIView):
         """
         context = super().get_serializer_context()
         lang = self.request.query_params.get("lang", "uz")
+        if lang not in ("uz", "ru"):
+            lang = "uz"  # audit C5
         context["lang"] = lang
         return context

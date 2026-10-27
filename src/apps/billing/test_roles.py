@@ -53,7 +53,7 @@ class BillingRoleAccessTest(APITestCase):
         for user in (self.billing, self.billing_super):
             client = auth(self.client_class(), user)
             for url in ("/api/v1/reports/plan-list/", "/api/v1/statistics/login-stats/", "/api/v1/general/handbooks/",
-                        "/api/v1/users/verify-digital-signature/", "/api/v1/sum/employee-report/",
+                        "/api/v1/sum/employee-report/",
                         "/api/v1/information-analytical/", "/api/v1/reports/dashboard/"):
                 with self.subTest(role=user.role, url=url):
                     self.assertEqual(client.get(url).status_code, 403, url)

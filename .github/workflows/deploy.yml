@@ -18,11 +18,30 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Copy .env to server
+    # Server host kaliti pin'lanadi (audit C10): SSH_KNOWN_HOSTS secret'i
+    # (`ssh-keyscan -H <HOST>` natijasi) bo'lsa shu, bo'lmasa keyscan (TOFU).
+    - name: Known hosts
+      env:
+        SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        HOST: ${{ secrets.HOST }}
       run: |
         set -euo pipefail
-        echo "${{ secrets.ENV_FILE }}" > .env
-        scp -o StrictHostKeyChecking=no .env ${{ secrets.USER }}@${{ secrets.HOST }}:/root/Forest-Back/.env
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        if [ -n "$SSH_KNOWN_HOSTS" ]; then
+          printf '%s\n' "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+        else
+          echo "::warning::SSH_KNOWN_HOSTS secret yo'q — ssh-keyscan (TOFU) ishlatilmoqda"
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+        fi
+
+    - name: Copy .env to server
+      env:
+        ENV_FILE: ${{ secrets.ENV_FILE }}
+      run: |
+        set -euo pipefail
+        # printf: echo qo'shtirnoq/maxsus belgilarni buzishi mumkin
+        printf '%s\n' "$ENV_FILE" > .env
+        scp .env ${{ secrets.USER }}@${{ secrets.HOST }}:/root/Forest-Back/.env
 
     - name: Sync files to server via rsync
       run: |
@@ -33,7 +52,7 @@ jobs:
         # ishlab turgan konteyner eski, "o'lik" inode'ni o'qishda davom etadi —
         # `nginx -s reload` ham yordam bermaydi, konteynerni qayta yaratish kerak
         # bo'lib qoladi. --inplace shu muammoni butunlay oldini oladi.
-        rsync -avz --inplace -e "ssh -o StrictHostKeyChecking=no" \
+        rsync -avz --inplace -e "ssh" \
           --exclude '.git/' \
           --exclude 'media/' \
           --exclude 'staticfiles/' \
@@ -46,8 +65,15 @@ jobs:
     - name: Deploy via SSH
       run: |
         set -euo pipefail
-        ssh -o StrictHostKeyChecking=no -T ${{ secrets.USER }}@${{ secrets.HOST }} 'bash -euo pipefail -s' << 'EOF'
+        ssh -T ${{ secrets.USER }}@${{ secrets.HOST }} 'bash -euo pipefail -s' << 'EOF'
           cd /root/Forest-Back
+
+          # Konteynerlar root'da emas (UID 1000, audit B14): bind-mount papkalar
+          # app foydalanuvchisiga yoziladigan bo'lsin. rsync fayllarni root
+          # sifatida yaratadi — shuning uchun har deploy'da.
+          mkdir -p media staticfiles backups /var/log/forest-back
+          chown -R 1000:1000 src media staticfiles backups /var/log/forest-back
+          chown 1000:1000 .env && chmod 640 .env
 
           # ---------------------------------------------------------------
           # docker-compose 1.29.2 (V1) + yangi Docker Engine = xavfli birikmа.

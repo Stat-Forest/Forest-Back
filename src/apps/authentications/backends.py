@@ -15,6 +15,9 @@ class EmailBackend(ModelBackend):
         try:
             user = UserModel.objects.get(**lookup)
         except UserModel.DoesNotExist:
+            # Foydalanuvchi yo'q bo'lganda ham hash hisoblanadi — javob vaqti
+            # bo'yicha email/login mavjudligini aniqlab bo'lmasin (audit C1)
+            UserModel().set_password(password)
             return None
 
         if user.check_password(password) and self.user_can_authenticate(user):

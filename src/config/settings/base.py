@@ -33,8 +33,6 @@ DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"
 CORS_ALLOWED_ORIGINS = [
     "https://stat-urmon.uz",
     "https://www.stat-urmon.uz",
-    "http://localhost:5173",
-    "http://localhost:5174",
 ]
 
 # files will be installed here
@@ -48,12 +46,19 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:3000",
     "https://stat-urmon.uz",
     "https://api.stat-urmon.uz",
 ]
+
+# localhost origin'lari faqat DEBUG'da (audit C11); dev'da vite proxy orqali
+# so'rovlar same-origin bo'lgani uchun odatda bular ham kerak emas.
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173"]
+    CSRF_TRUSTED_ORIGINS += ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+
+# Admin sessiyasi (sessionid) 8 soat — 2 hafta emas (audit C11)
+SESSION_COOKIE_AGE = 8 * 3600
+SESSION_COOKIE_SAMESITE = "Lax"
 
 # ===============================
 # 📦 INSTALLED_APPS

@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.admin import DateFieldListFilter
 from django.utils.translation import gettext_lazy as _
+from django.utils.html import format_html_join
 from django.utils.safestring import mark_safe
 
 from apps.general.models import Organization
@@ -223,7 +224,8 @@ class DeadlineAdmin(AdminHistoryMixin, admin.ModelAdmin):
     def organizations_display(self, obj):
         orgs = obj.organizations.all().order_by("name")
 
-        items = "".join(f"<li>{org.name}</li>" for org in orgs)
+        # org.name escape qilinadi (audit C7: admin ichida saqlangan XSS)
+        items = format_html_join("", "<li>{}</li>", ((org.name,) for org in orgs))
 
         return mark_safe(
             f"""

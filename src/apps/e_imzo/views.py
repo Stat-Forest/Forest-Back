@@ -22,6 +22,7 @@ eimzo_api = EimzoServiceApi()
 # tasodifiy matn imzolardi va backend uni hech narsaga bog'lamasdi — istalgan
 # eski PKCS#7 (masalan hisobot imzosi) bilan login qilish mumkin edi.
 LOGIN_CHALLENGE_TTL = 180
+EIMZO_GENERIC_ERROR = "E-imzo serveri bilan ishlashda xatolik. Keyinroq urinib ko'ring."
 
 
 def _challenge_key(challenge: str) -> str:
@@ -279,7 +280,6 @@ class EimzoLoginView(views.APIView):
 
         response_data = {
             "access": str(refresh.access_token),
-            "refresh": str(refresh),
             "email": user.email,
             "role": user.role,
             "user_id": user.id,
@@ -288,7 +288,7 @@ class EimzoLoginView(views.APIView):
             "is_new_user": created,
         }
 
-        # Refresh token HttpOnly cookie'da ham (audit A5)
+        # Refresh token faqat HttpOnly cookie'da (audit A5)
         return set_refresh_cookie(Response(response_data, status=status.HTTP_200_OK), str(refresh))
 
 
@@ -303,11 +303,14 @@ class SavePkcsView(views.APIView):
 
         status_code, resp = eimzo_api.timestamp_pkcs7(pkcs7, request)
         if status_code != 200:
-            raise exceptions.ValidationError({"success": False, "err_msg": resp.text})
+            # Ichki server javobi mijozga qaytarilmaydi (audit C15) — log'da
+            logger.warning("E-imzo timestamp xatosi: status=%s body=%.300s", status_code, getattr(resp, "text", ""))
+            raise exceptions.ValidationError({"success": False, "err_msg": EIMZO_GENERIC_ERROR})
 
         pkcs7b64 = resp.json().get("pkcs7b64")
         if not pkcs7b64:
-            return Response({"success": False, "err_msg": resp.json()}, status=406)
+            logger.warning("E-imzo timestamp: pkcs7b64 yo'q: %.300s", getattr(resp, "text", ""))
+            return Response({"success": False, "err_msg": EIMZO_GENERIC_ERROR}, status=406)
 
         return Response({"success": True, "pkcs7b64": pkcs7b64})
 
@@ -323,6 +326,7 @@ class PkcsVerify(views.APIView):
 
         status_code, resp = eimzo_api.eimzo_verify(pkcs7b64, request)
         if status_code != 200:
-            raise exceptions.ValidationError({"success": False, "err_msg": resp.text})
+            logger.warning("E-imzo verify xatosi: status=%s body=%.300s", status_code, getattr(resp, "text", ""))
+            raise exceptions.ValidationError({"success": False, "err_msg": EIMZO_GENERIC_ERROR})
 
         return Response(resp.json())

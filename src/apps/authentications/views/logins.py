@@ -20,10 +20,11 @@ class LoginAPIView(CustomGenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
-        # Refresh token HttpOnly cookie'da ham (audit A5). Body'dagi `refresh`
-        # eski frontend uchun vaqtincha qoladi — yangi frontend uni saqlamaydi.
-        refresh = serializer.validated_data.get("refresh")
+        data = dict(serializer.validated_data)
+        # Refresh token faqat HttpOnly cookie'da (audit A5) — JS (shu jumladan uchinchi
+        # tomon skriptlari) uni javob tanasidan o'qiy olmasin.
+        refresh = data.pop("refresh", None)
+        response = Response(data, status=status.HTTP_200_OK)
         if refresh:
             set_refresh_cookie(response, refresh)
         return response

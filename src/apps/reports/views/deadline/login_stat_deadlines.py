@@ -71,7 +71,11 @@ class DeadlineLoginStatListAPIView(generics.ListAPIView):
         tashkilotlari bilan (prod'da ~19 000 qator) har so'rovda yuklanardi.
         Ochiq (login sahifasi) endpoint — javob 5 daqiqa keshlanadi.
         """
-        cache_key = f"login_stat_deadlines:{get_language()}:{request.query_params.urlencode()}"
+        # Faqat ishlatiladigan parametrlar kalitga kiradi — notanish parametr bilan
+        # keshni to'ldirib bo'lmaydi (audit C5)
+        allowed = ('page', 'per_page', 'period_type')
+        key_parts = "&".join(f"{k}={request.query_params.get(k, '')[:50]}" for k in allowed)
+        cache_key = f"login_stat_deadlines:{get_language()}:{key_parts}"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)

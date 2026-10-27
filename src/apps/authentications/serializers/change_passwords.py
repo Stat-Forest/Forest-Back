@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.logs.models import HistoryActionJournal
+from apps.authentications.service.token_denylist import revoke_user_tokens_issued_before
 from apps.utils.services.tokens import blacklist_user_refresh_tokens
 from apps.base.exceptions.exception_files import CustomExceptionError
 
@@ -52,6 +53,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save(update_fields=["password", "last_activity"])
 
         blacklist_user_refresh_tokens(user)
+        # Oldin berilgan access tokenlar ham (boshqa qurilmalar) yaroqsiz (audit C3)
+        revoke_user_tokens_issued_before(user.id)
 
         HistoryActionJournal.objects.create(
             user=user,

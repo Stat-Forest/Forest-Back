@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.http import FileResponse
 from django.conf import settings
 import os
+import tempfile
 import zipfile
 import datetime
 
@@ -28,14 +29,14 @@ class LandDocumentAdmin(AdminHistoryMixin, admin.ModelAdmin):
             self.message_user(request, "❌ Fayli mavjud hujjatlar topilmadi!", level=messages.WARNING)
             return
 
-        export_dir = os.path.join(settings.MEDIA_ROOT, "exports")
-        os.makedirs(export_dir, exist_ok=True)
+        # ZIP vaqtinchalik faylda (MEDIA_ROOT/exports emas — nginx /media/ ni login'siz
+        # tarqatadi); FileResponse yopganda fayl o'chadi.
+        tmp = tempfile.TemporaryFile(suffix=".zip")
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         export_name = f"handbooks_{timestamp}.zip"
-        export_path = os.path.join(export_dir, export_name)
 
-        with zipfile.ZipFile(export_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zipf:
             for obj in queryset:
                 if obj.file and os.path.exists(obj.file.path):
                     # faylni original nomi bilan ZIP ichiga qo‘shamiz
@@ -44,6 +45,7 @@ class LandDocumentAdmin(AdminHistoryMixin, admin.ModelAdmin):
 
         self.message_user(request, f"✅ {queryset.count()} ta fayl ZIP formatda eksport qilindi!")
 
-        return FileResponse(open(export_path, "rb"), as_attachment=True, filename=export_name)
+        tmp.seek(0)
+        return FileResponse(tmp, as_attachment=True, filename=export_name)
 
     export_files_as_zip.short_description = "📦 Tanlangan hujjat fayllarini ZIP formatda eksport qilish"

@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema
+from apps.authentications.service.token_denylist import revoke_access_token
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -62,6 +63,8 @@ class NewPasswordAPIView(CustomGenericAPIView):
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        # pwd_reset tokeni bir martalik (audit C3)
+        revoke_access_token(validated_token)
 
         return Response(
             {"detail": "Parol muvaffaqiyatli yangilandi."},

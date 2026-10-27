@@ -159,7 +159,7 @@ class ContractViewSet(viewsets.GenericViewSet):
     def history(self, request, *args, **kwargs):
         contract = self.get_object()
         queryset = contract.history.select_related("executor").order_by("-created_at")
-        return Response(ContractHistorySerializer(queryset, many=True).data)
+        return Response(ContractHistorySerializer(queryset, many=True, context={"request": request}).data)
 
     @action(detail=False, methods=["get"], url_path="summary")
     def summary(self, request, *args, **kwargs):

@@ -3,7 +3,7 @@ Billing modellari faqat alohida `billing_admin_site`da (`/billing-admin/`) —
 stat `admin_site` va standart `admin.site`da ro'yxatdan o'tkazilmaydi.
 """
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import BaseUserCreationForm, UserChangeForm
@@ -350,6 +350,10 @@ class MibPushLogAdmin(admin.ModelAdmin):
 
     @admin.action(description="Shartnomaning joriy holatini MIB'ga qayta yuborish")
     def resend(self, request, queryset):
+        if not request.user.is_superuser:
+            # Ruxsatsiz amallar Django'da faqat ko'rish huquqi bilan ham ishlaydi
+            self.message_user(request, "Faqat superuser qayta yubora oladi", level=messages.ERROR)
+            return
         contract_ids = {log.contract_id for log in queryset if log.contract_id}
         for contract_id in contract_ids:
             mib_push.push_contract(contract_id, force=True)

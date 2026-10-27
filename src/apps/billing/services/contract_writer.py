@@ -212,6 +212,26 @@ def _renter_in_scope(renter: Renter, instance: Contract | None, user) -> bool:
     return not contracts.exists() or contracts.filter(xojalik_id__in=ids).exists()
 
 
+RENTER_MISMATCH_MESSAGE = "Bu JSHSHIR/INN bilan ijarachi tizimda bor, lekin pasport yoki F.I.Sh. mos kelmadi"
+
+
+def _norm_text(value) -> str:
+    return " ".join(_clean(value).casefold().split())
+
+
+def _claims_renter(renter: Renter, data: dict) -> bool:
+    """
+    Doiradan tashqaridagi (boshqa xo'jalikdagi) mavjud ijarachi faqat foydalanuvchi
+    uning pasportini (bo'lmasa F.I.Sh.ni) bilsa biriktiriladi — aks holda JSHSHIR/INN
+    terib boshqa odamning ma'lumotini olish mumkin edi (audit B7/H2).
+    """
+    passport = _norm_text(data.get("passport")).replace(" ", "")
+    if renter.passport and passport:
+        return passport == _norm_text(renter.passport).replace(" ", "")
+    name = _norm_text(data.get("full_name"))
+    return bool(name) and name == _norm_text(renter.full_name)
+
+
 def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
     """
     `id` berilsa — shu ijarachi yangilanadi; yaratishda pinfl/stir bo'yicha
@@ -249,6 +269,8 @@ def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
     if instance is None:
         existing = find_renter(pinfl, stir)
         if existing:
+            if not _renter_in_scope(existing, None, user) and not _claims_renter(existing, data):
+                raise BillingValidationError.field("renter", "pinfl", RENTER_MISMATCH_MESSAGE)
             return existing
         serializer = _validate(RenterWriteSerializer, "renter", data)
         return _save(serializer)
@@ -262,6 +284,11 @@ def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
         if target is None:
             serializer = _validate(RenterWriteSerializer, "renter", data)
             return _save(serializer)
+        if not _renter_in_scope(target, instance, user):
+            # Boshqa xo'jalikdagi ijarachi — faqat biriktiriladi, ma'lumoti o'zgartirilmaydi
+            if not _claims_renter(target, data):
+                raise BillingValidationError.field("renter", "pinfl", RENTER_MISMATCH_MESSAGE)
+            return target
     serializer = _validate(RenterWriteSerializer, "renter", data, instance=target, partial=True)
     return _save(serializer, target)
 
