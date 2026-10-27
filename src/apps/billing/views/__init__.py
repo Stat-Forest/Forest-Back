@@ -3,6 +3,7 @@ from .files import ContractFileViewSet
 from .gis import XojalikKonturViewSet, XojalikLocationViewSet
 from .public import (
     PublicGeoListView,
+    PublicXojalikOutlinesView,
     PublicRentStatsView,
     PublicXojalikKonturViewSet,
     PublicXojalikListView,
@@ -21,7 +22,7 @@ from .reference import (
 
 __all__ = [
     "ActivityTypeListView", "BolimListView", "ContractFileViewSet", "ContractViewSet", "DistrictListView",
-    "LandTypeListView", "PrivilegeTypeListView", "PublicGeoListView", "PublicRentStatsView", "PublicXojalikKonturViewSet", "PublicXojalikListView",
+    "LandTypeListView", "PrivilegeTypeListView", "PublicGeoListView", "PublicXojalikOutlinesView", "PublicRentStatsView", "PublicXojalikKonturViewSet", "PublicXojalikListView",
     "PublicXojalikLocationViewSet", "RegionListView", "RenterListView", "XojalikKonturViewSet",
     "XojalikListView", "XojalikLocationViewSet",
 ]

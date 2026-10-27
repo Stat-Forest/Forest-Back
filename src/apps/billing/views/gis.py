@@ -28,7 +28,7 @@ class XojalikLocationViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = scope_queryset(super().get_queryset(), self.request.user)
         if self.action == "list":
-            queryset = queryset.defer("boundary_geojson")
+            queryset = queryset.defer("boundary_geojson", "outline_geojson")
         return queryset
 
 

@@ -61,3 +61,54 @@ class PublicGisTest(APITestCase):
     def test_public_endpoints_are_read_only(self):
         self.assertEqual(self.client.post(f"{PUBLIC}/xojalik-locations/", {}).status_code, 405)
         self.assertEqual(self.client.post(f"{PUBLIC}/geo-list/", {}).status_code, 405)
+
+
+class PublicLandingMapTest(PublicGisTest):
+    """Landing: yerlar (xo'jalik chegaralari) darhol, shartnomalar faqat so'ralganda."""
+
+    def test_geo_list_summary_has_counts_without_results(self):
+        resp = self.client.get(f"{PUBLIC}/geo-list/", {"summary": "1"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual((resp.data["count"], resp.data["total_area"], resp.data["results"]), (1, 12.5, []))
+        # summary keshi to'liq ro'yxat keshini to'smaydi
+        self.assertEqual(len(self.client.get(f"{PUBLIC}/geo-list/").data["results"]), 1)
+
+    def test_outlines_built_by_command_and_served_anonymously(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        self.assertEqual(self.client.get(f"{PUBLIC}/xojalik-outlines/").data["features"], [])
+        out = StringIO()
+        call_command("build_xojalik_outlines", "--missing", stdout=out)
+        self.assertIn("qurildi: 1", out.getvalue())
+        call_command("build_xojalik_outlines", "--missing", stdout=out)
+        self.assertIn("qurildi: 0", out.getvalue())
+
+        data = self.client.get(f"{PUBLIC}/xojalik-outlines/").data
+        self.assertEqual(data["type"], "FeatureCollection")
+        feature = data["features"][0]
+        self.assertEqual(feature["properties"]["id"], str(self.location.id))
+        self.assertEqual(feature["properties"]["name"], self.location.name)
+        self.assertIn(feature["geometry"]["type"], ("Polygon", "MultiPolygon"))
+        # xo'jaliklar ro'yxati og'irlashmaydi
+        listed = self.client.get(f"{PUBLIC}/xojalik-locations/").data[0]
+        self.assertNotIn("outline_geojson", listed)
+
+
+class BuildOutlineTest(APITestCase):
+    def test_adjacent_parcels_merge_and_bad_rings_are_skipped(self):
+        from apps.billing.services.geo import build_outline
+
+        def square(x, y, s=0.01):
+            return [[[x, y], [x + s, y], [x + s, y + s], [x, y + s], [x, y]]]
+
+        boundary = {
+            "type": "MultiPolygon",
+            # ikki yonma-yon parcel (oralig'i ~100 m) + buzuq halqa (3 nuqta)
+            "coordinates": [square(72.0, 40.0), square(72.011, 40.0), [[[72.5, 40.5], [72.6, 40.5], [72.5, 40.5]]]],
+        }
+        outline = build_outline(boundary)
+        self.assertEqual(outline["type"], "Polygon")  # bitta hudud
+        self.assertIsNone(build_outline({"type": "Point", "coordinates": [72, 40]}))
+        self.assertIsNone(build_outline(None))
