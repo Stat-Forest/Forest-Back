@@ -18,6 +18,8 @@ python manage.py migrate --noinput
 echo "Seeding billing reference data..."
 python manage.py seed_billing || echo "!!! seed_billing FAILED"
 python manage.py import_xojalik_locations --if-empty || echo "!!! import_xojalik_locations FAILED"
+# Landing xaritasi uchun xo'jalik chegaralari (faqat yo'qlari; birinchi marta ~15 s)
+python manage.py build_xojalik_outlines --missing || echo "!!! build_xojalik_outlines FAILED"
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput

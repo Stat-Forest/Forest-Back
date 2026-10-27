@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.billing.models import Region, Xojalik, XojalikKontur, XojalikLocation
+from apps.billing.services.geo import build_outline
 
 DEFAULT_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "xojalik_locations.json.gz"
 LOCATION_FIELDS = ("latitude", "longitude", "bounds", "boundary_geojson", "area_ga", "parcel_count")
@@ -107,6 +108,7 @@ class Command(BaseCommand):
             return
 
         defaults = {f: row.get(f) for f in LOCATION_FIELDS}
+        defaults["outline_geojson"] = build_outline(defaults.get("boundary_geojson"))
         is_new = obj is None
         if is_new:
             obj = XojalikLocation.objects.create(name=name, region=region, **defaults)
@@ -114,7 +116,7 @@ class Command(BaseCommand):
         else:
             for field, value in defaults.items():
                 setattr(obj, field, value)
-            obj.save(update_fields=[*LOCATION_FIELDS, "updated_at"])
+            obj.save(update_fields=[*LOCATION_FIELDS, "outline_geojson", "updated_at"])
             self.stats["updated"] += 1
 
         if not obj.xojalik_id and xojalik:

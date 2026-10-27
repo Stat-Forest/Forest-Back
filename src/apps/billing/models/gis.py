@@ -20,6 +20,10 @@ class XojalikLocation(AbstractBaseModel):
     longitude = models.DecimalField(max_digits=10, decimal_places=7, verbose_name="Uzunlik")
     bounds = models.JSONField(null=True, blank=True, verbose_name="Chegara maydoni", help_text="[[south, west], [north, east]]")
     boundary_geojson = models.JSONField(null=True, blank=True, verbose_name="Konturlar (GeoJSON)")
+    outline_geojson = models.JSONField(
+        null=True, blank=True, editable=False, verbose_name="Ixcham tashqi chegara (GeoJSON)",
+        help_text="boundary_geojson'dan (services.geo.build_outline) — landing xaritasi uchun",
+    )
     area_ga = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Umumiy maydon (ga)")
     parcel_count = models.IntegerField(null=True, blank=True, verbose_name="Konturlar soni")
 
