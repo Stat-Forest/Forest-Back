@@ -1,3 +1,5 @@
+import re
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -14,7 +16,9 @@ from apps.billing.models import (
 )
 from apps.general.protected_media import signed_file_url
 
-from .reference import RenterFullSerializer, RenterShortSerializer
+from apps.billing.scope import can_view_renter_pii
+
+from .reference import RenterFullSerializer, RenterShortSerializer, _mask
 
 
 class ContractYearlyAmountSerializer(serializers.ModelSerializer):
@@ -96,12 +100,36 @@ class ContractFileEmbeddedSerializer(ContractFileSerializer):
         fields = ["id", "file_name", "file_url", "description", "uploaded_by_name", "created_at"]
 
 
+_RENTER_LABEL = re.compile(r"^(?P<name>.*) \((?P<ident>\d{9,14})\)$")
+
+
+def _mask_history_data(value):
+    """PII rolisiz foydalanuvchi uchun: eski billing tarixi (`legacy` — ijarachi
+    JSHSHIR/pasport/manzil/telefon) olib tashlanadi, "F.I.Sh. (JSHSHIR)" maskalanadi."""
+    if isinstance(value, dict):
+        return {key: _mask_history_data(item) for key, item in value.items() if key != "legacy"}
+    if isinstance(value, list):
+        return [_mask_history_data(item) for item in value]
+    if isinstance(value, str):
+        match = _RENTER_LABEL.match(value)
+        if match:
+            return f'{match["name"]} ({_mask(match["ident"])})'
+    return value
+
+
 class ContractHistorySerializer(serializers.ModelSerializer):
     executor_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ContractHistory
         fields = ["id", "reason", "data", "executor_name", "created_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if request is None or not can_view_renter_pii(request.user):
+            data["data"] = _mask_history_data(data["data"])
+        return data
 
     def get_executor_name(self, obj) -> str | None:
         user = obj.executor
@@ -153,6 +181,15 @@ class ContractDetailSerializer(ContractListSerializer):
             "auction_date", "exemptioned_date", "is_entity", "yearly_amounts", "lands", "activities",
             "privileges", "action", "files",
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if request is None or not can_view_renter_pii(request.user):
+            # Shartnoma skanlari (pasport nusxalari va h.k.) — /contract-files/ kabi
+            # faqat PII rollariga (audit A4); imzolangan havolalar berilmaydi.
+            data["files"] = []
+        return data
 
     @extend_schema_field(ContractActionSerializer(allow_null=True))
     def get_action(self, obj):

@@ -280,7 +280,6 @@ class EimzoLoginView(views.APIView):
 
         response_data = {
             "access": str(refresh.access_token),
-            "refresh": str(refresh),
             "email": user.email,
             "role": user.role,
             "user_id": user.id,
@@ -289,7 +288,7 @@ class EimzoLoginView(views.APIView):
             "is_new_user": created,
         }
 
-        # Refresh token HttpOnly cookie'da ham (audit A5)
+        # Refresh token faqat HttpOnly cookie'da (audit A5)
         return set_refresh_cookie(Response(response_data, status=status.HTTP_200_OK), str(refresh))
 
 

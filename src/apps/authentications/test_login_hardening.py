@@ -37,6 +37,16 @@ class ResetEmailAsyncTest(APITestCase):
         delay.assert_called_once()
         self.assertEqual(len(mail.outbox), 0)  # so'rov ichida sinxron yuborilmaydi
 
+    def test_no_reset_code_for_closed_billing_domain(self):
+        # H1: eski billing'dan email'siz ko'chirilgan inspektorlar (domen yopiladi)
+        make_user("inspektor1@billing-urmon.uz")
+        cache.clear()
+        with patch("apps.authentications.tasks.send_reset_password_email_task.delay") as delay:
+            resp = self.client.post(f"{AUTH}/forgot-password/send-code/", {"email": "inspektor1@billing-urmon.uz"},
+                                    format="json")
+        self.assertEqual(resp.status_code, 200, resp.content)  # javob bir xil
+        delay.assert_not_called()
+
 
 class PerEmailLockoutTest(APITestCase):
     def setUp(self):

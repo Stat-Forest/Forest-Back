@@ -32,7 +32,9 @@ class RefreshCookieTest(APITestCase):
         self.assertTrue(cookie["httponly"])
         self.assertEqual(cookie["path"], "/api/v1/authentications/")
         self.assertEqual(cookie["samesite"], "Lax")
-        self.assertEqual(cookie.value, resp.data["refresh"])
+        self.assertTrue(cookie.value)
+        # refresh faqat cookie'da — JSON tanasida yo'q
+        self.assertNotIn("refresh", resp.data)
 
     def test_refresh_with_cookie_only_rotates_cookie_and_hides_refresh(self):
         old = self._login().cookies[REFRESH_COOKIE].value
@@ -48,7 +50,7 @@ class RefreshCookieTest(APITestCase):
         self.assertEqual(self.client.post(f"{AUTH}/token/refresh/", {}, format="json").status_code, 401)
 
     def test_refresh_with_body_still_works(self):
-        refresh = self._login().data["refresh"]
+        refresh = self._login().cookies[REFRESH_COOKIE].value
         self.client.cookies.clear()
         resp = self.client.post(f"{AUTH}/token/refresh/", {"refresh": refresh}, format="json")
         self.assertEqual(resp.status_code, 200)
@@ -61,5 +63,5 @@ class RefreshCookieTest(APITestCase):
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.cookies[REFRESH_COOKIE]["max-age"], 0)
         self.client.credentials()
-        self.client.cookies[REFRESH_COOKIE] = login.data["refresh"]
+        self.client.cookies[REFRESH_COOKIE] = login.cookies[REFRESH_COOKIE].value
         self.assertEqual(self.client.post(f"{AUTH}/token/refresh/", {}, format="json").status_code, 401)

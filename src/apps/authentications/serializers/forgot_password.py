@@ -20,6 +20,9 @@ from apps.logs.models import HistoryActionJournal
 User = get_user_model()
 
 
+NO_RESET_EMAIL_DOMAINS = ("@billing-urmon.uz",)
+
+
 class SendResetCodeSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -41,6 +44,11 @@ class SendResetCodeSerializer(serializers.Serializer):
             )
 
         user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if user and email.endswith(NO_RESET_EMAIL_DOMAINS):
+            # Eski billing'dan email'siz ko'chirilgan inspektorlar: domen yopilgach boshqa
+            # egaga o'tsa, tiklash kodi orqali akkauntni egallash mumkin edi (audit H1).
+            # Javob bir xil — mavjudligi oshkor bo'lmaydi.
+            user = None
 
         if user:
             code = f"{secrets.randbelow(900000) + 100000}"

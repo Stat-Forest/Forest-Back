@@ -6,6 +6,7 @@ import django_filters
 from django.db.models import F, Q
 
 from apps.billing.models import Bolim, Contract
+from apps.billing.scope import can_view_renter_pii
 
 DATE_INPUT_FORMATS = ["%d.%m.%Y", "%Y-%m-%d"]
 TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -47,11 +48,19 @@ class BillingContractFilter(django_filters.FilterSet):
             return queryset
         return queryset.filter(status=value)
 
+    def _pinfl_q(self, value) -> Q:
+        """PII rolisiz foydalanuvchiga JSHSHIR faqat to'liq mos kelganda qidiriladi —
+        qism bo'yicha qidiruv maskalangan JSHSHIR'ni tiklashga imkon berardi."""
+        user = getattr(self.request, "user", None)
+        if can_view_renter_pii(user):
+            return Q(renter__pinfl__icontains=value)
+        return Q(renter__pinfl=value)
+
     def filter_stir(self, queryset, name, value):
         value = value.strip()
         if not value:
             return queryset
-        return queryset.filter(Q(renter__pinfl__icontains=value) | Q(renter__stir__icontains=value))
+        return queryset.filter(self._pinfl_q(value) | Q(renter__stir__icontains=value))
 
     def filter_number(self, queryset, name, value):
         value = value.strip()
@@ -72,7 +81,7 @@ class BillingContractFilter(django_filters.FilterSet):
             Q(number__icontains=value)
             | Q(contract_number__icontains=value)
             | Q(renter__full_name__icontains=value)
-            | Q(renter__pinfl__icontains=value)
+            | self._pinfl_q(value)
             | Q(renter__stir__icontains=value)
             | Q(xojalik__name__icontains=value)
         )
