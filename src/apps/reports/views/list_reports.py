@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from apps.base.views import CustomListAPIView, CustomRetrieveAPIView
 from apps.reports.permissions.report_scope import scope_regional_reports_for_user, scope_reports_for_user
-from apps.reports.models import Report, Statement, Deadline, StatementColumn
+from apps.reports.models import Report, StatementColumn
 from apps.reports.serializers.reports import ReportListSerializer
 from apps.reports.serializers.general_serializer import RegionalGeneralReportSerializer
 from apps.utils.services import PeriodChoices, RegionChoices
@@ -27,27 +27,12 @@ class ExtraReportFilter(django_filters.FilterSet):
         choices=[('', 'All')] + list(RegionChoices.choices),
         label="Hudud"
     )
-    statement = django_filters.ChoiceFilter(
-        method='filter_statement',
-        label="Hisobot turi",
-        choices=lambda: [('', 'All')] + list(
-            Statement.objects.filter(
-                reports__isnull=False
-            ).distinct().order_by('name_uz')
-            .values_list('id', 'name_uz')
-        )
-    )
+    # UUIDFilter: avvalgi ChoiceFilter(choices=lambda) har so'rovda Report jadvali
+    # bo'yicha 2 ta DISTINCT JOIN bajarardi (faqat qiymatni tekshirish uchun).
+    # Hisoboti yo'q shakl/muddat endi 400 emas, bo'sh natija qaytaradi.
+    statement = django_filters.UUIDFilter(method='filter_statement', label="Hisobot turi")
 
-    deadline = django_filters.ChoiceFilter(
-        method='filter_deadline',
-        label="Muddat",
-        choices=lambda: [('', 'All')] + list(
-            Deadline.objects.filter(
-                reports__isnull=False
-            ).distinct().order_by('-submit_at')
-            .values_list('id', 'submit_at')
-        )
-    )
+    deadline = django_filters.UUIDFilter(method='filter_deadline', label="Muddat")
 
     time_status = django_filters.ChoiceFilter(
         method='filter_time_status',

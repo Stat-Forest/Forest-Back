@@ -118,6 +118,8 @@ class ReportListSerializer(serializers.ModelSerializer):
     # ---------------------
 
     def get_report_items(self, report: Report):
+        if self.context.get("compact"):
+            return []
         lang = get_lang_code(self.context)
 
         # View sahifadagi hisobotlar uchun item'larni values() bilan yuklab bergan bo'lsa

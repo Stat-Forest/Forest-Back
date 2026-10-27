@@ -146,7 +146,7 @@ class ContractListSerializer(serializers.ModelSerializer):
     district_name = serializers.CharField(source="district.name", read_only=True, default=None)
     renter = RenterShortSerializer(read_only=True)
     debt = serializers.DecimalField(max_digits=22, decimal_places=2, read_only=True)
-    has_boundary = serializers.BooleanField(read_only=True)
+    has_boundary = serializers.SerializerMethodField()
     files_count = serializers.SerializerMethodField()
     days_remaining = serializers.IntegerField(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
@@ -160,6 +160,11 @@ class ContractListSerializer(serializers.ModelSerializer):
             "penalty_amount", "debt", "latitude", "longitude", "has_boundary", "files_count", "days_remaining",
             "is_expired", "created_at",
         ]
+
+    def get_has_boundary(self, obj) -> bool:
+        # Ro'yxat: boundary_geojson defer qilingan, DB'dagi annotatsiya ishlatiladi
+        present = getattr(obj, "boundary_present", None)
+        return bool(present) if present is not None else obj.has_boundary
 
     def get_files_count(self, obj) -> int:
         count = getattr(obj, "files_count", None)

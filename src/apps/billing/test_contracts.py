@@ -238,6 +238,25 @@ class ContractListAndStatsTest(ContractApiTestBase):
             self.assertIn(key, row)
         self.assertEqual(set(row["renter"]), {"id", "full_name", "pinfl", "stir", "phone", "passport"})
 
+    def test_list_has_boundary_and_files_without_loading_geojson(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        from apps.billing.models import ContractFile
+
+        Contract.objects.filter(id=self.a["id"]).update(
+            boundary_geojson={"type": "Polygon", "coordinates": [[[72, 40], [72.1, 40], [72.1, 40.1], [72, 40]]]},
+        )
+        ContractFile.objects.create(contract_id=self.a["id"], file="documents/billing/contracts/x.pdf")
+        ContractFile.objects.create(contract_id=self.a["id"], file="documents/billing/contracts/y.pdf")
+        with CaptureQueriesContext(connection) as ctx:
+            rows = {str(r["id"]): r for r in self.client.get(URL).data["results"]}
+        self.assertEqual((rows[str(self.a["id"])]["has_boundary"], rows[str(self.a["id"])]["files_count"]), (True, 2))
+        self.assertEqual((rows[str(self.b["id"])]["has_boundary"], rows[str(self.b["id"])]["files_count"]), (False, 0))
+        main = [q["sql"] for q in ctx.captured_queries if 'FROM "billing_contract"' in q["sql"] and "LIMIT" in q["sql"]]
+        self.assertTrue(main)
+        self.assertNotIn('"billing_contract"."boundary_geojson",', main[0].split("FROM")[0])
+
     def test_filters(self):
         def ids(**params):
             return {str(r["id"]) for r in self.client.get(URL, params).data["results"]}

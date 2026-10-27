@@ -6,3 +6,7 @@ class ReportPagination(PageNumberPagination):
     page_size_query_param = "per_page" # /reports/?per_page=20
     page_size = 10
     max_page_size = 200  
+
+class ReportCompactPagination(ReportPagination):
+    """compact=1 ro'yxat (report_items'siz) — bitta sahifada barcha tashkilotlar."""
+    max_page_size = 2000
