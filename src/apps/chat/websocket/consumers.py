@@ -7,6 +7,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from apps.chat.websocket.chat_serializers import SendMessageSerializer
 from apps.chat.websocket.middleware import get_user_from_token
 from apps.chat.websocket.events import (
+    user_group_name,
     CONVERSATION_ASSIGNED,
     CONVERSATION_CLOSED,
     MESSAGE_CREATED,
@@ -79,6 +80,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             self.group_name,
             self.channel_name,
         )
+        # Logout / parol o'zgarishi bu soketni ham yopishi uchun foydalanuvchi guruhi (audit F1)
+        self.user_group_name = user_group_name(self.user.id)
+        await self.channel_layer.group_add(self.user_group_name, self.channel_name)
 
         # Mijoz ["jwt", token] subprotocol'larini yuboradi — brauzer server
         # ulardan bittasini qaytarishini talab qiladi, aks holda ulanishni uzadi.
@@ -92,6 +96,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 self.group_name,
                 self.channel_name
             )
+        if hasattr(self, "user_group_name"):
+            await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
+
+    async def force_logout(self, event):
+        """Logout/parol o'zgarishi: ochiq soket yopiladi — xabarlar oqimi to'xtaydi (audit F1)."""
+        await self.close(code=4401)
 
     async def _send_error(self, message: str) -> None:
         """

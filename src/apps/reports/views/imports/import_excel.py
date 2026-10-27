@@ -121,6 +121,21 @@ class ImportTemplateDownloadAPIView(APIView):
         return response
 
 
+def _organization_allowed(user, organization_id) -> bool:
+    """
+    Foydalanuvchi shu tashkilot rejasini ko'ra oladimi (audit N8): tashkilotga
+    biriktirilgan foydalanuvchi — faqat o'z tashkiloti; hududiy — o'z viloyati
+    tashkilotlari; qolganlar (super_admin, rahbariyat, bo'lim admini) — hammasi.
+    """
+    if user.is_superuser or user.role in ("super_admin", "rahbariyat", "bolim_admin"):
+        return True
+    if user.role == "hududiy_boshqarma":
+        return user.region_user_orgs.filter(id=organization_id).exists()
+    if user.organization_id:
+        return str(user.organization_id) == str(organization_id)
+    return True
+
+
 class ImportParseSerializer(serializers.Serializer):
     file = serializers.FileField(help_text=".xlsx fayl")
     statement_id = serializers.UUIDField(help_text="Jadval (Statement) UUID'si")
@@ -194,6 +209,13 @@ class ImportParseAPIView(GenericAPIView):
         uploaded_file = serializer.validated_data.get("file")
         statement_id = serializer.validated_data.get("statement_id")
         organization_id = serializer.validated_data.get("organization_id")
+        # Reja solishtiruvi faqat o'z doirasidagi tashkilot uchun — aks holda boshqa
+        # tashkilotning tasdiqlangan reja qiymatlari xato matnida oshkor bo'lardi (audit N8)
+        if organization_id and not _organization_allowed(request.user, organization_id):
+            return Response(
+                {"detail": "Bu tashkilot uchun ruxsat yo'q."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         year = serializer.validated_data.get("year")
         season = serializer.validated_data.get("season") or None
         sheet_name = serializer.validated_data.get("sheet_name") or None

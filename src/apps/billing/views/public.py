@@ -89,7 +89,11 @@ class PublicGeoListView(_PublicView):
             except ValueError:
                 return Response({"errors": {"xojalik": "Noto'g'ri qiymat"}}, status=status.HTTP_400_BAD_REQUEST)
 
-        digest = hashlib.sha1(f"{xojalik}|{number}|{int(summary)}".encode()).hexdigest()
+        # Erkin matnli `number` keshlanmaydi — har bir turli qiymat Redis'da
+        # alohida (MB'lab) yozuv ochardi (audit L4/P1)
+        if number:
+            return Response(self._build(xojalik, number, summary))
+        digest = hashlib.sha1(f"{xojalik}|{int(summary)}".encode()).hexdigest()
         cache_key = f"billing:public:geo_list:{digest}"
         data = cache.get(cache_key)
         if data is None:

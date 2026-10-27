@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.authentications.service.refresh_cookie import clear_refresh_cookie, refresh_from_request
 from apps.authentications.service.token_denylist import revoke_access_token
+from apps.chat.websocket.events import close_user_sockets
 
 
 @extend_schema(tags=["authentications"])
@@ -28,4 +29,5 @@ class LogoutAPIView(APIView):
             except TokenError:
                 pass  # allaqachon yaroqsiz / blacklist'da — baribir chiqamiz
 
+        close_user_sockets(request.user.id)  # ochiq chat soketlari ham yopiladi (audit F1)
         return clear_refresh_cookie(Response(status=status.HTTP_204_NO_CONTENT))

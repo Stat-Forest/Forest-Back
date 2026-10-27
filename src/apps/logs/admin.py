@@ -190,7 +190,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
             # Juda uzun matnlarni qisqartirish (ixtiyoriy)
             if len(obyekt_text) > 100:
                 obyekt_text = obyekt_text[:97] + '...'
-            cell.value = obyekt_text
+            set_safe(cell, obyekt_text)
             cell.alignment = data_alignment_left
             cell.border = thin_border
             cell.font = data_font
@@ -201,7 +201,7 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
             # Juda uzun matnlarni qisqartirish (ixtiyoriy)
             if len(change_text) > 150:
                 change_text = change_text[:147] + '...'
-            cell.value = change_text
+            set_safe(cell, change_text)
             cell.alignment = data_alignment_left
             cell.border = thin_border
             cell.font = data_font
@@ -260,6 +260,8 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
 
     def export_all_logs(self, request):
         """Barcha yozuvlarni Excel formatda yuklab olish"""
+        if not self.has_view_permission(request):
+            raise PermissionDenied
         rows = HistoryActionJournal.objects.all()
         return self._create_excel_response(rows, filename="barcha_tarix.xlsx")
 
@@ -280,4 +282,6 @@ class HistoryActionJournalAdmin(admin.ModelAdmin):
         return False
 
     def has_view_permission(self, request, obj=None):
-        return True
+        # Model ruxsati (logs.view_historyactionjournal) yoki superuser — ilgari har
+        # qanday is_staff butun jurnalni ko'rib, eksport qila olardi (audit N15/F6)
+        return super().has_view_permission(request, obj)

@@ -86,6 +86,8 @@ local_settings.py
 
 #My ignore
 .env
+.env.postgres
+.env.eimzo
 db.sqlite3
 venv
 media

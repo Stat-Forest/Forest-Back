@@ -28,6 +28,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.billing.management.commands.import_billing_contracts import LEGACY_PREFIX
+from apps.billing.models.mib import MibPushLog
 from apps.billing.models import (
     Contract, ContractAction, ContractActionProduct, ContractActivity, ContractFile, ContractHistory,
     ContractLand, ContractPrivilege, ContractYearlyAmount, Renter,
@@ -99,6 +100,9 @@ class Command(BaseCommand):
 
         orphan_ids = list(orphan_renters.values_list("id", flat=True))
         with transaction.atomic():
+            # MIB push loglari (shartnoma FK SET_NULL) ijarachi pasport/JSHSHIR nusxasini
+            # saqlaydi — ular ham o'chiriladi (audit M1)
+            MibPushLog.objects.filter(contract_id__in=ids).delete()
             Contract.objects.filter(id__in=ids).delete()  # CASCADE: yillik, turlar, harakatlar, fayllar, tarix
             deleted_renters, _ = Renter.objects.filter(id__in=orphan_ids, contracts__isnull=True).delete()
             transaction.on_commit(lambda: self._delete_files(existing))

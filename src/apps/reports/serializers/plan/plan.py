@@ -186,10 +186,19 @@ class PlanSerializer(serializers.ModelSerializer):
             if not statement:
                 raise CustomExceptionError(400, {"statement": _("Invalid statement.")})
 
-            # if statement.parent_id != user.statement_id:
-            #     raise serializers.ValidationError(
-            #         "Plan statement user statementiga mos emas"
-            #     )
+            # Bo'lim admini faqat o'z bo'limi (statement) shakllari uchun reja
+            # yaratadi (audit N5: ilgari istalgan bo'lim/tashkilot uchun mumkin edi)
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if (
+                user is not None
+                and not user.is_superuser
+                and getattr(user, "statement_id", None)
+                and statement.parent_id != user.statement_id
+            ):
+                raise CustomExceptionError(
+                    400, {"statement": _("Bu shakl sizning bo'limingizga tegishli emas.")}
+                )
 
         # ================= UPDATE =================
         else:

@@ -1,3 +1,4 @@
+import logging
 # Standard library
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Prefetch
@@ -23,6 +24,8 @@ from apps.logs.drf_mixins import DRFHistoryMixin
 
 from apps.reports.models import Plan, PlanItem, PlantPlan, PlantPlanItem,StatementColumn
 from apps.users.models.users import CustomUser
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -233,8 +236,7 @@ class PlanDeleteAPIView(DRFHistoryMixin, PlanScopedQuerysetMixin, generics.Destr
         except (Http404, APIException):
             # 404 (doiradan tashqari reja) va 403 o'z holicha qaytsin
             raise
-        except Exception as e:
-            raise CustomExceptionError(
-                status_code=400,
-                detail={"error": str(e)}
-            )
+        except Exception as e:  # noqa: BLE001
+            # status_code= kwarg'i yo'q edi -> TypeError/500; ichki xato matni mijozga chiqmaydi (audit N11)
+            logger.warning("Plan delete failed: %s", e)
+            raise CustomExceptionError(400, {"detail": "Rejani o'chirib bo'lmadi."})

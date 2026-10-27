@@ -34,7 +34,30 @@ def protected_prefixes():
 
 
 def url_ttl() -> int:
-    return int(getattr(settings, "PROTECTED_MEDIA_URL_TTL", 3600))
+    # 30 daqiqa (ilgari 1 soat): havola bearer-token, foydalanuvchiga bog'lanmagan (audit L1)
+    return int(getattr(settings, "PROTECTED_MEDIA_URL_TTL", 1800))
+
+
+# Admin sessiyasi bilan (tokensiz) ochish: papka -> kerakli model ruxsati.
+# Ilgari har qanday is_staff istalgan himoyalangan faylni (shartnoma skanlari,
+# rezyumelar, zaxira) ocha olardi (audit PM1).
+STAFF_PREFIX_PERMS = (
+    ("documents/billing/", ("billing.view_contractfile",)),
+    ("documents/land/", ("general.view_landdocument",)),
+    ("handbooks/", ("general.view_handbook",)),
+    ("resumes/", ("users.view_personalinfo",)),
+)
+
+
+def staff_can_open(user, name: str) -> bool:
+    if not (user and user.is_authenticated and user.is_staff):
+        return False
+    if user.is_superuser:
+        return True
+    for prefix, perms in STAFF_PREFIX_PERMS:
+        if name.startswith(prefix):
+            return any(user.has_perm(p) for p in perms)
+    return False
 
 
 def is_protected(name: str) -> bool:
@@ -76,7 +99,7 @@ class ProtectedMediaView(View):
             raise Http404
 
         user = getattr(request, "user", None)
-        is_staff = bool(user and user.is_authenticated and user.is_staff)
+        is_staff = staff_can_open(user, path)
         token = request.GET.get("t", "")
         if not is_staff and not (token and verify_token(token, path)):
             return HttpResponseForbidden("Faylga kirish uchun ruxsat yo'q yoki havola muddati o'tgan.")

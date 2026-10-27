@@ -35,6 +35,8 @@ o'simlik bo'yicha guruhlangan ko'rinishi (Excel qatorlari kabi).
 
 import openpyxl
 
+from apps.utils.excel_safety import check_xlsx_zip
+
 from apps.reports.models import Plant
 from apps.reports.services.change_coma_to_dote import normalize_decimal_input_dote
 from apps.reports.services.report_import.columns import (
@@ -447,6 +449,8 @@ def parse_import_excel(file_obj, statement, sheet_name=None, lang="uz",
             qiymati tasdiqlangan reja bilan mos kelmasa
     """
     # ── 1. Workbook ochish ──
+    # ZIP yoyilgan hajmi/siqish nisbati tekshiriladi (audit R1: zip bomb -> OOM)
+    check_xlsx_zip(file_obj)
     try:
         wb = openpyxl.load_workbook(file_obj, data_only=True)
     except Exception as exc:

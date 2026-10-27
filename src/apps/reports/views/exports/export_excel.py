@@ -4,6 +4,7 @@ from datetime import datetime
 
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 
 from django.conf import settings
@@ -42,6 +43,9 @@ class ReportExcelExportAPIView(APIView):
     """
     Reportlarni Excel formatda eksport qilish API.
     """
+    # Og'ir (fayl yozadi) — foydalanuvchi bo'yicha 10/min (audit F4)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "export"
 
     @extend_schema(
         request=ReportExcelExportRequestSerializer,

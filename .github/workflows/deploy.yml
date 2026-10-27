@@ -5,16 +5,20 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+    # Uchinchi tomon action'lar commit SHA bilan pin'langan (tag qayta yozilishi mumkin)
     - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@dc588b651fe13675774614f8e6a936a468676387 # v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -71,9 +75,19 @@ jobs:
           # Konteynerlar root'da emas (UID 1000, audit B14): bind-mount papkalar
           # app foydalanuvchisiga yoziladigan bo'lsin. rsync fayllarni root
           # sifatida yaratadi — shuning uchun har deploy'da.
-          mkdir -p media staticfiles backups /var/log/forest-back
+          mkdir -p media staticfiles backups keys/mib e-imzo-server/keys /var/log/forest-back
           chown -R 1000:1000 src media staticfiles backups /var/log/forest-back
           chown 1000:1000 .env && chmod 640 .env
+          # MIB Push kaliti (keys/mib/private.pem) worker'ga (UID 1000) o'qiladigan bo'lsin —
+          # 2026-10-27 da B14 shu sababli qaytarilgan edi (kalit root:400).
+          chown -R 1000:1000 keys && chmod 750 keys keys/mib && chmod 440 keys/mib/* 2>/dev/null || true
+
+          # postgres va e_imzo_server konteynerlariga butun .env emas, faqat o'ziga
+          # tegishli o'zgaruvchilar beriladi (compose env_file: .env.postgres / .env.eimzo)
+          umask 077
+          grep -E '^POSTGRES_(DB|USER|PASSWORD)=' .env > .env.postgres
+          grep -E '^VPN_KEY_PASSWORD=' .env > .env.eimzo || true
+          umask 022
 
           # ---------------------------------------------------------------
           # docker-compose 1.29.2 (V1) + yangi Docker Engine = xavfli birikmа.

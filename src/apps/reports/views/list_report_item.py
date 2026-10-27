@@ -15,5 +15,9 @@ class ReportItemListAPIView(ListAPIView):
     filterset_fields = ['report__id']
 
     def get_queryset(self):
+        # Sahifalanmagan ro'yxat: hisobot ko'rsatilmasa butun doiradagi barcha
+        # qatorlar (yuz minglab) qaytardi (audit N9) — hisobot majburiy
+        if not self.request.query_params.get("report__id"):
+            return ReportItem.objects.none()
         allowed_reports = scope_reports_for_user(Report.objects.all(), self.request.user)
         return super().get_queryset().filter(report__in=allowed_reports)

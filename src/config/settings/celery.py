@@ -24,4 +24,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "billing.mib_push_retry_failed",
         "schedule": 15 * 60,
     },
+    # Eski MIB loglaridagi ijarachi PII'sini maskalash (kuniga bir marta)
+    "billing-mib-push-log-redact": {
+        "task": "billing.mib_push_log_redact",
+        "schedule": 24 * 3600,
+    },
+    # simplejwt: muddati o'tgan Outstanding/Blacklisted tokenlar jadvali cheksiz o'smasin
+    "auth-flush-expired-tokens": {
+        "task": "authentications.flush_expired_tokens",
+        "schedule": 24 * 3600,
+    },
 }

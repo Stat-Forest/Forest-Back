@@ -93,7 +93,7 @@ class ContractWriteSerializer(serializers.ModelSerializer):
             if self.instance:
                 clash = clash.exclude(pk=self.instance.pk)
             if clash.exists():
-                errors["contract_number"] = f"{contract_number} - raqamli shartnoma tizimda allaqachon mavjud"
+                errors["contract_number"] = "Bu raqamli shartnoma tizimda allaqachon mavjud"
         if errors:
             raise serializers.ValidationError(errors)
         return attrs

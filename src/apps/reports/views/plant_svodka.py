@@ -85,7 +85,8 @@ class PlantSvodkaAPIView(GenericAPIView):
             deadline=deadline,
             appendix_id=appendix_id,
             plant=plant,
-            lang=lang
+            lang=lang,
+            user=request.user,  # tashkilot darajasidagi qatorlar foydalanuvchi doirasida (audit N6)
         )
 
         return Response(data)

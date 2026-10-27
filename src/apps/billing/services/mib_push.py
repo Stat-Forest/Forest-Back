@@ -109,6 +109,39 @@ def build_payload(contract: Contract) -> dict:
     }
 
 
+# Payload'dagi shaxsiy ma'lumot kalitlari — saqlash muddati o'tgach maskalanadi
+PII_PAYLOAD_KEYS = ("rent_user_inn", "rent_user_full_name", "rent_user_address", "rent_user_passport", "rent_user_phone")
+
+
+def redact_old_payloads(days: int | None = None) -> int:
+    """
+    Yuborilgan/muddati o'tgan loglarda (N kundan eski) payload'dagi PII maydonlari
+    "***" ga almashtiriladi — hash va texnik maydonlar qoladi (audit M1/F5: ijarachi
+    pasporti/JSHSHIR'i alohida jadvalda abadiy saqlanmasin). Qaytaradi: o'zgargan soni.
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+
+    if days is None:
+        days = int(settings.MIB_PUSH.get("LOG_RETENTION_DAYS", 90))
+    cutoff = timezone.now() - timedelta(days=days)
+    qs = MibPushLog.objects.filter(
+        created_at__lt=cutoff,
+        status__in=[MibPushLog.Status.SENT, MibPushLog.Status.EXPIRED, MibPushLog.Status.FAILED],
+    ).exclude(payload__has_key="redacted_at")
+    changed = 0
+    for log in qs.iterator(chunk_size=500):
+        payload = dict(log.payload or {})
+        for key in PII_PAYLOAD_KEYS:
+            if key in payload:
+                payload[key] = "***"
+        payload["redacted_at"] = timezone.now().isoformat()
+        log.payload = payload
+        log.save(update_fields=["payload"])
+        changed += 1
+    return changed
+
+
 def payload_hash(payload: dict) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
 
