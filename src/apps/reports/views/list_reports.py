@@ -1,3 +1,4 @@
+import uuid
 import django_filters
 from drf_spectacular.utils import extend_schema
 
@@ -47,6 +48,10 @@ class ExtraReportFilter(django_filters.FilterSet):
 
     def filter_organization(self, queryset, name, value):
         if value:
+            try:
+                uuid.UUID(str(value))
+            except (ValueError, AttributeError, TypeError):
+                return queryset.none()  # noto'g'ri UUID -> 500 emas (audit N14)
             return queryset.filter(organization=value)
         return queryset
 

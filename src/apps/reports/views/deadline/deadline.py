@@ -67,9 +67,13 @@ class DeadlineListAPIView(generics.ListAPIView):
                 statement__parent_id=user.statement.pk
             )
 
-        # ================= SUPER =================
-        else:
+        # ================= SUPER / RAHBARIYAT =================
+        elif user.is_superuser or user.role in (CustomUser.Role.SUPER_ADMIN, CustomUser.Role.RAHBARIYAT):
             pass
+
+        # Tashkiloti ham, bo'limi ham yo'q boshqa rol — hech narsa (audit N16)
+        else:
+            qs = qs.none()
 
         # ================= is_new_deadline =================
         is_new_deadline = self.request.query_params.get("is_new_deadline")

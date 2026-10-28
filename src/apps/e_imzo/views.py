@@ -56,7 +56,9 @@ class EimzoChallengeView(views.APIView):
         ok, status_code, data = eimzo_api.eri_challenge(request)
         logger.debug("E-imzo challenge: ok=%s status=%s", ok, status_code)
         if not ok:
-            raise exceptions.ValidationError({"success": False, "err_msg": data})
+            # Ichki e-imzo-server javob matni mijozga chiqmaydi (audit C15/F10)
+            logger.warning("E-imzo challenge xatosi: status=%s body=%s", status_code, str(data)[:500])
+            raise exceptions.ValidationError({"success": False, "err_msg": EIMZO_GENERIC_ERROR})
         challenge = data.get("challenge")
         if challenge:
             cache.set(_challenge_key(str(challenge)), 1, LOGIN_CHALLENGE_TTL)
@@ -104,7 +106,8 @@ class EimzoLoginView(views.APIView):
         logger.debug("E-imzo backend auth: ok=%s status=%s", ok, status_code)
 
         if not ok:
-            raise exceptions.ValidationError({"success": False, "err_msg": data})
+            logger.warning("E-imzo backend auth xatosi: status=%s body=%s", status_code, str(data)[:500])
+            raise exceptions.ValidationError({"success": False, "err_msg": EIMZO_GENERIC_ERROR})
 
         # 2. subjectName olish
         subject_name = data.get("subjectName", {})

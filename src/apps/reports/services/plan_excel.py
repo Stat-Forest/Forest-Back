@@ -24,6 +24,8 @@ fayldan butunlay olib tashlanmaydi.
 """
 
 import openpyxl
+
+from apps.utils.excel_safety import check_xlsx_zip
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
@@ -351,6 +353,7 @@ def parse_plan_excel(file_obj, statement):
     Plant ID ustuni (A) yashirilgan bo'lsa ham qiymati faylda saqlanib qoladi,
     shuning uchun bu yerda hidden holatidan qat'iy nazar to'g'ri o'qiladi.
     """
+    check_xlsx_zip(file_obj)  # audit R1: zip bomb
     try:
         wb = openpyxl.load_workbook(file_obj, data_only=True)
     except Exception as exc:  # noqa: BLE001

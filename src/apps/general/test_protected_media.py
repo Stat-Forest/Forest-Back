@@ -4,6 +4,7 @@ import tempfile
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core import signing
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -82,10 +83,23 @@ class ProtectedMediaTest(APITestCase):
         self.assertEqual(self.client.get(f"{self.url}?t={token}").status_code, 403)
 
     def test_staff_session_can_open_without_token(self):
+        # Admin sessiyasi: faqat tegishli model ruxsati (yoki superuser) bilan (audit PM1)
+        self.client.force_login(self.staff)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        perm = Permission.objects.get(codename="view_landdocument", content_type__app_label="general")
+        self.staff.user_permissions.add(perm)
+        self.staff = User.objects.get(pk=self.staff.pk)  # perm keshini tozalash
         self.client.force_login(self.staff)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Accel-Redirect"], f"/protected-media/{self.path}")
+        # Boshqa papka (shartnoma skanlari) uchun bu ruxsat yetmaydi
+        self.assertEqual(self.client.get("/media/documents/billing/contracts/2026/01/x.pdf").status_code, 403)
+
+    def test_superuser_session_can_open_without_token(self):
+        root = User.objects.create_superuser(email="root_pm@example.com", password="x", first_name="R", last_name="T")
+        self.client.force_login(root)
+        self.assertEqual(self.client.get(self.url).status_code, 200)
 
     def test_missing_file_with_valid_token_is_404(self):
         name = "documents/land/yoq.pdf"

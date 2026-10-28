@@ -21,20 +21,23 @@ def _safe_decimal(val) -> Number:
         return Decimal(0)
 
 
-def _collect_org_general_reports(statement: Statement, deadline) -> List[Report]:
+def _collect_org_general_reports(statement: Statement, deadline, user=None) -> List[Report]:
     """
     Only ACCEPTED plant-based reports created for this deadline.
     This is the ONLY source of truth for plant svodka.
+    `user` berilsa — faqat uning doirasidagi tashkilotlar (audit N6).
     """
-
+    qs = Report.objects.filter(
+        statement=statement,
+        deadline=deadline,
+        is_plant_based=True,
+        status=Report.StatusChoices.ACCEPTED,
+    )
+    if user is not None:
+        from apps.reports.permissions.report_scope import scope_reports_for_user
+        qs = scope_reports_for_user(qs, user)
     return list(
-        Report.objects.filter(
-            statement=statement,
-            deadline=deadline,
-            is_plant_based=True,
-            status=Report.StatusChoices.ACCEPTED,
-        )
-        .select_related("organization")
+        qs.select_related("organization")
         .prefetch_related("report_items__inners__plant")
     )
 
@@ -212,7 +215,7 @@ def _format_statement_columns(
 
 
 def build_plant_svodka(statement: Statement, deadline, appendix_id: Optional[str] = None, plant: Optional[Plant] = None,
-                       include_empty: bool = True, lang: str = "uz"):
+                       include_empty: bool = True, lang: str = "uz", user=None):
     """
     Build appendix-separated, hierarchical svodka aggregated by plant.
 
@@ -242,7 +245,7 @@ def build_plant_svodka(statement: Statement, deadline, appendix_id: Optional[str
             plants = list(Plant.objects.filter(statement__isnull=True).order_by("name"))
 
     # 2) Source reports: per-organization, plant-based accepted reports
-    org_reports = _collect_org_general_reports(statement, deadline)
+    org_reports = _collect_org_general_reports(statement, deadline, user)
     if not org_reports:
         return []
 

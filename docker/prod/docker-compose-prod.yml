@@ -30,6 +30,7 @@ services:
         --max-requests 2000
         --max-requests-jitter 200
         --access-logfile /var/log/forest-back/gunicorn-access.log
+        --access-logformat '%(h)s %(t)s "%(m)s %(U)s" %(s)s %(b)s %(L)s'
         --error-logfile /var/log/forest-back/gunicorn-error.log
 
     volumes:
@@ -77,7 +78,9 @@ services:
       - forest_network
 
   forest_nginx:
-    image: nginx:latest
+    # Versiya pin'langan (ilgari :latest): yangilash — serverda qo'lda recreate
+    # (stop/rm -f/up -d --no-deps forest_nginx), deploy skripti nginx'ni qayta yaratmaydi.
+    image: nginx:1.29.8
     container_name: forest_nginx_prod
     ports:
       - "80:80"
@@ -109,7 +112,7 @@ services:
   #     --email tolqinovoybek92@gmail.com --agree-tos --no-eff-email \
   #     -d api.stat-urmon.uz
   forest_certbot:
-    image: certbot/certbot
+    image: certbot/certbot:v5.8.0
     container_name: forest_certbot
     volumes:
       - ./certbot/etc:/etc/letsencrypt
@@ -124,8 +127,10 @@ services:
   forest_postgres:
     image: postgres:16
     container_name: forest_postgres_prod
+    # Faqat POSTGRES_* o'zgaruvchilari (deploy skripti .env dan ajratib yozadi) —
+    # butun .env (SECRET_KEY, SMTP paroli, ...) bu konteynerga kerak emas.
     env_file:
-      - ../../.env
+      - ../../.env.postgres
     # Standart sozlama (shared_buffers 128 MB) 7.7 GB serverda kam: GeoJSON/hisobot
     # jadvallari diskdan o'qiladi. Deploy skripti bu servisni QAYTA YARATMAYDI —
     # serverda qo'lda: compose stop/rm -f/up -d --no-deps forest_postgres
@@ -197,11 +202,12 @@ services:
     networks:
       - forest_network
     restart: always
-    # VPN_KEY_PASSWORD .env dan (audit A7: parol va kalitlar gitda emas).
+    # Faqat VPN_KEY_PASSWORD (deploy skripti .env dan .env.eimzo ga ajratib yozadi) —
+    # vendor Java jar'iga butun .env (DB/SMTP parollari, SECRET_KEY) berilmaydi.
     # Kalit fayllari (vpn.jks, truststore.jks, *.key) serverda
     # /root/Forest-Back/e-imzo-server/keys/ da turadi — gitignore'da.
     env_file:
-      - ../../.env
+      - ../../.env.eimzo
     environment:
       - TZ=Asia/Tashkent
     volumes:

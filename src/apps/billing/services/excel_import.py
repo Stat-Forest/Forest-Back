@@ -203,5 +203,6 @@ def import_rows(rows: list, user) -> dict:
             errors[str(index)] = exc.errors
         except Exception as exc:  # noqa: BLE001 — bitta qator xatosi boshqalarini to'xtatmasin
             logger.exception("billing import row %s failed", index)
-            errors[str(index)] = {"contract": {"xatolik": str(exc)}}
+            # DB/OS xato matni (SQL, JSHSHIR, yo'llar) mijozga chiqmaydi (audit B3)
+            errors[str(index)] = {"contract": {"xatolik": "Qatorni saqlashda ichki xatolik. Administratorga murojaat qiling."}}
     return {"saved": saved, "errors": errors}

@@ -610,6 +610,17 @@ class UniversalPlantReportCreateSerializer(CustomSerializer):
                     except Exception:
                         raise serializers.ValidationError(f"Noto'g'ri tashkilot ID formati: {org_id}")
 
+                    # Tashkilot body'dan olinadi, lekin faqat foydalanuvchining o'z
+                    # tashkiloti bo'lishi mumkin (audit N1: boshqa tashkilot nomidan hisobot)
+                    if (
+                        not user.is_superuser
+                        and getattr(user, "organization_id", None)
+                        and str(org_id) != str(user.organization_id)
+                    ):
+                        raise serializers.ValidationError(
+                            "Hisobotni faqat o'z tashkilotingiz uchun yaratish mumkin."
+                        )
+
                     current_org = org_cache.get(str(org_id))
                     if current_org is None:
                         try:

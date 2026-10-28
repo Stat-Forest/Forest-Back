@@ -944,9 +944,6 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
         if region_key:
             by_region[region_key].append(rep)
 
-    results = []
-    region_general_reports: List[Report] = []
-
     # Daromad + quarter filter: faqat shu chorak ustunlari ko'rinadi
     serialize_allowed: set[str] | None = None
     if is_daromad and quarter:
@@ -958,7 +955,39 @@ def build_filtered_payload(statement, deadline_id: str, lang: str, quarter: str 
             if col_id:
                 serialize_allowed.add(col_id)
 
-    # 7) Har bir region uchun general rebuild
+    # 7) Har bir region uchun general rebuild.
+    # GET so'rovi DB'ga yozadi (Viloyat/Respublika Jami qayta quriladi) — bir vaqtda
+    # kelgan so'rovlar (turli lang/quarter variantlari ham) bir-birining ustidan
+    # yozmasin: statement+deadline bo'yicha Redis lock (audit C7/N4).
+    from django.core.cache import cache as django_cache
+    lock_key = f"filtered:rebuild:{stmt_id}:{deadline_id}"
+    _lock = getattr(django_cache, "lock", None)
+    rebuild_lock = _lock(lock_key, timeout=120, blocking_timeout=60) if _lock else _NoLock()
+    with rebuild_lock:
+        return _build_filtered_results(
+            statement, stmt_id, deadline, deadline_id, lang, quarter, cache, by_region,
+            individual_general_by_org, reja_col_ids, is_daromad, plant_map, plant_name_field,
+            all_plant_ids, serialize_allowed,
+        )
+
+
+class _NoLock:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def _build_filtered_results(
+    statement, stmt_id, deadline, deadline_id, lang, quarter, cache, by_region,
+    individual_general_by_org, reja_col_ids, is_daromad, plant_map, plant_name_field,
+    all_plant_ids, serialize_allowed,
+):
+    from apps.reports.services.report_cache import set_cached_filtered_payload
+
+    results = []
+    region_general_reports: List[Report] = []
     region_choices_map = dict(RegionChoices.choices)
     for region_key, reps in by_region.items():
         region_label = region_choices_map.get(str(region_key), str(region_key)).title()

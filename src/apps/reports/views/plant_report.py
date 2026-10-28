@@ -13,11 +13,15 @@ from apps.reports.serializers.plant.plant_report_delete import PlantReportDelete
 from apps.reports.serializers.plant.plant_report_list import PlantReportListSerializer
 from apps.logs.drf_mixins import DRFHistoryMixin
 from apps.reports.services.pagination import ReportPagination
-from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin, scope_reports_for_user
+from apps.reports.permissions.report_scope import ReportScopedQuerysetMixin, scope_reports_for_user, CanEditReportData
+from apps.reports.permissions.check_create_report import CanCreateReport
 
 
 @extend_schema(tags=["Plant-Reports"])
 class UniversalPlantReportCreateAPIView(DRFHistoryMixin, APIView):
+    # Hisobotni faqat tashkilot hodimi (va super_admin) yaratadi — oddiy hisobot bilan bir xil (audit N1)
+    permission_classes = (CanCreateReport,)
+
     def post(self, request):
         serializer = UniversalPlantReportCreateSerializer(
             data=request.data,
@@ -102,6 +106,9 @@ class PlantUpdateReportAPIView(DRFHistoryMixin, RetrieveUpdateAPIView):
     Daromad bo'lsa quarter workflow ishlaydi,
     qolgan statementlar esa eski update oqimida qoladi.
     """
+    # Faqat EDITOR_ROLES va faqat saved/cancelled (joriy chorak) holatda — oddiy
+    # hisobot update'i bilan bir xil (audit N3: ilgari ACCEPTED ham o'zgartirilardi)
+    permission_classes = (CanEditReportData,)
 
     def get_queryset(self):
         base_qs = scope_reports_for_user(

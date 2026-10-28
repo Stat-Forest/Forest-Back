@@ -56,6 +56,10 @@ if DEBUG:
     CORS_ALLOWED_ORIGINS += ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173"]
     CSRF_TRUSTED_ORIGINS += ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
 
+# Django admin (/admin/, /billing-admin/) uchun IP allowlist: "IP,IP/CIDR,..." —
+# bo'sh bo'lsa hamma uchun ochiq (apps/base/admin_ip_allowlist.py)
+ADMIN_ALLOWED_IPS = os.environ.get("ADMIN_ALLOWED_IPS", "")
+
 # Admin sessiyasi (sessionid) 8 soat — 2 hafta emas (audit C11)
 SESSION_COOKIE_AGE = 8 * 3600
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -109,6 +113,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # /admin/ va /billing-admin/ faqat ADMIN_ALLOWED_IPS dan (bo'sh bo'lsa cheklov yo'q)
+    "apps.base.admin_ip_allowlist.AdminIPAllowlistMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",

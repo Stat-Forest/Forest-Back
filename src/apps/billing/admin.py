@@ -342,6 +342,13 @@ class MibPushLogAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in MibPushLog._meta.fields]
     actions = ("resend",)
 
+    def get_fields(self, request, obj=None):
+        # payload (ijarachi pasport/JSHSHIR/telefon) faqat superuser'ga ko'rinadi (audit M1/F5)
+        fields = super().get_fields(request, obj)
+        if request.user.is_superuser:
+            return fields
+        return [f for f in fields if f not in ("payload", "response")]
+
     def has_add_permission(self, request):
         return False
 

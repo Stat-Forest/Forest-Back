@@ -4,6 +4,7 @@ from django.db.models.functions import Length
 from django.core.cache import cache
 import hashlib
 import json
+import re
 
 from rest_framework.views import APIView
 from rest_framework import permissions
@@ -82,6 +83,18 @@ class ReportLoginSummaryAPIView(APIView):
         yearly = request.query_params.get("yearly")
         statement_status = request.query_params.get("statement_status")
         lang = request.query_params.get("lang", "uz")
+        if lang not in ("uz", "ru"):
+            lang = "uz"  # audit N12: noma'lum til -> 500
+        # Ochiq endpoint: parametrlar kesh kaliti — ixtiyoriy qiymat bilan Redis
+        # to'ldirilmasin (audit N13)
+        if monthly and not re.fullmatch(r"\d{4}-\d{2}", monthly):
+            return Response({"detail": "monthly: YYYY-MM"}, status=400)
+        if yearly and not re.fullmatch(r"\d{4}", yearly):
+            return Response({"detail": "yearly: YYYY"}, status=400)
+        if statement_status not in (None, "", "month", "year"):
+            return Response({"detail": "statement_status: month|year"}, status=400)
+        if lang not in ("uz", "ru"):
+            lang = "uz"
 
         # ✅ Cache key yaratish
         cache_key = self._make_cache_key(monthly, yearly, statement_status, lang)

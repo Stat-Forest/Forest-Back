@@ -1,3 +1,5 @@
+import os
+
 REST_FRAMEWORK = {
     # -------------------------------------------------------------------------
     # Authentication
@@ -33,9 +35,15 @@ REST_FRAMEWORK = {
     # -------------------------------------------------------------------------
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
+        # Autentifikatsiyalangan foydalanuvchi uchun yuqori, lekin chegaralangan limit
+        # (audit F4): oddiy UI 1 daqiqada bir necha o'nlab so'rov yuboradi; 600/min
+        # skrapping va qayta-qayta eksport/aggregatsiya bilan DoS'ni to'xtatadi.
+        'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/min',  # Unauthenticated: 30 requests per minute
+        'user': os.getenv('USER_THROTTLE_RATE', '600/min'),
+        'export': '10/min',  # Excel eksport (fayl yozadi, og'ir) — ScopedRateThrottle
         'burst': '10/min',  # Scope-based burst limit for sensitive endpoints (login, OTP, etc.)
         'login_ip': '10/min',
         'login_email': '5/min',

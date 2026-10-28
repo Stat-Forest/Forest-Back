@@ -95,6 +95,8 @@ class StatisticsEmployeeReportAPIView(APIView):
 
     def get(self, request):
         lang = request.query_params.get("lang", "uz")
+        if lang not in ("uz", "ru"):
+            lang = "uz"  # audit N12: noma'lum til -> 500
         deadline_id = request.query_params.get("deadline")
 
         translation.activate(lang)

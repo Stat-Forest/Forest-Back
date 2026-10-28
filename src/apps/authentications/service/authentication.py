@@ -19,15 +19,21 @@ class CustomJWTAuthentication(JWTAuthentication):
     """
 
     def authenticate(self, request):
-        result = super().authenticate(request)
-        if result is None:
+        header = self.get_header(request)
+        if header is None:
+            return None
+        raw_token = self.get_raw_token(header)
+        if raw_token is None:
             return None
 
-        user, validated_token = result
+        validated_token = self.get_validated_token(raw_token)
 
-        # Logout qilingan token (muddati tugamagan bo'lsa ham) — yaroqsiz
+        # Logout qilingan token (muddati tugamagan bo'lsa ham) — yaroqsiz.
+        # get_user'dan OLDIN: bekor qilingan token last_activity'ni yangilamasin (audit F13)
         if is_access_token_revoked(validated_token):
             raise InvalidToken("Sessiya tugatilgan. Qayta login qiling.")
+
+        user = self.get_user(validated_token)
 
         if validated_token.get("pwd_reset"):
             view = (getattr(request, "parser_context", None) or {}).get("view")
@@ -59,6 +65,12 @@ class CustomJWTAuthentication(JWTAuthentication):
 
         if not user.is_active:
             raise AuthenticationFailed("Foydalanuvchi faol emas.", code="user_inactive")
+
+        # Parolni tiklash tokeni (10 daqiqa, faqat new-password view'ida) sessiya
+        # emas — inactivity tekshiruvi unga qo'llanmaydi. Aks holda 15 daqiqadan
+        # ko'p vaqt oldin kirgan har bir foydalanuvchi parolini tiklay olmasdi (audit F2)
+        if validated_token.get("pwd_reset"):
+            return user
 
         timeout_seconds = getattr(settings, "SESSION_INACTIVITY_TIMEOUT_SECONDS", 900)
         touch_interval_seconds = getattr(settings, "SESSION_ACTIVITY_TOUCH_INTERVAL_SECONDS", 60)

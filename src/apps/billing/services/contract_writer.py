@@ -226,8 +226,10 @@ def _claims_renter(renter: Renter, data: dict) -> bool:
     terib boshqa odamning ma'lumotini olish mumkin edi (audit B7/H2).
     """
     passport = _norm_text(data.get("passport")).replace(" ", "")
-    if renter.passport and passport:
-        return passport == _norm_text(renter.passport).replace(" ", "")
+    if renter.passport:
+        # Pasport bazada bor — faqat pasport mos kelsa (F.I.Sh. + JSHSHIR ko'p
+        # hujjatlarda birga uchraydi; pasportni yubormasdan chetlab o'tish — audit B2)
+        return bool(passport) and passport == _norm_text(renter.passport).replace(" ", "")
     name = _norm_text(data.get("full_name"))
     return bool(name) and name == _norm_text(renter.full_name)
 

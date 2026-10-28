@@ -14,4 +14,6 @@ MIB_PUSH = {
     "TIMEOUT": int(os.getenv("MIB_PUSH_TIMEOUT", 10)),
     "DTL_DAYS": int(os.getenv("MIB_PUSH_DTL_DAYS", 10)),
     "MAX_ATTEMPTS": int(os.getenv("MIB_PUSH_MAX_ATTEMPTS", 5)),
+    # Shu kundan eski yuborilgan loglarda payload'dagi pasport/JSHSHIR/telefon/manzil maskalanadi
+    "LOG_RETENTION_DAYS": int(os.getenv("MIB_PUSH_LOG_RETENTION_DAYS", 90)),
 }

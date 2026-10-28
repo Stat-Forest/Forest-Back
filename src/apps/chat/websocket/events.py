@@ -92,3 +92,27 @@ def broadcast_conversation_event(*, conversation, event: str) -> None:
             event,
             conversation.id,
         )
+
+
+def user_group_name(user_id) -> str:
+    """Foydalanuvchining barcha ochiq chat soketlari guruhi (logout'da yopish uchun)."""
+    return f"user_{user_id}"
+
+
+def close_user_sockets(user_id) -> None:
+    """
+    Logout / parol o'zgarishi / bloklashdan keyin shu foydalanuvchining ochiq
+    WebSocket'larini yopish (audit F1: aks holda soket xabarlarni olishda davom etardi).
+    Channel layer ishlamasa — jim o'tadi, logout buzilmaydi.
+    """
+    import logging
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    try:
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(user_group_name(user_id), {"type": "force.logout"})
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("WS yopish xabari yuborilmadi (user=%s): %s", user_id, exc)

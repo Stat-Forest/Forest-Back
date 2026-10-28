@@ -287,8 +287,20 @@ class ReportCreateSerializer(serializers.ModelSerializer):
                             raise serializers.ValidationError(
                                 {"detail": f"Organization inners required for column {col_id}"}
                             )
-                        current_org_id = inners_data[0]["value"]
-                        org_instance = Organization.objects.get(id=current_org_id)
+                        current_org_id = str(inners_data[0]["value"])
+                        # Tashkilot ustunidagi qiymat foydalanuvchining o'z tashkiloti
+                        # bo'lishi shart (audit N2: boshqa tashkilot nomidan hisobot)
+                        if resolved_org is not None and not user.is_superuser and current_org_id != str(resolved_org.id):
+                            raise ValidationError(
+                                {"report_items": _("Hisobotni faqat o'z tashkilotingiz uchun yaratish mumkin.")}
+                            )
+                        if resolved_org is not None and current_org_id == str(resolved_org.id):
+                            org_instance = resolved_org
+                        else:
+                            try:
+                                org_instance = Organization.objects.get(id=current_org_id)
+                            except Exception:
+                                raise ValidationError({"report_items": _("Tashkilot topilmadi.")})
 
                     report_key = (current_org_id, str(column.statement.id))
 

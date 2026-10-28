@@ -80,6 +80,16 @@ class PlantReportUpdateSerializer(CustomModelSerializer):
                 "Svodный (hisoblangan) reportni qo'lda tahrirlab bo'lmaydi."
             )
 
+        # Daromad'da chorak holati DaromadQuarterService'da tekshiriladi; qolgan
+        # statement'larda yuborilgan/qabul qilingan hisobot o'zgartirilmaydi (audit N3)
+        if (
+            not DaromadQuarterService.is_daromad_report(instance)
+            and instance.status not in (Report.StatusChoices.SAVED, Report.StatusChoices.CANCELLED)
+        ):
+            raise ValidationError(
+                "Yuborilgan yoki qabul qilingan hisobotni tahrirlab bo'lmaydi."
+            )
+
         raw_items = validated_data.pop("report_items", [])
         quarter = validated_data.get("quarter")
 
