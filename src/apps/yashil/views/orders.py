@@ -64,7 +64,7 @@ def orders_for_cabinet(cabinet, is_admin: bool):
     if cabinet.member_type == T.SUPPLIER:
         forwarded = OrderEvent.objects.filter(order=OuterRef("pk"), action="forward")
         return qs.filter(supplier_org_id=cabinet.organization_id).annotate(_fw=Exists(forwarded)).filter(
-            Q(state__in=(OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW, OrderState.EXECUTION)) | Q(_fw=True)
+            Q(state__in=(OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW, OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED)) | Q(_fw=True)
         ).exclude(state=OrderState.DRAFT)
     if cabinet.member_type == T.OBSERVER:
         return scope_service.scope_mahallas(qs, cabinet, field="mahalla_id").exclude(state=OrderState.DRAFT)

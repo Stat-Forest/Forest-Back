@@ -24,7 +24,9 @@ class OrderState(models.TextChoices):
     SUPPLIER_NEW = "supplier_new", "Yetkazib beruvchida yangi"
     SUPPLIER_REVIEW = "supplier_review", "Yetkazib beruvchi ko'rib chiqmoqda"
     EXECUTION = "execution", "Ijroda"
-    # 3-bosqich: act_review, act_returned, partial, closed, cancelled
+    PARTIAL = "partial", "Qisman bajarilgan"
+    CLOSED = "closed", "Bajarilgan"
+    CANCELLED = "cancelled", "Bekor qilingan"
 
 
 # Kirill nomlari (interfeys va hujjat uchun; TZ §7 jadvali)
@@ -36,10 +38,15 @@ STATE_LABELS_CYR = {
     OrderState.SUPPLIER_NEW: "Етказиб берувчида янги",
     OrderState.SUPPLIER_REVIEW: "Етказиб берувчи кўриб чиқмоқда",
     OrderState.EXECUTION: "Ижрода",
+    OrderState.PARTIAL: "Қисман бажарилган",
+    OrderState.CLOSED: "Бажарилган",
+    OrderState.CANCELLED: "Бекор қилинган",
 }
 
 REVIEW_STATES = {OrderState.UNION_NEW, OrderState.UNION_REVIEW, OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW}
 EDITABLE_STATES = {OrderState.DRAFT, OrderState.RETURNED}
+DELIVERY_STATES = {OrderState.EXECUTION, OrderState.PARTIAL}
+FINAL_STATES = {OrderState.CLOSED, OrderState.CANCELLED}
 
 
 class ReturnReason(models.TextChoices):
@@ -97,6 +104,7 @@ class Order(AbstractBaseModel):
     accepted_on = models.DateField(null=True, blank=True, help_text="Asia/Tashkent sanasi")
     delivery_due = models.DateField(null=True, blank=True)
     executor_name = models.CharField(max_length=300, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True, help_text="Bajarilgan yoki bekor qilingan vaqt")
     current_version = models.ForeignKey("yashil.OrderVersion", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
 
     class Meta:

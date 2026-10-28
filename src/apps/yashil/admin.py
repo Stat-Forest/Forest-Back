@@ -4,6 +4,9 @@ from django.contrib import admin
 from apps.base.admin import admin_site
 from apps.yashil.models import (
     Acceptance,
+    Act,
+    ActAttachment,
+    ActVersion,
     Document,
     ServiceAllocation,
     StockMovement,
@@ -307,6 +310,43 @@ class ServiceAllocationAdmin(admin.ModelAdmin):
     list_display = ("organization", "catalog_item", "period", "order_line", "qty")
     list_filter = ("period",)
     readonly_fields = [f.name for f in ServiceAllocation._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- dalolatnoma (3-bosqich)
+class ActVersionInline(admin.TabularInline):
+    model = ActVersion
+    extra = 0
+    can_delete = False
+    readonly_fields = ("version_no", "delivery_date", "responsible", "document_version", "submitted_at", "superseded_at", "created_at")
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@register(Act)
+class ActAdmin(admin.ModelAdmin):
+    list_display = ("number", "order", "status", "version_no", "is_partial", "approved_at", "returned_at", "created_at")
+    list_filter = ("status", "is_partial")
+    search_fields = ("number", "order__number", "order__mahalla__name")
+    readonly_fields = [f.name for f in Act._meta.fields]
+    inlines = (ActVersionInline,)
+    list_select_related = ("order",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ActAttachment)
+class ActAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("act", "original_name", "kind", "size", "version_no", "created_at")
+    readonly_fields = ("act", "file", "original_name", "size", "kind", "version_no", "uploaded_by")
 
     def has_add_permission(self, request):
         return False

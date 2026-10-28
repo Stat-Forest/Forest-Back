@@ -58,13 +58,27 @@ class LineOutSerializer(serializers.ModelSerializer):
     catalog_item = CatalogItemSerializer(read_only=True)
     qty = serializers.SerializerMethodField()
     unit_cyr = serializers.SerializerMethodField()
+    accepted_qty = serializers.SerializerMethodField()
+    remaining_qty = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderLine
-        fields = ("id", "catalog_item", "qty", "unit_cyr", "attrs_note", "position")
+        fields = ("id", "catalog_item", "qty", "unit_cyr", "attrs_note", "position", "accepted_qty", "remaining_qty")
 
     def get_qty(self, obj):
         return _dec(obj.qty)
+
+    def _accepted(self, obj):
+        table = self.context.get("accepted_by_line")
+        return table.get(obj.id, Decimal("0")) if table is not None else None
+
+    def get_accepted_qty(self, obj):
+        a = self._accepted(obj)
+        return _dec(a) if a is not None else None
+
+    def get_remaining_qty(self, obj):
+        a = self._accepted(obj)
+        return _dec(obj.qty - a) if a is not None else None
 
     def get_unit_cyr(self, obj):
         return UNIT_LABELS.get(obj.catalog_item.unit, (obj.catalog_item.unit,))[0]
@@ -188,6 +202,8 @@ class OrderDetailSerializer(OrderListSerializer):
     actions = serializers.SerializerMethodField()
     last_return = serializers.SerializerMethodField()
     acceptance = serializers.SerializerMethodField()
+    acts = serializers.SerializerMethodField()
+    closed_at = serializers.DateTimeField(format="iso-8601", read_only=True)
     lat = serializers.SerializerMethodField()
     lon = serializers.SerializerMethodField()
     area_calc_ha = serializers.SerializerMethodField()
@@ -199,8 +215,20 @@ class OrderDetailSerializer(OrderListSerializer):
             "mahalla", "supplier", "union_unit", "object_type", "object_note", "season", "address", "lat", "lon",
             "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info", "base_seedlings",
             "problem_note", "linked_order", "repeat_reason", "first_submitted_at", "accepted_at", "executor_name",
-            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance",
+            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance", "acts", "closed_at",
         )
+
+    def to_representation(self, instance):
+        from apps.yashil.services.acts import accepted_by_line
+
+        self.context["accepted_by_line"] = accepted_by_line(instance)
+        return super().to_representation(instance)
+
+    def get_acts(self, o):
+        from apps.yashil.serializers_acts import ActListSerializer
+
+        qs = o.acts.select_related("order__mahalla", "order__supplier_org", "current_version").order_by("index")
+        return ActListSerializer(qs, many=True, context=self.context).data
 
     def get_mahalla(self, o):
         m = o.mahalla

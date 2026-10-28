@@ -1,3 +1,14 @@
+from .acts import (
+    ActAttachmentDeleteView,
+    ActAttachmentsView,
+    ActCancelView,
+    ActDetailView,
+    ActListView,
+    ActReturnView,
+    ActSignTaskView,
+    ActSignView,
+    OrderActsCreateView,
+)
 from .documents import (
     DocumentVersionHtmlView,
     DocumentVersionView,
@@ -44,6 +55,8 @@ from .reference import (
 )
 
 __all__ = [
+    "ActAttachmentDeleteView", "ActAttachmentsView", "ActCancelView", "ActDetailView", "ActListView", "ActReturnView",
+    "ActSignTaskView", "ActSignView", "OrderActsCreateView",
     "DocumentVersionHtmlView", "DocumentVersionView", "NotificationListView", "NotificationReadAllView",
     "NotificationReadView", "PublicVerifyView", "OrderAcceptView", "OrderAttachmentDeleteView", "OrderAttachmentsView",
     "OrderDetailView", "OrderDocumentView", "OrderEventsView", "OrderForwardView", "OrderListCreateView",

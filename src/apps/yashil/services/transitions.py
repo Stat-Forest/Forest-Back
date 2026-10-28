@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.yashil.models import (
+    DELIVERY_STATES,
     Order,
     OrderEvent,
     OrderState,
@@ -40,9 +41,10 @@ K = YashilNotification.Kind
 
 
 class TransitionError(Exception):
-    def __init__(self, message: str, *, code: str = "state_conflict", field: str | None = None, status: int = 409):
+    def __init__(self, message: str, *, code: str = "state_conflict", field: str | None = None, status: int = 409, index=None):
         super().__init__(message)
         self.message, self.code, self.field, self.status = message, code, field, status
+        self.index = index
         self.extra: dict = {}
 
 
@@ -247,7 +249,7 @@ def deadline_info(order: Order, today=None) -> dict:
         info.update(stage="review", review_due=due.isoformat() if due else None,
                     review_used=review_days_used(segments, today, cal, REVIEW_WORKDAYS),
                     late_workdays=overdue_workdays(due, today, cal) if due else 0)
-    elif order.state == OrderState.EXECUTION and order.delivery_due:
+    elif order.state in DELIVERY_STATES and order.delivery_due:
         info.update(stage="delivery", delivery_due=order.delivery_due.isoformat(),
                     late_workdays=overdue_workdays(order.delivery_due, today, cal))
     return info
@@ -275,5 +277,10 @@ def allowed_actions(order: Order, cabinet) -> list[str]:
             return ["review"]
         if s == OrderState.SUPPLIER_REVIEW:
             return (["accept"] if cabinet.can_prepare else []) + ["return"]
+        if s in DELIVERY_STATES and cabinet.can_prepare:
+            from apps.yashil.models import Act
+
+            if not order.acts.filter(status__in=Act.OPEN_STATUSES).exists():
+                return ["create_act"]
         return []
     return []

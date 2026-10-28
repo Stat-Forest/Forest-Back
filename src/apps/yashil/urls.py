@@ -1,6 +1,15 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    ActAttachmentDeleteView,
+    ActAttachmentsView,
+    ActCancelView,
+    ActDetailView,
+    ActListView,
+    ActReturnView,
+    ActSignTaskView,
+    ActSignView,
+    OrderActsCreateView,
     DocumentVersionHtmlView,
     DocumentVersionView,
     NotificationListView,
@@ -62,6 +71,16 @@ urlpatterns = [
     path("orders/<uuid:order_id>/return/", OrderReturnView.as_view(), name="yashil-order-return"),
     path("orders/<uuid:order_id>/accept/", OrderAcceptView.as_view(), name="yashil-order-accept"),
     path("orders/<uuid:order_id>/events/", OrderEventsView.as_view(), name="yashil-order-events"),
+    # Dalolatnomalar (3-bosqich)
+    path("orders/<uuid:order_id>/acts/", OrderActsCreateView.as_view(), name="yashil-order-acts"),
+    path("acts/", ActListView.as_view(), name="yashil-acts"),
+    path("acts/<uuid:act_id>/", ActDetailView.as_view(), name="yashil-act-detail"),
+    path("acts/<uuid:act_id>/attachments/", ActAttachmentsView.as_view(), name="yashil-act-attachments"),
+    path("acts/<uuid:act_id>/attachments/<uuid:attachment_id>/", ActAttachmentDeleteView.as_view(), name="yashil-act-attachment"),
+    path("acts/<uuid:act_id>/sign-task/", ActSignTaskView.as_view(), name="yashil-act-sign-task"),
+    path("acts/<uuid:act_id>/sign/", ActSignView.as_view(), name="yashil-act-sign"),
+    path("acts/<uuid:act_id>/return/", ActReturnView.as_view(), name="yashil-act-return"),
+    path("acts/<uuid:act_id>/cancel/", ActCancelView.as_view(), name="yashil-act-cancel"),
     # Ombor (3-bosqich)
     path("stock/", StockSummaryView.as_view(), name="yashil-stock"),
     path("stock/movements/", StockMovementListView.as_view(), name="yashil-stock-movements"),

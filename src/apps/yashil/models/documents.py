@@ -24,6 +24,7 @@ class Document(AbstractBaseModel):
     class Kind(models.TextChoices):
         ORDER_FORM = "order_form", "Buyurtmanoma"
         ACT = "act", "Topshirish-qabul qilish dalolatnomasi"
+        CANCELLATION = "cancellation", "Bekor qilish hujjati"
 
     kind = models.CharField(max_length=20, choices=Kind.choices)
     order = models.ForeignKey("yashil.Order", on_delete=models.CASCADE, related_name="documents")
@@ -42,6 +43,7 @@ class Document(AbstractBaseModel):
 class DocumentVersion(AbstractBaseModel):
     class Status(models.TextChoices):
         UNSIGNED = "unsigned", "Imzolanmagan"
+        PARTLY = "partly_signed", "Qisman imzolangan (ikkinchi imzo kutilmoqda)"
         SIGNED = "signed", "Imzolangan"
         SUPERSEDED = "superseded", "Almashtirilgan"
         CANCELLED = "cancelled", "Bekor qilingan"
@@ -53,7 +55,7 @@ class DocumentVersion(AbstractBaseModel):
     html = models.TextField(blank=True)
     content_hash = models.CharField(max_length=64, db_index=True, editable=False)
     qr_token = models.CharField(max_length=32, unique=True, editable=False)
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.UNSIGNED)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.UNSIGNED)
     pdf_file = models.FileField(upload_to="documents/yashil/pdf/", null=True, blank=True)
 
     class Meta:
@@ -67,9 +69,15 @@ class DocumentVersion(AbstractBaseModel):
             self.qr_token = secrets.token_urlsafe(16)[:22]
         super().save(*args, **kwargs)
 
+    SIGNABLE_STATUSES = ("unsigned", "partly_signed")
+
     @property
     def signatures_by_role(self) -> dict:
         return {s.role: s for s in self.signatures.all()}
+
+    @property
+    def is_open_for_signing(self) -> bool:
+        return self.status in self.SIGNABLE_STATUSES
 
 
 class Signature(AbstractBaseModel):

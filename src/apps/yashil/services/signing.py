@@ -74,6 +74,14 @@ def _check_signer_profile(user, membership):
         raise SigningError("Профилингизда ПИНФЛ (ЖШШИР) киритилмаган. Администраторга мурожаат қилинг.", code="signer_profile")
 
 
+def _check_open_for_role(version: DocumentVersion, role: str):
+    """Versiya imzolash uchun ochiq va shu tomon hali imzolamagan bo'lishi kerak (akt — ikki imzo)."""
+    if not version.is_open_for_signing:
+        raise SigningError("Ҳужжатнинг бу версияси имзолаш учун очиқ эмас (имзоланган ёки алмаштирилган)", code="state_conflict", status=409)
+    if version.signatures.filter(role=role).exists():
+        raise SigningError("Бу тараф ҳужжатни аллақачон имзолаган", code="state_conflict", status=409)
+
+
 def _signing_payload(version: DocumentVersion, user, role: str, nonce: str) -> str:
     payload = {
         "v": 1, "type": DOCUMENT_TYPE, "doc_kind": version.document.kind,
@@ -88,8 +96,7 @@ def _signing_payload(version: DocumentVersion, user, role: str, nonce: str) -> s
 def prepare_signing(version: DocumentVersion, user, membership, role: str, request) -> dict:
     """Frontend uchun imzolash topshirig'i: sign_text, mode, nonce, expires_in."""
     _check_signer_profile(user, membership)
-    if version.status != DocumentVersion.Status.UNSIGNED:
-        raise SigningError("Ҳужжатнинг бу версияси имзолаш учун очиқ эмас", code="state_conflict", status=409)
+    _check_open_for_role(version, role)
     nonce = secrets.token_hex(16)
     document = _signing_payload(version, user, role, nonce)
     entry = {"document": document, "content_hash": version.content_hash, "user_id": str(user.id), "role": role}
@@ -136,9 +143,9 @@ def _store(version, user, membership, role, *, mode, pkcs7, cert, subject, verif
         cert_valid_from=str(cert.get("validFrom") or "")[:32], cert_valid_to=str(cert.get("validTo") or "")[:32],
         mode=mode, pkcs7=pkcs7, verify_result=verify_result, is_valid=True, created_by=user,
     )
-    from apps.yashil.services.documents import mark_signed
+    from apps.yashil.services.documents import after_signature
 
-    mark_signed(version)
+    after_signature(version)
     return signature
 
 
@@ -155,8 +162,7 @@ def verify_and_store(version: DocumentVersion, user, membership, role: str, pkcs
     if entry.get("user_id") != str(user.id) or entry.get("role") != role:
         raise SigningError("Имзолаш сўрови бошқа фойдаланувчи учун берилган.")
     version.refresh_from_db()
-    if version.status != DocumentVersion.Status.UNSIGNED:
-        raise SigningError("Ҳужжат аллақачон имзоланган ёки алмаштирилган", code="state_conflict", status=409)
+    _check_open_for_role(version, role)
     if version.content_hash != entry.get("content_hash"):
         raise SigningError("Ҳужжат имзолаш сўровидан кейин ўзгартирилган. Қайтадан имзоланг.", code="content_changed")
 
