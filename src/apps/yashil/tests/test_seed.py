@@ -38,6 +38,17 @@ class SeedDemoTest(TestCase):
             CatalogItem.objects.count(), YashilMembership.objects.count(), SupplierAssignment.objects.count(),
         ))
 
+    @override_settings(DEBUG=True)
+    def test_seed_with_orders_creates_five_states_once(self):
+        from apps.yashil.models import Order
+
+        call_command("yashil_seed_demo", "--with-orders", stdout=io.StringIO())
+        call_command("yashil_seed_demo", "--with-orders", stdout=io.StringIO())
+        self.assertEqual(Order.objects.count(), 5)
+        self.assertEqual(set(Order.objects.values_list("state", flat=True)),
+                         {"draft", "union_new", "supplier_new", "returned", "execution"})
+        self.assertEqual(Order.objects.exclude(number__isnull=True).count(), 4)
+
     @override_settings(DEBUG=False)
     def test_seed_refuses_outside_debug_without_force(self):
         from django.core.management.base import CommandError

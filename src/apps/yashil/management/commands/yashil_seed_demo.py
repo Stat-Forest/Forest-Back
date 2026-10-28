@@ -94,6 +94,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--force", action="store_true", help="DEBUG=False bo'lsa ham ishga tushirish (prod'da ISHLATMANG)")
+        parser.add_argument("--with-orders", action="store_true", help="Turli holatdagi namuna buyurtmalar ham (imzosiz, faqat namoyish)")
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -155,7 +156,45 @@ class Command(BaseCommand):
         self._member("dm@test.uz", "ym_dm", "ДМ", "Масъули", T.SUPPLIER, organization=dm_main)
         self._member("kuzatuvchi@test.uz", "ym_observer", "Агентлик", "Кузатувчиси", T.OBSERVER, can_prepare=False, can_sign=False)
         self._member("xojalik@test.uz", "tashkilot_rahbari", "Хўжалик", "Раҳбари", T.SUPPLIER, organization=forest1, user_org=forest1)
+        if options["with_orders"]:
+            self._demo_orders(mahallas, forest1, dm_main)
         self.stdout.write("Yashil mahalla namuna ma'lumotlari tayyor (parol: Test12345!).")
+
+    def _demo_orders(self, mahallas, forest1, dm_main):
+        """Namuna buyurtmalar: qoralama, uyushmada, yetkazib beruvchida, qaytarilgan, ijroda (imzosiz)."""
+        from decimal import Decimal
+
+        from apps.yashil.models import Order, OrderLine, ReturnReason, YashilMembership
+        from apps.yashil.services import transitions as tr
+
+        if Order.objects.filter(title__startswith="Намуна:").exists():
+            return
+        m = YashilMembership.objects.get(user__email="mahalla@test.uz")
+        u = YashilMembership.objects.get(user__email="uyushma@test.uz")
+        f = YashilMembership.objects.get(user__email="xojalik@test.uz")
+        items = {c.code: c for c in CatalogItem.objects.all()}
+        mahalla = mahallas["YM-DEMO-001"]
+
+        def make(title, route, org, lines, **extra):
+            o = Order.objects.create(mahalla=mahalla, route=route, supplier_org=org, created_by_membership=m,
+                                     title=title, address="Боғистон, марказий кўча", lat=Decimal("40.783200"),
+                                     lon=Decimal("72.350100"), area_ha=Decimal("0.5"), water_source="Ариқ", **extra)
+            for i, (code, qty) in enumerate(lines):
+                OrderLine.objects.create(order=o, catalog_item=items[code], qty=Decimal(qty), position=i)
+            return o
+
+        make("Намуна: қоралама — кўчат", "forest", forest1, [("ASH", "200"), ("ELM", "100")])
+        o2 = make("Намуна: уюшмада — кўчат ва мульча", "forest", forest1, [("ASH", "300"), ("MUL", "1000")], base_seedlings=300)
+        tr.submit(o2, m, document_version=None)
+        o3 = make("Намуна: етказиб берувчида — биогумус", "dm", dm_main, [("BIO", "500")], base_seedlings=120)
+        tr.submit(o3, m, document_version=None); tr.start_review(o3, u); tr.forward(o3, u)
+        o4 = make("Намуна: қайтарилган — тол кўчати", "forest", forest1, [("WIL", "150")])
+        tr.submit(o4, m, document_version=None); tr.start_review(o4, u)
+        tr.return_order(o4, u, reason_code=ReturnReason.ADDRESS, comment="Манзилни аниқлаштиринг: кўча номи йўқ", fields=["address"])
+        o5 = make("Намуна: ижрода — қайрағоч", "forest", forest1, [("ELM", "250")])
+        tr.submit(o5, m, document_version=None); tr.start_review(o5, u); tr.forward(o5, u)
+        tr.start_review(o5, f); tr.accept(o5, f, executor_name="Иброҳимов А.")
+        self.stdout.write("Namuna buyurtmalar: 5 ta (qoralama, uyushmada, yetkazib beruvchida, qaytarilgan, ijroda).")
 
     def _supplier(self, name, region, supplier_type, parent=None):
         org, _ = Organization.objects.get_or_create(name=name, defaults={"region": region})

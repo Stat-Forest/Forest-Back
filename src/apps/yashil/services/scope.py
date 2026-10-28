@@ -154,3 +154,16 @@ def forest_suppliers(exclude_org_id=None):
     if exclude_org_id:
         qs = qs.exclude(organization_id=exclude_org_id)
     return qs
+
+
+def memberships_active_for_target(member_type, *, mahalla_id=None, union_unit_id=None, organization_id=None, on: date | None = None):
+    """Xabarnoma qabul qiluvchilar: berilgan kabinetning faol a'zolari."""
+    on = on or date.today()
+    qs = YashilMembership.objects.filter(member_type=member_type, is_active=True, user__is_active=True).filter(_active_period_q(on))
+    if mahalla_id is not None:
+        qs = qs.filter(mahalla_id=mahalla_id)
+    if union_unit_id is not None:
+        qs = qs.filter(union_unit_id=union_unit_id)
+    if organization_id is not None:
+        qs = qs.filter(organization_id=organization_id)
+    return qs.select_related("user")
