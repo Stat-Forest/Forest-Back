@@ -19,6 +19,17 @@ from .orders import (
     OrderReviewView,
     OrderSubmitView,
 )
+from .stock import (
+    ServiceCapacityView,
+    StockMovementListView,
+    StockOpeningView,
+    StockReceiptView,
+    StockReturnInView,
+    StockReversalApproveView,
+    StockReversalRejectView,
+    StockReversalRequestView,
+    StockSummaryView,
+)
 from .reference import (
     CalendarDueView,
     CalendarListView,
@@ -39,4 +50,6 @@ __all__ = [
     "OrderReturnView", "OrderReviewView", "OrderSubmitView",
     "CalendarDueView", "CalendarListView", "CatalogListView", "DistrictListView", "MahallaListView", "MeView",
     "ObjectTypeListView", "RegionListView", "SeasonListView", "SuppliersForMahallaView",
+    "ServiceCapacityView", "StockMovementListView", "StockOpeningView", "StockReceiptView", "StockReturnInView",
+    "StockReversalApproveView", "StockReversalRejectView", "StockReversalRequestView", "StockSummaryView",
 ]

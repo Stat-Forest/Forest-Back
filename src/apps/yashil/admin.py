@@ -3,7 +3,11 @@ from django.contrib import admin
 
 from apps.base.admin import admin_site
 from apps.yashil.models import (
+    Acceptance,
     Document,
+    ServiceAllocation,
+    StockMovement,
+    Warehouse,
     DocumentVersion,
     IdempotencyRecord,
     Order,
@@ -255,6 +259,54 @@ class IdempotencyRecordAdmin(admin.ModelAdmin):
     list_display = ("user", "path", "key", "status_code", "created_at")
     readonly_fields = ("user", "key", "path", "request_hash", "status_code", "response", "created_at")
     search_fields = ("key", "path", "user__email")
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- ombor (3-bosqich)
+@register(Warehouse)
+class WarehouseAdmin(admin.ModelAdmin):
+    list_display = ("organization", "name", "is_default", "created_at")
+    search_fields = ("organization__name", "name")
+    raw_id_fields = ("organization",)
+
+
+@register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    """Harakatlar o'chirilmaydi va tahrirlanmaydi — tuzatish faqat teskari operatsiya bilan (TZ §9.3)."""
+
+    list_display = ("created_at", "warehouse", "catalog_item", "kind", "qty", "status", "doc_number", "doc_date")
+    list_filter = ("kind", "status", "warehouse__organization")
+    search_fields = ("doc_number", "catalog_item__code", "warehouse__organization__name", "note")
+    readonly_fields = [f.name for f in StockMovement._meta.fields]
+    list_select_related = ("warehouse__organization", "catalog_item")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(Acceptance)
+class AcceptanceAdmin(admin.ModelAdmin):
+    list_display = ("order", "warehouse", "accepted_on", "delivery_due", "executor_name", "accepted_by")
+    search_fields = ("order__number", "executor_name")
+    readonly_fields = [f.name for f in Acceptance._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ServiceAllocation)
+class ServiceAllocationAdmin(admin.ModelAdmin):
+    list_display = ("organization", "catalog_item", "period", "order_line", "qty")
+    list_filter = ("period",)
+    readonly_fields = [f.name for f in ServiceAllocation._meta.fields]
 
     def has_add_permission(self, request):
         return False

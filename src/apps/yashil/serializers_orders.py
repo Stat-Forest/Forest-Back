@@ -187,6 +187,7 @@ class OrderDetailSerializer(OrderListSerializer):
     season = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
     last_return = serializers.SerializerMethodField()
+    acceptance = serializers.SerializerMethodField()
     lat = serializers.SerializerMethodField()
     lon = serializers.SerializerMethodField()
     area_calc_ha = serializers.SerializerMethodField()
@@ -198,7 +199,7 @@ class OrderDetailSerializer(OrderListSerializer):
             "mahalla", "supplier", "union_unit", "object_type", "object_note", "season", "address", "lat", "lon",
             "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info", "base_seedlings",
             "problem_note", "linked_order", "repeat_reason", "first_submitted_at", "accepted_at", "executor_name",
-            "lines", "versions", "documents", "events", "attachments", "actions", "last_return",
+            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance",
         )
 
     def get_mahalla(self, o):
@@ -231,6 +232,20 @@ class OrderDetailSerializer(OrderListSerializer):
             return None
         return {"comment": ev.comment, "reason_code": ev.reason_code, "by": ev.payload.get("by"),
                 "fields": ev.payload.get("fields", []), "at": ev.created_at.isoformat(timespec="seconds"), "actor": ev.actor_label}
+
+    def get_acceptance(self, o):
+        """Ijroga qabul natijasi: ombor, ajratish qatorlari, yetishmovchilik (TZ §9.2)."""
+        from apps.yashil.models import Acceptance
+
+        acc = Acceptance.objects.filter(order=o).select_related("warehouse", "accepted_by").first()
+        if acc is None:
+            return None
+        return {
+            "id": str(acc.id), "warehouse": {"id": str(acc.warehouse_id), "name": acc.warehouse.name},
+            "accepted_on": acc.accepted_on.isoformat(), "delivery_due": acc.delivery_due.isoformat(),
+            "executor_name": acc.executor_name, "result": acc.result,
+            "accepted_by": f"{acc.accepted_by.last_name} {acc.accepted_by.first_name}".strip(),
+        }
 
     def get_lat(self, o):
         return _dec(o.lat)
