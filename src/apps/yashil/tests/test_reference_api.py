@@ -1,6 +1,7 @@
 """Ma'lumotnoma API: mahallalar, yetkazib beruvchilar, katalog, kalendar (TZ §3, §8)."""
 from datetime import date
 
+from django.core.cache import cache
 from rest_framework.test import APITestCase
 
 from apps.yashil.models import CalendarDay, CatalogItem, ObjectType, Season, YashilMembership
@@ -124,6 +125,7 @@ class ReferenceListsTest(APITestCase):
 
 class CalendarApiTest(APITestCase):
     def setUp(self):
+        cache.clear()
         d = make_district(make_region())
         user = make_user("c", role="ym_mahalla")
         member(user, T.MAHALLA, mahalla=make_mahalla(d))

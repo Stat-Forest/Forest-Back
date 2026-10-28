@@ -3,6 +3,15 @@ from django.contrib import admin
 
 from apps.base.admin import admin_site
 from apps.yashil.models import (
+    Document,
+    DocumentVersion,
+    IdempotencyRecord,
+    Order,
+    OrderAttachment,
+    OrderEvent,
+    OrderLine,
+    Signature,
+    YashilNotification,
     CalendarDay,
     CatalogItem,
     Mahalla,
@@ -138,3 +147,114 @@ class ServiceCapacityAdmin(admin.ModelAdmin):
     list_display = ("organization", "catalog_item", "period", "capacity")
     list_filter = ("period",)
     raw_id_fields = ("organization", "catalog_item")
+
+
+# ----------------------------------------------------------------------------- 2-bosqich: buyurtmalar (faqat ko'rish)
+class OrderLineInline(admin.TabularInline):
+    model = OrderLine
+    extra = 0
+    can_delete = False
+    readonly_fields = ("catalog_item", "qty", "attrs_note", "position")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class OrderEventInline(admin.TabularInline):
+    model = OrderEvent
+    extra = 0
+    can_delete = False
+    readonly_fields = ("action", "from_state", "to_state", "actor_label", "comment", "reason_code", "created_at")
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    """Buyurtmalar adminda faqat ko'riladi — o'zgartirish faqat modul oqimi orqali (TZ §17.2)."""
+
+    list_display = ("display_number", "title", "mahalla", "supplier_org", "route", "state", "version_no", "last_submitted_at", "delivery_due")
+    list_filter = ("state", "route", "mahalla__region")
+    search_fields = ("number", "title", "mahalla__name", "supplier_org__name")
+    readonly_fields = [f.name for f in Order._meta.fields]
+    inlines = (OrderLineInline, OrderEventInline)
+    list_select_related = ("mahalla", "supplier_org")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(OrderAttachment)
+class OrderAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("order", "original_name", "kind", "size", "version_no", "created_at")
+    readonly_fields = ("order", "file", "original_name", "size", "kind", "version_no", "uploaded_by")
+
+    def has_add_permission(self, request):
+        return False
+
+
+class DocumentVersionInline(admin.TabularInline):
+    model = DocumentVersion
+    extra = 0
+    can_delete = False
+    readonly_fields = ("version_no", "template_version", "status", "content_hash", "qr_token", "created_at")
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ("number", "kind", "order", "current_version", "created_at")
+    list_filter = ("kind",)
+    search_fields = ("number", "order__number")
+    readonly_fields = ("kind", "order", "number", "current_version")
+    inlines = (DocumentVersionInline,)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(Signature)
+class SignatureAdmin(admin.ModelAdmin):
+    list_display = ("document_version", "role", "signer_cn", "signer_tin", "mode", "is_valid", "signed_at")
+    list_filter = ("role", "mode", "is_valid")
+    search_fields = ("signer_cn", "signer_tin", "document_version__document__number")
+    readonly_fields = [f.name for f in Signature._meta.fields]
+    exclude = ("pkcs7",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(YashilNotification)
+class YashilNotificationAdmin(admin.ModelAdmin):
+    list_display = ("recipient_user", "kind", "title", "order", "read_at", "created_at")
+    list_filter = ("kind",)
+    search_fields = ("recipient_user__email", "title", "order__number")
+    readonly_fields = ("recipient_user", "membership", "kind", "title", "body", "order", "read_at")
+
+    def has_add_permission(self, request):
+        return False
+
+
+@register(IdempotencyRecord)
+class IdempotencyRecordAdmin(admin.ModelAdmin):
+    list_display = ("user", "path", "key", "status_code", "created_at")
+    readonly_fields = ("user", "key", "path", "request_hash", "status_code", "response", "created_at")
+    search_fields = ("key", "path", "user__email")
+
+    def has_add_permission(self, request):
+        return False

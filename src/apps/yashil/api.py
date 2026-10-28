@@ -61,6 +61,8 @@ def yashil_exception_handler(exc, context):
     payload = {"request_id": request_id_for(request), "detail": response.data}
     if isinstance(exc, YashilError):
         payload.update(error_code=exc.error_code, field=exc.field, message=str(exc.detail))
+        if getattr(exc, "index", None) is not None:
+            payload["index"] = exc.index
     elif isinstance(exc, ValidationError):
         field = next(iter(exc.detail), None) if isinstance(exc.detail, dict) else None
         payload.update(error_code="validation", field=field, message=_first_message(exc.detail))
@@ -75,6 +77,73 @@ def yashil_exception_handler(exc, context):
     else:
         payload.update(error_code=getattr(exc, "default_code", "error"), field=None, message=_first_message(response.data))
     return Response(payload, status=response.status_code, headers=response.headers if hasattr(response, "headers") else None)
+
+
+# ----------------------------------------------------------------------------- idempotency
+IDEMPOTENCY_HEADER = "HTTP_IDEMPOTENCY_KEY"
+
+
+def _request_hash(request) -> str:
+    import hashlib, json as _json
+
+    body = request.data if hasattr(request, "data") else {}
+    try:
+        canonical = _json.dumps(body, sort_keys=True, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        canonical = str(body)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+class IdempotentPostMixin:
+    """
+    POST uchun `Idempotency-Key` (TZ §16.2, §21): bir xil kalit + bir xil body → saqlangan
+    javob; boshqa body → 409 `idempotency_mismatch`. `idempotency_required=True` bo'lsa
+    kalitsiz so'rov 400. Faqat 2xx/4xx javoblar saqlanadi.
+    """
+
+    idempotency_required = True
+
+    def post(self, request, *args, **kwargs):
+        from apps.yashil.models import IdempotencyRecord
+
+        key = (request.META.get(IDEMPOTENCY_HEADER) or "").strip()[:128]
+        if not key:
+            if self.idempotency_required:
+                raise YashilError("Idempotency-Key сарлавҳаси мажбурий", error_code="idempotency_key_required",
+                                  status_code=status.HTTP_400_BAD_REQUEST)
+            return self.perform_post(request, *args, **kwargs)
+        path = request.path[:300]
+        req_hash = _request_hash(request)
+        record = IdempotencyRecord.objects.filter(user=request.user, key=key, path=path).first()
+        if record is not None:
+            if record.request_hash != req_hash:
+                raise YashilError("Бу Idempotency-Key бошқа сўров учун ишлатилган", error_code="idempotency_mismatch",
+                                  status_code=status.HTTP_409_CONFLICT)
+            return Response(record.response, status=record.status_code)
+        response = self.perform_post(request, *args, **kwargs)
+        if 200 <= response.status_code < 500 and isinstance(response.data, (dict, list)):
+            IdempotencyRecord.objects.get_or_create(
+                user=request.user, key=key, path=path,
+                defaults={"request_hash": req_hash, "status_code": response.status_code, "response": response.data},
+            )
+        return response
+
+    def perform_post(self, request, *args, **kwargs):  # pragma: no cover - subclass
+        raise NotImplementedError
+
+
+def service_error(exc) -> YashilError:
+    """Servis xatolarini (TransitionError, OrderValidationError, SigningError) API shartnomasiga o'giradi."""
+    code = getattr(exc, "code", "business_rule")
+    field = getattr(exc, "field", None)
+    http = getattr(exc, "status", None)
+    if http is None:
+        http = status.HTTP_422_UNPROCESSABLE_ENTITY
+    err = YashilError(getattr(exc, "message", str(exc)), error_code=code, field=field, status_code=http)
+    index = getattr(exc, "index", None)
+    if index is not None:
+        err.index = index
+    return err
 
 
 class CabinetMixin:
@@ -136,6 +205,6 @@ class IsModuleAdmin(BasePermission):
 
 
 __all__ = [
-    "CABINET_HEADER", "CabinetMixin", "CanPrepare", "CanSign", "HasCabinet", "IsAuthenticated", "IsModuleAdmin",
+    "CABINET_HEADER", "CabinetMixin", "IdempotentPostMixin", "service_error", "CanPrepare", "CanSign", "HasCabinet", "IsAuthenticated", "IsModuleAdmin",
     "YashilError", "invalid_format", "not_found", "request_id_for", "yashil_exception_handler",
 ]

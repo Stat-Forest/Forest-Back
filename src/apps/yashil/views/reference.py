@@ -50,7 +50,11 @@ class MeView(CabinetMixin, APIView):
 
     def get(self, request):
         cabinets = list(scope_service.memberships_for(request.user))
+        from apps.yashil.models import YashilNotification
+
+        unread = YashilNotification.objects.filter(recipient_user=request.user, read_at__isnull=True).count()
         return Response({
+            "unread_notifications": unread,
             "user": {
                 "id": str(request.user.id),
                 "full_name": f"{request.user.last_name} {request.user.first_name}".strip(),

@@ -34,4 +34,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "authentications.flush_expired_tokens",
         "schedule": 24 * 3600,
     },
+    # Yashil mahalla: 3/10 ish kuni eslatmalari va muddat buzilishi (kuniga bir marta)
+    "yashil-deadline-reminders": {
+        "task": "yashil.deadline_reminders",
+        "schedule": 24 * 3600,
+    },
 }
