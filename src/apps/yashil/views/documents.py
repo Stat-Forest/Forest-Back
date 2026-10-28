@@ -42,6 +42,19 @@ class DocumentVersionHtmlView(_DocumentBase):
         return resp
 
 
+class DocumentVersionPdfView(_DocumentBase):
+    """PDF yuklash (TZ §13.3): yo'q bo'lsa yaratiladi; imzoli nisbiy havola (himoyalangan media)."""
+
+    def get(self, request, version_id):
+        from apps.yashil.serializers_stock import relative_signed_url
+        from apps.yashil.services.pdf import ensure_pdf, pdf_filename
+
+        v = self.get_version(version_id)
+        f = ensure_pdf(v)
+        return Response({"url": relative_signed_url(f), "filename": pdf_filename(v), "size": f.size, "status": v.status,
+                         "version_no": v.version_no, "document_version_id": str(v.id)})
+
+
 class PublicVerifyView(APIView):
     """QR'dan ochiladigan sahifa: login'siz, shaxsiy ma'lumotsiz (javob Ж6)."""
 
