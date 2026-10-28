@@ -34,19 +34,20 @@ PASSWORD = "Test12345!"
 VALID_FROM = date(2026, 1, 1)
 
 REGIONS = {"1703": "Андижон вилояти", "1727": "Тошкент вилояти"}
+# Kodlar — billing ma'lumotnomasidagi (MHOBT) haqiqiy tuman kodlari.
 DISTRICTS = {
-    "1703202": ("1703", "Андижон тумани"),
-    "1703203": ("1703", "Асака тумани"),
-    "1727206": ("1727", "Бўстонлиқ тумани"),
-    "1727212": ("1727", "Зангиота тумани"),
+    "1703203": ("1703", "Андижон тумани"),
+    "1703224": ("1703", "Асака тумани"),
+    "1727224": ("1727", "Бўстонлиқ тумани"),
+    "1727237": ("1727", "Зангиота тумани"),
 }
 MAHALLAS = [
-    ("YM-DEMO-001", "1703202", "Боғистон маҳалласи"),
-    ("YM-DEMO-002", "1703202", "Навбаҳор маҳалласи"),
-    ("YM-DEMO-003", "1703203", "Гулистон маҳалласи"),
-    ("YM-DEMO-004", "1727206", "Чимён маҳалласи"),
-    ("YM-DEMO-005", "1727206", "Хумсон маҳалласи"),
-    ("YM-DEMO-006", "1727212", "Эшонгузар маҳалласи"),
+    ("YM-DEMO-001", "1703203", "Боғистон маҳалласи"),
+    ("YM-DEMO-002", "1703203", "Навбаҳор маҳалласи"),
+    ("YM-DEMO-003", "1703224", "Гулистон маҳалласи"),
+    ("YM-DEMO-004", "1727224", "Чимён маҳалласи"),
+    ("YM-DEMO-005", "1727224", "Хумсон маҳалласи"),
+    ("YM-DEMO-006", "1727237", "Эшонгузар маҳалласи"),
 ]
 CATALOG = [
     # code, cyr, lat, supplier_type, item_type, category, unit, attributes
@@ -122,9 +123,9 @@ class Command(BaseCommand):
             self._assign(mahallas[code], forest2)
 
         unit_and, _ = UnionUnit.objects.get_or_create(name="Андижон туман маҳаллалар уюшмаси", defaults={
-            "level": UnionUnit.Level.DISTRICT, "region": regions["1703"], "district": districts["1703202"]})
+            "level": UnionUnit.Level.DISTRICT, "region": regions["1703"], "district": districts["1703203"]})
         unit_bos, _ = UnionUnit.objects.get_or_create(name="Бўстонлиқ туман маҳаллалар уюшмаси", defaults={
-            "level": UnionUnit.Level.DISTRICT, "region": regions["1727"], "district": districts["1727206"]})
+            "level": UnionUnit.Level.DISTRICT, "region": regions["1727"], "district": districts["1727224"]})
         for code in ("YM-DEMO-001", "YM-DEMO-002", "YM-DEMO-003"):
             self._route(mahallas[code], unit_and)
         for code in ("YM-DEMO-004", "YM-DEMO-005", "YM-DEMO-006"):
