@@ -28,8 +28,6 @@ if not DEBUG:
 
 CORS_ALLOW_CREDENTIALS = True
 
-DEFAULT_FROM_EMAIL="urmoninfo@gmail.com"
-
 CORS_ALLOWED_ORIGINS = [
     "https://stat-urmon.uz",
     "https://www.stat-urmon.uz",
