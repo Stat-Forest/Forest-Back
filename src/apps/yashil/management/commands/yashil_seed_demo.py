@@ -167,12 +167,16 @@ class Command(BaseCommand):
         from apps.yashil.models import Order, OrderLine, ReturnReason, YashilMembership
         from apps.yashil.services import transitions as tr
 
-        if Order.objects.filter(title__startswith="Намуна:").exists():
-            return
         m = YashilMembership.objects.get(user__email="mahalla@test.uz")
         u = YashilMembership.objects.get(user__email="uyushma@test.uz")
         f = YashilMembership.objects.get(user__email="xojalik@test.uz")
         items = {c.code: c for c in CatalogItem.objects.all()}
+        if Order.objects.filter(title__startswith="Намуна:").exists():
+            # Buyurtmalar bor — faqat ombor/akt qismi yetishmasa to'ldiriladi (qayta ishga tushirish)
+            existing = Order.objects.filter(title="Намуна: ижрода — қайрағоч").first()
+            if existing is not None:
+                self._demo_stock_and_act(forest1, f, existing, items)
+            return
         mahalla = mahallas["YM-DEMO-001"]
 
         def make(title, route, org, lines, **extra):
@@ -210,7 +214,7 @@ class Command(BaseCommand):
 
         wh = ledger.default_warehouse(forest1)
         today = local_date(timezone.now())
-        if not wh.movements.exists():
+        if not wh.movements.filter(kind__in=("opening", "receipt")).exists():
             ledger.post_opening(wh, items["ASH"], Decimal("500"), f, doc_number="ИНВ-2026-12", doc_date=today - timedelta(days=30), note="Инвентаризация")
             ledger.post_opening(wh, items["ELM"], Decimal("100"), f, doc_number="ИНВ-2026-12", doc_date=today - timedelta(days=30), note="Инвентаризация")
             ledger.post_receipt(wh, items["MUL"], Decimal("2000"), f, doc_number="К-0001", doc_date=today - timedelta(days=5), note="Питомникдан кирим")
