@@ -508,6 +508,10 @@ class CustomUserAdmin(AdminHistoryMixin, admin.ModelAdmin):
             CustomUser.Role.HUDUDIY_BOSHQARMA: "hududiy_boshqarma",
             CustomUser.Role.BILLING_USER: "billing_user",
             CustomUser.Role.BILLING_SUPER: "billing_super",
+            CustomUser.Role.YM_MAHALLA: "ym_mahalla",
+            CustomUser.Role.YM_UNION: "ym_union",
+            CustomUser.Role.YM_DM: "ym_dm",
+            CustomUser.Role.YM_OBSERVER: "ym_observer",
         }
         group_name = role_group_map.get(obj.role)
         if group_name:

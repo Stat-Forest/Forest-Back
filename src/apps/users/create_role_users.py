@@ -34,6 +34,10 @@ def setup_roles_permissions_and_users():
         "hududiy_boshqarma": [],
         "billing_user": [],
         "billing_super": [],
+        "ym_mahalla": [],
+        "ym_union": [],
+        "ym_dm": [],
+        "ym_observer": [],
     }
 
     for group_name, codename_list in groups_permissions.items():

@@ -24,6 +24,11 @@ class CustomUser(AbstractBaseModel, AbstractBaseUser, PermissionsMixin):
         SUPPORT_ADMIN = "support_admin", "Support Admin"
         BILLING_USER = "billing_user", "Ijara billing foydalanuvchisi"
         BILLING_SUPER = "billing_super", "Ijara billing super foydalanuvchisi"
+        # Yashil mahalla moduli (vakolat YashilMembership orqali; rol faqat URL cheklovi uchun)
+        YM_MAHALLA = "ym_mahalla", "Yashil mahalla: mahalla"
+        YM_UNION = "ym_union", "Yashil mahalla: mahallalar uyushmasi"
+        YM_DM = "ym_dm", "Yashil mahalla: DM"
+        YM_OBSERVER = "ym_observer", "Yashil mahalla: kuzatuvchi"
 
     class Gender(models.TextChoices):
         MALE = "male", _("Male")

@@ -51,10 +51,30 @@ BILLING_ROLE_RULES = {
     ],
 }
 
+# Yashil mahalla rollari: faqat modul, auth, chat va kabinet xabarnomalari (o'qish).
+# O'rmon xo'jaligi foydalanuvchilari mavjud rollarda qoladi — ular uchun cheklov yo'q.
+YASHIL_ROLE_RULES = {
+    "mode": "allowlist",
+    "allow": [
+        "/api/v1/yashil/",
+        "/api/v1/authentications/",
+        "/api/v1/chats/",
+        "/api/v1/general/notifications/",
+        "/api/v1/general/announcements/",
+    ],
+    "allow_exact": [],
+    "write_allow": [
+        "/api/v1/yashil/",
+        "/api/v1/authentications/",
+        "/api/v1/chats/",
+    ],
+}
+
 DEFAULT_ROLE_PATH_RULES = {
     "support_admin": {
         "deny": [
             "/api/v1/billing/",   # ijarachilar PINFL/pasporti, shartnoma fayllari (audit B11)
+            "/api/v1/yashil/",    # yashil mahalla: buyurtma/akt/ombor ma'lumotlari
             "/api/v1/reports/",
             "/api/v1/statistics/",
             "/api/v1/sum/",
@@ -77,6 +97,10 @@ DEFAULT_ROLE_PATH_RULES = {
     # Ijara billing rollari — pastda (BILLING_ROLE_RULES, allow-list rejimi).
     "billing_user": BILLING_ROLE_RULES,
     "billing_super": BILLING_ROLE_RULES,
+    "ym_mahalla": YASHIL_ROLE_RULES,
+    "ym_union": YASHIL_ROLE_RULES,
+    "ym_dm": YASHIL_ROLE_RULES,
+    "ym_observer": YASHIL_ROLE_RULES,
 }
 
 
