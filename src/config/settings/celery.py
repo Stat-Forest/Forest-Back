@@ -39,4 +39,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "yashil.deadline_reminders",
         "schedule": 24 * 3600,
     },
+    # Yashil mahalla: tungi solishtirish — ombor/qabul/akt yaxlitligi (TZ 22.3)
+    "yashil-reconcile": {
+        "task": "yashil.reconcile",
+        "schedule": 24 * 3600,
+    },
 }

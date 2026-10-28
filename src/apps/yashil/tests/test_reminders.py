@@ -64,3 +64,21 @@ class ReminderTest(TestCase):
     def test_nothing_on_quiet_days(self):
         deadline_reminders(today=date(2027, 1, 12))
         self.assertEqual(YashilNotification.objects.count(), 0)
+
+
+class ActReviewReminderTest(ReminderTest):
+    def test_act_in_mahalla_review_over_three_workdays_reminds_mahalla(self):
+        from datetime import datetime, timezone as tz
+
+        from apps.yashil.models import Act, ActVersion
+
+        self.order.state = OrderState.EXECUTION; self.order.save()
+        act = Act.objects.create(order=self.order, index=1, number="YM-2027-000001/A1", status=Act.Status.REVIEW)
+        v = ActVersion.objects.create(act=act, version_no=1, delivery_date=date(2027, 1, 12), submitted_at=datetime(2027, 1, 12, 9, tzinfo=tz.utc))
+        act.current_version = v; act.save()
+        deadline_reminders(today=date(2027, 1, 15))  # 3 ish kuni: 13, 14, 15 — hali muddat ichida
+        self.assertEqual(self.kinds(self.m), [])
+        deadline_reminders(today=date(2027, 1, 18))
+        deadline_reminders(today=date(2027, 1, 18))
+        self.assertEqual(self.kinds(self.m), ["deadline_reminder"])
+        self.assertEqual(self.kinds(self.s), [])

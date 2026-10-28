@@ -256,6 +256,17 @@ def deadline_info(order: Order, today=None) -> dict:
 
 
 def allowed_actions(order: Order, cabinet) -> list[str]:
+    from apps.yashil.services.cancel import cancel_actions
+
+    base = _base_actions(order, cabinet)
+    cancel = cancel_actions(order, cabinet)
+    # Ochiq bekor so'rovi bo'lsa faqat kelishuv/tasdiq amallari qoladi
+    if order.state in DELIVERY_STATES and order.cancel_requests.filter(status__in=("requested", "agreed")).exists():
+        return cancel
+    return base + cancel
+
+
+def _base_actions(order: Order, cabinet) -> list[str]:
     if cabinet is None:
         return []
     s = order.state
@@ -280,7 +291,8 @@ def allowed_actions(order: Order, cabinet) -> list[str]:
         if s in DELIVERY_STATES and cabinet.can_prepare:
             from apps.yashil.models import Act
 
-            if not order.acts.filter(status__in=Act.OPEN_STATUSES).exists():
+            if not order.acts.filter(status__in=Act.OPEN_STATUSES).exists() and \
+                    not order.cancel_requests.filter(status__in=("requested", "agreed")).exists():
                 return ["create_act"]
         return []
     return []

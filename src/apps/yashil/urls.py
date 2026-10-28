@@ -1,6 +1,12 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    CancelAgreeView,
+    CancelApproveView,
+    CancelDetailView,
+    CancelListView,
+    CancelRejectView,
+    OrderCancelView,
     ActAttachmentDeleteView,
     ActAttachmentsView,
     ActCancelView,
@@ -72,6 +78,13 @@ urlpatterns = [
     path("orders/<uuid:order_id>/return/", OrderReturnView.as_view(), name="yashil-order-return"),
     path("orders/<uuid:order_id>/accept/", OrderAcceptView.as_view(), name="yashil-order-accept"),
     path("orders/<uuid:order_id>/events/", OrderEventsView.as_view(), name="yashil-order-events"),
+    # Bekor qilish (3-bosqich)
+    path("orders/<uuid:order_id>/cancel/", OrderCancelView.as_view(), name="yashil-order-cancel"),
+    path("cancel/", CancelListView.as_view(), name="yashil-cancel-list"),
+    path("cancel/<uuid:request_id>/", CancelDetailView.as_view(), name="yashil-cancel-detail"),
+    path("cancel/<uuid:request_id>/agree/", CancelAgreeView.as_view(), name="yashil-cancel-agree"),
+    path("cancel/<uuid:request_id>/approve/", CancelApproveView.as_view(), name="yashil-cancel-approve"),
+    path("cancel/<uuid:request_id>/reject/", CancelRejectView.as_view(), name="yashil-cancel-reject"),
     # Dalolatnomalar (3-bosqich)
     path("orders/<uuid:order_id>/acts/", OrderActsCreateView.as_view(), name="yashil-order-acts"),
     path("acts/", ActListView.as_view(), name="yashil-acts"),

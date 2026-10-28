@@ -203,6 +203,7 @@ class OrderDetailSerializer(OrderListSerializer):
     last_return = serializers.SerializerMethodField()
     acceptance = serializers.SerializerMethodField()
     acts = serializers.SerializerMethodField()
+    cancel_request = serializers.SerializerMethodField()
     closed_at = serializers.DateTimeField(format="iso-8601", read_only=True)
     lat = serializers.SerializerMethodField()
     lon = serializers.SerializerMethodField()
@@ -215,7 +216,7 @@ class OrderDetailSerializer(OrderListSerializer):
             "mahalla", "supplier", "union_unit", "object_type", "object_note", "season", "address", "lat", "lon",
             "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info", "base_seedlings",
             "problem_note", "linked_order", "repeat_reason", "first_submitted_at", "accepted_at", "executor_name",
-            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance", "acts", "closed_at",
+            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance", "acts", "cancel_request", "closed_at",
         )
 
     def to_representation(self, instance):
@@ -223,6 +224,13 @@ class OrderDetailSerializer(OrderListSerializer):
 
         self.context["accepted_by_line"] = accepted_by_line(instance)
         return super().to_representation(instance)
+
+    def get_cancel_request(self, o):
+        """Ochiq (yoki oxirgi) bekor qilish so'rovi — buyurtma kartasidagi kelishuv tugmalari uchun."""
+        from apps.yashil.serializers_cancel import CancelRequestSerializer
+
+        req = o.cancel_requests.select_related("requested_by_membership__user", "agreed_by", "approved_by", "document__current_version").first()
+        return CancelRequestSerializer(req, context=self.context).data if req else None
 
     def get_acts(self, o):
         from apps.yashil.serializers_acts import ActListSerializer

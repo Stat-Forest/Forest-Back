@@ -10,10 +10,25 @@ from datetime import date
 from celery import shared_task
 from django.utils import timezone
 
-from apps.yashil.models import Order, OrderState, YashilMembership, YashilNotification
+from apps.yashil.models import (
+    DELIVERY_STATES,
+    Acceptance,
+    Act,
+    CatalogItem,
+    Order,
+    OrderState,
+    ReconcileIssue,
+    ServiceAllocation,
+    StockMovement,
+    SupplierProfile,
+    Warehouse,
+    YashilMembership,
+    YashilNotification,
+)
 from apps.yashil.services import notifications as notif
 from apps.yashil.services.scope import memberships_active_for_target
 from apps.yashil.services.workdays import (
+    add_workdays,
     calendar_from_db,
     count_workdays,
     local_date,
@@ -26,6 +41,7 @@ K = YashilNotification.Kind
 REVIEW_STATES = (OrderState.UNION_NEW, OrderState.UNION_REVIEW, OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW)
 DELIVERY_REMIND_AT = (3, 1)
 REVIEW_REMIND_AT = (1,)
+ACT_REVIEW_WORKDAYS = 3
 
 
 def _already_sent(order, kind, title, membership_ids) -> bool:
@@ -85,6 +101,20 @@ def _process_delivery(order, today, cal) -> int:
     return sent
 
 
+def _process_act_review(act, today, cal) -> int:
+    """Akt mahalla tasdig'ida 3 ish kunidan ortiq tursa — mahallaga eslatma (javob Д3), har kuni bir marta."""
+    v = act.current_version
+    if v is None or not v.submitted_at:
+        return 0
+    due = add_workdays(local_date(v.submitted_at), ACT_REVIEW_WORKDAYS, cal)
+    if today <= due:
+        return 0
+    days = overdue_workdays(due, today, cal)
+    title = f"{act.number}: далолатнома тасдиғи {days} иш кунига кечикмоқда"
+    return _send(act.order, memberships_active_for_target(T.MAHALLA, mahalla_id=act.order.mahalla_id), K.DEADLINE_REMINDER, title,
+                 f"Етказиб берувчи {local_date(v.submitted_at):%d.%m.%Y} да юборган", today)
+
+
 @shared_task(name="yashil.deadline_reminders", ignore_result=True)
 def deadline_reminders(today: date | None = None) -> int:
     """Qaytaradi: yuborilgan xabarnomalar soni."""
@@ -93,6 +123,100 @@ def deadline_reminders(today: date | None = None) -> int:
     sent = 0
     for order in Order.objects.filter(state__in=REVIEW_STATES).select_related("mahalla", "supplier_org").prefetch_related("review_segments"):
         sent += _process_review(order, today, cal)
-    for order in Order.objects.filter(state=OrderState.EXECUTION, delivery_due__isnull=False).select_related("mahalla", "supplier_org"):
+    for order in Order.objects.filter(state__in=DELIVERY_STATES, delivery_due__isnull=False).select_related("mahalla", "supplier_org"):
         sent += _process_delivery(order, today, cal)
+    for act in Act.objects.filter(status=Act.Status.REVIEW).select_related("order__mahalla", "current_version"):
+        sent += _process_act_review(act, today, cal)
     return sent
+
+
+# ----------------------------------------------------------------------------- tungi solishtirish (TZ §22.3)
+ERROR_KINDS = ("allocation_missing", "allocation_duplicate", "accepted_exceeds", "closed_incomplete", "stock_negative_dm")
+
+
+def _dec(value) -> str:
+    from decimal import Decimal
+
+    return format(Decimal(value).normalize(), "f")
+
+
+def _collect_issues() -> dict:
+    """{(kind, key): {"order_id", "warehouse_id", "details"}} — hozirgi holatdagi nomuvofiqliklar."""
+    from apps.yashil.services.acts import accepted_by_line
+    from apps.yashil.services.ledger import _totals_by_item, supplier_type_of
+
+    found = {}
+    for acc in Acceptance.objects.select_related("order").prefetch_related("order__lines__catalog_item"):
+        for line in acc.order.lines.all():
+            base = {"order_id": acc.order_id, "warehouse_id": acc.warehouse_id,
+                    "details": {"order": acc.order.number, "code": line.catalog_item.code, "qty": _dec(line.qty)}}
+            if line.catalog_item.item_type == CatalogItem.ItemType.GOODS:
+                n = StockMovement.objects.filter(acceptance=acc, order_line=line, kind=StockMovement.Kind.ALLOCATE, status=StockMovement.Status.POSTED).count()
+                if n == 0:
+                    found[("allocation_missing", str(line.id))] = base
+                elif n > 1:
+                    found[("allocation_duplicate", str(line.id))] = {**base, "details": {**base["details"], "count": n}}
+            elif not ServiceAllocation.objects.filter(order_line=line).exists():
+                found[("allocation_missing", str(line.id))] = base
+    for order in Order.objects.filter(state__in=(OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED)).prefetch_related("lines__catalog_item"):
+        accepted = accepted_by_line(order)
+        incomplete = False
+        for line in order.lines.all():
+            if accepted[line.id] > line.qty:
+                found[("accepted_exceeds", str(line.id))] = {"order_id": order.id, "warehouse_id": None, "details": {
+                    "order": order.number, "code": line.catalog_item.code, "ordered": _dec(line.qty), "accepted": _dec(accepted[line.id])}}
+            if accepted[line.id] < line.qty:
+                incomplete = True
+        if order.state == OrderState.CLOSED and incomplete:
+            found[("closed_incomplete", str(order.id))] = {"order_id": order.id, "warehouse_id": None, "details": {"order": order.number}}
+    items = {i.id: i for i in CatalogItem.objects.all()}
+    for wh in Warehouse.objects.select_related("organization"):
+        forest = supplier_type_of(wh.organization) == SupplierProfile.SupplierType.FOREST
+        for item_id, totals in _totals_by_item(wh).items():
+            bal = sum(totals.values())
+            if bal < 0:
+                item = items.get(item_id)
+                kind = "stock_negative" if forest else "stock_negative_dm"
+                found[(kind, f"{wh.id}:{item_id}")] = {"order_id": None, "warehouse_id": wh.id, "details": {
+                    "organization": wh.organization.name, "code": item.code if item else str(item_id),
+                    "name": item.name_cyr if item else "", "balance": _dec(bal), "shortage": _dec(-bal)}}
+    return found
+
+
+@shared_task(name="yashil.reconcile", ignore_result=True)
+def reconcile() -> dict:
+    """
+    Har kecha: qoldiq = harakatlar yig'indisi; har qabul qatoriga bitta ajratish; qabul ≤ buyurtma;
+    yopiq buyurtma to'liq. Xatolar `ReconcileIssue` + kuzatuvchilarga xabar; manfiy o'rmon qoldig'i
+    xato emas — yetkazib beruvchiga bir marta (qoldiq musbat bo'lib yana manfiyga tushsa — qayta).
+    """
+    now = timezone.now()
+    found = _collect_issues()
+    open_issues = {(i.kind, i.key): i for i in ReconcileIssue.objects.filter(resolved_at__isnull=True)}
+    new_errors = 0
+    for (kind, key), data in found.items():
+        if (kind, key) in open_issues:
+            continue
+        ReconcileIssue.objects.create(kind=kind, key=key, order_id=data["order_id"], warehouse_id=data["warehouse_id"], details=data["details"])
+        d = data["details"]
+        if kind == "stock_negative":
+            wh = Warehouse.objects.select_related("organization").get(pk=data["warehouse_id"])
+            notif.notify_memberships(
+                memberships_active_for_target(T.SUPPLIER, organization_id=wh.organization_id), kind=K.STOCK_NEGATIVE,
+                title=f"{d['code']}: манфий қолдиқ {d['balance']} — таъминлаш керак {d['shortage']}", body=d.get("name", ""),
+            )
+            continue
+        new_errors += 1
+        notif.notify_memberships(
+            memberships_active_for_target(T.OBSERVER), kind=K.RECONCILE_ISSUE,
+            title=f"Солиштириш: {kind} — {d.get('order') or d.get('organization') or key}", body=str(d)[:1000],
+            order=Order.objects.filter(pk=data["order_id"]).first() if data["order_id"] else None,
+        )
+    resolved = 0
+    for k, issue in open_issues.items():
+        if k not in found:
+            issue.resolved_at = now
+            issue.save(update_fields=["resolved_at"])
+            resolved += 1
+    return {"checked_at": now.isoformat(timespec="seconds"), "issues_new": new_errors, "issues_resolved": resolved,
+            "open_errors": sum(1 for k in found if k[0] in ERROR_KINDS), "negative_items": sum(1 for k in found if k[0] == "stock_negative")}

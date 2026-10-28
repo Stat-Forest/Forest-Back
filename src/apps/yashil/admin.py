@@ -4,6 +4,8 @@ from django.contrib import admin
 from apps.base.admin import admin_site
 from apps.yashil.models import (
     Acceptance,
+    CancelRequest,
+    ReconcileIssue,
     Act,
     ActAttachment,
     ActVersion,
@@ -347,6 +349,32 @@ class ActAdmin(admin.ModelAdmin):
 class ActAttachmentAdmin(admin.ModelAdmin):
     list_display = ("act", "original_name", "kind", "size", "version_no", "created_at")
     readonly_fields = ("act", "file", "original_name", "size", "kind", "version_no", "uploaded_by")
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- bekor qilish va solishtirish (3-bosqich)
+@register(CancelRequest)
+class CancelRequestAdmin(admin.ModelAdmin):
+    list_display = ("order", "requested_by_party", "is_full", "status", "agreed_by", "approved_by", "created_at")
+    list_filter = ("status", "requested_by_party", "is_full")
+    search_fields = ("order__number", "reason")
+    readonly_fields = [f.name for f in CancelRequest._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ReconcileIssue)
+class ReconcileIssueAdmin(admin.ModelAdmin):
+    list_display = ("found_at", "kind", "key", "order", "warehouse", "resolved_at")
+    list_filter = ("kind",)
+    search_fields = ("key", "order__number", "warehouse__organization__name")
+    readonly_fields = ("kind", "key", "order", "warehouse", "details", "found_at")
 
     def has_add_permission(self, request):
         return False
