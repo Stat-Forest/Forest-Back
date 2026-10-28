@@ -41,10 +41,16 @@ jobs:
     - name: Copy .env to server
       env:
         ENV_FILE: ${{ secrets.ENV_FILE }}
+        # /admin/ va /billing-admin/ uchun IP allowlist — alohida secret (ENV_FILE ni
+        # ochmasdan o'zgartirish uchun). Bo'sh bo'lsa .env ga yozilmaydi (cheklov yo'q).
+        ADMIN_ALLOWED_IPS: ${{ secrets.ADMIN_ALLOWED_IPS }}
       run: |
         set -euo pipefail
         # printf: echo qo'shtirnoq/maxsus belgilarni buzishi mumkin
-        printf '%s\n' "$ENV_FILE" > .env
+        printf '%s\n' "$ENV_FILE" | grep -v '^ADMIN_ALLOWED_IPS=' > .env
+        if [ -n "${ADMIN_ALLOWED_IPS:-}" ]; then
+          printf 'ADMIN_ALLOWED_IPS=%s\n' "$ADMIN_ALLOWED_IPS" >> .env
+        fi
         scp .env ${{ secrets.USER }}@${{ secrets.HOST }}:/root/Forest-Back/.env
 
     - name: Sync files to server via rsync
