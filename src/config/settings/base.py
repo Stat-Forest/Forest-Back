@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     "apps.ai.apps.AiConfig",
     "apps.chat.apps.ChatsConfig",
     "apps.billing.apps.BillingConfig",
+    "apps.yashil.apps.YashilConfig",
 ]
 
 # ===============================
