@@ -164,7 +164,7 @@ class ActFlowApiTest(ActApiBase):
         res = self.client.post(f"{BASE}/acts/{act_id}/cancel/", {"comment": "Нотўғри"}, format="json", HTTP_IDEMPOTENCY_KEY="x1")
         self.assertEqual((res.status_code, res.data["status"]), (200, "cancelled"))
         res = self.client.get(f"{BASE}/orders/{self.order.pk}/")
-        self.assertEqual(res.data["actions"], ["create_act"])
+        self.assertEqual(res.data["actions"], ["create_act", "cancel_request"])
 
 
 class ActScopeApiTest(ActApiBase):

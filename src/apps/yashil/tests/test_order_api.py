@@ -170,7 +170,7 @@ class ReviewFlowTest(OrderApiBase):
         self.as_(self.m_user)
         detail = self.client.get(f"{BASE}/orders/{o.pk}/").data
         self.assertEqual([e["action"] for e in detail["events"]], ["submit", "review", "forward", "review", "accept"])
-        self.assertEqual(detail["actions"], [])
+        self.assertEqual(detail["actions"], ["cancel_request"])  # ijroda mahalla faqat bekor so'rovi bera oladi
 
     def test_q07_return_without_comment_and_q08_resubmit(self):
         o = self.submitted_order()
@@ -185,7 +185,7 @@ class ReviewFlowTest(OrderApiBase):
         self.assertEqual(res.data["last_return"]["comment"], "Манзилни аниқлаштиринг")
         self.as_(self.m_user)
         self.assertTrue(YashilNotification.objects.filter(recipient_user=self.m_user, kind="order_returned").exists())
-        self.assertEqual(self.client.get(f"{BASE}/orders/{o.pk}/").data["actions"], ["edit", "submit"])
+        self.assertEqual(self.client.get(f"{BASE}/orders/{o.pk}/").data["actions"], ["edit", "submit", "cancel"])
         self.assertEqual(self.client.patch(f"{BASE}/orders/{o.pk}/", {"address": "Янги манзил", "version_no": 1}, format="json").status_code, 200)
         _, res = self.sign_and_submit(o.pk, 1, key="k2")
         self.assertEqual(res.status_code, 200, res.data)

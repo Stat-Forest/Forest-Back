@@ -42,6 +42,7 @@ from .orders import (
 from .stock import (
     ServiceCapacityView,
     StockMovementListView,
+    StockOrganizationsView,
     StockOpeningView,
     StockReceiptView,
     StockReturnInView,
@@ -73,6 +74,6 @@ __all__ = [
     "OrderReturnView", "OrderReviewView", "OrderSubmitView",
     "CalendarDueView", "CalendarListView", "CatalogListView", "DistrictListView", "MahallaListView", "MeView",
     "ObjectTypeListView", "RegionListView", "SeasonListView", "SuppliersForMahallaView",
-    "ServiceCapacityView", "StockMovementListView", "StockOpeningView", "StockReceiptView", "StockReturnInView",
+    "ServiceCapacityView", "StockMovementListView", "StockOrganizationsView", "StockOpeningView", "StockReceiptView", "StockReturnInView",
     "StockReversalApproveView", "StockReversalRejectView", "StockReversalRequestView", "StockSummaryView",
 ]

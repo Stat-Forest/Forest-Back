@@ -82,6 +82,30 @@ class StockSummaryView(_StockBase):
         })
 
 
+class StockOrganizationsView(_StockBase):
+    """Kuzatuvchi/admin uchun yetkazib beruvchilar ro'yxati (yetishmovchilik soni bilan); yetkazib beruvchi — o'zi."""
+
+    def get(self, request):
+        cab = self.cabinet
+        if cab is not None and cab.member_type == T.SUPPLIER:
+            profiles = SupplierProfile.objects.filter(organization_id=cab.organization_id)
+        elif self.is_admin or (cab is not None and cab.member_type == T.OBSERVER):
+            profiles = SupplierProfile.objects.filter(is_active_supplier=True)
+        else:
+            raise YashilError("Омбор фақат етказиб берувчи ва кузатувчи кабинетида", error_code="forbidden", status_code=403)
+        q = (request.query_params.get("q") or "").strip()
+        if q:
+            profiles = profiles.filter(organization__name__icontains=q)
+        rows = []
+        for p in profiles.select_related("organization").order_by("supplier_type", "organization__name")[:300]:
+            org = p.organization
+            summary = ledger.warehouse_summary(org)
+            rows.append({"id": str(org.id), "name": p.display_name, "supplier_type": p.supplier_type, "region": org.region,
+                         "shortage_count": sum(1 for r in summary if r["shortage"] != "0"),
+                         "pending_reversals": sum(r["pending_reversals"] for r in summary)})
+        return Response({"results": rows})
+
+
 class StockMovementListView(_StockBase):
     def get(self, request):
         org = self.organization(request)

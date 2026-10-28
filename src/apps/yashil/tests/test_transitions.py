@@ -124,7 +124,7 @@ class TransitionTest(TestCase):
         self.assertEqual(kinds, {"m@example.com", "u@example.com", "u2@example.com"})
 
     def test_allowed_actions_per_cabinet(self):
-        self.assertEqual(tr.allowed_actions(self.order, self.m_cab), ["edit", "submit"])
+        self.assertEqual(tr.allowed_actions(self.order, self.m_cab), ["edit", "submit", "cancel"])
         self.assertEqual(tr.allowed_actions(self.order, self.u_cab), [])
         self.submit()
         self.assertEqual(tr.allowed_actions(self.order, self.u_cab), ["review"])

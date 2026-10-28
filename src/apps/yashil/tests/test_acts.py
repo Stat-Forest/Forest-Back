@@ -267,7 +267,7 @@ class ReturnAndReviseTest(ActBase):
         self.mahalla_sign(act); act.refresh_from_db()
         self.assertEqual(act_service.allowed_act_actions(act, self.m_cab), [])
         self.order.refresh_from_db()
-        self.assertEqual(tr.allowed_actions(self.order, self.s_cab), ["create_act"])
+        self.assertEqual(tr.allowed_actions(self.order, self.s_cab), ["create_act", "cancel_request"])
 
 
 class ActVerifyPayloadTest(ActBase):

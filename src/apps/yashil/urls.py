@@ -36,6 +36,7 @@ from apps.yashil.views import (
     PublicVerifyView,
     ServiceCapacityView,
     StockMovementListView,
+    StockOrganizationsView,
     StockOpeningView,
     StockReceiptView,
     StockReturnInView,
@@ -97,6 +98,7 @@ urlpatterns = [
     path("acts/<uuid:act_id>/cancel/", ActCancelView.as_view(), name="yashil-act-cancel"),
     # Ombor (3-bosqich)
     path("stock/", StockSummaryView.as_view(), name="yashil-stock"),
+    path("stock/organizations/", StockOrganizationsView.as_view(), name="yashil-stock-organizations"),
     path("stock/movements/", StockMovementListView.as_view(), name="yashil-stock-movements"),
     path("stock/receipts/", StockReceiptView.as_view(), name="yashil-stock-receipts"),
     path("stock/opening/", StockOpeningView.as_view(), name="yashil-stock-opening"),

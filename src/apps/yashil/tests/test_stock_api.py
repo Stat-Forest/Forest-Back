@@ -73,6 +73,23 @@ class StockSummaryTest(StockApiBase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.data["error_code"], "forbidden")
 
+    def test_observer_lists_supplier_organizations_with_shortage_count(self):
+        ledger.post_opening(self.fw, self.ash, Decimal("10"), self.f_cab, doc_number="ИНВ-1", doc_date=date(2026, 12, 31))
+        order = Order.objects.create(mahalla=self.mahalla, route="forest", supplier_org=self.forest, union_unit=self.unit,
+                                     created_by_membership=self.m_cab, number="YM-2027-000001", state=OrderState.EXECUTION)
+        OrderLine.objects.create(order=order, catalog_item=self.ash, qty=Decimal("30"))
+        ledger.allocate_for_acceptance(order, self.f_cab, accepted_on=date(2027, 1, 11), delivery_due=date(2027, 1, 25), executor_name="X")
+        res = self.as_(self.o_user, self.o_cab).get(f"{BASE}/stock/organizations/")
+        self.assertEqual(res.status_code, 200, res.data)
+        rows = {r["name"]: r for r in res.data["results"]}
+        self.assertEqual(set(rows), {self.forest.name, self.other_forest.name, self.dm.name})
+        self.assertEqual((rows[self.forest.name]["shortage_count"], rows[self.forest.name]["supplier_type"]), (1, "forest"))
+        self.assertEqual(rows[self.other_forest.name]["shortage_count"], 0)
+        res = self.as_(self.f_user, self.f_cab).get(f"{BASE}/stock/organizations/")
+        self.assertEqual([r["id"] for r in res.data["results"]], [str(self.forest.pk)])
+        res = self.as_(self.m_user, self.m_cab).get(f"{BASE}/stock/organizations/")
+        self.assertEqual(res.status_code, 403)
+
     def test_supplier_cannot_read_other_organization(self):
         res = self.as_(self.f_user, self.f_cab).get(f"{BASE}/stock/", {"organization": str(self.other_forest.pk)})
         self.assertEqual(res.status_code, 403)
