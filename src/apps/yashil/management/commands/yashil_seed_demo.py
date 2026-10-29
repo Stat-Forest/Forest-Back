@@ -167,12 +167,16 @@ class Command(BaseCommand):
         from apps.yashil.models import Order, OrderLine, ReturnReason, YashilMembership
         from apps.yashil.services import transitions as tr
 
-        if Order.objects.filter(title__startswith="Намуна:").exists():
-            return
         m = YashilMembership.objects.get(user__email="mahalla@test.uz")
         u = YashilMembership.objects.get(user__email="uyushma@test.uz")
         f = YashilMembership.objects.get(user__email="xojalik@test.uz")
         items = {c.code: c for c in CatalogItem.objects.all()}
+        if Order.objects.filter(title__startswith="Намуна:").exists():
+            # Buyurtmalar bor — faqat ombor/akt qismi yetishmasa to'ldiriladi (qayta ishga tushirish)
+            existing = Order.objects.filter(title="Намуна: ижрода — қайрағоч").first()
+            if existing is not None:
+                self._demo_stock_and_act(forest1, f, existing, items)
+            return
         mahalla = mahallas["YM-DEMO-001"]
 
         def make(title, route, org, lines, **extra):
@@ -194,7 +198,30 @@ class Command(BaseCommand):
         o5 = make("Намуна: ижрода — қайрағоч", "forest", forest1, [("ELM", "250")])
         tr.submit(o5, m, document_version=None); tr.start_review(o5, u); tr.forward(o5, u)
         tr.start_review(o5, f); tr.accept(o5, f, executor_name="Иброҳимов А.")
-        self.stdout.write("Namuna buyurtmalar: 5 ta (qoralama, uyushmada, yetkazib beruvchida, qaytarilgan, ijroda).")
+        self._demo_stock_and_act(forest1, f, o5, items)
+        self.stdout.write("Namuna buyurtmalar: 5 ta (qoralama, uyushmada, yetkazib beruvchida, qaytarilgan, ijroda) + ombor va akt qoralamasi.")
+
+    def _demo_stock_and_act(self, forest1, f, order, items):
+        """Ombor: boshlang'ich qoldiq va kirim (ijroda buyurtma −250 qayrag'och → yetishmovchilik); akt qoralamasi (dalilsiz)."""
+        from datetime import timedelta
+        from decimal import Decimal
+
+        from django.utils import timezone
+
+        from apps.yashil.services import acts as act_service
+        from apps.yashil.services import ledger
+        from apps.yashil.services.workdays import local_date
+
+        wh = ledger.default_warehouse(forest1)
+        today = local_date(timezone.now())
+        if not wh.movements.filter(kind__in=("opening", "receipt")).exists():
+            ledger.post_opening(wh, items["ASH"], Decimal("500"), f, doc_number="ИНВ-2026-12", doc_date=today - timedelta(days=30), note="Инвентаризация")
+            ledger.post_opening(wh, items["ELM"], Decimal("100"), f, doc_number="ИНВ-2026-12", doc_date=today - timedelta(days=30), note="Инвентаризация")
+            ledger.post_receipt(wh, items["MUL"], Decimal("2000"), f, doc_number="К-0001", doc_date=today - timedelta(days=5), note="Питомникдан кирим")
+        if order.state in ("execution", "partial") and not order.acts.exists():
+            line = order.lines.first()
+            act_service.create_act(order, f, delivery_date=today, lines=[{"order_line": line, "qty": Decimal("100")}],
+                                   responsible="Иброҳимов А.", note="Биринчи партия (намуна)")
 
     def _supplier(self, name, region, supplier_type, parent=None):
         org, _ = Organization.objects.get_or_create(name=name, defaults={"region": region})

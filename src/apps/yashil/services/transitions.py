@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.yashil.models import (
+    DELIVERY_STATES,
     Order,
     OrderEvent,
     OrderState,
@@ -40,9 +41,11 @@ K = YashilNotification.Kind
 
 
 class TransitionError(Exception):
-    def __init__(self, message: str, *, code: str = "state_conflict", field: str | None = None, status: int = 409):
+    def __init__(self, message: str, *, code: str = "state_conflict", field: str | None = None, status: int = 409, index=None):
         super().__init__(message)
         self.message, self.code, self.field, self.status = message, code, field, status
+        self.index = index
+        self.extra: dict = {}
 
 
 def _forbidden(message="Бу амал учун ваколат йўқ", code="forbidden"):
@@ -197,7 +200,7 @@ def return_order(order: Order, cabinet, *, reason_code: str, comment: str, field
 
 @transaction.atomic
 def accept(order: Order, cabinet, *, executor_name: str):
-    """Ijroga qabul: holat + 10 ish kuni. Ombor ajratish 3-bosqichda shu yerga qo'shiladi."""
+    """Ijroga qabul: holat + 10 ish kuni + ombor ajratish (bir tranzaksiya)."""
     caller, order = order, _lock(order)
     if not _is_supplier_for(order, cabinet):
         raise _forbidden()
@@ -207,6 +210,8 @@ def accept(order: Order, cabinet, *, executor_name: str):
         raise TransitionError("Аввал «Кўриб чиқишни бошлаш» босилиши керак")
     if not (executor_name or "").strip():
         raise TransitionError("Масъул ижрочи кўрсатилиши керак", code="executor_required", field="executor_name", status=422)
+    from apps.yashil.services import ledger
+
     now = timezone.now()
     today = local_date(now)
     from_state = order.state
@@ -215,10 +220,13 @@ def accept(order: Order, cabinet, *, executor_name: str):
     order.accepted_on = today
     order.delivery_due = delivery_deadline(today, calendar_from_db())
     order.executor_name = executor_name.strip()
+    # Ombor ajratish shu tranzaksiyada (TZ §22.1): DM'da yetmasa LedgerError — hech narsa yozilmaydi.
+    acceptance = ledger.allocate_for_acceptance(order, cabinet, accepted_on=today, delivery_due=order.delivery_due,
+                                                executor_name=order.executor_name)
     order.save(update_fields=["state", "accepted_at", "accepted_on", "delivery_due", "executor_name", "updated_at"])
     _close_open_segment(order, today, "accepted")
     _event(order, "accept", from_state, order.state, cabinet,
-           payload={"executor_name": order.executor_name, "delivery_due": order.delivery_due.isoformat()})
+           payload={"executor_name": order.executor_name, "delivery_due": order.delivery_due.isoformat(), "stock": acceptance.result})
     notif.notify_mahalla(order, kind=K.ORDER_ACCEPTED, title=f"Буюртма {order.number} ижрога қабул қилинди",
                          body=f"Етказиш муддати: {order.delivery_due:%d.%m.%Y}")
     notif.notify_union(order, kind=K.ORDER_ACCEPTED, title=f"Буюртма {order.number} ижрога қабул қилинди")
@@ -241,13 +249,24 @@ def deadline_info(order: Order, today=None) -> dict:
         info.update(stage="review", review_due=due.isoformat() if due else None,
                     review_used=review_days_used(segments, today, cal, REVIEW_WORKDAYS),
                     late_workdays=overdue_workdays(due, today, cal) if due else 0)
-    elif order.state == OrderState.EXECUTION and order.delivery_due:
+    elif order.state in DELIVERY_STATES and order.delivery_due:
         info.update(stage="delivery", delivery_due=order.delivery_due.isoformat(),
                     late_workdays=overdue_workdays(order.delivery_due, today, cal))
     return info
 
 
 def allowed_actions(order: Order, cabinet) -> list[str]:
+    from apps.yashil.services.cancel import cancel_actions
+
+    base = _base_actions(order, cabinet)
+    cancel = cancel_actions(order, cabinet)
+    # Ochiq bekor so'rovi bo'lsa faqat kelishuv/tasdiq amallari qoladi
+    if order.state in DELIVERY_STATES and order.cancel_requests.filter(status__in=("requested", "agreed")).exists():
+        return cancel
+    return base + cancel
+
+
+def _base_actions(order: Order, cabinet) -> list[str]:
     if cabinet is None:
         return []
     s = order.state
@@ -269,5 +288,11 @@ def allowed_actions(order: Order, cabinet) -> list[str]:
             return ["review"]
         if s == OrderState.SUPPLIER_REVIEW:
             return (["accept"] if cabinet.can_prepare else []) + ["return"]
+        if s in DELIVERY_STATES and cabinet.can_prepare:
+            from apps.yashil.models import Act
+
+            if not order.acts.filter(status__in=Act.OPEN_STATUSES).exists() and \
+                    not order.cancel_requests.filter(status__in=("requested", "agreed")).exists():
+                return ["create_act"]
         return []
     return []

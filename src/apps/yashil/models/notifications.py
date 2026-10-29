@@ -17,6 +17,11 @@ class YashilNotification(models.Model):
         DEADLINE_REMINDER = "deadline_reminder", "Muddat eslatmasi"
         OVERDUE = "overdue", "Muddat buzildi"
         STOCK_NEGATIVE = "stock_negative", "Manfiy qoldiq"
+        CANCEL_REQUESTED = "cancel_requested", "Bekor qilish so'rovi"
+        CANCEL_AGREED = "cancel_agreed", "Bekor qilishga kelishildi"
+        CANCEL_APPROVED = "cancel_approved", "Bekor qilish tasdiqlandi"
+        CANCEL_REJECTED = "cancel_rejected", "Bekor qilish rad etildi"
+        RECONCILE_ISSUE = "reconcile_issue", "Solishtirish nomuvofiqligi"
 
     recipient_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="yashil_notifications")
     membership = models.ForeignKey(YashilMembership, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")

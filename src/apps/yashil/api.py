@@ -63,6 +63,8 @@ def yashil_exception_handler(exc, context):
         payload.update(error_code=exc.error_code, field=exc.field, message=str(exc.detail))
         if getattr(exc, "index", None) is not None:
             payload["index"] = exc.index
+        for key, value in (getattr(exc, "extra", None) or {}).items():
+            payload.setdefault(key, value)
     elif isinstance(exc, ValidationError):
         field = next(iter(exc.detail), None) if isinstance(exc.detail, dict) else None
         payload.update(error_code="validation", field=field, message=_first_message(exc.detail))
@@ -143,6 +145,7 @@ def service_error(exc) -> YashilError:
     index = getattr(exc, "index", None)
     if index is not None:
         err.index = index
+    err.extra = dict(getattr(exc, "extra", None) or {})
     return err
 
 

@@ -3,7 +3,16 @@ from django.contrib import admin
 
 from apps.base.admin import admin_site
 from apps.yashil.models import (
+    Acceptance,
+    CancelRequest,
+    ReconcileIssue,
+    Act,
+    ActAttachment,
+    ActVersion,
     Document,
+    ServiceAllocation,
+    StockMovement,
+    Warehouse,
     DocumentVersion,
     IdempotencyRecord,
     Order,
@@ -255,6 +264,117 @@ class IdempotencyRecordAdmin(admin.ModelAdmin):
     list_display = ("user", "path", "key", "status_code", "created_at")
     readonly_fields = ("user", "key", "path", "request_hash", "status_code", "response", "created_at")
     search_fields = ("key", "path", "user__email")
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- ombor (3-bosqich)
+@register(Warehouse)
+class WarehouseAdmin(admin.ModelAdmin):
+    list_display = ("organization", "name", "is_default", "created_at")
+    search_fields = ("organization__name", "name")
+    raw_id_fields = ("organization",)
+
+
+@register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    """Harakatlar o'chirilmaydi va tahrirlanmaydi — tuzatish faqat teskari operatsiya bilan (TZ §9.3)."""
+
+    list_display = ("created_at", "warehouse", "catalog_item", "kind", "qty", "status", "doc_number", "doc_date")
+    list_filter = ("kind", "status", "warehouse__organization")
+    search_fields = ("doc_number", "catalog_item__code", "warehouse__organization__name", "note")
+    readonly_fields = [f.name for f in StockMovement._meta.fields]
+    list_select_related = ("warehouse__organization", "catalog_item")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(Acceptance)
+class AcceptanceAdmin(admin.ModelAdmin):
+    list_display = ("order", "warehouse", "accepted_on", "delivery_due", "executor_name", "accepted_by")
+    search_fields = ("order__number", "executor_name")
+    readonly_fields = [f.name for f in Acceptance._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ServiceAllocation)
+class ServiceAllocationAdmin(admin.ModelAdmin):
+    list_display = ("organization", "catalog_item", "period", "order_line", "qty")
+    list_filter = ("period",)
+    readonly_fields = [f.name for f in ServiceAllocation._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- dalolatnoma (3-bosqich)
+class ActVersionInline(admin.TabularInline):
+    model = ActVersion
+    extra = 0
+    can_delete = False
+    readonly_fields = ("version_no", "delivery_date", "responsible", "document_version", "submitted_at", "superseded_at", "created_at")
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@register(Act)
+class ActAdmin(admin.ModelAdmin):
+    list_display = ("number", "order", "status", "version_no", "is_partial", "approved_at", "returned_at", "created_at")
+    list_filter = ("status", "is_partial")
+    search_fields = ("number", "order__number", "order__mahalla__name")
+    readonly_fields = [f.name for f in Act._meta.fields]
+    inlines = (ActVersionInline,)
+    list_select_related = ("order",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ActAttachment)
+class ActAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("act", "original_name", "kind", "size", "version_no", "created_at")
+    readonly_fields = ("act", "file", "original_name", "size", "kind", "version_no", "uploaded_by")
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ----------------------------------------------------------------------------- bekor qilish va solishtirish (3-bosqich)
+@register(CancelRequest)
+class CancelRequestAdmin(admin.ModelAdmin):
+    list_display = ("order", "requested_by_party", "is_full", "status", "agreed_by", "approved_by", "created_at")
+    list_filter = ("status", "requested_by_party", "is_full")
+    search_fields = ("order__number", "reason")
+    readonly_fields = [f.name for f in CancelRequest._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@register(ReconcileIssue)
+class ReconcileIssueAdmin(admin.ModelAdmin):
+    list_display = ("found_at", "kind", "key", "order", "warehouse", "resolved_at")
+    list_filter = ("kind",)
+    search_fields = ("key", "order__number", "warehouse__organization__name")
+    readonly_fields = ("kind", "key", "order", "warehouse", "details", "found_at")
 
     def has_add_permission(self, request):
         return False

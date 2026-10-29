@@ -58,13 +58,27 @@ class LineOutSerializer(serializers.ModelSerializer):
     catalog_item = CatalogItemSerializer(read_only=True)
     qty = serializers.SerializerMethodField()
     unit_cyr = serializers.SerializerMethodField()
+    accepted_qty = serializers.SerializerMethodField()
+    remaining_qty = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderLine
-        fields = ("id", "catalog_item", "qty", "unit_cyr", "attrs_note", "position")
+        fields = ("id", "catalog_item", "qty", "unit_cyr", "attrs_note", "position", "accepted_qty", "remaining_qty")
 
     def get_qty(self, obj):
         return _dec(obj.qty)
+
+    def _accepted(self, obj):
+        table = self.context.get("accepted_by_line")
+        return table.get(obj.id, Decimal("0")) if table is not None else None
+
+    def get_accepted_qty(self, obj):
+        a = self._accepted(obj)
+        return _dec(a) if a is not None else None
+
+    def get_remaining_qty(self, obj):
+        a = self._accepted(obj)
+        return _dec(obj.qty - a) if a is not None else None
 
     def get_unit_cyr(self, obj):
         return UNIT_LABELS.get(obj.catalog_item.unit, (obj.catalog_item.unit,))[0]
@@ -187,6 +201,10 @@ class OrderDetailSerializer(OrderListSerializer):
     season = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
     last_return = serializers.SerializerMethodField()
+    acceptance = serializers.SerializerMethodField()
+    acts = serializers.SerializerMethodField()
+    cancel_request = serializers.SerializerMethodField()
+    closed_at = serializers.DateTimeField(format="iso-8601", read_only=True)
     lat = serializers.SerializerMethodField()
     lon = serializers.SerializerMethodField()
     area_calc_ha = serializers.SerializerMethodField()
@@ -198,8 +216,27 @@ class OrderDetailSerializer(OrderListSerializer):
             "mahalla", "supplier", "union_unit", "object_type", "object_note", "season", "address", "lat", "lon",
             "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info", "base_seedlings",
             "problem_note", "linked_order", "repeat_reason", "first_submitted_at", "accepted_at", "executor_name",
-            "lines", "versions", "documents", "events", "attachments", "actions", "last_return",
+            "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance", "acts", "cancel_request", "closed_at",
         )
+
+    def to_representation(self, instance):
+        from apps.yashil.services.acts import accepted_by_line
+
+        self.context["accepted_by_line"] = accepted_by_line(instance)
+        return super().to_representation(instance)
+
+    def get_cancel_request(self, o):
+        """Ochiq (yoki oxirgi) bekor qilish so'rovi — buyurtma kartasidagi kelishuv tugmalari uchun."""
+        from apps.yashil.serializers_cancel import CancelRequestSerializer
+
+        req = o.cancel_requests.select_related("requested_by_membership__user", "agreed_by", "approved_by", "document__current_version").first()
+        return CancelRequestSerializer(req, context=self.context).data if req else None
+
+    def get_acts(self, o):
+        from apps.yashil.serializers_acts import ActListSerializer
+
+        qs = o.acts.select_related("order__mahalla", "order__supplier_org", "current_version").order_by("index")
+        return ActListSerializer(qs, many=True, context=self.context).data
 
     def get_mahalla(self, o):
         m = o.mahalla
@@ -231,6 +268,20 @@ class OrderDetailSerializer(OrderListSerializer):
             return None
         return {"comment": ev.comment, "reason_code": ev.reason_code, "by": ev.payload.get("by"),
                 "fields": ev.payload.get("fields", []), "at": ev.created_at.isoformat(timespec="seconds"), "actor": ev.actor_label}
+
+    def get_acceptance(self, o):
+        """Ijroga qabul natijasi: ombor, ajratish qatorlari, yetishmovchilik (TZ §9.2)."""
+        from apps.yashil.models import Acceptance
+
+        acc = Acceptance.objects.filter(order=o).select_related("warehouse", "accepted_by").first()
+        if acc is None:
+            return None
+        return {
+            "id": str(acc.id), "warehouse": {"id": str(acc.warehouse_id), "name": acc.warehouse.name},
+            "accepted_on": acc.accepted_on.isoformat(), "delivery_due": acc.delivery_due.isoformat(),
+            "executor_name": acc.executor_name, "result": acc.result,
+            "accepted_by": f"{acc.accepted_by.last_name} {acc.accepted_by.first_name}".strip(),
+        }
 
     def get_lat(self, o):
         return _dec(o.lat)
