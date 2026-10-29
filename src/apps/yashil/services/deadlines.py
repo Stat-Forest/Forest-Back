@@ -21,7 +21,9 @@ def compute(order: Order, today: date, cal) -> dict:
     """Sof hisob: buyurtma holati va segmentlaridan uchta qiymat."""
     review_due, late, stage = None, 0, ""
     if order.state in REVIEW_STATES:
-        review_due = review_deadline(order.review_segments_as_tuples_dates(), cal)
+        from apps.yashil.services.rules import review_workdays_for
+
+        review_due = review_deadline(order.review_segments_as_tuples_dates(), cal, review_workdays_for(order))
         if review_due:
             late = overdue_workdays(review_due, today, cal)
             stage = "review" if late else ""

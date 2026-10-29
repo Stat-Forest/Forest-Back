@@ -41,7 +41,6 @@ K = YashilNotification.Kind
 REVIEW_STATES = (OrderState.UNION_NEW, OrderState.UNION_REVIEW, OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW)
 DELIVERY_REMIND_AT = (3, 1)
 REVIEW_REMIND_AT = (1,)
-ACT_REVIEW_WORKDAYS = 3
 
 
 def _already_sent(order, kind, title, membership_ids) -> bool:
@@ -66,7 +65,9 @@ def _responsible(order):
 
 
 def _process_review(order, today, cal) -> int:
-    due = review_deadline(order.review_segments_as_tuples_dates(), cal)
+    from apps.yashil.services.rules import review_workdays_for
+
+    due = review_deadline(order.review_segments_as_tuples_dates(), cal, review_workdays_for(order))
     if due is None:
         return 0
     sent = 0
@@ -106,7 +107,9 @@ def _process_act_review(act, today, cal) -> int:
     v = act.current_version
     if v is None or not v.submitted_at:
         return 0
-    due = add_workdays(local_date(v.submitted_at), ACT_REVIEW_WORKDAYS, cal)
+    from apps.yashil.services.rules import get as rule
+
+    due = add_workdays(local_date(v.submitted_at), rule("act_review_reminder_days", today), cal)
     if today <= due:
         return 0
     days = overdue_workdays(due, today, cal)

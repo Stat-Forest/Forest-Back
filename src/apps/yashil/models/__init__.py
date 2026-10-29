@@ -4,6 +4,7 @@ from .cancel import CancelRequest, ReconcileIssue
 from .catalog import CatalogItem, NormRule, ServiceCapacity
 from .documents import Document, DocumentVersion, Signature, canonical_hash
 from .exports import ExportJob
+from .settings import YashilSetting
 from .membership import YashilMembership
 from .notifications import IdempotencyRecord, YashilNotification
 from .orders import (
@@ -42,5 +43,5 @@ __all__ = [
     "ReturnReason", "ReviewSegment", "STATE_LABELS_CYR", "Season", "ServiceCapacity", "Signature",
     "SupplierAssignment", "SupplierProfile", "UnionUnit", "YashilMembership", "YashilNotification", "canonical_hash",
     "Acceptance", "ServiceAllocation", "StockMovement", "Warehouse",
-    "CancelRequest", "ReconcileIssue", "ExportJob", "ACT_RETURN_REASON_CYR", "Act", "ActAttachment", "ActLine", "ActReturnReason", "ActVersion", "DELIVERY_STATES", "FINAL_STATES",
+    "CancelRequest", "ReconcileIssue", "ExportJob", "YashilSetting", "ACT_RETURN_REASON_CYR", "Act", "ActAttachment", "ActLine", "ActReturnReason", "ActVersion", "DELIVERY_STATES", "FINAL_STATES",
 ]

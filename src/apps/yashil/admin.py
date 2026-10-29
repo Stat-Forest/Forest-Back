@@ -6,6 +6,7 @@ from apps.yashil.models import (
     Acceptance,
     CancelRequest,
     ReconcileIssue,
+    YashilSetting,
     ExportJob,
     Act,
     ActAttachment,
@@ -389,4 +390,17 @@ class ExportJobAdmin(admin.ModelAdmin):
     readonly_fields = ("requested_by", "membership", "kind", "format", "filters", "status", "row_count", "file", "error", "started_at", "finished_at")
 
     def has_add_permission(self, request):
+        return False
+
+
+@register(YashilSetting)
+class YashilSettingAdmin(admin.ModelAdmin):
+    list_display = ("key", "version", "value", "effective_from", "changed_by", "created_at")
+    list_filter = ("key",)
+    readonly_fields = ("key", "value", "effective_from", "version", "changed_by", "note")
+
+    def has_add_permission(self, request):
+        return False  # yangi versiya faqat modul sozlamalari ekrani / rules.set_value orqali
+
+    def has_delete_permission(self, request, obj=None):
         return False
