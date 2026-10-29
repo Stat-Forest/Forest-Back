@@ -55,6 +55,9 @@ LINK=""
 rsync -a --delete $LINK "$ROOT/media/" "$DEST/media/$STAMP.tmp/"
 rm -rf "$DEST/media/$STAMP"
 mv "$DEST/media/$STAMP.tmp" "$DEST/media/$STAMP"
+# rsync -a papkaga asl media/ ning eski mtime'ini yozadi — saqlash muddati (5-qadam) mtime bo'yicha
+# hisoblanadi, shuning uchun nusxa vaqtini hozirgi vaqtga o'rnatamiz, aks holda yangi nusxa darhol o'chadi
+touch "$DEST/media/$STAMP"
 ln -sfn "$DEST/media/$STAMP" "$DEST/media/latest"
 echo "  media: $(find "$DEST/media/$STAMP" -type f | wc -l) fayl"
 
