@@ -44,4 +44,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "yashil.reconcile",
         "schedule": 24 * 3600,
     },
+    # Yashil mahalla: muddati o'tgan eksport fayllarini o'chirish (TZ 14.2, 7 kun)
+    "yashil-export-cleanup": {
+        "task": "yashil.export_cleanup",
+        "schedule": 24 * 3600,
+    },
 }

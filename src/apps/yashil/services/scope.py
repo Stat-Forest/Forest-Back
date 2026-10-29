@@ -193,3 +193,12 @@ def orders_for_cabinet(cabinet, is_admin: bool):
     if cabinet.member_type == T.OBSERVER:
         return scope_mahallas(qs, cabinet, field="mahalla_id").exclude(state=OrderState.DRAFT)
     return qs.none()
+
+
+def acts_for_cabinet(cabinet, is_admin: bool):
+    """Kabinet ko'lamidagi dalolatnomalar (buyurtma ko'lami orqali)."""
+    from apps.yashil.models import Act
+
+    order_ids = orders_for_cabinet(cabinet, is_admin).values("pk")
+    return Act.objects.filter(order_id__in=order_ids).select_related(
+        "order__mahalla", "order__supplier_org", "current_version", "document__current_version")

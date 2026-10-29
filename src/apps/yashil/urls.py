@@ -1,6 +1,8 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    ExportCreateView,
+    ExportDetailView,
     RegistryView,
     RegistrySummaryView,
     ReportFiltersView,
@@ -114,6 +116,8 @@ urlpatterns = [
     path("reports/registry/", RegistryView.as_view(), name="yashil-report-registry"),
     path("reports/registry/summary/", RegistrySummaryView.as_view(), name="yashil-report-registry-summary"),
     path("reports/filters/", ReportFiltersView.as_view(), name="yashil-report-filters"),
+    path("reports/exports/", ExportCreateView.as_view(), name="yashil-report-exports"),
+    path("reports/exports/<uuid:job_id>/", ExportDetailView.as_view(), name="yashil-report-export"),
     path("documents/<uuid:version_id>/", DocumentVersionView.as_view(), name="yashil-document"),
     path("documents/<uuid:version_id>/html/", DocumentVersionHtmlView.as_view(), name="yashil-document-html"),
     path("documents/<uuid:version_id>/pdf/", DocumentVersionPdfView.as_view(), name="yashil-document-pdf"),

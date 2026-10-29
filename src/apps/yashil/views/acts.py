@@ -21,15 +21,10 @@ from apps.yashil.serializers_acts import (
 from apps.yashil.services import acts as act_service
 from apps.yashil.services.signing import SigningError
 from apps.yashil.services.transitions import TransitionError
-from apps.yashil.views.orders import OrderBaseView, orders_for_cabinet
+from apps.yashil.services.scope import acts_for_cabinet  # noqa: F401 — cancel/documents view'lari shu nomdan foydalanadi
+from apps.yashil.views.orders import OrderBaseView
 
 T = YashilMembership.MemberType
-
-
-def acts_for_cabinet(cabinet, is_admin: bool):
-    order_ids = orders_for_cabinet(cabinet, is_admin).values("pk")
-    return Act.objects.filter(order_id__in=order_ids).select_related(
-        "order__mahalla", "order__supplier_org", "current_version", "document__current_version")
 
 
 def act_detail_queryset(qs):
