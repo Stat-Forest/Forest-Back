@@ -120,6 +120,10 @@ def deadline_reminders(today: date | None = None) -> int:
     """Qaytaradi: yuborilgan xabarnomalar soni."""
     today = today or local_date(timezone.now())
     cal = calendar_from_db()
+    # Avval kechikish ustunlari (reestr filtri va statistika kartalari shunga qaraydi)
+    from apps.yashil.services.deadlines import recalc_all
+
+    recalc_all(today=today, cal=cal)
     sent = 0
     for order in Order.objects.filter(state__in=REVIEW_STATES).select_related("mahalla", "supplier_org").prefetch_related("review_segments"):
         sent += _process_review(order, today, cal)

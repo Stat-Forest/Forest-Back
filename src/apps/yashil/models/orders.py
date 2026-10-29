@@ -105,6 +105,11 @@ class Order(AbstractBaseModel):
     delivery_due = models.DateField(null=True, blank=True)
     executor_name = models.CharField(max_length=300, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True, help_text="Bajarilgan yoki bekor qilingan vaqt")
+    # Kechikish hisobi — har holat o'tishida va ertalabki vazifada yangilanadi (services/deadlines.py).
+    # Filtr/statistika shu ustunlardan (ish kunlari kalendari SQL'da hisoblanmaydi).
+    review_due = models.DateField(null=True, blank=True, help_text="Ko'rib chiqish oxirgi sanasi (ochiq segment)")
+    late_workdays = models.PositiveIntegerField(default=0, db_index=True, help_text="Muddatdan keyin o'tgan ish kunlari")
+    overdue_stage = models.CharField(max_length=10, blank=True, help_text="review / delivery / bo'sh")
     current_version = models.ForeignKey("yashil.OrderVersion", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
 
     class Meta:
@@ -115,6 +120,8 @@ class Order(AbstractBaseModel):
             models.Index(fields=["mahalla", "state"]),
             models.Index(fields=["supplier_org", "state"]),
             models.Index(fields=["union_unit", "state"]),
+            models.Index(fields=["state", "first_submitted_at"]),
+            models.Index(fields=["accepted_on"]),
         ]
 
     def review_segments_as_tuples(self):
