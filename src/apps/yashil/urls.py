@@ -1,6 +1,9 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    RegistryView,
+    RegistrySummaryView,
+    ReportFiltersView,
     CancelAgreeView,
     CancelApproveView,
     CancelDetailView,
@@ -107,6 +110,10 @@ urlpatterns = [
     path("stock/reversals/<uuid:movement_id>/approve/", StockReversalApproveView.as_view(), name="yashil-stock-reversal-approve"),
     path("stock/reversals/<uuid:movement_id>/reject/", StockReversalRejectView.as_view(), name="yashil-stock-reversal-reject"),
     path("stock/capacity/", ServiceCapacityView.as_view(), name="yashil-stock-capacity"),
+    # Hisobotlar (TZ §14)
+    path("reports/registry/", RegistryView.as_view(), name="yashil-report-registry"),
+    path("reports/registry/summary/", RegistrySummaryView.as_view(), name="yashil-report-registry-summary"),
+    path("reports/filters/", ReportFiltersView.as_view(), name="yashil-report-filters"),
     path("documents/<uuid:version_id>/", DocumentVersionView.as_view(), name="yashil-document"),
     path("documents/<uuid:version_id>/html/", DocumentVersionHtmlView.as_view(), name="yashil-document-html"),
     path("documents/<uuid:version_id>/pdf/", DocumentVersionPdfView.as_view(), name="yashil-document-pdf"),
