@@ -247,7 +247,11 @@ def allocate_for_acceptance(order: Order, cabinet, *, accepted_on, delivery_due,
     if Acceptance.objects.filter(order=order).exists():
         raise LedgerError("Буюртма аллақачон ижрога қабул қилинган", code="acceptance_exists", status=409)
     warehouse = _lock(default_warehouse(order.supplier_org))
-    strict = supplier_type_of(order.supplier_org) == SupplierProfile.SupplierType.DM
+    from apps.yashil.services.rules import get as rule
+
+    # DM har doim qat'iy; o'rmon — siyosat bo'yicha (TZ 24.1, standart: manfiyga ruxsat)
+    strict = (supplier_type_of(order.supplier_org) == SupplierProfile.SupplierType.DM
+              or not rule("forest_negative_stock_allowed", accepted_on))
     period = _period(accepted_on)
     lines = list(order.lines.select_related("catalog_item").order_by("position", "created_at"))
     insufficient, plan = [], []

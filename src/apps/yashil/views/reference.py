@@ -22,10 +22,9 @@ from apps.yashil.serializers import (
     SupplierSerializer,
     UnionUnitSerializer,
 )
+from apps.yashil.services import rules
 from apps.yashil.services import scope as scope_service
 from apps.yashil.services.workdays import (
-    DELIVERY_WORKDAYS,
-    REVIEW_WORKDAYS,
     add_workdays,
     calendar_from_db,
 )
@@ -64,7 +63,7 @@ class MeView(CabinetMixin, APIView):
             "is_member": bool(cabinets),
             "active_cabinet": CabinetSerializer(self.cabinet).data if self.cabinet else None,
             "cabinets": CabinetSerializer(cabinets, many=True).data,
-            "rules": {"review_workdays": REVIEW_WORKDAYS, "delivery_workdays": DELIVERY_WORKDAYS},
+            "rules": {"review_workdays": rules.get("review_workdays"), "delivery_workdays": rules.get("delivery_workdays")},
         })
 
 
@@ -181,6 +180,6 @@ class CalendarDueView(YashilAPIView):
         cal = calendar_from_db()
         return Response({
             "start": start.isoformat(),
-            "review_due": add_workdays(start, REVIEW_WORKDAYS, cal).isoformat(),
-            "delivery_due": add_workdays(start, DELIVERY_WORKDAYS, cal).isoformat(),
+            "review_due": add_workdays(start, rules.get("review_workdays", start), cal).isoformat(),
+            "delivery_due": add_workdays(start, rules.get("delivery_workdays", start), cal).isoformat(),
         })

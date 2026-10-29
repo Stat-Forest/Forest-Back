@@ -27,7 +27,6 @@ from apps.yashil.services.numbering import next_order_number
 from apps.yashil.services.scope import union_route
 from apps.yashil.services.snapshot import build_snapshot
 from apps.yashil.services.workdays import (
-    REVIEW_WORKDAYS,
     calendar_from_db,
     delivery_deadline,
     local_date,
@@ -226,7 +225,9 @@ def accept(order: Order, cabinet, *, executor_name: str):
     order.state = OrderState.EXECUTION
     order.accepted_at = now
     order.accepted_on = today
-    order.delivery_due = delivery_deadline(today, calendar_from_db())
+    from apps.yashil.services.rules import get as rule
+
+    order.delivery_due = delivery_deadline(today, calendar_from_db(), rule("delivery_workdays", today))
     order.executor_name = executor_name.strip()
     # Ombor ajratish shu tranzaksiyada (TZ §22.1): DM'da yetmasa LedgerError — hech narsa yozilmaydi.
     acceptance = ledger.allocate_for_acceptance(order, cabinet, accepted_on=today, delivery_due=order.delivery_due,
@@ -243,7 +244,9 @@ def accept(order: Order, cabinet, *, executor_name: str):
 
 # ----------------------------------------------------------------------------- hisob-kitob
 def review_due(order: Order):
-    return review_deadline(order.review_segments_as_tuples_dates(), calendar_from_db())
+    from apps.yashil.services.rules import review_workdays_for
+
+    return review_deadline(order.review_segments_as_tuples_dates(), calendar_from_db(), review_workdays_for(order))
 
 
 def deadline_info(order: Order, today=None) -> dict:
@@ -253,9 +256,12 @@ def deadline_info(order: Order, today=None) -> dict:
     segments = order.review_segments_as_tuples_dates()
     info = {"review_due": None, "review_used": None, "delivery_due": None, "late_workdays": 0, "stage": None}
     if order.state in (OrderState.UNION_NEW, OrderState.UNION_REVIEW, OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW):
-        due = review_deadline(segments, cal)
+        from apps.yashil.services.rules import review_workdays_for
+
+        total = review_workdays_for(order)
+        due = review_deadline(segments, cal, total)
         info.update(stage="review", review_due=due.isoformat() if due else None,
-                    review_used=review_days_used(segments, today, cal, REVIEW_WORKDAYS),
+                    review_used=review_days_used(segments, today, cal, total),
                     late_workdays=overdue_workdays(due, today, cal) if due else 0)
     elif order.state in DELIVERY_STATES and order.delivery_due:
         info.update(stage="delivery", delivery_due=order.delivery_due.isoformat(),
