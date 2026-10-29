@@ -174,6 +174,7 @@ class OrderListSerializer(serializers.ModelSerializer):
         fields = (
             "id", "number", "display_number", "title", "route", "state", "state_cyr", "version_no", "mahalla_name",
             "supplier_name", "area_ha", "created_at", "last_submitted_at", "delivery_due", "deadline",
+            "late_workdays", "overdue_stage",
         )
 
     def get_state_cyr(self, obj):

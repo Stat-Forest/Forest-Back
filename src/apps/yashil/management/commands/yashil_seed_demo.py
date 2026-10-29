@@ -158,6 +158,10 @@ class Command(BaseCommand):
         self._member("xojalik@test.uz", "tashkilot_rahbari", "Хўжалик", "Раҳбари", T.SUPPLIER, organization=forest1, user_org=forest1)
         if options["with_orders"]:
             self._demo_orders(mahallas, forest1, dm_main)
+        # Kechikish ustunlari (reestr filtri / statistika) demo buyurtmalar uchun ham to'ldiriladi
+        from apps.yashil.services.deadlines import recalc_all
+
+        recalc_all()
         self.stdout.write("Yashil mahalla namuna ma'lumotlari tayyor (parol: Test12345!).")
 
     def _demo_orders(self, mahallas, forest1, dm_main):

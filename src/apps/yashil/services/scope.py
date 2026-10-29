@@ -16,7 +16,7 @@ Qoidalar:
 """
 from datetime import date
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 
 from apps.yashil.models import Mahalla, MahallaUnionRoute, SupplierAssignment, SupplierProfile, YashilMembership
 
@@ -167,3 +167,38 @@ def memberships_active_for_target(member_type, *, mahalla_id=None, union_unit_id
     if organization_id is not None:
         qs = qs.filter(organization_id=organization_id)
     return qs.select_related("user")
+
+
+# ----------------------------------------------------------------------------- buyurtmalar ko'lami
+UNION_VISIBLE_EXCLUDE = ("draft",)
+
+
+def orders_for_cabinet(cabinet, is_admin: bool):
+    """Kabinet ko'lamidagi buyurtmalar (TZ §2 jadvali)."""
+    from apps.yashil.models import Order, OrderEvent, OrderState
+
+    T = YashilMembership.MemberType
+    qs = Order.objects.select_related("mahalla__district", "mahalla__region", "supplier_org__supplier_profile", "union_unit")
+    if cabinet is None:
+        return qs if is_admin else qs.none()
+    if cabinet.member_type == T.MAHALLA:
+        return qs.filter(mahalla_id=cabinet.mahalla_id)
+    if cabinet.member_type == T.UNION:
+        return qs.filter(union_unit_id=cabinet.union_unit_id).exclude(state__in=UNION_VISIBLE_EXCLUDE)
+    if cabinet.member_type == T.SUPPLIER:
+        forwarded = OrderEvent.objects.filter(order=OuterRef("pk"), action="forward")
+        return qs.filter(supplier_org_id=cabinet.organization_id).annotate(_fw=Exists(forwarded)).filter(
+            Q(state__in=(OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW, OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED)) | Q(_fw=True)
+        ).exclude(state=OrderState.DRAFT)
+    if cabinet.member_type == T.OBSERVER:
+        return scope_mahallas(qs, cabinet, field="mahalla_id").exclude(state=OrderState.DRAFT)
+    return qs.none()
+
+
+def acts_for_cabinet(cabinet, is_admin: bool):
+    """Kabinet ko'lamidagi dalolatnomalar (buyurtma ko'lami orqali)."""
+    from apps.yashil.models import Act
+
+    order_ids = orders_for_cabinet(cabinet, is_admin).values("pk")
+    return Act.objects.filter(order_id__in=order_ids).select_related(
+        "order__mahalla", "order__supplier_org", "current_version", "document__current_version")

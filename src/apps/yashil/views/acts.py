@@ -21,15 +21,10 @@ from apps.yashil.serializers_acts import (
 from apps.yashil.services import acts as act_service
 from apps.yashil.services.signing import SigningError
 from apps.yashil.services.transitions import TransitionError
-from apps.yashil.views.orders import OrderBaseView, orders_for_cabinet
+from apps.yashil.services.scope import acts_for_cabinet  # noqa: F401 — cancel/documents view'lari shu nomdan foydalanadi
+from apps.yashil.views.orders import OrderBaseView
 
 T = YashilMembership.MemberType
-
-
-def acts_for_cabinet(cabinet, is_admin: bool):
-    order_ids = orders_for_cabinet(cabinet, is_admin).values("pk")
-    return Act.objects.filter(order_id__in=order_ids).select_related(
-        "order__mahalla", "order__supplier_org", "current_version", "document__current_version")
 
 
 def act_detail_queryset(qs):
@@ -97,6 +92,27 @@ class ActListView(ActBaseView):
         if p.get("q"):
             q = p["q"].strip()
             qs = qs.filter(Q(number__icontains=q) | Q(order__title__icontains=q) | Q(order__mahalla__name__icontains=q))
+        # Reestr filtrlari (TZ §14.2): davr — haqiqiy yetkazish sanasi, hudud, yetkazib beruvchi, yo'nalish
+        from apps.yashil.services import registry
+
+        try:
+            f = registry.parse_filters({k: v for k, v in p.items() if k not in ("state", "status", "q", "ordering")})
+        except registry.RegistryFilterError as exc:
+            raise YashilError(str(exc), error_code="invalid_format", field=exc.field, status_code=status.HTTP_400_BAD_REQUEST)
+        if f.get("date_from"):
+            qs = qs.filter(current_version__delivery_date__gte=f["date_from"])
+        if f.get("date_to"):
+            qs = qs.filter(current_version__delivery_date__lte=f["date_to"])
+        if f.get("region"):
+            qs = qs.filter(order__mahalla__region_id=f["region"])
+        if f.get("district"):
+            qs = qs.filter(order__mahalla__district_id=f["district"])
+        if f.get("mahalla"):
+            qs = qs.filter(order__mahalla_id=f["mahalla"])
+        if f.get("supplier_org"):
+            qs = qs.filter(order__supplier_org_id=f["supplier_org"])
+        if f.get("route"):
+            qs = qs.filter(order__route=f["route"])
         paginator = CustomPageNumberPagination()
         page = paginator.paginate_queryset(qs.order_by("-updated_at"), request, view=self)
         return paginator.get_paginated_response(ActListSerializer(page, many=True, context={"request": request, "cabinet": self.cabinet}).data)

@@ -41,6 +41,7 @@ from apps.yashil.serializers_orders import (
     SubmitSerializer,
 )
 from apps.yashil.services import scope as scope_service
+from apps.yashil.services.scope import orders_for_cabinet  # noqa: F401 — boshqa view'lar shu nomdan foydalanadi
 from apps.yashil.services import transitions as tr
 from apps.yashil.services.documents import build_order_form
 from apps.yashil.services.norms import OrderValidationError, validate_for_submit, validate_lines
@@ -48,27 +49,6 @@ from apps.yashil.services.signing import SigningError, prepare_signing, verify_a
 from apps.yashil.services.transitions import TransitionError
 
 T = YashilMembership.MemberType
-UNION_VISIBLE_EXCLUDE = (OrderState.DRAFT,)
-SUPPLIER_HIDDEN = (OrderState.DRAFT, OrderState.UNION_NEW, OrderState.UNION_REVIEW)
-
-
-def orders_for_cabinet(cabinet, is_admin: bool):
-    """Kabinet ko'lamidagi buyurtmalar (TZ §2 jadvali)."""
-    qs = Order.objects.select_related("mahalla__district", "mahalla__region", "supplier_org__supplier_profile", "union_unit")
-    if cabinet is None:
-        return qs if is_admin else qs.none()
-    if cabinet.member_type == T.MAHALLA:
-        return qs.filter(mahalla_id=cabinet.mahalla_id)
-    if cabinet.member_type == T.UNION:
-        return qs.filter(union_unit_id=cabinet.union_unit_id).exclude(state__in=UNION_VISIBLE_EXCLUDE)
-    if cabinet.member_type == T.SUPPLIER:
-        forwarded = OrderEvent.objects.filter(order=OuterRef("pk"), action="forward")
-        return qs.filter(supplier_org_id=cabinet.organization_id).annotate(_fw=Exists(forwarded)).filter(
-            Q(state__in=(OrderState.SUPPLIER_NEW, OrderState.SUPPLIER_REVIEW, OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED)) | Q(_fw=True)
-        ).exclude(state=OrderState.DRAFT)
-    if cabinet.member_type == T.OBSERVER:
-        return scope_service.scope_mahallas(qs, cabinet, field="mahalla_id").exclude(state=OrderState.DRAFT)
-    return qs.none()
 
 
 def detail_queryset(qs):
@@ -118,16 +98,14 @@ class OrderListCreateView(OrderBaseView):
 
     def get(self, request):
         qs = orders_for_cabinet(self.cabinet, self.is_admin)
-        p = request.query_params
-        if p.get("state"):
-            qs = qs.filter(state__in=[s for s in p["state"].split(",") if s])
-        if p.get("route"):
-            qs = qs.filter(route=p["route"])
-        if p.get("mahalla"):
-            qs = qs.filter(mahalla_id=p["mahalla"])
-        if p.get("q"):
-            q = p["q"].strip()
-            qs = qs.filter(Q(number__icontains=q) | Q(title__icontains=q) | Q(mahalla__name__icontains=q) | Q(address__icontains=q))
+        # Reestr filtrlari (davr asosi, hudud, yetkazib beruvchi, kechikish, ...) — TZ §14.2
+        from apps.yashil.services import registry
+
+        try:
+            f = registry.parse_filters(request.query_params)
+        except registry.RegistryFilterError as exc:
+            raise YashilError(str(exc), error_code="invalid_format", field=exc.field, status_code=status.HTTP_400_BAD_REQUEST)
+        qs = registry.apply_order_filters(qs, f)
         qs = qs.order_by("-last_submitted_at", "-created_at")
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)

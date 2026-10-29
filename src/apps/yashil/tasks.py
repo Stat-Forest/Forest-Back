@@ -120,6 +120,10 @@ def deadline_reminders(today: date | None = None) -> int:
     """Qaytaradi: yuborilgan xabarnomalar soni."""
     today = today or local_date(timezone.now())
     cal = calendar_from_db()
+    # Avval kechikish ustunlari (reestr filtri va statistika kartalari shunga qaraydi)
+    from apps.yashil.services.deadlines import recalc_all
+
+    recalc_all(today=today, cal=cal)
     sent = 0
     for order in Order.objects.filter(state__in=REVIEW_STATES).select_related("mahalla", "supplier_org").prefetch_related("review_segments"):
         sent += _process_review(order, today, cal)
@@ -220,3 +224,23 @@ def reconcile() -> dict:
             resolved += 1
     return {"checked_at": now.isoformat(timespec="seconds"), "issues_new": new_errors, "issues_resolved": resolved,
             "open_errors": sum(1 for k in found if k[0] in ERROR_KINDS), "negative_items": sum(1 for k in found if k[0] == "stock_negative")}
+
+
+# ----------------------------------------------------------------------------- hisobot eksporti (TZ §14.2)
+@shared_task(name="yashil.export_job", ignore_result=True)
+def export_job(job_id: str):
+    from apps.yashil.models import ExportJob
+    from apps.yashil.services.exports import run_export
+
+    job = ExportJob.objects.filter(pk=job_id, status__in=ExportJob.ACTIVE_STATUSES).first()
+    if job is None:
+        return None
+    run_export(job)
+    return job.status
+
+
+@shared_task(name="yashil.export_cleanup", ignore_result=True)
+def export_cleanup() -> int:
+    from apps.yashil.services.exports import cleanup
+
+    return cleanup()

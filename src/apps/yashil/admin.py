@@ -6,6 +6,7 @@ from apps.yashil.models import (
     Acceptance,
     CancelRequest,
     ReconcileIssue,
+    ExportJob,
     Act,
     ActAttachment,
     ActVersion,
@@ -375,6 +376,17 @@ class ReconcileIssueAdmin(admin.ModelAdmin):
     list_filter = ("kind",)
     search_fields = ("key", "order__number", "warehouse__organization__name")
     readonly_fields = ("kind", "key", "order", "warehouse", "details", "found_at")
+
+    def has_add_permission(self, request):
+        return False
+
+
+@register(ExportJob)
+class ExportJobAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "requested_by", "membership", "kind", "format", "status", "row_count", "finished_at")
+    list_filter = ("kind", "format", "status")
+    search_fields = ("requested_by__email", "membership__user__email")
+    readonly_fields = ("requested_by", "membership", "kind", "format", "filters", "status", "row_count", "file", "error", "started_at", "finished_at")
 
     def has_add_permission(self, request):
         return False

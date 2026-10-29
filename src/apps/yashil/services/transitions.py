@@ -69,11 +69,19 @@ def _label(cabinet) -> str:
 
 
 def _event(order, action, from_state, to_state, cabinet, comment="", reason_code="", payload=None):
-    return OrderEvent.objects.create(
+    event = OrderEvent.objects.create(
         order=order, action=action, from_state=from_state, to_state=to_state,
         actor_user=cabinet.user if cabinet else None, actor_membership=cabinet,
         actor_label=_label(cabinet), comment=comment or "", reason_code=reason_code or "", payload=payload or {},
     )
+    if from_state != to_state:
+        # Holat o'zgardi — kechikish ustunlari shu tranzaksiyada yangilanadi
+        from apps.yashil.services.deadlines import recalc_order
+        from apps.yashil.services.stats import bump_version
+
+        recalc_order(order)
+        bump_version()
+    return event
 
 
 def _lock(order: Order) -> Order:

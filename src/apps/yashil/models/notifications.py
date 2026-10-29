@@ -22,6 +22,8 @@ class YashilNotification(models.Model):
         CANCEL_APPROVED = "cancel_approved", "Bekor qilish tasdiqlandi"
         CANCEL_REJECTED = "cancel_rejected", "Bekor qilish rad etildi"
         RECONCILE_ISSUE = "reconcile_issue", "Solishtirish nomuvofiqligi"
+        EXPORT_READY = "export_ready", "Eksport tayyor"
+        EXPORT_FAILED = "export_failed", "Eksport bajarilmadi"
 
     recipient_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="yashil_notifications")
     membership = models.ForeignKey(YashilMembership, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")

@@ -17,6 +17,17 @@ from .cancel import (
     CancelRejectView,
     OrderCancelView,
 )
+from .reports import (
+    ExportCreateView,
+    ExportDetailView,
+    MapPointsView,
+    RegistryView,
+    RegistrySummaryView,
+    ReportFiltersView,
+    StatsCardsView,
+    StatsOrganizationsView,
+    StatsSeedlingsView,
+)
 from .documents import (
     DocumentVersionHtmlView,
     DocumentVersionPdfView,
