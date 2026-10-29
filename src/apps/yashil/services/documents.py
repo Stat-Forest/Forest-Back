@@ -260,6 +260,12 @@ def public_verify_payload(version: DocumentVersion) -> dict:
         status = "cancelled"
     else:
         status = "unsigned"
+    from apps.yashil.services.integrity import version_problems
+
+    # Bazada mazmun yoki imzo bog'lanishi o'zgartirilgan bo'lsa — haqiqiy deb ko'rsatilmaydi (Q25)
+    tampered = bool(version_problems(version))
+    if tampered:
+        status = "tampered"
     return {
         "doc_type": document.kind,
         "number": c.get("number"),
@@ -271,7 +277,7 @@ def public_verify_payload(version: DocumentVersion) -> dict:
         "order_number": c.get("order_number") if document.kind != Document.Kind.ORDER_FORM else c.get("number"),
         "parties": {"mahalla": c.get("mahalla_name"), "supplier": c.get("supplier_name")},
         "signatures": [
-            {"role": s.role, "signed_at": timezone.localtime(s.signed_at).isoformat(timespec="seconds"), "valid": s.is_valid}
+            {"role": s.role, "signed_at": timezone.localtime(s.signed_at).isoformat(timespec="seconds"), "valid": s.is_valid and not tampered}
             for s in version.signatures.all()
         ],
         "missing_roles": missing_roles(version),
