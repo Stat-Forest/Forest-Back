@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    MapPointsView,
     StatsCardsView,
     StatsOrganizationsView,
     StatsSeedlingsView,
@@ -125,6 +126,7 @@ urlpatterns = [
     path("stats/cards/", StatsCardsView.as_view(), name="yashil-stats-cards"),
     path("stats/seedlings/", StatsSeedlingsView.as_view(), name="yashil-stats-seedlings"),
     path("stats/organizations/", StatsOrganizationsView.as_view(), name="yashil-stats-organizations"),
+    path("map/points/", MapPointsView.as_view(), name="yashil-map-points"),
     path("documents/<uuid:version_id>/", DocumentVersionView.as_view(), name="yashil-document"),
     path("documents/<uuid:version_id>/html/", DocumentVersionHtmlView.as_view(), name="yashil-document-html"),
     path("documents/<uuid:version_id>/pdf/", DocumentVersionPdfView.as_view(), name="yashil-document-pdf"),

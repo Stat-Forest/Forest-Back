@@ -98,16 +98,14 @@ class OrderListCreateView(OrderBaseView):
 
     def get(self, request):
         qs = orders_for_cabinet(self.cabinet, self.is_admin)
-        p = request.query_params
-        if p.get("state"):
-            qs = qs.filter(state__in=[s for s in p["state"].split(",") if s])
-        if p.get("route"):
-            qs = qs.filter(route=p["route"])
-        if p.get("mahalla"):
-            qs = qs.filter(mahalla_id=p["mahalla"])
-        if p.get("q"):
-            q = p["q"].strip()
-            qs = qs.filter(Q(number__icontains=q) | Q(title__icontains=q) | Q(mahalla__name__icontains=q) | Q(address__icontains=q))
+        # Reestr filtrlari (davr asosi, hudud, yetkazib beruvchi, kechikish, ...) — TZ §14.2
+        from apps.yashil.services import registry
+
+        try:
+            f = registry.parse_filters(request.query_params)
+        except registry.RegistryFilterError as exc:
+            raise YashilError(str(exc), error_code="invalid_format", field=exc.field, status_code=status.HTTP_400_BAD_REQUEST)
+        qs = registry.apply_order_filters(qs, f)
         qs = qs.order_by("-last_submitted_at", "-created_at")
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request, view=self)

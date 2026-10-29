@@ -7,6 +7,7 @@ DEFAULTS = {
     "YASHIL_EXPORT_MAX_ACTIVE": 3,        # bir foydalanuvchida bir vaqtda faol eksportlar
     "YASHIL_EXPORT_RETENTION_DAYS": 7,    # tayyor fayl shuncha kun saqlanadi
     "YASHIL_EXPORT_CHUNK": 1000,          # DB'dan o'qish bo'lagi
+    "YASHIL_MAP_MAX_POINTS": 5000,        # xaritaga bir so'rovda qaytariladigan nuqtalar (ko'p bo'lsa bbox talab)
 }
 
 

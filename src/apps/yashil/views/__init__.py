@@ -20,6 +20,7 @@ from .cancel import (
 from .reports import (
     ExportCreateView,
     ExportDetailView,
+    MapPointsView,
     RegistryView,
     RegistrySummaryView,
     ReportFiltersView,

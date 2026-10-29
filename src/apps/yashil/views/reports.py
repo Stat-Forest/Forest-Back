@@ -9,6 +9,7 @@ from apps.yashil.api import CabinetMixin, HasCabinet, IsAuthenticated, YashilErr
 from apps.yashil.models import ExportJob
 from apps.yashil.serializers_stock import relative_signed_url
 from apps.yashil.services import exports, registry, stats
+from apps.yashil.services import map as map_service
 
 
 class _ReportBase(CabinetMixin, APIView):
@@ -118,3 +119,16 @@ class StatsOrganizationsView(_ReportBase):
     def get(self, request):
         f = self.filters(request)
         return Response({"results": stats.organizations(self.cabinet, self.is_admin, f), "filters_label": registry.filters_label(f)})
+
+
+# ----------------------------------------------------------------------------- xarita (TZ §15.4)
+class MapPointsView(_ReportBase):
+    def get(self, request):
+        f = self.filters(request)
+        try:
+            bbox = map_service.parse_bbox(request.query_params.get("bbox"))
+            return Response(map_service.points(self.cabinet, self.is_admin, f, bbox))
+        except map_service.MapError as exc:
+            err = YashilError(exc.message, error_code=exc.code, field=exc.field, status_code=exc.status)
+            err.extra = exc.extra
+            raise err
