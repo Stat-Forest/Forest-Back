@@ -1,6 +1,9 @@
 from django.urls import path
 
 from apps.yashil.views import (
+    StatsCardsView,
+    StatsOrganizationsView,
+    StatsSeedlingsView,
     ExportCreateView,
     ExportDetailView,
     RegistryView,
@@ -118,6 +121,10 @@ urlpatterns = [
     path("reports/filters/", ReportFiltersView.as_view(), name="yashil-report-filters"),
     path("reports/exports/", ExportCreateView.as_view(), name="yashil-report-exports"),
     path("reports/exports/<uuid:job_id>/", ExportDetailView.as_view(), name="yashil-report-export"),
+    # Statistika (TZ §15)
+    path("stats/cards/", StatsCardsView.as_view(), name="yashil-stats-cards"),
+    path("stats/seedlings/", StatsSeedlingsView.as_view(), name="yashil-stats-seedlings"),
+    path("stats/organizations/", StatsOrganizationsView.as_view(), name="yashil-stats-organizations"),
     path("documents/<uuid:version_id>/", DocumentVersionView.as_view(), name="yashil-document"),
     path("documents/<uuid:version_id>/html/", DocumentVersionHtmlView.as_view(), name="yashil-document-html"),
     path("documents/<uuid:version_id>/pdf/", DocumentVersionPdfView.as_view(), name="yashil-document-pdf"),

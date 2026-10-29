@@ -8,7 +8,7 @@ from apps.base.pagination import CustomPageNumberPagination
 from apps.yashil.api import CabinetMixin, HasCabinet, IsAuthenticated, YashilError, invalid_format, not_found
 from apps.yashil.models import ExportJob
 from apps.yashil.serializers_stock import relative_signed_url
-from apps.yashil.services import exports, registry
+from apps.yashil.services import exports, registry, stats
 
 
 class _ReportBase(CabinetMixin, APIView):
@@ -101,3 +101,20 @@ class ExportDetailView(_ReportBase):
         if job is None:
             raise not_found()
         return Response(export_payload(job))
+
+
+# ----------------------------------------------------------------------------- statistika (TZ §15)
+class StatsCardsView(_ReportBase):
+    def get(self, request):
+        return Response(stats.cards(self.cabinet, self.is_admin, self.filters(request)))
+
+
+class StatsSeedlingsView(_ReportBase):
+    def get(self, request):
+        return Response(stats.seedlings(self.cabinet, self.is_admin, self.filters(request)))
+
+
+class StatsOrganizationsView(_ReportBase):
+    def get(self, request):
+        f = self.filters(request)
+        return Response({"results": stats.organizations(self.cabinet, self.is_admin, f), "filters_label": registry.filters_label(f)})

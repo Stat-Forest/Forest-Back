@@ -176,6 +176,45 @@ def apply_filters(qs, f: dict):
     return qs
 
 
+def apply_order_filters(qs, f: dict):
+    """Xuddi `apply_filters`, lekin `Order` queryset'i uchun (statistika, xarita)."""
+    qs = qs.annotate(first_submitted_on=TruncDate("first_submitted_at"))
+    basis = f["period_basis"]
+    if basis == "delivered" and (f.get("date_from") or f.get("date_to")):
+        latest = ActVersion.objects.filter(
+            act__order=OuterRef("pk"), act__status=Act.Status.APPROVED, superseded_at__isnull=True,
+        ).order_by().values("act__order").annotate(m=Max("delivery_date")).values("m")[:1]
+        qs = qs.annotate(last_delivery_date=Subquery(latest))
+    basis_field = {"submitted": "first_submitted_on", "accepted": "accepted_on", "delivered": "last_delivery_date"}[basis]
+    if f.get("date_from"):
+        qs = qs.filter(**{f"{basis_field}__gte": f["date_from"]})
+    if f.get("date_to"):
+        qs = qs.filter(**{f"{basis_field}__lte": f["date_to"]})
+    if f.get("region"):
+        qs = qs.filter(mahalla__region_id=f["region"])
+    if f.get("district"):
+        qs = qs.filter(mahalla__district_id=f["district"])
+    if f.get("mahalla"):
+        qs = qs.filter(mahalla_id=f["mahalla"])
+    if f.get("supplier_org"):
+        qs = qs.filter(supplier_org_id=f["supplier_org"])
+    if f.get("route"):
+        qs = qs.filter(route=f["route"])
+    if f.get("catalog_item"):
+        qs = qs.filter(lines__catalog_item_id=f["catalog_item"]).distinct()
+    if f.get("category"):
+        qs = qs.filter(lines__catalog_item__category=f["category"]).distinct()
+    if f.get("state"):
+        qs = qs.filter(state__in=f["state"])
+    if f.get("overdue"):
+        qs = qs.filter(late_workdays__gt=0)
+    if f.get("q"):
+        q = f["q"]
+        qs = qs.filter(Q(number__icontains=q) | Q(title__icontains=q) | Q(mahalla__name__icontains=q)
+                       | Q(address__icontains=q) | Q(supplier_org__name__icontains=q))
+    return qs
+
+
 def ordered(qs, ordering: str):
     if not ordering:
         return qs.order_by(*DEFAULT_ORDERING)

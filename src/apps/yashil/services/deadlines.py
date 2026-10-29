@@ -58,4 +58,8 @@ def recalc_all(today: date | None = None, cal=None) -> int:
     changed += Order.objects.exclude(state__in=REVIEW_STATES | DELIVERY_STATES).exclude(
         late_workdays=0, overdue_stage="", review_due__isnull=True,
     ).update(late_workdays=0, overdue_stage="", review_due=None)
+    if changed:
+        from apps.yashil.services.stats import bump_version
+
+        bump_version()
     return changed
