@@ -35,7 +35,11 @@ class RegistryView(_ReportBase):
         f = self.filters(request)
         qs = registry.registry_queryset(self.cabinet, self.is_admin, f)
         paginator = RegistryPagination()
-        page = paginator.paginate_queryset(qs, request, view=self)
+        # Sahifalash yengil so'rovda (faqat ID, filtr va tartib uchun kerakli join'lar); qabul/yetkazish
+        # qism-so'rovlari va select_related faqat sahifadagi 50 qator uchun bajariladi.
+        ids = paginator.paginate_queryset(qs.values_list("pk", flat=True), request, view=self)
+        rows = {line.pk: line for line in qs.order_by().filter(pk__in=ids)}
+        page = [rows[pk] for pk in ids if pk in rows]
         start = (paginator.page.number - 1) * paginator.page.paginator.per_page + 1
         response = paginator.get_paginated_response(registry.row_dicts(page, start_no=start))
         response.data["filters_label"] = registry.filters_label(f)
@@ -46,9 +50,12 @@ class RegistrySummaryView(_ReportBase):
     """GET reports/registry/summary/ — unikal buyurtmalar, pozitsiya/birlik jami, holatlar."""
 
     def get(self, request):
+        from apps.yashil.services.stats import _cached
+
         f = self.filters(request)
-        qs = registry.apply_filters(registry.base_queryset(self.cabinet, self.is_admin), f)
-        data = registry.summary(qs)
+        # Kuzatuvchi (respublika) ko'lamida yuz minglab qator — 5 daqiqalik kesh, ma'lumot o'zgarsa versiya oshadi
+        data = dict(_cached("registry_summary", self.cabinet, self.is_admin, f,
+                            lambda cab, adm, ff: registry.summary(registry.apply_filters(registry.base_queryset(cab, adm), ff))))
         data["filters_label"] = registry.filters_label(f)
         return Response(data)
 

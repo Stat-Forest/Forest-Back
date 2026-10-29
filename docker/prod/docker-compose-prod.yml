@@ -135,6 +135,10 @@ services:
     # jadvallari diskdan o'qiladi. Deploy skripti bu servisni QAYTA YARATMAYDI —
     # serverda qo'lda: compose stop/rm -f/up -d --no-deps forest_postgres
     # (ma'lumotlar volume'da, ~10 s uzilish).
+    # Docker standarti /dev/shm = 64 MB: og'ir hisobot so'rovlarida parallel worker'lar
+    # "could not resize shared memory segment ... No space left on device" bilan yiqiladi
+    # (100 ming buyurtmali yuklama sinovida aniqlandi). O'zgarsa — servisni qo'lda qayta yaratish.
+    shm_size: 512mb
     command: >-
       postgres
       -c shared_buffers=1GB

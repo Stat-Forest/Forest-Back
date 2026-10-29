@@ -73,8 +73,9 @@ def _event(order, action, from_state, to_state, cabinet, comment="", reason_code
         actor_user=cabinet.user if cabinet else None, actor_membership=cabinet,
         actor_label=_label(cabinet), comment=comment or "", reason_code=reason_code or "", payload=payload or {},
     )
-    if from_state != to_state:
-        # Holat o'zgardi — kechikish ustunlari shu tranzaksiyada yangilanadi
+    if from_state != to_state or action == "act_approve":
+        # Holat yoki qabul qilingan miqdor o'zgardi — kechikish ustunlari shu tranzaksiyada yangilanadi,
+        # statistika va reestr yig'indisi keshi eskiradi (qisman → qisman akt ham miqdorni o'zgartiradi)
         from apps.yashil.services.deadlines import recalc_order
         from apps.yashil.services.stats import bump_version
 
