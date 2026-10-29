@@ -19,6 +19,7 @@ from django.db.models.functions import Coalesce, TruncDate
 from apps.yashil.models import STATE_LABELS_CYR, Act, ActLine, ActVersion, CatalogItem, OrderLine, OrderState, SupplierProfile
 from apps.yashil.services.scope import orders_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
+from apps.yashil.services.workdays import local_date
 
 ZERO = Decimal("0")
 QTY = DecimalField(max_digits=18, decimal_places=4)
@@ -273,6 +274,7 @@ def row_dicts(lines, start_no: int = 1) -> list[dict]:
             "remaining_qty": _dec(l.qty - accepted),
             "first_submitted_on": _iso(l.first_submitted_on),
             "last_submitted_at": o.last_submitted_at.isoformat() if o.last_submitted_at else None,
+            "last_submitted_on": _iso(local_date(o.last_submitted_at)) if o.last_submitted_at else None,
             "review_due": _iso(o.review_due),
             "accepted_on": _iso(o.accepted_on),
             "delivery_due": _iso(o.delivery_due),

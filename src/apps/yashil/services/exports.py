@@ -52,7 +52,7 @@ REGISTRY_COLUMNS = [
     ("state_cyr", "Буюртма ҳолати"),
     ("responsible_cyr", "Масъул босқич"),
     ("first_submitted_on", "Буюртма берилган сана"),
-    ("last_submitted_at", "Охирги қайта юбориш"),
+    ("last_submitted_on", "Охирги қайта юбориш"),
     ("review_due", "Кўриб чиқиш муддати"),
     ("delivery_due", "Етказиш муддати"),
     ("late_workdays", "Кечиккан иш кунлари"),
@@ -89,7 +89,60 @@ ACT_STATUS_CYR = {
     Act.Status.DRAFT: "Қоралама", Act.Status.REVIEW: "Маҳалла тасдиғида", Act.Status.APPROVED: "Қабул қилинган",
     Act.Status.RETURNED: "Тузатиш учун қайтарилган", Act.Status.CANCELLED: "Бекор қилинган",
 }
+# PDF (landshaft A4) uchun ixcham ustunlar: qo'shma kataklar va nisbiy kengliklar (TZ 14.1 minimal tarkib)
+REGISTRY_PDF_COLUMNS = [
+    ("row_no", "Т/р", 0.45),
+    ("_mahalla", "Маҳалла (вилоят / туман)", 1.4),
+    ("_supplier", "Етказиб берувчи", 1.3),
+    ("_order", "Буюртма рақами ва номи", 1.6),
+    ("item", "Маҳсулот ёки хизмат", 1.3),
+    ("_qty", "Буюртма", 0.8),
+    ("accepted_qty", "Қабул", 0.65),
+    ("remaining_qty", "Қолган", 0.65),
+    ("_state", "Ҳолат / масъул", 1.1),
+    ("_submitted", "Берилган сана", 0.9),
+    ("_due", "Муддатлар", 1.0),
+    ("_late", "Кечикиш", 0.8),
+]
+REGISTRY_PDF_OPTIONAL_WIDTH = 1.0
+ACT_PDF_WIDTHS = [0.45, 1.2, 0.6, 1.0, 1.1, 1.0, 1.2, 1.2, 0.9, 0.9, 1.0, 1.0, 0.6, 1.0, 1.8]
 KIND_TITLES = {ExportJob.Kind.REGISTRY: "Буюртмалар реестри", ExportJob.Kind.ACTS: "Далолатномалар реестри"}
+DATE_KEYS = {"first_submitted_on", "last_submitted_on", "review_due", "delivery_due", "accepted_on", "last_delivery_date", "delivery_date"}
+
+
+def _d(value) -> str:
+    """ISO sana -> dd.mm.yyyy (eksport uchun)."""
+    if not value:
+        return ""
+    s = str(value)
+    return f"{s[8:10]}.{s[5:7]}.{s[0:4]}" if len(s) >= 10 and s[4] == "-" else s
+
+
+def _pdf_registry_cell(key: str, r: dict) -> str:
+    if key == "_mahalla":
+        return f"{r['mahalla']}\n{r['region']} / {r['district']}"
+    if key == "_supplier":
+        return f"{r['supplier']}\n{r['route_cyr']}"
+    if key == "_order":
+        return f"{r['number'] or '—'}\n{r['title']}"
+    if key == "_qty":
+        return f"{r['qty']} {r['unit_cyr']}"
+    if key == "_state":
+        return f"{r['state_cyr']}" + (f"\n{r['responsible_cyr']}" if r.get("responsible_cyr") else "")
+    if key == "_submitted":
+        first, last = _d(r.get("first_submitted_on")), _d(r.get("last_submitted_on"))
+        return first + (f"\nқайта: {last}" if last and last != first else "")
+    if key == "_due":
+        parts = []
+        if r.get("review_due"):
+            parts.append(f"кўриб чиқиш: {_d(r['review_due'])}")
+        if r.get("delivery_due"):
+            parts.append(f"етказиш: {_d(r['delivery_due'])}")
+        return "\n".join(parts) or "—"
+    if key == "_late":
+        return f"{r['late_workdays']} иш куни\n{r.get('overdue_stage_cyr', '')}" if r.get("late_workdays") else "—"
+    v = r.get(key)
+    return _d(v) if key in DATE_KEYS else ("" if v is None else str(v))
 CONTENT_TYPES = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "csv": "text/csv; charset=utf-8",
@@ -240,10 +293,10 @@ def _header_lines(job: ExportJob, f: dict) -> list[str]:
     ]
 
 
-def _cell(value):
+def _cell(key, value):
     if value is None:
         return ""
-    return value
+    return _d(value) if key in DATE_KEYS else value
 
 
 def _write_xlsx(job, f, columns, rows) -> bytes:
@@ -262,7 +315,7 @@ def _write_xlsx(job, f, columns, rows) -> bytes:
         c.fill = fill
         c.alignment = Alignment(wrap_text=True, vertical="top")
     for r in rows:
-        append_safe(ws, [_cell(r.get(k)) for k, _ in columns])
+        append_safe(ws, [_cell(k, r.get(k)) for k, _ in columns])
     for i, (key, _) in enumerate(columns, start=1):
         ws.column_dimensions[get_column_letter(i)].width = 6 if key == "row_no" else 22
     ws.freeze_panes = ws.cell(row=header_row + 1, column=1)
@@ -284,7 +337,7 @@ def _write_csv(job, f, columns, rows) -> bytes:
     w.writerow([])
     w.writerow([h for _, h in columns])
     for r in rows:
-        w.writerow([_csv_safe(r.get(k)) for k, _ in columns])
+        w.writerow([_csv_safe(_cell(k, r.get(k))) for k, _ in columns])
     return b"\xef\xbb\xbf" + buf.getvalue().encode("utf-8")
 
 
@@ -310,13 +363,21 @@ def _write_pdf(job, f, columns, rows) -> bytes:
     cell.fontSize, cell.leading = 7, 8.5
     cellh = st["cellh"]
     cellh.fontSize, cellh.leading = 7, 8.5
-    data = [[Paragraph(h, cellh) for _, h in columns]]
+    if job.kind == ExportJob.Kind.REGISTRY:
+        extra = [c for c in columns if c[0] in {o[0] for o in REGISTRY_OPTIONAL}]
+        pdf_cols = [(k, h) for k, h, _ in REGISTRY_PDF_COLUMNS] + extra
+        weights = [w for _, _, w in REGISTRY_PDF_COLUMNS] + [REGISTRY_PDF_OPTIONAL_WIDTH] * len(extra)
+        cell_of = _pdf_registry_cell
+    else:
+        pdf_cols = columns
+        weights = ACT_PDF_WIDTHS[:len(columns)] + [1.0] * max(0, len(columns) - len(ACT_PDF_WIDTHS))
+        cell_of = lambda k, r: _d(r.get(k)) if k in DATE_KEYS else ("" if r.get(k) is None else str(r.get(k)))  # noqa: E731
+    data = [[Paragraph(h, cellh) for _, h in pdf_cols]]
     for r in rows:
-        data.append([Paragraph(pdfs._esc(r.get(k)), cell) for k, _ in columns])
+        data.append([Paragraph(pdfs._esc(cell_of(k, r)).replace("\n", "<br/>"), cell) for k, _ in pdf_cols])
     width = page[0] - 20 * mm
-    first = 9 * mm
-    rest = (width - first) / max(1, len(columns) - 1)
-    t = Table(data, colWidths=[first] + [rest] * (len(columns) - 1), repeatRows=1)
+    unit = width / sum(weights)
+    t = Table(data, colWidths=[w * unit for w in weights], repeatRows=1)
     t.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#999999")),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e8eef2")),

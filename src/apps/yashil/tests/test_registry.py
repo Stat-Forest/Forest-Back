@@ -123,6 +123,7 @@ class RegistryRowsTest(RegistryBase):
         self.assertEqual(ash["mahalla"], "Боғистон")
         self.assertEqual(ash["supplier"], "Намуна ўрмон хўжалиги")
         self.assertEqual(ash["first_submitted_on"], "2027-01-10")
+        self.assertEqual(ash["last_submitted_on"], "2027-01-10")
         self.assertEqual(ash["delivery_due"], "2027-01-26")
         self.assertEqual((ash["late_workdays"], ash["overdue_stage"]), (2, "delivery"))
         self.assertEqual(ash["act_numbers"], "YM-2027-000001/A1")
