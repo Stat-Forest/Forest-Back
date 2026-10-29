@@ -16,7 +16,7 @@ from decimal import Decimal
 from django.db.models import Count, DecimalField, Max, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
 
-from apps.yashil.models import STATE_LABELS_CYR, Act, ActLine, ActVersion, CatalogItem, OrderLine, OrderState, SupplierProfile
+from apps.yashil.models import STATE_LABELS_CYR, Act, ActLine, ActVersion, CatalogItem, Order, OrderLine, OrderState, SupplierProfile
 from apps.yashil.services.scope import orders_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
 from apps.yashil.services.workdays import local_date
@@ -293,24 +293,36 @@ def row_dicts(lines, start_no: int = 1) -> list[dict]:
 
 
 def summary(qs) -> dict:
-    """Unikal buyurtmalar soni, qatorlar, pozitsiya/birlik kesimida jami, holatlar bo'yicha unikal soni."""
-    by_item = []
+    """Unikal buyurtmalar soni, qatorlar, pozitsiya/birlik kesimida jami, holatlar bo'yicha unikal soni.
+
+    Filtrlangan qatorlar ID'si orqali oddiy yig'ma so'rovlar: annotatsiyali querysetda har qator uchun
+    qabul qilingan miqdor qism-so'rovi hisoblanardi (100 ming buyurtmada soniyalar).
+    """
+    lines = OrderLine.objects.filter(pk__in=qs.order_by().values("pk"))
+    accepted = {
+        r["order_line__catalog_item_id"]: r["s"] or ZERO
+        for r in ActLine.objects.filter(order_line__in=lines.values("pk"), act_version__act__status=Act.Status.APPROVED,
+                                        act_version__superseded_at__isnull=True)
+        .order_by().values("order_line__catalog_item_id").annotate(s=Sum("qty"))
+    }
     item_rows = (
-        qs.order_by().values("catalog_item__code", "catalog_item__name_cyr", "catalog_item__unit", "catalog_item__order")
-        .annotate(ordered=Sum("qty"), accepted=Sum("accepted_qty"), orders=Count("order", distinct=True), lines=Count("id"))
+        lines.order_by().values("catalog_item_id", "catalog_item__code", "catalog_item__name_cyr", "catalog_item__unit", "catalog_item__order")
+        .annotate(ordered=Sum("qty"), orders=Count("order", distinct=True), lines=Count("id"))
         .order_by("catalog_item__order", "catalog_item__code")
     )
+    by_item = []
     for r in item_rows:
-        o, a = r["ordered"] or ZERO, r["accepted"] or ZERO
+        o, a = r["ordered"] or ZERO, accepted.get(r["catalog_item_id"], ZERO)
         by_item.append({
             "item_code": r["catalog_item__code"], "item": r["catalog_item__name_cyr"], "unit": r["catalog_item__unit"],
             "unit_cyr": UNIT_LABELS.get(r["catalog_item__unit"], (r["catalog_item__unit"],))[0],
             "ordered": _dec(o), "accepted": _dec(a), "remaining": _dec(o - a), "orders": r["orders"], "lines": r["lines"],
         })
-    by_state = {r["order__state"]: r["n"] for r in qs.order_by().values("order__state").annotate(n=Count("order", distinct=True))}
-    totals = qs.order_by().aggregate(orders=Count("order", distinct=True), lines=Count("id"))
-    overdue = qs.filter(order__late_workdays__gt=0).order_by().aggregate(n=Count("order", distinct=True))["n"]
-    return {"orders": totals["orders"], "lines": totals["lines"], "by_item": by_item, "by_state": by_state, "overdue_orders": overdue}
+    orders = Order.objects.filter(pk__in=lines.values("order_id"))
+    by_state = {r["state"]: r["n"] for r in orders.order_by().values("state").annotate(n=Count("id"))}
+    overdue = orders.filter(late_workdays__gt=0).count()
+    return {"orders": sum(by_state.values()), "lines": sum(r["lines"] for r in by_item), "by_item": by_item,
+            "by_state": by_state, "overdue_orders": overdue}
 
 
 def filter_dictionaries(cabinet, is_admin: bool) -> dict:

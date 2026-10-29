@@ -148,45 +148,76 @@ def _dec(value) -> str:
 
 
 def _collect_issues() -> dict:
-    """{(kind, key): {"order_id", "warehouse_id", "details"}} — hozirgi holatdagi nomuvofiqliklar."""
-    from apps.yashil.services.acts import accepted_by_line
-    from apps.yashil.services.ledger import _totals_by_item, supplier_type_of
+    """{(kind, key): {"order_id", "warehouse_id", "details"}} — hozirgi holatdagi nomuvofiqliklar.
+
+    Yig'ma so'rovlar bilan (100 ming buyurtmada ham bir necha so'rov): har qator uchun
+    alohida so'rov tungi vazifani va bekapdagi yaxlitlik tekshiruvini daqiqalarga cho'zardi.
+    """
+    from django.db.models import Count, Sum
+
+    from apps.yashil.models import ActLine, Act, OrderLine
+    from apps.yashil.services.ledger import supplier_type_of
 
     found = {}
-    for acc in Acceptance.objects.select_related("order").prefetch_related("order__lines__catalog_item"):
-        for line in acc.order.lines.all():
-            base = {"order_id": acc.order_id, "warehouse_id": acc.warehouse_id,
-                    "details": {"order": acc.order.number, "code": line.catalog_item.code, "qty": _dec(line.qty)}}
-            if line.catalog_item.item_type == CatalogItem.ItemType.GOODS:
-                n = StockMovement.objects.filter(acceptance=acc, order_line=line, kind=StockMovement.Kind.ALLOCATE, status=StockMovement.Status.POSTED).count()
-                if n == 0:
-                    found[("allocation_missing", str(line.id))] = base
-                elif n > 1:
-                    found[("allocation_duplicate", str(line.id))] = {**base, "details": {**base["details"], "count": n}}
-            elif not ServiceAllocation.objects.filter(order_line=line).exists():
-                found[("allocation_missing", str(line.id))] = base
-    for order in Order.objects.filter(state__in=(OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED)).prefetch_related("lines__catalog_item"):
-        accepted = accepted_by_line(order)
-        incomplete = False
-        for line in order.lines.all():
-            if accepted[line.id] > line.qty:
-                found[("accepted_exceeds", str(line.id))] = {"order_id": order.id, "warehouse_id": None, "details": {
-                    "order": order.number, "code": line.catalog_item.code, "ordered": _dec(line.qty), "accepted": _dec(accepted[line.id])}}
-            if accepted[line.id] < line.qty:
-                incomplete = True
-        if order.state == OrderState.CLOSED and incomplete:
-            found[("closed_incomplete", str(order.id))] = {"order_id": order.id, "warehouse_id": None, "details": {"order": order.number}}
+    alloc_counts = {
+        (r["acceptance_id"], r["order_line_id"]): r["n"]
+        for r in StockMovement.objects.filter(kind=StockMovement.Kind.ALLOCATE, status=StockMovement.Status.POSTED, acceptance__isnull=False)
+        .values("acceptance_id", "order_line_id").annotate(n=Count("id"))
+    }
+    service_lines = set(ServiceAllocation.objects.values_list("order_line_id", flat=True))
+    accepted_lines = (OrderLine.objects.filter(order__acceptance__isnull=False)
+                      .values("id", "qty", "order_id", "order__number", "order__acceptance__id", "order__acceptance__warehouse_id",
+                              "catalog_item__code", "catalog_item__item_type"))
+    for line in accepted_lines.iterator(chunk_size=5000):
+        base = {"order_id": line["order_id"], "warehouse_id": line["order__acceptance__warehouse_id"],
+                "details": {"order": line["order__number"], "code": line["catalog_item__code"], "qty": _dec(line["qty"])}}
+        if line["catalog_item__item_type"] == CatalogItem.ItemType.GOODS:
+            n = alloc_counts.get((line["order__acceptance__id"], line["id"]), 0)
+            if n == 0:
+                found[("allocation_missing", str(line["id"]))] = base
+            elif n > 1:
+                found[("allocation_duplicate", str(line["id"]))] = {**base, "details": {**base["details"], "count": n}}
+        elif line["id"] not in service_lines:
+            found[("allocation_missing", str(line["id"]))] = base
+
+    accepted_qty = {
+        r["order_line_id"]: r["s"]
+        for r in ActLine.objects.filter(act_version__act__status=Act.Status.APPROVED, act_version__superseded_at__isnull=True)
+        .values("order_line_id").annotate(s=Sum("qty"))
+    }
+    incomplete_orders, closed_orders = set(), {}
+    delivery_lines = (OrderLine.objects.filter(order__state__in=(OrderState.EXECUTION, OrderState.PARTIAL, OrderState.CLOSED))
+                      .values("id", "qty", "order_id", "order__number", "order__state", "catalog_item__code"))
+    for line in delivery_lines.iterator(chunk_size=5000):
+        accepted = accepted_qty.get(line["id"]) or 0
+        if accepted > line["qty"]:
+            found[("accepted_exceeds", str(line["id"]))] = {"order_id": line["order_id"], "warehouse_id": None, "details": {
+                "order": line["order__number"], "code": line["catalog_item__code"], "ordered": _dec(line["qty"]), "accepted": _dec(accepted)}}
+        if accepted < line["qty"]:
+            incomplete_orders.add(line["order_id"])
+        if line["order__state"] == OrderState.CLOSED:
+            closed_orders[line["order_id"]] = line["order__number"]
+    for order_id, number in closed_orders.items():
+        if order_id in incomplete_orders:
+            found[("closed_incomplete", str(order_id))] = {"order_id": order_id, "warehouse_id": None, "details": {"order": number}}
+
     items = {i.id: i for i in CatalogItem.objects.all()}
-    for wh in Warehouse.objects.select_related("organization"):
-        forest = supplier_type_of(wh.organization) == SupplierProfile.SupplierType.FOREST
-        for item_id, totals in _totals_by_item(wh).items():
-            bal = sum(totals.values())
-            if bal < 0:
-                item = items.get(item_id)
-                kind = "stock_negative" if forest else "stock_negative_dm"
-                found[(kind, f"{wh.id}:{item_id}")] = {"order_id": None, "warehouse_id": wh.id, "details": {
-                    "organization": wh.organization.name, "code": item.code if item else str(item_id),
-                    "name": item.name_cyr if item else "", "balance": _dec(bal), "shortage": _dec(-bal)}}
+    warehouses = {w.id: w for w in Warehouse.objects.select_related("organization")}
+    balances = (StockMovement.objects.filter(status=StockMovement.Status.POSTED)
+                .values("warehouse_id", "catalog_item_id").annotate(s=Sum("qty")))
+    forest_cache = {}
+    for r in balances:
+        bal = r["s"] or 0
+        if bal >= 0:
+            continue
+        wh = warehouses[r["warehouse_id"]]
+        if wh.id not in forest_cache:
+            forest_cache[wh.id] = supplier_type_of(wh.organization) == SupplierProfile.SupplierType.FOREST
+        item = items.get(r["catalog_item_id"])
+        kind = "stock_negative" if forest_cache[wh.id] else "stock_negative_dm"
+        found[(kind, f"{wh.id}:{r['catalog_item_id']}")] = {"order_id": None, "warehouse_id": wh.id, "details": {
+            "organization": wh.organization.name, "code": item.code if item else str(r["catalog_item_id"]),
+            "name": item.name_cyr if item else "", "balance": _dec(bal), "shortage": _dec(-bal)}}
     return found
 
 

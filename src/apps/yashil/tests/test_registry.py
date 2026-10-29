@@ -185,6 +185,18 @@ class RegistrySummaryTest(RegistryBase):
         self.assertEqual([i["item_code"] for i in s["by_item"]], ["ASH", "MUL"])
 
 
+    def test_summary_is_cached_until_data_version_changes(self):
+        from apps.yashil.models import OrderLine
+        from apps.yashil.services.stats import bump_version
+
+        first = self.get(self.o_all, self.o_all_cab, "registry/summary/")
+        OrderLine.objects.filter(catalog_item__code="MUL").update(qty="60")
+        self.assertEqual(self.get(self.o_all, self.o_all_cab, "registry/summary/")["by_item"], first["by_item"])
+        bump_version()
+        by = {i["item_code"]: i for i in self.get(self.o_all, self.o_all_cab, "registry/summary/")["by_item"]}
+        self.assertEqual(by["MUL"]["ordered"], "60")
+
+
 class ReportFiltersTest(RegistryBase):
     def test_dictionaries_in_scope(self):
         f = self.get(self.m_user, self.m_cab, "filters/")

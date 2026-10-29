@@ -62,6 +62,7 @@ class VirtualUser(threading.Thread):
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {row['token']}", "X-Yashil-Cabinet": row["cabinet"]})
         self.order_ids = []
+        self.registry_pages = 1
 
     def get(self, group, path, params=None):
         url = self.args.base.rstrip("/") + path
@@ -86,12 +87,16 @@ class VirtualUser(threading.Thread):
             self.get("card", f"/orders/{self.rnd.choice(self.order_ids)}/")
 
     def registry(self):
-        params = {"page": self.rnd.randint(1, 5)}
-        if self.rnd.random() < 0.5:
-            params["route"] = self.rnd.choice(["forest", "dm"])
+        # Filtrsiz so'rovda ma'lum bo'lgan sahifalar oralig'idan (mavjud bo'lmagan sahifa 404 bo'ladi)
+        params = {"page": self.rnd.randint(1, min(5, self.registry_pages))}
         if self.rnd.random() < 0.3:
-            params["state"] = self.rnd.choice(["execution", "partial", "closed", "supplier_new"])
-        self.remember(self.get("registry", "/reports/registry/", params), key="order_id")
+            params = {"page": 1, "route": self.rnd.choice(["forest", "dm"])}
+            if self.rnd.random() < 0.5:
+                params["state"] = self.rnd.choice(["execution", "partial", "closed", "supplier_new"])
+        data = self.get("registry", "/reports/registry/", params)
+        if data and "route" not in params:
+            self.registry_pages = max(1, -(-int(data.get("count") or 0) // 50))
+        self.remember(data, key="order_id")
 
     def scenario(self):
         kind = self.row["kind"]
