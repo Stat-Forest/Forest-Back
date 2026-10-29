@@ -25,6 +25,18 @@ ALLOWED_MODELS = [
     "Handbook",
     "Contract",
     "ContractFile",
+    # Yashil mahalla ma'lumotnomalari va sozlamalari (TZ 17.2: superadmin o'zgarishlari jurnalda)
+    "Mahalla",
+    "UnionUnit",
+    "MahallaUnionRoute",
+    "SupplierProfile",
+    "SupplierAssignment",
+    "YashilMembership",
+    "CalendarDay",
+    "CatalogItem",
+    "NormRule",
+    "ServiceCapacity",
+    "YashilSetting",
 ]
 
 

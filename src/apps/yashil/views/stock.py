@@ -23,6 +23,7 @@ from apps.yashil.serializers_stock import (
     StockEntrySerializer,
     StockMovementSerializer,
 )
+from apps.yashil.services import capacity as capacity_service
 from apps.yashil.services import ledger
 from apps.yashil.services.ledger import LedgerError
 
@@ -195,20 +196,39 @@ class StockReversalRejectView(_ReversalDecisionView):
 
 
 class ServiceCapacityView(_StockBase):
-    """DM xizmat quvvati: oy bo'yicha quvvat, sarf, bo'sh (javob В5)."""
+    """DM xizmat quvvati: oy bo'yicha quvvat, sarf, bo'sh (javob В5). PUT — DM'ning imzolovchi a'zosi (TZ 19.2)."""
 
     def get(self, request):
         org = self.organization(request)
-        period = (request.query_params.get("period") or "").strip()
-        if len(period) != 7 or period[4] != "-" or not period.replace("-", "").isdigit():
-            raise invalid_format("`period` YYYY-MM кўринишида бўлиши керак", "period")
-        items = CatalogItem.objects.filter(supplier_type=ledger.supplier_type_of(org), item_type=CatalogItem.ItemType.SERVICE, is_active=True).order_by("order", "code")
-        caps = {c.catalog_item_id: c.capacity for c in ServiceCapacity.objects.filter(organization=org, period=period)}
-        rows = []
-        for item in items:
-            cap = caps.get(item.id)
-            available = ledger.capacity_available(org, item, period)
-            used = (cap - available) if cap is not None else ledger.ZERO
-            rows.append({"catalog_item_id": str(item.id), "code": item.code, "name_cyr": item.name_cyr, "name_lat": item.name_lat,
-                         "unit": item.unit, "capacity": ledger._dec(cap or 0), "used": ledger._dec(used), "available": ledger._dec(available)})
-        return Response({"period": period, "rows": rows})
+        try:
+            return Response(capacity_service.capacity_payload(org, request.query_params.get("period") or ""))
+        except capacity_service.CapacityError as exc:
+            raise YashilError(exc.message, error_code=exc.code, field=exc.field, status_code=exc.status)
+
+    def put(self, request):
+        cab = self.cabinet
+        if cab is None or cab.member_type != T.SUPPLIER or ledger.supplier_type_of(cab.organization) != SupplierProfile.SupplierType.DM:
+            raise YashilError("Хизмат қувватини фақат ДМ кабинети киритади", error_code="forbidden", status_code=403)
+        if not cab.can_sign:
+            raise YashilError("Қувватни киритиш учун имзолаш ҳуқуқи керак", error_code="cannot_sign", status_code=403)
+        d = request.data if isinstance(request.data, dict) else {}
+        try:
+            return Response(capacity_service.set_capacity(cab.organization, d.get("period") or "", d.get("rows") or [], request.user))
+        except capacity_service.CapacityError as exc:
+            raise YashilError(exc.message, error_code=exc.code, field=exc.field, status_code=exc.status)
+
+
+class StockOpeningImportView(_StockBase):
+    """POST stock/opening/import/ (multipart: file, dry_run) — boshlang'ich qoldiqlar Excel'dan (javob Е1)."""
+
+    def post(self, request):
+        from apps.yashil.services import imports
+        from apps.yashil.views.admin import import_response, is_dry_run, read_upload
+
+        cab = self.cabinet
+        if cab is None or cab.member_type != T.SUPPLIER or not cab.can_prepare:
+            raise YashilError("Бошланғич қолдиқни фақат етказиб берувчи кабинети киритади", error_code="forbidden", status_code=403)
+        f = read_upload(request)
+        dry = is_dry_run(request)
+        return import_response(lambda: imports.import_opening_stock(f, cabinet=cab, dry_run=dry, partial=False))
+

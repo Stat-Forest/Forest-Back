@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.yashil.views import admin as admin_views
+from apps.yashil.views.stock import StockOpeningImportView
 from apps.yashil.views import (
     MapPointsView,
     StatsCardsView,
@@ -116,6 +118,33 @@ urlpatterns = [
     path("stock/reversals/<uuid:movement_id>/approve/", StockReversalApproveView.as_view(), name="yashil-stock-reversal-approve"),
     path("stock/reversals/<uuid:movement_id>/reject/", StockReversalRejectView.as_view(), name="yashil-stock-reversal-reject"),
     path("stock/capacity/", ServiceCapacityView.as_view(), name="yashil-stock-capacity"),
+    path("stock/opening/import/", StockOpeningImportView.as_view(), name="yashil-stock-opening-import"),
+    # Modul administratori (TZ §17.1, plans §11.1-9)
+    path("admin/users/search/", admin_views.UserSearchView.as_view(), name="yashil-admin-users"),
+    path("admin/organizations/search/", admin_views.OrganizationSearchView.as_view(), name="yashil-admin-orgs"),
+    path("admin/memberships/", admin_views.MembershipListView.as_view(), name="yashil-admin-memberships"),
+    path("admin/memberships/<uuid:pk>/", admin_views.MembershipDetailView.as_view(), name="yashil-admin-membership"),
+    path("admin/calendar/", admin_views.CalendarAdminView.as_view(), name="yashil-admin-calendar"),
+    path("admin/calendar/import/", admin_views.CalendarImportView.as_view(), name="yashil-admin-calendar-import"),
+    path("admin/calendar/<uuid:pk>/", admin_views.CalendarDetailView.as_view(), name="yashil-admin-calendar-day"),
+    path("admin/mahallas/", admin_views.MahallaAdminView.as_view(), name="yashil-admin-mahallas"),
+    path("admin/mahallas/import/", admin_views.MahallaImportView.as_view(), name="yashil-admin-mahallas-import"),
+    path("admin/mahallas/<uuid:pk>/", admin_views.MahallaAdminDetailView.as_view(), name="yashil-admin-mahalla"),
+    path("admin/union-units/", admin_views.UnionUnitAdminView.as_view(), name="yashil-admin-union-units"),
+    path("admin/union-units/<uuid:pk>/", admin_views.UnionUnitAdminDetailView.as_view(), name="yashil-admin-union-unit"),
+    path("admin/suppliers/", admin_views.SupplierAdminView.as_view(), name="yashil-admin-suppliers"),
+    path("admin/suppliers/<uuid:pk>/", admin_views.SupplierAdminDetailView.as_view(), name="yashil-admin-supplier"),
+    path("admin/assignments/", admin_views.AssignmentAdminView.as_view(), name="yashil-admin-assignments"),
+    path("admin/assignments/import/", admin_views.AssignmentImportView.as_view(), name="yashil-admin-assignments-import"),
+    path("admin/assignments/<uuid:pk>/", admin_views.AssignmentAdminDetailView.as_view(), name="yashil-admin-assignment"),
+    path("admin/routes/", admin_views.RouteAdminView.as_view(), name="yashil-admin-routes"),
+    path("admin/routes/import/", admin_views.RouteImportView.as_view(), name="yashil-admin-routes-import"),
+    path("admin/routes/<uuid:pk>/", admin_views.RouteAdminDetailView.as_view(), name="yashil-admin-route"),
+    path("admin/catalog/", admin_views.CatalogAdminView.as_view(), name="yashil-admin-catalog"),
+    path("admin/catalog/<uuid:pk>/", admin_views.CatalogAdminDetailView.as_view(), name="yashil-admin-catalog-item"),
+    path("admin/capacity/", admin_views.CapacityAdminView.as_view(), name="yashil-admin-capacity"),
+    path("admin/settings/", admin_views.SettingsAdminView.as_view(), name="yashil-admin-settings"),
+    path("admin/audit/", admin_views.AuditAdminView.as_view(), name="yashil-admin-audit"),
     # Hisobotlar (TZ §14)
     path("reports/registry/", RegistryView.as_view(), name="yashil-report-registry"),
     path("reports/registry/summary/", RegistrySummaryView.as_view(), name="yashil-report-registry-summary"),
