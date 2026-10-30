@@ -205,6 +205,8 @@ def reject_cancel(req: CancelRequest, cabinet, *, note: str) -> CancelRequest:
     is_other = _party_of(order, cabinet) == _other(req.requested_by_party)
     if not (is_union or is_other):
         raise _forbidden()
+    if is_other and not is_union and not cabinet.can_prepare:
+        raise _forbidden("Бу кабинетда рад этиш ҳуқуқи йўқ", code="cannot_prepare")
     if req.status not in CancelRequest.OPEN_STATUSES or (is_other and not is_union and req.status != S.REQUESTED):
         raise TransitionError("Сўров бу ҳолатда рад этилмайди")
     if not (note or "").strip():
