@@ -33,7 +33,8 @@ class MapPointsTest(MapBase):
         self.assertEqual(p1["mahalla"], "Боғистон")
         self.assertEqual(p1["supplier"], "Намуна ўрмон хўжалиги")
         self.assertEqual(p1["area_ha"], "0.5")
-        self.assertEqual(p1["lines"][0], {"item": "Шумтол кўчати", "unit_cyr": "туп", "qty": "300", "accepted": "100"})
+        self.assertEqual(p1["lines"][0], {"item": "Шумтол кўчати", "item_lat": "Shumtol ko'chati", "unit_cyr": "туп", "qty": "300",
+                                          "accepted": "100"})
         self.assertEqual((p1["delivery_due"], p1["late_workdays"]), ("2027-01-26", 2))
 
     def test_scope_and_filters(self):

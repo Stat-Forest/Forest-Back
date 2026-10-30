@@ -58,7 +58,7 @@ class StockSummaryTest(StockApiBase):
         ledger.allocate_for_acceptance(order, self.f_cab, accepted_on=date(2027, 1, 11), delivery_due=date(2027, 1, 25), executor_name="X")
         res = self.as_(self.f_user, self.f_cab).get(f"{BASE}/stock/")
         self.assertEqual(res.status_code, 200, res.data)
-        self.assertEqual(res.data["warehouse"]["name"], "Асосий омбор")
+        self.assertEqual(res.data["warehouse"]["name"], "Asosiy ombor")
         row = next(r for r in res.data["rows"] if r["code"] == "ASH")
         self.assertEqual((row["balance"], row["shortage"], row["allocated"]), ("-200", "200", "300"))
         self.assertEqual(res.data["shortage_count"], 1)

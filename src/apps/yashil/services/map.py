@@ -9,7 +9,7 @@ from decimal import Decimal, InvalidOperation
 
 from apps.yashil import conf
 from apps.yashil.models import OrderState
-from apps.yashil.services import registry
+from apps.yashil.services import lang, registry
 from apps.yashil.services.scope import orders_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
 
@@ -60,7 +60,8 @@ def points(cabinet, is_admin: bool, f: dict, bbox=None) -> dict:
             "lat": _dec(o.lat), "lon": _dec(o.lon), "mahalla": o.mahalla.name, "supplier": o.supplier_org.name,
             "address": o.address, "area_ha": _dec(o.area_ha),
             "lines": [{
-                "item": l.catalog_item.name_cyr, "unit_cyr": UNIT_LABELS.get(l.catalog_item.unit, (l.catalog_item.unit,))[0],
+                "item": l.catalog_item.name_cyr, "item_lat": lang.to_lat(l.catalog_item.name_lat or l.catalog_item.name_cyr),
+                "unit_cyr": UNIT_LABELS.get(l.catalog_item.unit, (l.catalog_item.unit,))[0],
                 "qty": _dec(l.qty), "accepted": _dec(accepted.get(l.id, ZERO)),
             } for l in o.lines.all()],
             "accepted_on": o.accepted_on.isoformat() if o.accepted_on else None,

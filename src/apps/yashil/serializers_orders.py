@@ -21,6 +21,7 @@ from apps.yashil.models import (
     YashilNotification,
 )
 from apps.yashil.serializers import CatalogItemSerializer
+from apps.yashil.services import lang
 from apps.yashil.services.units import UNIT_LABELS
 
 ISO = serializers.DateField(format="iso-8601", read_only=True)
@@ -160,6 +161,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class OrderListSerializer(serializers.ModelSerializer):
+    display_number = serializers.SerializerMethodField()
     mahalla_name = serializers.CharField(source="mahalla.name", read_only=True)
     supplier_name = serializers.CharField(source="supplier_org.name", read_only=True)
     state_cyr = serializers.SerializerMethodField()
@@ -187,6 +189,9 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     def get_area_ha(self, obj) -> str | None:
         return _dec(obj.area_ha)
+
+    def get_display_number(self, obj) -> str:
+        return lang.tr_known(obj.display_number)  # «Қоралама <id>» joriy tilda
 
 
 class OrderDetailSerializer(OrderListSerializer):
@@ -313,6 +318,14 @@ class SubmitSerializer(serializers.Serializer):
     version_no = serializers.IntegerField(required=False)
 
 
+# Bu turlarda izoh (body) tizim matni; qolganlarida — foydalanuvchi yozgan sabab/izoh, o'girilmaydi
+SYSTEM_BODY_KINDS = frozenset({
+    YashilNotification.Kind.ORDER_ACCEPTED, YashilNotification.Kind.ACT_SENT, YashilNotification.Kind.ACT_APPROVED,
+    YashilNotification.Kind.DEADLINE_REMINDER, YashilNotification.Kind.OVERDUE, YashilNotification.Kind.EXPORT_READY,
+    YashilNotification.Kind.EXPORT_FAILED,
+})
+
+
 class NotificationSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format="iso-8601", read_only=True)
     read_at = serializers.DateTimeField(format="iso-8601", read_only=True)
@@ -323,7 +336,14 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = ("id", "kind", "title", "body", "order", "order_number", "read_at", "created_at")
 
     def get_order_number(self, obj) -> str | None:
-        return obj.order.display_number if obj.order_id else None
+        return lang.tr_known(obj.order.display_number) if obj.order_id else None
+
+    def to_representation(self, obj):
+        data = super().to_representation(obj)
+        data["title"] = lang.tr(data["title"])
+        if obj.kind in SYSTEM_BODY_KINDS:
+            data["body"] = lang.tr_known(data["body"])
+        return data
 
 
 def parse_decimal(value, field):

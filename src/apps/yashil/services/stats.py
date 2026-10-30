@@ -17,7 +17,7 @@ from django.core.cache import cache
 from django.db.models import Count, Max, Q, Sum
 
 from apps.yashil.models import Act, ActLine, CatalogItem, OrderState, UnionUnit
-from apps.yashil.services import registry
+from apps.yashil.services import lang, registry
 from apps.yashil.services.scope import orders_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
 
@@ -114,7 +114,8 @@ def _seedlings(cabinet, is_admin, f) -> dict:
         catalog_item__category=CatalogItem.Category.SEEDLING,
     ).exclude(order__state=OrderState.CANCELLED)
     rows = (
-        lines.order_by().values("catalog_item__code", "catalog_item__name_cyr", "catalog_item__unit", "catalog_item__order")
+        lines.order_by().values("catalog_item__code", "catalog_item__name_cyr", "catalog_item__name_lat", "catalog_item__unit",
+                                "catalog_item__order")
         .annotate(ordered=Sum("qty"), accepted=Sum("accepted_qty"), orders=Count("order", distinct=True),
                   returned_open=Sum("qty", filter=Q(order__state=OrderState.RETURNED)))
         .order_by("catalog_item__order", "catalog_item__code")
@@ -131,7 +132,8 @@ def _seedlings(cabinet, is_admin, f) -> dict:
         o, a = r["ordered"] or ZERO, r["accepted"] or ZERO
         p, ro = pending.get(r["catalog_item__code"], ZERO) or ZERO, r["returned_open"] or ZERO
         items.append({
-            "item_code": r["catalog_item__code"], "item": r["catalog_item__name_cyr"], "unit": r["catalog_item__unit"],
+            "item_code": r["catalog_item__code"], "item": r["catalog_item__name_cyr"],
+            "item_lat": lang.to_lat(r["catalog_item__name_lat"] or r["catalog_item__name_cyr"]), "unit": r["catalog_item__unit"],
             "unit_cyr": UNIT_LABELS.get(r["catalog_item__unit"], (r["catalog_item__unit"],))[0], "orders": r["orders"],
             "ordered": _dec(o), "accepted": _dec(a), "pending": _dec(p), "returned_open": _dec(ro), "diff": _dec(o - a),
         })

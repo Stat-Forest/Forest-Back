@@ -35,6 +35,7 @@ class ExportJob(AbstractBaseModel):
     kind = models.CharField(max_length=12, choices=Kind.choices)
     format = models.CharField(max_length=5, choices=Format.choices)
     filters = models.JSONField(default=dict, blank=True)
+    lang = models.CharField(max_length=2, default="uz", help_text="Fayl tili (so'rov paytidagi platforma tili): uz yoki ru")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.QUEUED, db_index=True)
     row_count = models.PositiveIntegerField(default=0)
     file = models.FileField(upload_to=export_upload_to, null=True, blank=True)

@@ -37,7 +37,7 @@ class SuppliersForMahallaTest(APITestCase):
         make_forest("Қандайдир хўжалик")
         res = self.client.get(f"{BASE}/suppliers/for-mahalla/{self.mahalla.pk}/")
         self.assertIsNone(res.data["forest"]["primary"])
-        self.assertEqual(res.data["forest"]["message"], "Хўжалик бириктирилмаган")
+        self.assertEqual(res.data["forest"]["message"], "Xo'jalik biriktirilmagan")
         self.assertEqual(len(res.data["forest"]["alternatives"]), 1)
 
     def test_dm_list_filtered_by_service_area_and_union_route(self):
