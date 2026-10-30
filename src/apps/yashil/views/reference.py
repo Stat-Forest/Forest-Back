@@ -22,7 +22,7 @@ from apps.yashil.serializers import (
     SupplierSerializer,
     UnionUnitSerializer,
 )
-from apps.yashil.services import rules
+from apps.yashil.services import lang, rules
 from apps.yashil.services import scope as scope_service
 from apps.yashil.services.workdays import (
     add_workdays,
@@ -130,11 +130,11 @@ class SuppliersForMahallaView(YashilAPIView):
                 "primary": SupplierSerializer(primary).data if primary else None,
                 "assignment_valid_to": assignment.valid_to if assignment else None,
                 "alternatives": SupplierSerializer(alternatives, many=True).data,
-                "message": None if primary else scope_service.NOT_ASSIGNED_FOREST,
+                "message": None if primary else lang.tr(scope_service.NOT_ASSIGNED_FOREST),
             },
             "dm": {"options": SupplierSerializer(scope_service.dm_suppliers_for(mahalla), many=True).data},
             "union": UnionUnitSerializer(route.union_unit).data if route else None,
-            "union_message": None if route else scope_service.NOT_ROUTED_UNION,
+            "union_message": None if route else lang.tr(scope_service.NOT_ROUTED_UNION),
         })
 
 

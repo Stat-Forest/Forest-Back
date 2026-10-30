@@ -240,7 +240,7 @@ def _verify_document(version, user, membership, role, pkcs7, request, entry) -> 
         raise SigningError("E-imzo server жавоби нотўғри (verify).")
     info = v_data.get("pkcs7Info") or {}
     if v_data.get("status") != 1:
-        raise SigningError("Имзо ҳақиқий эмас (status %s). %s" % (v_data.get("status"), v_data.get("message") or ""))
+        raise SigningError(f"Имзо ҳақиқий эмас (status {v_data.get('status')}). {v_data.get('message') or ''}")
     signers = info.get("signers") or []
     if len(signers) != 1:
         raise SigningError("Ҳужжатда айнан битта имзо бўлиши керак.")

@@ -1,6 +1,7 @@
 """Hisobot eksporti (TZ §14.2, §17.2–17.3; Q21, Q22): XLSX/CSV/PDF, sinxron/fon, formula xavfsizligi, saqlash muddati."""
 import csv
 import io
+import re
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -16,6 +17,7 @@ from apps.yashil.tests._common import BASE, auth
 from apps.yashil.tests.test_registry import RegistryBase
 
 EXPORTS = f"{BASE}/reports/exports/"
+CYR_UZ = re.compile(r"[\u0400-\u04FF]")
 
 
 class ExportBase(RegistryBase):
@@ -46,13 +48,13 @@ class ExportSyncTest(ExportBase):
         wb = load_workbook(io.BytesIO(self.job_bytes(data)))
         ws = wb.active
         head = [ws.cell(row=r, column=1).value for r in range(1, 6)]
-        self.assertIn("Яшил маҳалла", head[0])
-        self.assertTrue(any("Ўрмон хўжалиги" in str(h) for h in head))
-        header_row = next(r for r in range(1, 10) if ws.cell(row=r, column=1).value == "Т/р")
+        self.assertIn("Yashil mahalla", head[0])
+        self.assertTrue(any("O'rmon xo'jaligi" in str(h) for h in head))
+        header_row = next(r for r in range(1, 10) if ws.cell(row=r, column=1).value == "T/r")
         headers = [c.value for c in ws[header_row]]
-        self.assertIn("Маҳалла номи", headers)
-        self.assertIn("Маҳсулот ёки хизмат", headers)
-        title_col = headers.index("Буюртма номи ва рақами") + 1
+        self.assertIn("Mahalla nomi", headers)
+        self.assertIn("Mahsulot yoki xizmat", headers)
+        title_col = headers.index("Buyurtma nomi va raqami") + 1
         cells = [ws.cell(row=r, column=title_col) for r in range(header_row + 1, ws.max_row + 1)]
         formula_like = [c for c in cells if "=HYPERLINK" in str(c.value)]
         self.assertEqual(len(formula_like), 2)  # o1 ning ikkala qatori
@@ -64,10 +66,10 @@ class ExportSyncTest(ExportBase):
         raw = self.job_bytes(data)
         self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
         rows = list(csv.reader(io.StringIO(raw.decode("utf-8-sig"))))
-        header_i = next(i for i, r in enumerate(rows) if r and r[0] == "Т/р")
+        header_i = next(i for i, r in enumerate(rows) if r and r[0] == "T/r")
         body = rows[header_i + 1:]
         self.assertEqual(len(body), 4)
-        title_col = rows[header_i].index("Буюртма номи ва рақами")
+        title_col = rows[header_i].index("Buyurtma nomi va raqami")
         bad = [r[title_col] for r in body if "HYPERLINK" in r[title_col]]
         self.assertTrue(bad and all(v.startswith("'") for v in bad))
 
@@ -81,8 +83,26 @@ class ExportSyncTest(ExportBase):
         data = self.post(self.o_all, self.o_all_cab, {"kind": "acts", "format": "xlsx", "filters": {}})
         self.assertEqual(data["row_count"], 2)
         ws = load_workbook(io.BytesIO(self.job_bytes(data))).active
-        header_row = next(r for r in range(1, 10) if ws.cell(row=r, column=1).value == "Т/р")
-        self.assertIn("Далолатнома рақами", [c.value for c in ws[header_row]])
+        header_row = next(r for r in range(1, 10) if ws.cell(row=r, column=1).value == "T/r")
+        self.assertIn("Dalolatnoma raqami", [c.value for c in ws[header_row]])
+
+    def test_language_follows_request(self):
+        self.client.credentials(); auth(self.client, self.o_all, self.o_all_cab)
+        res = self.client.post(EXPORTS, {"kind": "registry", "format": "csv", "filters": {"state": ["execution"]}},
+                               format="json", HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(ExportJob.objects.get(pk=res.data["id"]).lang, "ru")
+        rows = list(csv.reader(io.StringIO(self.job_bytes(res.data).decode("utf-8-sig"))))
+        self.assertIn("Зелёная махалля", rows[0][0])
+        self.assertIn("статус: В исполнении", rows[2][0])
+        header_i = next(i for i, r in enumerate(rows) if r and r[0] == "№")
+        head = rows[header_i]
+        self.assertIn("Продукция или услуга", head)
+        body = [dict(zip(head, r)) for r in rows[header_i + 1:]]
+        self.assertEqual({r["Статус заявки"] for r in body}, {"В исполнении"})
+        self.assertTrue(all(r["Ед. изм."] in ("шт.", "кг") for r in body))
+        self.assertFalse(any(CYR_UZ.search(r["Продукция или услуга"]) for r in body))  # nom lotinda
+        pdf = self.client.post(EXPORTS, {"kind": "registry", "format": "pdf", "filters": {}}, format="json", HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertTrue(self.job_bytes(pdf.data).startswith(b"%PDF"))
 
     def test_scope_mahalla_and_observer_can_export(self):
         data = self.post(self.m_user, self.m_cab, {"kind": "registry", "format": "csv", "filters": {}})

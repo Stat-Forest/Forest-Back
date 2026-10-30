@@ -65,7 +65,7 @@ class CardsTest(StatsBase):
     def test_api_cards_for_mahalla(self):
         d = self.api(self.m_user, self.m_cab, "cards/")
         self.assertEqual(d["total"], 5)
-        self.assertEqual(d["filters_label"], "Буюртма юборилган сана (биринчи юбориш)")
+        self.assertEqual(d["filters_label"], "Buyurtma yuborilgan sana (birinchi yuborish)")
 
 
 class SeedlingsTest(StatsBase):

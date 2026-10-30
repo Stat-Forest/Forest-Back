@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from apps.general.protected_media import is_protected, make_token
 from apps.yashil.models import CatalogItem, StockMovement
+from apps.yashil.services import lang
 
 
 def _dec(value):
@@ -61,6 +62,12 @@ class StockMovementSerializer(serializers.ModelSerializer):
 
     def get_qty(self, obj) -> str | None:
         return _dec(obj.qty)
+
+    def to_representation(self, obj):
+        data = super().to_representation(obj)
+        if obj.kind in (StockMovement.Kind.ALLOCATE, StockMovement.Kind.RELEASE):
+            data["note"] = lang.tr_known(data["note"])  # tizim izohi («Буюртма …»)
+        return data
 
     def get_catalog_item(self, obj) -> dict | None:
         i = obj.catalog_item

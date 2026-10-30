@@ -17,6 +17,7 @@ from django.db.models import Count, DecimalField, Max, OuterRef, Q, Subquery, Su
 from django.db.models.functions import Coalesce, TruncDate
 
 from apps.yashil.models import STATE_LABELS_CYR, Act, ActLine, ActVersion, CatalogItem, Order, OrderLine, OrderState, SupplierProfile
+from apps.yashil.services import lang
 from apps.yashil.services.scope import orders_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
 from apps.yashil.services.workdays import local_date
@@ -105,7 +106,12 @@ def parse_filters(params) -> dict:
 
 
 def filters_label(f: dict) -> str:
-    """Eksport sarlavhasi uchun filtrlar matni (kirill)."""
+    """Filtrlar matni joriy so'rov tilida (API javoblari uchun)."""
+    return lang.tr(filters_label_cyr(f))
+
+
+def filters_label_cyr(f: dict) -> str:
+    """Filtrlar matni (kirill) — eksport sarlavhasida eksport tiliga o'giriladi."""
     parts = [dict(PERIOD_BASES)[f["period_basis"]]]
     if f.get("date_from") or f.get("date_to"):
         a = f["date_from"].strftime("%d.%m.%Y") if f.get("date_from") else "…"
@@ -265,6 +271,7 @@ def row_dicts(lines, start_no: int = 1) -> list[dict]:
             "supplier": o.supplier_org.name,
             "supplier_id": str(o.supplier_org_id),
             "item": item.name_cyr,
+            "item_lat": lang.to_lat(item.name_lat or item.name_cyr),
             "item_code": item.code,
             "category": item.category,
             "unit": item.unit,
@@ -306,7 +313,8 @@ def summary(qs) -> dict:
         .order_by().values("order_line__catalog_item_id").annotate(s=Sum("qty"))
     }
     item_rows = (
-        lines.order_by().values("catalog_item_id", "catalog_item__code", "catalog_item__name_cyr", "catalog_item__unit", "catalog_item__order")
+        lines.order_by().values("catalog_item_id", "catalog_item__code", "catalog_item__name_cyr", "catalog_item__name_lat",
+                               "catalog_item__unit", "catalog_item__order")
         .annotate(ordered=Sum("qty"), orders=Count("order", distinct=True), lines=Count("id"))
         .order_by("catalog_item__order", "catalog_item__code")
     )
@@ -314,7 +322,8 @@ def summary(qs) -> dict:
     for r in item_rows:
         o, a = r["ordered"] or ZERO, accepted.get(r["catalog_item_id"], ZERO)
         by_item.append({
-            "item_code": r["catalog_item__code"], "item": r["catalog_item__name_cyr"], "unit": r["catalog_item__unit"],
+            "item_code": r["catalog_item__code"], "item": r["catalog_item__name_cyr"],
+            "item_lat": lang.to_lat(r["catalog_item__name_lat"] or r["catalog_item__name_cyr"]), "unit": r["catalog_item__unit"],
             "unit_cyr": UNIT_LABELS.get(r["catalog_item__unit"], (r["catalog_item__unit"],))[0],
             "ordered": _dec(o), "accepted": _dec(a), "remaining": _dec(o - a), "orders": r["orders"], "lines": r["lines"],
         })

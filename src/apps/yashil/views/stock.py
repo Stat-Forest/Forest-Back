@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.models import Organization
 from apps.yashil.api import (
+    MESSAGE_KEYS,
     CabinetMixin,
     HasCabinet,
     IdempotentPostMixin,
@@ -24,7 +25,7 @@ from apps.yashil.serializers_stock import (
     StockMovementSerializer,
 )
 from apps.yashil.services import capacity as capacity_service
-from apps.yashil.services import ledger
+from apps.yashil.services import lang, ledger
 from apps.yashil.services import scope as scope_service
 from apps.yashil.services.ledger import LedgerError
 
@@ -66,7 +67,7 @@ class _StockBase(CabinetMixin, APIView):
         data = {
             "movement": StockMovementSerializer(movement, context={"request": self.request}).data,
             "balance": ledger._dec(ledger.balance(movement.warehouse, movement.catalog_item)),
-            "warnings": warnings or [],
+            "warnings": lang.tr_tree(warnings or [], keys=MESSAGE_KEYS),
         }
         return Response(data, status=http_status)
 
@@ -78,7 +79,7 @@ class StockSummaryView(_StockBase):
         rows = ledger.warehouse_summary(org, warehouse)
         return Response({
             "organization": {"id": str(org.id), "name": org.name, "supplier_type": ledger.supplier_type_of(org)},
-            "warehouse": {"id": str(warehouse.id), "name": warehouse.name},
+            "warehouse": {"id": str(warehouse.id), "name": lang.tr_known(warehouse.name)},
             "rows": rows,
             "shortage_count": sum(1 for r in rows if r["shortage"] != "0"),
             "pending_reversals": sum(r["pending_reversals"] for r in rows),

@@ -153,7 +153,7 @@ class ReferenceAdminTest(AdminBase):
         f = xlsx_file(["нимадир"], [["1"]])
         res = self.client.post(f"{ADMIN}/mahallas/import/", {"file": f, "dry_run": "1"}, format="multipart")
         self.assertEqual(res.status_code, 400)
-        self.assertIn("манба коди", res.data["message"])
+        self.assertIn("manba kodi", res.data["message"])
 
     def test_mahallas_list_create_patch_and_import(self):
         self.as_admin()

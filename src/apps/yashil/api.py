@@ -13,9 +13,11 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from apps.yashil.schema import YashilAutoSchema
+from apps.yashil.services import lang
 from apps.yashil.services.scope import CabinetForbidden, is_module_admin, resolve_cabinet
 
 CABINET_HEADER = "HTTP_X_YASHIL_CABINET"
+MESSAGE_KEYS = frozenset({"message"})
 
 
 class YashilError(APIException):
@@ -59,13 +61,13 @@ def yashil_exception_handler(exc, context):
     if response is None:
         return None
     request = context.get("request")
-    payload = {"request_id": request_id_for(request), "detail": response.data}
+    payload = {"request_id": request_id_for(request), "detail": lang.tr_tree(response.data)}
     if isinstance(exc, YashilError):
         payload.update(error_code=exc.error_code, field=exc.field, message=str(exc.detail))
         if getattr(exc, "index", None) is not None:
             payload["index"] = exc.index
         for key, value in (getattr(exc, "extra", None) or {}).items():
-            payload.setdefault(key, value)
+            payload.setdefault(key, lang.tr_tree(value, keys=MESSAGE_KEYS))
     elif isinstance(exc, ValidationError):
         field = next(iter(exc.detail), None) if isinstance(exc.detail, dict) else None
         payload.update(error_code="validation", field=field, message=_first_message(exc.detail))
@@ -79,6 +81,7 @@ def yashil_exception_handler(exc, context):
         payload.update(error_code="rate_limited", field=None, message=_first_message(response.data))
     else:
         payload.update(error_code=getattr(exc, "default_code", "error"), field=None, message=_first_message(response.data))
+    payload["message"] = lang.tr(payload["message"])
     return Response(payload, status=response.status_code, headers=response.headers if hasattr(response, "headers") else None)
 
 

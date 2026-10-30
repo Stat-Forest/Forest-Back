@@ -27,7 +27,7 @@ from openpyxl.utils import get_column_letter
 from apps.utils.excel_safe import append_safe
 from apps.yashil import conf
 from apps.yashil.models import STATE_LABELS_CYR, Act, ExportJob, YashilNotification
-from apps.yashil.services import registry
+from apps.yashil.services import lang, registry
 from apps.yashil.services.scope import acts_for_cabinet
 from apps.yashil.services.units import UNIT_LABELS
 
@@ -118,7 +118,8 @@ def _d(value) -> str:
     return f"{s[8:10]}.{s[5:7]}.{s[0:4]}" if len(s) >= 10 and s[4] == "-" else s
 
 
-def _pdf_registry_cell(key: str, r: dict) -> str:
+def _pdf_registry_cell(key: str, r: dict, t) -> str:
+    """PDF katakchasi; `t` — eksport tiliga o'girish (r qiymatlari _localize'dan o'tgan)."""
     if key == "_mahalla":
         return f"{r['mahalla']}\n{r['region']} / {r['district']}"
     if key == "_supplier":
@@ -131,18 +132,37 @@ def _pdf_registry_cell(key: str, r: dict) -> str:
         return f"{r['state_cyr']}" + (f"\n{r['responsible_cyr']}" if r.get("responsible_cyr") else "")
     if key == "_submitted":
         first, last = _d(r.get("first_submitted_on")), _d(r.get("last_submitted_on"))
-        return first + (f"\nқайта: {last}" if last and last != first else "")
+        return first + (t(f"\nқайта: {last}") if last and last != first else "")
     if key == "_due":
         parts = []
         if r.get("review_due"):
-            parts.append(f"кўриб чиқиш: {_d(r['review_due'])}")
+            parts.append(t(f"кўриб чиқиш: {_d(r['review_due'])}"))
         if r.get("delivery_due"):
-            parts.append(f"етказиш: {_d(r['delivery_due'])}")
+            parts.append(t(f"етказиш: {_d(r['delivery_due'])}"))
         return "\n".join(parts) or "—"
     if key == "_late":
-        return f"{r['late_workdays']} иш куни\n{r.get('overdue_stage_cyr', '')}" if r.get("late_workdays") else "—"
+        stage = registry.STAGE_CYR.get(r.get("overdue_stage"), "")
+        return t(f"{r['late_workdays']} иш куни\n{stage}") if r.get("late_workdays") else "—"
     v = r.get(key)
     return _d(v) if key in DATE_KEYS else ("" if v is None else str(v))
+
+
+# Qiymati tizim yorlig'i bo'lgan ustunlar (holat, birlik, yo'nalish, ...) — eksport tiliga o'giriladi
+LABEL_KEYS = ("route_cyr", "unit_cyr", "state_cyr", "responsible_cyr", "overdue_stage_cyr", "status_cyr", "order_state_cyr",
+              "is_partial")
+
+
+def _localize(rows, t):
+    """Qatorlarni eksport tiliga: yorliqlar tarjimasi, mahsulot nomi lotinda."""
+    for r in rows:
+        for key in LABEL_KEYS:
+            if r.get(key):
+                r[key] = t(r[key])
+        if r.get("item_lat"):
+            r["item"] = r["item_lat"]
+        if isinstance(r.get("lines"), list):
+            r["lines"] = "; ".join(f"{name} — {qty} {t(unit)}" for name, qty, unit in r["lines"])
+        yield r
 CONTENT_TYPES = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "csv": "text/csv; charset=utf-8",
@@ -207,13 +227,12 @@ def act_rows(acts, start_no: int = 1) -> list[dict]:
     rows = []
     for n, a in enumerate(acts, start=start_no):
         o, v = a.order, a.current_version
-        lines = ""
+        lines = []  # (nom, miqdor, birlik) — matn _localize'da eksport tilida yig'iladi
         if v is not None:
-            parts = []
             for l in v.lines.select_related("order_line__catalog_item"):
                 item = l.order_line.catalog_item
-                parts.append(f"{item.name_cyr} — {format(l.qty.normalize(), 'f')} {UNIT_LABELS.get(item.unit, (item.unit,))[0]}")
-            lines = "; ".join(parts)
+                lines.append((lang.to_lat(item.name_lat or item.name_cyr), format(l.qty.normalize(), "f"),
+                              UNIT_LABELS.get(item.unit, (item.unit,))[0]))
         rows.append({
             "row_no": n, "id": str(a.id), "number": a.number, "version_no": a.version_no, "status": a.status,
             "status_cyr": ACT_STATUS_CYR.get(a.status, a.status), "order_id": str(o.id), "order_number": o.number,
@@ -281,15 +300,20 @@ def count_rows(job: ExportJob, f: dict) -> int:
 
 
 # ----------------------------------------------------------------------------- yozuvchilar
+def _t(job: ExportJob):
+    return lambda text: lang.tr(text, job.lang)
+
+
 def _header_lines(job: ExportJob, f: dict) -> list[str]:
     cab = job.membership
     who = cab.cabinet_name if cab is not None else "Модул администратори"
     when = timezone.localtime(timezone.now()).strftime("%d.%m.%Y %H:%M")
+    t = _t(job)
     return [
-        f"STAT-URMON · Яшил маҳалла · {KIND_TITLES.get(job.kind, job.kind)}",
-        f"Йўналиш: {registry.ROUTE_CYR.get(f.get('route'), 'Умумий (иккала йўналиш)')}",
-        f"Фильтрлар: {registry.filters_label(f)}",
-        f"Кабинет: {who} · Шакллантирилди: {when} (Asia/Tashkent) · Қатор: {job.row_count}",
+        t(f"STAT-URMON · Яшил маҳалла · {KIND_TITLES.get(job.kind, job.kind)}"),
+        t(f"Йўналиш: {registry.ROUTE_CYR.get(f.get('route'), 'Умумий (иккала йўналиш)')}"),
+        t(f"Фильтрлар: {registry.filters_label_cyr(f)}"),
+        t(f"Кабинет: {who} · Шакллантирилди: {when} (Asia/Tashkent) · Қатор: {job.row_count}"),
     ]
 
 
@@ -302,12 +326,12 @@ def _cell(key, value):
 def _write_xlsx(job, f, columns, rows) -> bytes:
     wb = Workbook()
     ws = wb.active
-    ws.title = KIND_TITLES.get(job.kind, "Ҳисобот")[:31]
+    ws.title = _t(job)(KIND_TITLES.get(job.kind, "Ҳисобот"))[:31]
     for line in _header_lines(job, f):
         append_safe(ws, [line])
         ws.cell(row=ws.max_row, column=1).font = Font(bold=ws.max_row == 1)
     ws.append([])
-    append_safe(ws, [h for _, h in columns])
+    append_safe(ws, [_t(job)(h) for _, h in columns])
     header_row = ws.max_row
     fill = PatternFill("solid", fgColor="E8EEF2")
     for c in ws[header_row]:
@@ -335,7 +359,7 @@ def _write_csv(job, f, columns, rows) -> bytes:
     for line in _header_lines(job, f):
         w.writerow([_csv_safe(line)])
     w.writerow([])
-    w.writerow([h for _, h in columns])
+    w.writerow([_t(job)(h) for _, h in columns])
     for r in rows:
         w.writerow([_csv_safe(_cell(k, r.get(k))) for k, _ in columns])
     return b"\xef\xbb\xbf" + buf.getvalue().encode("utf-8")
@@ -354,7 +378,7 @@ def _write_pdf(job, f, columns, rows) -> bytes:
     buf = io.BytesIO()
     page = landscape(A4)
     doc = SimpleDocTemplate(buf, pagesize=page, leftMargin=10 * mm, rightMargin=10 * mm, topMargin=12 * mm, bottomMargin=12 * mm,
-                            title=KIND_TITLES.get(job.kind, "Ҳисобот"), author="STAT-URMON")
+                            title=_t(job)(KIND_TITLES.get(job.kind, "Ҳисобот")), author="STAT-URMON")
     story = []
     for i, line in enumerate(_header_lines(job, f)):
         story.append(Paragraph(pdfs._esc(line), st["h"] if i == 0 else st["small"]))
@@ -367,12 +391,13 @@ def _write_pdf(job, f, columns, rows) -> bytes:
         extra = [c for c in columns if c[0] in {o[0] for o in REGISTRY_OPTIONAL}]
         pdf_cols = [(k, h) for k, h, _ in REGISTRY_PDF_COLUMNS] + extra
         weights = [w for _, _, w in REGISTRY_PDF_COLUMNS] + [REGISTRY_PDF_OPTIONAL_WIDTH] * len(extra)
-        cell_of = _pdf_registry_cell
+        t = _t(job)
+        cell_of = lambda k, r: _pdf_registry_cell(k, r, t)  # noqa: E731
     else:
         pdf_cols = columns
         weights = ACT_PDF_WIDTHS[:len(columns)] + [1.0] * max(0, len(columns) - len(ACT_PDF_WIDTHS))
         cell_of = lambda k, r: _d(r.get(k)) if k in DATE_KEYS else ("" if r.get(k) is None else str(r.get(k)))  # noqa: E731
-    data = [[Paragraph(h, cellh) for _, h in pdf_cols]]
+    data = [[Paragraph(_t(job)(h), cellh) for _, h in pdf_cols]]
     for r in rows:
         data.append([Paragraph(pdfs._esc(cell_of(k, r)).replace("\n", "<br/>"), cell) for k, _ in pdf_cols])
     width = page[0] - 20 * mm
@@ -389,8 +414,8 @@ def _write_pdf(job, f, columns, rows) -> bytes:
         canvas.saveState()
         canvas.setFont(pdfs.FONT, 7)
         canvas.setFillColor(colors.HexColor("#666666"))
-        canvas.drawString(10 * mm, 6 * mm, "STAT-URMON · Яшил маҳалла")
-        canvas.drawRightString(page[0] - 10 * mm, 6 * mm, f"{d.page}-бет")
+        canvas.drawString(10 * mm, 6 * mm, _t(job)("STAT-URMON · Яшил маҳалла"))
+        canvas.drawRightString(page[0] - 10 * mm, 6 * mm, _t(job)(f"{d.page}-бет"))
         canvas.restoreState()
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
@@ -401,10 +426,11 @@ WRITERS = {"xlsx": _write_xlsx, "csv": _write_csv, "pdf": _write_pdf}
 
 
 def _write(job: ExportJob, f: dict) -> tuple[bytes, int]:
+    t = _t(job)
     if job.kind == ExportJob.Kind.ACTS:
-        columns, rows = ACT_COLUMNS, list(_act_rows(job, f))
+        columns, rows = ACT_COLUMNS, list(_localize(_act_rows(job, f), t))
     else:
-        columns, rows = _registry_columns(f), list(_registry_rows(job, f))
+        columns, rows = _registry_columns(f), list(_localize(_registry_rows(job, f), t))
     job.row_count = len(rows)
     return WRITERS[job.format](job, f, columns, rows), len(rows)
 
@@ -440,7 +466,7 @@ def _notify(job: ExportJob):
     YashilNotification.objects.create(recipient_user=job.requested_by, membership=job.membership, kind=kind, title=text, body=body)
 
 
-def create_job(user, cabinet, is_admin: bool, *, kind: str, fmt: str, filters: dict) -> ExportJob:
+def create_job(user, cabinet, is_admin: bool, *, kind: str, fmt: str, filters: dict, language: str | None = None) -> ExportJob:
     """So'rov: kichik — darhol tayyor (xabarsiz), katta — navbat (tayyor bo'lganda xabar)."""
     if kind not in ExportJob.Kind.values:
         raise ExportError("Ҳисобот тури: registry / acts", code="invalid_format", status=400, field="kind")
@@ -454,7 +480,7 @@ def create_job(user, cabinet, is_admin: bool, *, kind: str, fmt: str, filters: d
     if active >= conf.get("YASHIL_EXPORT_MAX_ACTIVE"):
         raise ExportError("Бир вақтда жуда кўп экспорт — олдингилари тайёр бўлишини кутинг", code="too_many_exports", status=429)
     job = ExportJob(requested_by=user, membership=None if (is_admin and cabinet is None) else cabinet, kind=kind, format=fmt,
-                    filters=_serializable({**f, "columns": f.get("columns", [])}))
+                    filters=_serializable({**f, "columns": f.get("columns", [])}), lang=lang.normalize(language or lang.current()))
     total = count_rows(job, f)
     if fmt == ExportJob.Format.PDF and total > conf.get("YASHIL_EXPORT_PDF_LIMIT"):
         raise ExportError(f"PDF учун жуда кўп қатор ({total}). Фильтрни қисқартиринг ёки XLSX/CSV танланг.", code="export_too_large")

@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from apps.base.pagination import CustomPageNumberPagination
 from apps.general.models import Organization
 from apps.logs.models import HistoryActionJournal
-from apps.yashil.api import CabinetMixin, IsAuthenticated, YashilError, invalid_format, not_found
+from apps.yashil.api import MESSAGE_KEYS, CabinetMixin, IsAuthenticated, YashilError, invalid_format, not_found
 from apps.yashil.models import (
     CalendarDay,
     CatalogItem,
@@ -37,7 +37,7 @@ from apps.yashil.serializers_admin import (
     UnionUnitAdminSerializer,
 )
 from apps.yashil.services import capacity as capacity_service
-from apps.yashil.services import imports, rules
+from apps.yashil.services import imports, lang, rules
 
 User = get_user_model()
 AUDIT_MODELS = (
@@ -45,6 +45,7 @@ AUDIT_MODELS = (
     "CalendarDay", "CatalogItem", "NormRule", "ServiceCapacity", "YashilSetting",
 )
 IMPORT_MAX_SIZE = 10 * 1024 * 1024
+LABEL_KEYS = frozenset({"label"})
 
 
 class IsModuleAdmin(BasePermission):
@@ -351,7 +352,7 @@ class CapacityAdminView(AdminView):
 # ----------------------------------------------------------------------------- sozlamalar, audit
 class SettingsAdminView(AdminView):
     def get(self, request):
-        return Response({"results": rules.snapshot()})
+        return Response({"results": lang.tr_tree(rules.snapshot(), keys=LABEL_KEYS)})
 
     def put(self, request):
         from datetime import date
@@ -366,7 +367,7 @@ class SettingsAdminView(AdminView):
             rules.set_value(str(d.get("key") or ""), d.get("value"), request.user, effective_from=eff, note=str(d.get("note") or ""))
         except rules.RuleError as exc:
             raise YashilError(str(exc), error_code="validation", field=exc.field)
-        return Response({"results": rules.snapshot()})
+        return Response({"results": lang.tr_tree(rules.snapshot(), keys=LABEL_KEYS)})
 
 
 class AuditAdminView(AdminView):
@@ -412,7 +413,7 @@ def import_response(run):
         err = YashilError(f"Файлда {len(result.errors)} та хато бор — тузатиб қайта юкланг", error_code="import_has_errors")
         err.extra = result.to_dict()
         raise err
-    return Response(result.to_dict())
+    return Response(lang.tr_tree(result.to_dict(), keys=MESSAGE_KEYS))
 
 
 class _ImportView(AdminView):
