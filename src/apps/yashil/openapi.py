@@ -15,6 +15,7 @@ from typing import Any
 from django.urls import include, path
 from drf_spectacular.drainage import GENERATOR_STATS
 from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.plumbing import _load_enum_name_overrides
 from drf_spectacular.settings import patched_settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
@@ -275,8 +276,13 @@ def build_schema(collect_problems=False):
     """Faqat modul URL'lari bo'yicha OpenAPI sxemasi (dict). collect_problems — (schema, xato/ogohlantirishlar)."""
     GENERATOR_STATS.reset()
     generator = SchemaGenerator(patterns=_patterns())
-    with GENERATOR_STATS.silence(), patched_settings({"ENUM_NAME_OVERRIDES": ENUM_NAME_OVERRIDES}):
-        schema = generator.get_schema(request=None, public=True)
+    # spectacular enum override'larini keshlaydi — loyiha sxemasidan oldin yaratilgan kesh bizning ro'yxatni yashirmasin
+    _load_enum_name_overrides.cache_clear()
+    try:
+        with GENERATOR_STATS.silence(), patched_settings({"ENUM_NAME_OVERRIDES": ENUM_NAME_OVERRIDES}):
+            schema = generator.get_schema(request=None, public=True)
+    finally:
+        _load_enum_name_overrides.cache_clear()
     schema["info"] = {
         "title": "STAT-URMON — «Яшил маҳалла» API",
         "version": "1.0",
