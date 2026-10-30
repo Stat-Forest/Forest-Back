@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.yashil.api import CabinetMixin, HasCabinet, IsAuthenticated, not_found, yashil_exception_handler
 from apps.yashil.models import DocumentVersion, YashilNotification
+from apps.yashil.schema import YashilAutoSchema
 from apps.yashil.serializers_orders import DocumentVersionSerializer, NotificationSerializer
 from apps.yashil.services.documents import public_verify_payload, render_html
 from apps.yashil.views.orders import orders_for_cabinet
@@ -61,6 +62,7 @@ class PublicVerifyView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_classes = [AnonRateThrottle]
+    schema = YashilAutoSchema()
 
     def get_exception_handler(self):
         return yashil_exception_handler

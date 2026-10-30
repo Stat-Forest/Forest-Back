@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from apps.billing.models import District, Region
@@ -14,12 +15,15 @@ from apps.yashil.models import (
 )
 
 
+# billing'dagi Region/District serializer'lari bilan OpenAPI komponent nomi to'qnashmasin
+@extend_schema_serializer(component_name="YashilRegion")
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
         fields = ("id", "code", "name")
 
 
+@extend_schema_serializer(component_name="YashilDistrict")
 class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
         model = District

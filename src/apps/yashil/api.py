@@ -12,6 +12,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from apps.yashil.schema import YashilAutoSchema
 from apps.yashil.services.scope import CabinetForbidden, is_module_admin, resolve_cabinet
 
 CABINET_HEADER = "HTTP_X_YASHIL_CABINET"
@@ -154,6 +155,7 @@ class CabinetMixin:
 
     cabinet = None
     is_admin = False
+    schema = YashilAutoSchema()
 
     def get_exception_handler(self):
         return yashil_exception_handler
