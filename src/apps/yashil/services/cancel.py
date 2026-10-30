@@ -29,9 +29,8 @@ from apps.yashil.services import ledger
 from apps.yashil.services import notifications as notif
 from apps.yashil.services import transitions as tr
 from apps.yashil.services.acts import accepted_by_line, remaining_by_line
-from apps.yashil.services.documents import _new_version
+from apps.yashil.services import documents, lang
 from apps.yashil.services.transitions import TransitionError
-from apps.yashil.services.units import UNIT_LABELS
 from apps.yashil.services.workdays import local_date
 
 T = YashilMembership.MemberType
@@ -230,16 +229,17 @@ def reject_cancel(req: CancelRequest, cabinet, *, note: str) -> CancelRequest:
 def _cancellation_document(order: Order, req: CancelRequest, rows_info, result: str, cabinet) -> Document:
     n = order.documents.filter(kind=Document.Kind.CANCELLATION).count() + 1
     document = Document.objects.create(order=order, kind=Document.Kind.CANCELLATION, number=f"{order.number}/B{n}")
+    L = lang.current()
     content = {
-        "doc_type": "cancellation", "template_version": 1, "number": document.number, "order_number": order.number,
+        "doc_type": "cancellation", "template_version": 2, "lang": L, "number": document.number, "order_number": order.number,
         "order_id": str(order.id), "version_no": 1, "date": local_date(timezone.now()).strftime("%d.%m.%Y"),
-        "mahalla_name": order.mahalla.name, "supplier_name": order.supplier_org.name,
-        "requested_by": f"{PARTY_CYR[req.requested_by_party]} — {req.requested_by_membership.cabinet_name}",
-        "agreed_by": req.agreed_by.cabinet_name if req.agreed_by else "—",
-        "approved_by": cabinet.cabinet_name, "reason": req.reason, "is_full": req.is_full,
-        "lines": rows_info, "result": result, "result_cyr": RESULT_CYR[result],
+        "mahalla_name": documents.ref_name(order.mahalla.name, L), "supplier_name": documents.ref_name(order.supplier_org.name, L),
+        "requested_by": f"{lang.doc_text(PARTY_CYR[req.requested_by_party], L)} — {documents.ref_name(req.requested_by_membership.cabinet_name, L)}",
+        "agreed_by": documents.ref_name(req.agreed_by.cabinet_name, L) if req.agreed_by else "—",
+        "approved_by": documents.ref_name(cabinet.cabinet_name, L), "reason": req.reason, "is_full": req.is_full,
+        "lines": rows_info, "result": result, "result_cyr": RESULT_CYR[result], "result_label": lang.doc_text(RESULT_CYR[result], L),
     }
-    version = _new_version(document, content, 1)
+    version = documents._new_version(document, content, 2)
     # Tizim hujjati: elektron imzo talab qilinmaydi, hash bilan muhrlangan
     version.status = DocumentVersion.Status.SIGNED
     version.save(update_fields=["status", "updated_at"])
@@ -272,8 +272,9 @@ def approve_cancel(req: CancelRequest, cabinet) -> CancelRequest:
             if not req.is_full:
                 line.qty = line.qty - cancel_qty
                 line.save(update_fields=["qty", "updated_at"])
-        rows_info.append({"n": n, "order_line_id": str(line.id), "code": line.catalog_item.code, "name": line.catalog_item.name_cyr,
-                          "unit": UNIT_LABELS.get(line.catalog_item.unit, (line.catalog_item.unit,))[0],
+        item = line.catalog_item
+        rows_info.append({"n": n, "order_line_id": str(line.id), "code": item.code, "name": documents.item_name(item.name_cyr, item.name_lat),
+                          "unit": documents.unit_label(item.unit, lang.current()),
                           "ordered_qty": _dec(line.qty + (cancel_qty if not req.is_full else ZERO)), "accepted_qty": _dec(accepted[line.id]),
                           "cancelled_qty": _dec(cancel_qty)})
     now = timezone.now()

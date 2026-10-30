@@ -4,6 +4,7 @@ Modul xabarlari tili (D-28): platforma tili `uz` → o'zbek lotin, `ru` → rus.
 Koddagi xabarlar kirillcha (o'zbek) yoziladi; javob chegarasida o'giriladi:
 - uz: kirill → lotin transliteratsiya (katalog kerak emas);
 - ru: `lang_ru.RU` katalogi; f-string qiymatlari ({0}, {1}) shablon bo'yicha ajratib olinadi.
+Hujjat matni (`doc_text`) — alohida: hujjat yaratilgan tilda, `DOC_RU` katalogi, qiymatlar o'girilmaydi.
 So'rov tili LocaleMiddleware orqali (`Accept-Language`); fon vazifalari tilni o'zi uzatadi.
 """
 import re
@@ -11,7 +12,7 @@ from functools import lru_cache
 
 from django.utils import translation
 
-from apps.yashil.services.lang_ru import RU
+from apps.yashil.services.lang_ru import DOC_RU, RU
 
 UZ, RU_LANG = "uz", "ru"
 _CYR = re.compile(r"[Ѐ-ӿ]")
@@ -50,6 +51,8 @@ def to_lat(text: str) -> str:
         low = ch.lower()
         prev = text[i - 1] if i else ""
         nxt = text[i + 1] if i + 1 < n else ""
+        if low == "ъ" and nxt.lower() in "еёюя":
+            continue  # объект → obyekt: «y» keyingi harfda bor
         if low == "е":
             lat = "ye" if (not _is_letter(prev) or prev in _VOWELS or prev.lower() in "ъь") else "e"
         elif low == "ц":
@@ -157,3 +160,17 @@ def tr_tree(value, lang: str | None = None, keys: frozenset | None = None):
     if keys is None and isinstance(value, str):
         return tr(value, lang)
     return value
+
+
+def doc_text(template: str, doc_lang: str | None = None, *values) -> str:
+    """Hujjat matni: `doc_lang` yo'q — eski hujjat (kirill, o'zgarmaydi); uz — lotin; ru — `DOC_RU`/`RU`.
+    Qiymatlar ({0}, {1}) o'girilmaydi — ular hujjat tilida tayyorlangan yoki foydalanuvchi matni."""
+    if doc_lang == RU_LANG:
+        text = DOC_RU.get(template) or RU.get(template, template)
+    elif doc_lang == UZ:
+        text = to_lat(template)
+    else:
+        text = template
+    if not values:
+        return text
+    return _PH.sub(lambda m: str(values[int(m.group(1))]), text)

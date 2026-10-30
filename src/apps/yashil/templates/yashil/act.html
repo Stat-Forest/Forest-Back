@@ -1,6 +1,6 @@
-<!doctype html>
-<html lang="uz"><head><meta charset="utf-8">
-<title>Далолатнома {{ c.number }}</title>
+{% load yashil_doc %}<!doctype html>
+<html lang="{{ c.lang|default:'uz' }}"><head><meta charset="utf-8">
+<title>{% d "Далолатнома" %} {{ c.number }}</title>
 <style>
   body{font:14px/1.6 Arial,sans-serif;color:#000;max-width:820px;margin:32px auto;padding:0 16px}
   .muted{color:#555;font-size:12px}.center{text-align:center}
@@ -12,21 +12,21 @@
   .cols{display:flex;gap:24px}.cols>div{flex:1}
   @media print{body{margin:0}}
 </style></head><body>
-<h1>ТОПШИРИШ-ҚАБУЛ ҚИЛИШ ДАЛОЛАТНОМАСИ</h1>
-<p class="center">Рақами: <b>{{ c.number }}</b> &nbsp;&nbsp; Сана: <b>{{ c.date|default:"—" }}</b> &nbsp;&nbsp; Версия: <b>{{ c.version_no }}</b>{% if c.is_partial %} &nbsp;&nbsp; <span class="badge">Қисман</span>{% endif %}</p>
-<p>Жой: {{ c.place }}</p>
-<p>Ўзбекистон Республикаси Президентининг 2026 йил 23 сентябрдаги ПФ-206-сон Фармони ва {{ c.order_date }}даги {{ c.order_number }} сонли буюртманомага асосан {{ c.supplier_name }} томонидан {{ c.mahalla_name }}га {{ c.object_text }} учун қуйидаги маҳсулотлар етказиб берилди ва (ёки) хизматлар кўрсатилди.</p>
-<table><thead><tr><th style="width:40px">Т/р</th><th>Маҳсулот ёки хизмат номи</th><th style="width:140px">Ушбу акт бўйича миқдор</th><th style="width:110px">Бирлик</th></tr></thead>
+<h1>{% d "ТОПШИРИШ-ҚАБУЛ ҚИЛИШ ДАЛОЛАТНОМАСИ" %}</h1>
+<p class="center">{% d "Рақами" %}: <b>{{ c.number }}</b> &nbsp;&nbsp; {% d "Сана" %}: <b>{{ c.date|default:"—" }}</b> &nbsp;&nbsp; {% d "Версия" %}: <b>{{ c.version_no }}</b>{% if c.is_partial %} &nbsp;&nbsp; <span class="badge">{% d "Қисман" %}</span>{% endif %}</p>
+<p>{% d "Жой: {0}" c.place %}</p>
+<p>{% d "Ўзбекистон Республикаси Президентининг 2026 йил 23 сентябрдаги ПФ-206-сон Фармони ва {0}даги {1} сонли буюртманомага асосан {2} томонидан {3}га {4} учун қуйидаги маҳсулотлар етказиб берилди ва (ёки) хизматлар кўрсатилди." c.order_date c.order_number c.supplier_name c.mahalla_name c.object_text %}</p>
+<table><thead><tr><th style="width:40px">{% d "Т/р" %}</th><th>{% d "Маҳсулот ёки хизмат номи" %}</th><th style="width:140px">{% d "Ушбу акт бўйича миқдор" %}</th><th style="width:110px">{% d "Бирлик" %}</th></tr></thead>
 <tbody>{% for l in c.lines %}<tr><td>{{ l.n }}</td><td>{{ l.name }}{% if l.attrs %} <span class="muted">({{ l.attrs }})</span>{% endif %}</td><td>{{ l.qty }}</td><td>{{ l.unit }}</td></tr>{% endfor %}</tbody></table>
-<p>Ҳақиқий етказилган ёки хизмат кўрсатилган сана: {{ c.delivery_date }}.<br>Қўшимча маълумот ва қайдлар: {{ c.note|default:"—" }}.<br>Иловалар: {{ c.attachments_text }}.</p>
+<p>{% d "Ҳақиқий етказилган ёки хизмат кўрсатилган сана: {0}." c.delivery_date %}<br>{% d "Қўшимча маълумот ва қайдлар: {0}." c.note|default:"—" %}<br>{% d "Иловалар: {0}." c.attachments_text %}</p>
 <div class="cols">
-  <div><b>Топширувчи</b><br>{{ c.deliverer.name }}<br>{{ c.deliverer.full_name|default:"—" }}{% if c.deliverer.position %}, {{ c.deliverer.position }}{% endif %}</div>
-  <div><b>Қабул қилувчи</b><br>{{ c.receiver.name }}<br>{{ c.receiver.full_name|default:"—" }}{% if c.receiver.position %}, {{ c.receiver.position }}{% endif %}</div>
+  <div><b>{% d "Топширувчи" %}</b><br>{{ c.deliverer.name }}<br>{{ c.deliverer.full_name|default:"—" }}{% if c.deliverer.position %}, {{ c.deliverer.position }}{% endif %}</div>
+  <div><b>{% d "Қабул қилувчи" %}</b><br>{{ c.receiver.name }}<br>{{ c.receiver.full_name|default:"—" }}{% if c.receiver.position %}, {{ c.receiver.position }}{% endif %}</div>
 </div>
-<p class="muted">Етказиб берувчи юқоридаги миқдорларни топширганини электрон имзоси билан тасдиқлайди. Маҳалла ушбу ҳужжатни электрон имзолаш орқали айнан кўрсатилган маҳсулотлар ёки хизматларни қабул қилганини тасдиқлайди.</p>
-<div class="sign"><b>Электрон тасдиқ</b><br>
-Етказиб берувчи: {% if supplier_sig %}{{ supplier_sig.signer_cn }} · {{ supplier_sig.signed_at|date:"d.m.Y H:i" }} · E-IMZO ({{ supplier_sig.mode }}) <span class="badge">Ҳақиқий</span>{% else %}<span class="badge">Имзо кутилмоқда</span>{% endif %}<br>
-Маҳалла: {% if mahalla_sig %}{{ mahalla_sig.signer_cn }} · {{ mahalla_sig.signed_at|date:"d.m.Y H:i" }} · E-IMZO ({{ mahalla_sig.mode }}) <span class="badge">Ҳақиқий</span>{% else %}<span class="badge">Имзо кутилмоқда</span>{% endif %}<br>
-Ҳужжат ҳолати: <span class="badge">{% if fully_signed %}Икки томон имзолаган{% else %}Тўлиқ тасдиқланмаган{% endif %}</span> &nbsp; Ҳужжат IDси: {{ version.qr_token }}
-<br><span class="muted">Текшириш: {{ verify_url }}</span></div>
+<p class="muted">{% d "Етказиб берувчи юқоридаги миқдорларни топширганини электрон имзоси билан тасдиқлайди. Маҳалла ушбу ҳужжатни электрон имзолаш орқали айнан кўрсатилган маҳсулотлар ёки хизматларни қабул қилганини тасдиқлайди." %}</p>
+<div class="sign"><b>{% d "Электрон тасдиқ" %}</b><br>
+{% d "Етказиб берувчи" %}: {% if supplier_sig %}{{ supplier_sig.signer_cn }} · {{ supplier_sig.signed_at|date:"d.m.Y H:i" }} · E-IMZO ({{ supplier_sig.mode }}) <span class="badge">{% d "Ҳақиқий" %}</span>{% else %}<span class="badge">{% d "Имзо кутилмоқда" %}</span>{% endif %}<br>
+{% d "Маҳалла" %}: {% if mahalla_sig %}{{ mahalla_sig.signer_cn }} · {{ mahalla_sig.signed_at|date:"d.m.Y H:i" }} · E-IMZO ({{ mahalla_sig.mode }}) <span class="badge">{% d "Ҳақиқий" %}</span>{% else %}<span class="badge">{% d "Имзо кутилмоқда" %}</span>{% endif %}<br>
+{% d "Ҳужжат ҳолати" %}: <span class="badge">{% if fully_signed %}{% d "Икки томон имзолаган" %}{% else %}{% d "Тўлиқ тасдиқланмаган" %}{% endif %}</span> &nbsp; {% d "Ҳужжат IDси" %}: {{ version.qr_token }}
+<br><span class="muted">{% d "Текшириш" %}: {{ verify_url }}</span></div>
 </body></html>
