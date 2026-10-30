@@ -59,6 +59,16 @@ class ImportMahallasTest(TestCase):
         self.assertEqual(Mahalla.objects.count(), 1)
         self.assertIn("3-qator", out)
         self.assertIn("1703999", out)
+        # Xato matni interfeysda kirill ko'rinishida chiqadi (modul tili — TZ §17.1)
+        self.assertIn("туман коди топилмади", out)
+
+    def test_file_level_errors_are_cyrillic(self):
+        from apps.yashil.services.imports import ImportFileError, import_mahallas
+
+        path = xlsx([["MH-001", "Боғистон"]], ["манба коди", "маҳалла номи"])
+        with self.assertRaises(ImportFileError) as cm:
+            import_mahallas(path, dry_run=True)
+        self.assertIn("Мажбурий устунлар топилмади", str(cm.exception))
 
     def test_latin_headers_are_accepted(self):
         header = ["manba kodi", "viloyat kodi", "tuman kodi", "mahalla nomi", "manzil", "faol", "amal boshlanishi"]
