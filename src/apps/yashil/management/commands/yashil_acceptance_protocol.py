@@ -32,7 +32,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--out", required=True, help="DOCX fayl yo'li")
         parser.add_argument("--no-run", action="store_true", help="Testlarsiz bo'sh bayonnoma")
-        parser.add_argument("--environment", default="", help="Muhit nomi (masalan: test server 194.93.25.253)")
+        parser.add_argument("--environment", default="", help="Muhit nomi (masalan: test server)")
         parser.add_argument("--note", default="")
         parser.add_argument("--json", dest="json_out", default="", help="Natijalarni JSON faylga ham yozish")
 

@@ -170,9 +170,11 @@ services:
     env_file:
       - ../../.env
     command: celery -A config worker --loglevel=info
-    # MIB Push Service kaliti: shartnomalar shu worker'dan yuboriladi
+    # MIB Push Service kaliti: shartnomalar shu worker'dan yuboriladi.
+    # media: fon eksport fayllari (yashil.export_job) shu yerda yoziladi va nginx/app ulardan beradi
     volumes:
       - ../../keys/mib:/etc/mib-push:ro
+      - ../../media:/app/media
     depends_on:
       - forest_redis
       - forest_postgres

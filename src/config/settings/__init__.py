@@ -10,3 +10,4 @@ from .celery import *
 from .mib_push import *
 from .jazzmin import *
 from .ai_setup import *
+from .yashil import *

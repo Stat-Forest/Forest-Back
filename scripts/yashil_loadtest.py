@@ -4,7 +4,8 @@
 
 Tayyorgarlik (test serverda):
     docker exec forest_app python manage.py yashil_seed_load --force --orders 100000 --users 100 \
-        --password '<parol>' --tokens-out /app/media/load-tokens.json      # YASHIL_ALLOW_LOAD_SEED=1 bilan
+        --password '<parol>' --tokens-out /tmp/load-tokens.json      # YASHIL_ALLOW_LOAD_SEED=1 bilan
+    docker cp forest_app:/tmp/load-tokens.json .   # media/ ichiga yozmang — u ochiq beriladi
 Ishga tushirish (istalgan kompyuterda, faqat `requests` kerak):
     python3 yashil_loadtest.py --base https://test.stat-urmon.uz/api/v1/yashil --tokens load-tokens.json \
         --duration 300 --out natija.json
