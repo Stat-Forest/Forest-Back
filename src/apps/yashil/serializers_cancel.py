@@ -42,20 +42,20 @@ class CancelRequestSerializer(serializers.ModelSerializer):
         fields = ("id", "order", "requested_by_party", "requested_by", "is_full", "lines", "reason", "status", "status_cyr",
                   "agreed_by_name", "agreed_at", "approved_by_name", "approved_at", "decision_note", "document", "result", "created_at")
 
-    def get_status_cyr(self, obj):
+    def get_status_cyr(self, obj) -> str | None:
         return CANCEL_STATUS_CYR.get(obj.status, obj.status)
 
-    def get_order(self, obj):
+    def get_order(self, obj) -> dict | None:
         o = obj.order
         return {"id": str(o.id), "number": o.number, "title": o.title, "state": o.state, "state_cyr": STATE_LABELS_CYR.get(o.state, o.state),
                 "mahalla_name": o.mahalla.name, "supplier_name": o.supplier_org.name}
 
-    def get_requested_by(self, obj):
+    def get_requested_by(self, obj) -> dict:
         m = obj.requested_by_membership
         return {"cabinet": m.cabinet_name, "name": f"{m.user.last_name} {m.user.first_name}".strip()}
 
-    def get_agreed_by_name(self, obj):
+    def get_agreed_by_name(self, obj) -> str | None:
         return obj.agreed_by.cabinet_name if obj.agreed_by else None
 
-    def get_approved_by_name(self, obj):
+    def get_approved_by_name(self, obj) -> str | None:
         return obj.approved_by.cabinet_name if obj.approved_by else None

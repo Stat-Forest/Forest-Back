@@ -61,17 +61,17 @@ class ActLineOutSerializer(serializers.ModelSerializer):
         model = ActLine
         fields = ("id", "order_line", "catalog_item", "qty", "ordered_qty", "unit_cyr")
 
-    def get_catalog_item(self, obj):
+    def get_catalog_item(self, obj) -> dict | None:
         i = obj.order_line.catalog_item
         return {"id": str(i.id), "code": i.code, "name_cyr": i.name_cyr, "name_lat": i.name_lat, "unit": i.unit, "precision": i.precision}
 
-    def get_qty(self, obj):
+    def get_qty(self, obj) -> str | None:
         return _dec(obj.qty)
 
-    def get_ordered_qty(self, obj):
+    def get_ordered_qty(self, obj) -> str | None:
         return _dec(obj.order_line.qty)
 
-    def get_unit_cyr(self, obj):
+    def get_unit_cyr(self, obj) -> str | None:
         return UNIT_LABELS.get(obj.order_line.catalog_item.unit, (obj.order_line.catalog_item.unit,))[0]
 
 
@@ -98,7 +98,7 @@ class ActAttachmentSerializer(serializers.ModelSerializer):
         model = ActAttachment
         fields = ("id", "version_no", "original_name", "size", "kind", "url", "created_at")
 
-    def get_url(self, obj):
+    def get_url(self, obj) -> str | None:
         return relative_signed_url(obj.file)
 
 
@@ -117,19 +117,19 @@ class ActListSerializer(serializers.ModelSerializer):
         fields = ("id", "number", "index", "status", "status_cyr", "version_no", "is_partial", "order", "delivery_date",
                   "approved_at", "returned_at", "created_at", "updated_at", "actions")
 
-    def get_status_cyr(self, obj):
+    def get_status_cyr(self, obj) -> str | None:
         return ACT_STATUS_CYR.get(obj.status, obj.status)
 
-    def get_order(self, obj):
+    def get_order(self, obj) -> dict | None:
         o = obj.order
         return {"id": str(o.id), "number": o.number, "title": o.title, "state": o.state, "state_cyr": STATE_LABELS_CYR.get(o.state, o.state),
                 "mahalla_name": o.mahalla.name, "supplier_name": o.supplier_org.name, "route": o.route}
 
-    def get_delivery_date(self, obj):
+    def get_delivery_date(self, obj) -> str | None:
         v = obj.current_version
         return v.delivery_date.isoformat() if v else None
 
-    def get_actions(self, obj):
+    def get_actions(self, obj) -> list[str]:
         from apps.yashil.services.acts import allowed_act_actions
 
         return allowed_act_actions(obj, self.context.get("cabinet"))
@@ -145,11 +145,11 @@ class ActDetailSerializer(ActListSerializer):
     class Meta(ActListSerializer.Meta):
         fields = ActListSerializer.Meta.fields + ("current_version", "versions", "attachments", "document", "last_return")
 
-    def get_attachments(self, obj):
+    def get_attachments(self, obj) -> list[dict]:
         rows = [a for a in obj.attachments.all() if a.version_no == obj.version_no]
         return ActAttachmentSerializer(rows, many=True, context=self.context).data
 
-    def get_last_return(self, obj):
+    def get_last_return(self, obj) -> dict | None:
         from apps.yashil.services.acts import last_return_of
 
         return last_return_of(obj)

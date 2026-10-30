@@ -59,27 +59,27 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "reversal_of", "requested_by", "approved_by_name", "approved_at", "decision_note", "created_at",
         )
 
-    def get_qty(self, obj):
+    def get_qty(self, obj) -> str | None:
         return _dec(obj.qty)
 
-    def get_catalog_item(self, obj):
+    def get_catalog_item(self, obj) -> dict | None:
         i = obj.catalog_item
         return {"id": str(i.id), "code": i.code, "name_cyr": i.name_cyr, "name_lat": i.name_lat, "unit": i.unit}
 
-    def get_file_url(self, obj):
+    def get_file_url(self, obj) -> str | None:
         return relative_signed_url(obj.file)
 
-    def get_order_number(self, obj):
+    def get_order_number(self, obj) -> str | None:
         if obj.order_line_id:
             return obj.order_line.order.number
         if obj.acceptance_id:
             return obj.acceptance.order.number
         return None
 
-    def get_requested_by(self, obj):
+    def get_requested_by(self, obj) -> str:
         m = obj.requested_by_membership
         return f"{m.user.last_name} {m.user.first_name}".strip() if m else ""
 
-    def get_approved_by_name(self, obj):
+    def get_approved_by_name(self, obj) -> str | None:
         u = obj.approved_by
         return f"{u.last_name} {u.first_name}".strip() if u else ""

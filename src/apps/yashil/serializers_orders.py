@@ -65,22 +65,22 @@ class LineOutSerializer(serializers.ModelSerializer):
         model = OrderLine
         fields = ("id", "catalog_item", "qty", "unit_cyr", "attrs_note", "position", "accepted_qty", "remaining_qty")
 
-    def get_qty(self, obj):
+    def get_qty(self, obj) -> str | None:
         return _dec(obj.qty)
 
     def _accepted(self, obj):
         table = self.context.get("accepted_by_line")
         return table.get(obj.id, Decimal("0")) if table is not None else None
 
-    def get_accepted_qty(self, obj):
+    def get_accepted_qty(self, obj) -> str | None:
         a = self._accepted(obj)
         return _dec(a) if a is not None else None
 
-    def get_remaining_qty(self, obj):
+    def get_remaining_qty(self, obj) -> str | None:
         a = self._accepted(obj)
         return _dec(obj.qty - a) if a is not None else None
 
-    def get_unit_cyr(self, obj):
+    def get_unit_cyr(self, obj) -> str | None:
         return UNIT_LABELS.get(obj.catalog_item.unit, (obj.catalog_item.unit,))[0]
 
 
@@ -136,7 +136,7 @@ class OrderEventSerializer(serializers.ModelSerializer):
         model = OrderEvent
         fields = ("id", "action", "from_state", "to_state", "actor_name", "actor_label", "comment", "reason_code", "payload", "created_at")
 
-    def get_actor_name(self, obj):
+    def get_actor_name(self, obj) -> str | None:
         u = obj.actor_user
         return f"{u.last_name} {u.first_name}".strip() if u else ""
 
@@ -149,7 +149,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         model = OrderAttachment
         fields = ("id", "version_no", "original_name", "size", "kind", "url", "created_at")
 
-    def get_url(self, obj):
+    def get_url(self, obj) -> str | None:
         """Nisbiy URL (frontend o'z origin'iga qo'shadi); himoyalangan papka uchun imzoli `?t=`."""
         if not obj.file or not obj.file.name:
             return None
@@ -177,15 +177,15 @@ class OrderListSerializer(serializers.ModelSerializer):
             "late_workdays", "overdue_stage",
         )
 
-    def get_state_cyr(self, obj):
+    def get_state_cyr(self, obj) -> str | None:
         return STATE_LABELS_CYR.get(obj.state, obj.state)
 
-    def get_deadline(self, obj):
+    def get_deadline(self, obj) -> dict | None:
         from apps.yashil.services.transitions import deadline_info
 
         return deadline_info(obj)
 
-    def get_area_ha(self, obj):
+    def get_area_ha(self, obj) -> str | None:
         return _dec(obj.area_ha)
 
 
@@ -226,51 +226,51 @@ class OrderDetailSerializer(OrderListSerializer):
         self.context["accepted_by_line"] = accepted_by_line(instance)
         return super().to_representation(instance)
 
-    def get_cancel_request(self, o):
+    def get_cancel_request(self, o) -> dict | None:
         """Ochiq (yoki oxirgi) bekor qilish so'rovi — buyurtma kartasidagi kelishuv tugmalari uchun."""
         from apps.yashil.serializers_cancel import CancelRequestSerializer
 
         req = o.cancel_requests.select_related("requested_by_membership__user", "agreed_by", "approved_by", "document__current_version").first()
         return CancelRequestSerializer(req, context=self.context).data if req else None
 
-    def get_acts(self, o):
+    def get_acts(self, o) -> list[dict]:
         from apps.yashil.serializers_acts import ActListSerializer
 
         qs = o.acts.select_related("order__mahalla", "order__supplier_org", "current_version").order_by("index")
         return ActListSerializer(qs, many=True, context=self.context).data
 
-    def get_mahalla(self, o):
+    def get_mahalla(self, o) -> dict | None:
         m = o.mahalla
         return {"id": str(m.id), "name": m.name, "district": m.district.name, "region": m.region.name, "source_code": m.source_code}
 
-    def get_supplier(self, o):
+    def get_supplier(self, o) -> dict | None:
         p = getattr(o.supplier_org, "supplier_profile", None)
         return {"id": str(o.supplier_org_id), "name": p.display_name if p else o.supplier_org.name, "supplier_type": p.supplier_type if p else o.route}
 
-    def get_union_unit(self, o):
+    def get_union_unit(self, o) -> dict | None:
         return {"id": str(o.union_unit_id), "name": o.union_unit.name} if o.union_unit_id else None
 
-    def get_object_type(self, o):
+    def get_object_type(self, o) -> dict | None:
         t = o.object_type
         return {"id": str(t.id), "code": t.code, "name_cyr": t.name_cyr, "name_lat": t.name_lat} if t else None
 
-    def get_season(self, o):
+    def get_season(self, o) -> dict | None:
         s = o.season
         return {"id": str(s.id), "year": s.year, "kind": s.kind, "label_cyr": s.label_cyr} if s else None
 
-    def get_actions(self, o):
+    def get_actions(self, o) -> list[str]:
         from apps.yashil.services.transitions import allowed_actions
 
         return allowed_actions(o, self.context.get("cabinet"))
 
-    def get_last_return(self, o):
+    def get_last_return(self, o) -> dict | None:
         ev = next((e for e in reversed(list(o.events.all())) if e.action == "return"), None)
         if not ev:
             return None
         return {"comment": ev.comment, "reason_code": ev.reason_code, "by": ev.payload.get("by"),
                 "fields": ev.payload.get("fields", []), "at": ev.created_at.isoformat(timespec="seconds"), "actor": ev.actor_label}
 
-    def get_acceptance(self, o):
+    def get_acceptance(self, o) -> dict | None:
         """Ijroga qabul natijasi: ombor, ajratish qatorlari, yetishmovchilik (TZ §9.2)."""
         from apps.yashil.models import Acceptance
 
@@ -284,13 +284,13 @@ class OrderDetailSerializer(OrderListSerializer):
             "accepted_by": f"{acc.accepted_by.last_name} {acc.accepted_by.first_name}".strip(),
         }
 
-    def get_lat(self, o):
+    def get_lat(self, o) -> str | None:
         return _dec(o.lat)
 
-    def get_lon(self, o):
+    def get_lon(self, o) -> str | None:
         return _dec(o.lon)
 
-    def get_area_calc_ha(self, o):
+    def get_area_calc_ha(self, o) -> str | None:
         return _dec(o.area_calc_ha)
 
 
@@ -322,7 +322,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = YashilNotification
         fields = ("id", "kind", "title", "body", "order", "order_number", "read_at", "created_at")
 
-    def get_order_number(self, obj):
+    def get_order_number(self, obj) -> str | None:
         return obj.order.display_number if obj.order_id else None
 
 

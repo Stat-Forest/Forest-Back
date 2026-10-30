@@ -5,6 +5,7 @@ Kabinet va ko'lam (TZ §2 jadval, §2.2).
     is_module_admin(user)            -> bool
     resolve_cabinet(user, header)    -> YashilMembership | None     (header yot bo'lsa CabinetForbidden)
     visible_mahalla_ids(membership)  -> set[UUID] | None            None = cheklovsiz
+    observer_supplier_profiles(m)    -> QuerySet[SupplierProfile]   kuzatuvchi ombor ko'lami
 
 Qoidalar:
 - mahalla a'zosi — faqat o'z mahallasi;
@@ -118,6 +119,28 @@ def visible_mahalla_ids(membership, on: date | None = None):
             .values_list("id", flat=True)
         )
     return set()
+
+
+def observer_supplier_profiles(membership, queryset=None):
+    """
+    Kuzatuvchi ko'radigan yetkazib beruvchilar (ombor, quvvat): ko'lamidagi biror mahallaga xizmat qiluvchilar —
+    o'rmon xo'jaligi biriktirish orqali, DM xizmat hududi orqali (hududsiz DM — butun respublika).
+    Respublika kuzatuvchisi — hammasi.
+    """
+    qs = SupplierProfile.objects.all() if queryset is None else queryset
+    ids = visible_mahalla_ids(membership)
+    if ids is None:
+        return qs
+    if not ids:
+        return qs.none()
+    mahallas = Mahalla.objects.filter(id__in=ids)
+    forest_orgs = SupplierAssignment.objects.filter(mahalla_id__in=ids).values("organization_id")
+    dm_area = (Q(service_regions__in=mahallas.values("region_id")) | Q(service_districts__in=mahallas.values("district_id"))
+               | (Q(service_regions__isnull=True) & Q(service_districts__isnull=True)))
+    return qs.filter(
+        (Q(supplier_type=SupplierProfile.SupplierType.FOREST) & Q(organization_id__in=forest_orgs))
+        | (Q(supplier_type=SupplierProfile.SupplierType.DM) & dm_area)
+    ).distinct()
 
 
 def scope_mahallas(queryset, membership, field: str = "id"):

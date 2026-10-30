@@ -22,6 +22,7 @@ from apps.yashil.models import (
     ActLine,
     ActReturnReason,
     ActVersion,
+    CancelRequest,
     DocumentVersion,
     Order,
     OrderLine,
@@ -165,6 +166,9 @@ def create_act(order: Order, cabinet, *, delivery_date, lines, responsible="", n
         raise TransitionError("Далолатнома фақат ижродаги буюртма учун тузилади")
     if open_act(order) is not None:
         raise TransitionError("Бу буюртма бўйича очиқ далолатнома бор — аввал уни якунланг ёки бекор қилинг", code="act_in_progress")
+    if order.cancel_requests.filter(status__in=CancelRequest.OPEN_STATUSES).exists():
+        raise TransitionError("Буюртмани бекор қилиш сўрови кўриб чиқилмоқда — далолатнома тузилмайди",
+                              code="cancel_pending", status=409)
     _check_delivery_date(order, delivery_date)
     validated = _validate_lines(order, lines)
     index = (order.acts.count() or 0) + 1

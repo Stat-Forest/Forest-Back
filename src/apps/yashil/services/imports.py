@@ -61,7 +61,7 @@ def parse_date(value) -> date | None:
             return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
-    raise ValueError(f"Sana tushunarsiz: {s!r} (dd.mm.yyyy yoki yyyy-mm-dd)")
+    raise ValueError(f"Сана тушунарсиз: {s!r} (кк.оо.йййй ёки йййй-оо-кк)")
 
 
 def parse_bool(value, default=True) -> bool:
@@ -72,7 +72,7 @@ def parse_bool(value, default=True) -> bool:
         return True
     if s in FALSE_WORDS:
         return False
-    raise ValueError(f"Mantiqiy qiymat tushunarsiz: {value!r}")
+    raise ValueError(f"Ҳа/йўқ қиймати тушунарсиз: {value!r}")
 
 
 def text(value) -> str:
@@ -94,7 +94,7 @@ class Sheet:
             if key in row and row[key] not in (None, ""):
                 return row[key]
         if required:
-            raise ValueError(f"'{aliases[0]}' ustuni bo'sh")
+            raise ValueError(f"«{aliases[0]}» устуни бўш")
         return None
 
 
@@ -103,7 +103,7 @@ def read_sheet(source, required_headers: dict) -> Sheet:
     if isinstance(source, (str, Path)):
         path = Path(source)
         if not path.exists():
-            raise ImportFileError(f"Fayl topilmadi: {source}")
+            raise ImportFileError(f"Файл топилмади: {source}")
         fh = path.open("rb")
     else:
         fh = source
@@ -112,29 +112,29 @@ def read_sheet(source, required_headers: dict) -> Sheet:
         try:
             check_xlsx_zip(fh)
         except UnsafeExcelFile as exc:
-            raise ImportFileError(f"Excel fayl xavfsizlik tekshiruvidan o'tmadi: {exc}")
+            raise ImportFileError(f"Excel файл хавфсизлик текширувидан ўтмади: {exc}")
         fh.seek(0)
         try:
             wb = load_workbook(fh, read_only=True, data_only=True)
         except Exception as exc:  # noqa: BLE001 — buzilgan fayl
-            raise ImportFileError(f"Excel fayl o'qilmadi: {exc}")
+            raise ImportFileError(f"Excel файл ўқилмади: {exc}")
         ws = wb.active
         iterator = ws.iter_rows(values_only=True)
         try:
             header_row = next(iterator)
         except StopIteration:
-            raise ImportFileError("Fayl bo'sh")
+            raise ImportFileError("Файл бўш")
         headers = [norm_header(h) for h in header_row]
         missing = [aliases[0] for aliases in required_headers.values() if not any(norm_header(a) in headers for a in aliases)]
         if missing:
-            raise ImportFileError("Majburiy ustunlar topilmadi: " + ", ".join(missing))
+            raise ImportFileError("Мажбурий устунлар топилмади: " + ", ".join(missing))
         rows = []
         for idx, values in enumerate(iterator, start=2):
             if values is None or all(v in (None, "") for v in values):
                 continue
             rows.append((idx, {h: v for h, v in zip(headers, values) if h}))
             if len(rows) > MAX_ROWS:
-                raise ImportFileError(f"Juda ko'p qator (>{MAX_ROWS}) — faylni bo'ling")
+                raise ImportFileError(f"Қаторлар жуда кўп (>{MAX_ROWS}) — файлни бўлинг")
         wb.close()
         return Sheet(headers=headers, rows=rows)
     finally:
@@ -228,9 +228,9 @@ def import_mahallas(source, *, dry_run=False, partial=True, user=None) -> Import
         name = text(sheet.col(row, *H["name"], required=True))
         region, district = regions.get(region_code), districts.get(district_code)
         if region is None:
-            raise ValueError(f"viloyat kodi topilmadi: {region_code}")
+            raise ValueError(f"вилоят коди топилмади: {region_code}")
         if district is None or district.region_id != region.id:
-            raise ValueError(f"tuman kodi topilmadi yoki viloyatga mos emas: {district_code}")
+            raise ValueError(f"туман коди топилмади ёки вилоятга мос эмас: {district_code}")
         values = {"name": name, "region": region, "district": district, "address": text(sheet.col(row, "манзил", "manzil")),
                   "is_active": parse_bool(sheet.col(row, "фаол", "faol"), default=True)}
         valid_from = parse_date(sheet.col(row, "амал бошланиши", "amal boshlanishi"))
@@ -269,7 +269,7 @@ def find_org(value: str):
         pass
     org = Organization.objects.filter(name__iexact=value).first()
     if org is None:
-        raise ValueError(f"tashkilot topilmadi: {value}")
+        raise ValueError(f"ташкилот топилмади: {value}")
     return org
 
 
@@ -278,7 +278,7 @@ def _mahalla_by_code(code):
 
     mahalla = Mahalla.objects.filter(source_code=code).first()
     if mahalla is None:
-        raise ValueError(f"mahalla kodi topilmadi: {code}")
+        raise ValueError(f"маҳалла коди топилмади: {code}")
     return mahalla
 
 
@@ -326,7 +326,7 @@ def _find_unit(value: str):
         pass
     unit = UnionUnit.objects.filter(name__iexact=value).first()
     if unit is None:
-        raise ValueError(f"uyushma bo'linmasi topilmadi: {value}")
+        raise ValueError(f"уюшма бўлинмаси топилмади: {value}")
     return unit
 
 
@@ -378,7 +378,7 @@ def import_calendar(source, *, dry_run=False, partial=True, user=None, source_re
         elif kind_raw in HOLIDAY_WORDS:
             kind = CalendarDay.Kind.HOLIDAY
         else:
-            raise ValueError(f"turi tushunarsiz: {kind_raw!r} (байрам / иш куни)")
+            raise ValueError(f"тури тушунарсиз: {kind_raw!r} (байрам / иш куни)")
         values = {"kind": kind, "note": text(sheet.col(row, "изоҳ", "izoh", "note")), "source_ref": source_ref}
         existing = CalendarDay.objects.filter(date=day).first()
         if existing is None:
@@ -419,15 +419,15 @@ def import_opening_stock(source, *, cabinet, dry_run=False, partial=False) -> Im
         code = text(sheet.col(row, *H["code"], required=True))
         item = CatalogItem.objects.filter(code=code).first()
         if item is None:
-            raise ValueError(f"katalog kodi topilmadi: {code}")
+            raise ValueError(f"каталог коди топилмади: {code}")
         if code in seen:
-            raise ValueError(f"pozitsiya faylda takrorlangan: {code}")
+            raise ValueError(f"позиция файлда такрорланган: {code}")
         seen.add(code)
         raw = text(sheet.col(row, *H["qty"], required=True)).replace(" ", "").replace(",", ".")
         try:
             qty = Decimal(raw)
         except InvalidOperation:
-            raise ValueError(f"miqdor noto'g'ri: {raw!r}")
+            raise ValueError(f"миқдор нотўғри: {raw!r}")
         doc_number = text(sheet.col(row, *H["doc_number"], required=True))
         doc_date = parse_date(sheet.col(row, *H["doc_date"], required=True))
         ledger.post_opening(warehouse, item, qty, cabinet, doc_number=doc_number, doc_date=doc_date,

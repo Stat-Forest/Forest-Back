@@ -208,6 +208,10 @@ class OrderAttachmentAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def has_delete_permission(self, request, obj=None):
+        # imzolangan versiya fayllari tarixda qoladi (TZ §17.2); qoralama ilovasi API orqali o'chiriladi
+        return False
+
 
 class DocumentVersionInline(admin.TabularInline):
     model = DocumentVersion
@@ -353,6 +357,10 @@ class ActAttachmentAdmin(admin.ModelAdmin):
     readonly_fields = ("act", "file", "original_name", "size", "kind", "version_no", "uploaded_by")
 
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # imzolangan versiya fayllari tarixda qoladi (TZ §17.2); qoralama ilovasi API orqali o'chiriladi
         return False
 
 

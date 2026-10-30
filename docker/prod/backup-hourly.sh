@@ -6,7 +6,7 @@
 #   db/forest_<YYYY-mm-dd_HH>.dump           pg_dump -Fc (siqilgan, pg_restore bilan tiklanadi)
 #   db/forest_<YYYY-mm-dd_HH>.integrity.json yashil_integrity_check natijasi (tiklash sinovida solishtiriladi)
 #   media/<YYYY-mm-dd_HH>/                    media nusxasi (rsync --link-dest: faqat o'zgargan fayllar joy oladi)
-#   config/<YYYY-mm-dd>/                      kuniga bir marta: e-imzo kalitlari va .env fayllari (chmod 600)
+#   config/<YYYY-mm-dd>/                      kuniga bir marta: e-imzo kalitlari, .env fayllari, migratsiyalar (chmod 600)
 # Saqlash: soatlik — KEEP_HOURS (48) soat, har kungi 00 nusxa — KEEP_DAYS (30) kun.
 # Tashqi nusxa: OFFSITE_TARGET="user@host:/path" (rsync over ssh) — bo'lsa oxirgi nusxa yuboriladi.
 set -euo pipefail
@@ -69,6 +69,8 @@ if [ ! -d "$DEST/config/$DAY" ]; then
     for f in .env .env.postgres .env.eimzo; do
         [ -f "$ROOT/$f" ] && cp -a "$ROOT/$f" "$DEST/config/$DAY/$f"
     done
+    # Migratsiyalar gitda yo'q (entrypoint serverda yaratadi) — yangi serverga tiklashda aynan shular kerak
+    (cd "$ROOT/src" && find apps -path '*/migrations/0*.py' -print0 | tar --null -czf "$DEST/config/$DAY/migrations.tgz" -T -)
     chmod -R go-rwx "$DEST/config/$DAY"
 fi
 

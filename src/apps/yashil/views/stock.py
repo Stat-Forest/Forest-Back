@@ -25,6 +25,7 @@ from apps.yashil.serializers_stock import (
 )
 from apps.yashil.services import capacity as capacity_service
 from apps.yashil.services import ledger
+from apps.yashil.services import scope as scope_service
 from apps.yashil.services.ledger import LedgerError
 
 T = YashilMembership.MemberType
@@ -46,7 +47,10 @@ class _StockBase(CabinetMixin, APIView):
             if not wanted:
                 raise invalid_format("`organization` параметри керак", "organization")
             org = Organization.objects.filter(pk=wanted).first()
-            if org is None or not SupplierProfile.objects.filter(organization=org).exists():
+            profiles = SupplierProfile.objects.filter(organization=org)
+            if cab is not None and cab.member_type == T.OBSERVER:
+                profiles = scope_service.observer_supplier_profiles(cab, profiles)
+            if org is None or not profiles.exists():
                 raise not_found("Етказиб берувчи топилмади")
             return org
         raise YashilError("Омбор фақат етказиб берувчи ва кузатувчи кабинетида", error_code="forbidden", status_code=403)
@@ -90,7 +94,9 @@ class StockOrganizationsView(_StockBase):
         cab = self.cabinet
         if cab is not None and cab.member_type == T.SUPPLIER:
             profiles = SupplierProfile.objects.filter(organization_id=cab.organization_id)
-        elif self.is_admin or (cab is not None and cab.member_type == T.OBSERVER):
+        elif cab is not None and cab.member_type == T.OBSERVER:
+            profiles = scope_service.observer_supplier_profiles(cab, SupplierProfile.objects.filter(is_active_supplier=True))
+        elif self.is_admin:
             profiles = SupplierProfile.objects.filter(is_active_supplier=True)
         else:
             raise YashilError("Омбор фақат етказиб берувчи ва кузатувчи кабинетида", error_code="forbidden", status_code=403)

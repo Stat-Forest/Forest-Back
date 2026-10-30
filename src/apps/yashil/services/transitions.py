@@ -52,15 +52,15 @@ def _forbidden(message="Бу амал учун ваколат йўқ", code="for
 
 
 def _is_union_for(order, cabinet) -> bool:
-    return cabinet.member_type == T.UNION and order.union_unit_id == cabinet.union_unit_id
+    return cabinet is not None and cabinet.member_type == T.UNION and order.union_unit_id == cabinet.union_unit_id
 
 
 def _is_supplier_for(order, cabinet) -> bool:
-    return cabinet.member_type == T.SUPPLIER and order.supplier_org_id == cabinet.organization_id
+    return cabinet is not None and cabinet.member_type == T.SUPPLIER and order.supplier_org_id == cabinet.organization_id
 
 
 def _is_mahalla_for(order, cabinet) -> bool:
-    return cabinet.member_type == T.MAHALLA and order.mahalla_id == cabinet.mahalla_id
+    return cabinet is not None and cabinet.member_type == T.MAHALLA and order.mahalla_id == cabinet.mahalla_id
 
 
 def _label(cabinet) -> str:
