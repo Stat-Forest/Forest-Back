@@ -157,7 +157,7 @@ class SignAndApproveTest(ActBase):
         self.assertEqual((dv.document.kind, dv.document.number, dv.status), ("act", "YM-2027-000001/A1", "partly_signed"))
         self.assertEqual(dv.content["date"], "15.01.2027")
         self.assertEqual(list(dv.signatures.values_list("role", flat=True)), ["supplier"])
-        self.assertIn("ТОПШИРИШ", dv.html)
+        self.assertIn("TOPSHIRISH", dv.html)
         self.assertEqual(YashilNotification.objects.filter(kind="act_sent", recipient_user=self.m_user).count(), 1)
         # ombor o'zgarmagan (Q16)
         self.assertEqual(ledger.balance(ledger.default_warehouse(self.forest), self.ash), Decimal("-100"))
@@ -279,7 +279,7 @@ class ActVerifyPayloadTest(ActBase):
         dv = act.current_version.document_version
         p = public_verify_payload(dv)
         self.assertEqual((p["doc_type"], p["status"], p["missing_roles"]), ("act", "pending_signature", ["mahalla"]))
-        self.assertEqual(p["parties"], {"mahalla": "Боғистон маҳалласи", "supplier": "Намуна ўрмон хўжалиги"})
+        self.assertEqual(p["parties"], {"mahalla": "Bog'iston mahallasi", "supplier": "Namuna o'rmon xo'jaligi"})  # uz hujjat — lotin
         with patch("django.utils.timezone.now", return_value=LATER):
             act_service.return_act(act, self.m_cab, reason_code="quantity", comment="x")
             act_service.update_act(act, self.s_cab, delivery_date=date(2027, 1, 14), lines=self.lines(ash="50"), responsible="x", note="")

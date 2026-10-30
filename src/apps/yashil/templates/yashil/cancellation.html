@@ -1,6 +1,6 @@
-<!doctype html>
-<html lang="uz"><head><meta charset="utf-8">
-<title>Бекор қилиш ҳужжати {{ c.number }}</title>
+{% load yashil_doc %}<!doctype html>
+<html lang="{{ c.lang|default:'uz' }}"><head><meta charset="utf-8">
+<title>{% d "Бекор қилиш ҳужжати" %} {{ c.number }}</title>
 <style>
   body{font:14px/1.6 Arial,sans-serif;color:#000;max-width:820px;margin:32px auto;padding:0 16px}
   .muted{color:#555;font-size:12px}h1{font-size:20px;margin:18px 0 6px;text-align:center}.center{text-align:center}
@@ -8,12 +8,12 @@
   th,td{border:1px solid #bbb;padding:6px 8px;vertical-align:top}th{background:#e8eef2;text-align:left}
   .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid #999}
 </style></head><body>
-<h1>БУЮРТМАНИ БЕКОР ҚИЛИШ ҲУЖЖАТИ</h1>
-<p class="center">Рақами: <b>{{ c.number }}</b> &nbsp;&nbsp; Буюртма: <b>{{ c.order_number }}</b> &nbsp;&nbsp; Сана: <b>{{ c.date }}</b></p>
-<p>Маҳалла: {{ c.mahalla_name }}.<br>Етказиб берувчи: {{ c.supplier_name }}.<br>Сўровчи: {{ c.requested_by }}.<br>Келишган: {{ c.agreed_by }}.<br>Тасдиқлаган (уюшма): {{ c.approved_by }}.</p>
-<p>Сабаб: {{ c.reason }}</p>
-<table><thead><tr><th style="width:40px">Т/р</th><th>Маҳсулот ёки хизмат</th><th>Буюртма</th><th>Қабул қилинган</th><th>Бекор қилинган</th><th>Бирлик</th></tr></thead>
+<h1>{% d "БУЮРТМАНИ БЕКОР ҚИЛИШ ҲУЖЖАТИ" %}</h1>
+<p class="center">{% d "Рақами" %}: <b>{{ c.number }}</b> &nbsp;&nbsp; {% d "Буюртма" %}: <b>{{ c.order_number }}</b> &nbsp;&nbsp; {% d "Сана" %}: <b>{{ c.date }}</b></p>
+<p>{% d "Маҳалла: {0}." c.mahalla_name %}<br>{% d "Етказиб берувчи: {0}." c.supplier_name %}<br>{% d "Сўровчи: {0}." c.requested_by %}<br>{% d "Келишган: {0}." c.agreed_by %}<br>{% d "Тасдиқлаган (уюшма): {0}." c.approved_by %}</p>
+<p>{% d "Сабаб: {0}" c.reason %}</p>
+<table><thead><tr><th style="width:40px">{% d "Т/р" %}</th><th>{% d "Маҳсулот ёки хизмат" %}</th><th>{% d "Буюртма" %}</th><th>{% d "Қабул қилинган" %}</th><th>{% d "Бекор қилинган" %}</th><th>{% d "Бирлик" %}</th></tr></thead>
 <tbody>{% for l in c.lines %}<tr><td>{{ l.n }}</td><td>{{ l.name }}</td><td>{{ l.ordered_qty }}</td><td>{{ l.accepted_qty }}</td><td>{{ l.cancelled_qty }}</td><td>{{ l.unit }}</td></tr>{% endfor %}</tbody></table>
-<p>Якуний ҳолат: <span class="badge">{{ c.result_cyr }}</span></p>
-<p class="muted">Ҳужжат IDси: {{ version.qr_token }} · Текшириш: {{ verify_url }}<br>Бекор қилиш уч томонлама электрон келишув асосида тизим томонидан расмийлаштирилган; имзоланган буюртманома ва далолатномалар ўзгартирилмайди.</p>
+<p>{% d "Якуний ҳолат" %}: <span class="badge">{{ c.result_label|default:c.result_cyr }}</span></p>
+<p class="muted">{% d "Ҳужжат IDси" %}: {{ version.qr_token }} · {% d "Текшириш" %}: {{ verify_url }}<br>{% d "Бекор қилиш уч томонлама электрон келишув асосида тизим томонидан расмийлаштирилган; имзоланган буюртманома ва далолатномалар ўзгартирилмайди." %}</p>
 </body></html>

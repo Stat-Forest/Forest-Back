@@ -8,7 +8,7 @@ from django.utils import translation
 
 from apps.yashil.models import YashilNotification
 from apps.yashil.services import lang
-from apps.yashil.services.lang_ru import RU
+from apps.yashil.services.lang_ru import DOC_RU, RU
 from apps.yashil.tests._common import BASE
 from apps.yashil.tests.test_order_api import OrderApiBase
 
@@ -80,9 +80,9 @@ NOT_MESSAGES = {
     "каталог коди", "позиция коди", "миқдор", "қолдиқ", "ҳужжат рақами", "асос ҳужжат", "ҳужжат санаси", "манзил", "изоҳ",
     "иш куни", "ишкуни", "кўчирилган иш куни", "байрам", "дам олиш", "дам олиш куни",
 }
-# Hujjat mazmuni (C bosqich), hujjatlashtirish va konsol buyruqlari
+# Hujjatlashtirish, konsol buyruqlari va tekshiruv xabarlari (hujjat matni — DOC_RU, quyida tekshiriladi)
 SKIP_FILES = {"openapi.py", "schema.py", "acceptance.py", "conf.py", "admin.py",
-              "services/protocol.py", "services/pdf.py", "services/documents.py", "services/readiness.py",
+              "services/protocol.py", "services/readiness.py",
               "services/integrity.py", "services/lang.py", "services/lang_ru.py"}
 
 
@@ -134,6 +134,8 @@ class CatalogCoverageTest(SimpleTestCase):
             if len(text) <= 1 or text in NOT_MESSAGES:
                 continue
             # "...: " + qo'shimcha va " (…)" qo'shimchasi katalogda {0} bilan
+            if text in DOC_RU:
+                continue
             key = text if text in RU else (text + "{0}" if text + "{0}" in RU else "{0}" + text)
             if key not in RU:
                 missing.append(f"{where}: {text!r}")

@@ -227,7 +227,7 @@ class ReviewFlowTest(OrderApiBase):
         self.as_(self.m_user)
         html = self.client.get(f"{BASE}/documents/{v.pk}/html/")
         self.assertEqual(html.status_code, 200)
-        self.assertIn("Ҳақиқий", html.content.decode())
+        self.assertIn("Haqiqiy", html.content.decode())
 
 
 class AttachmentsAndNotificationsTest(OrderApiBase):

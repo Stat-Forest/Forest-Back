@@ -1,6 +1,6 @@
-{% load static %}<!doctype html>
-<html lang="uz"><head><meta charset="utf-8">
-<title>Буюртманома {{ c.number }}</title>
+{% load yashil_doc %}<!doctype html>
+<html lang="{{ c.lang|default:'uz' }}"><head><meta charset="utf-8">
+<title>{% d "Буюртманома" %} {{ c.number }}</title>
 <style>
   body{font:14px/1.6 Arial,sans-serif;color:#000;max-width:820px;margin:32px auto;padding:0 16px}
   .right{text-align:right}.muted{color:#555;font-size:12px}
@@ -11,19 +11,19 @@
   .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid #999}
   @media print{body{margin:0}}
 </style></head><body>
-<p class="right">{{ c.supplier_name }}га<br>{{ c.region }}, {{ c.district }}даги<br>{{ c.mahalla_name }} номидан</p>
-<h1>Буюртманома</h1>
-<p>Рақами: <b>{{ c.number }}</b> &nbsp;&nbsp; Сана: <b>{{ c.date|default:"—" }}</b> &nbsp;&nbsp; Версия: <b>{{ c.version_no }}</b></p>
-<p>Ўзбекистон Республикаси Президентининг 2026 йил 23 сентябрдаги ПФ-206-сон Фармонига асосан {{ c.full_address }} манзилида, {{ c.point }} жойлашув нуқтасидаги {{ c.area_ha }} гектар ҳудудда «Яшил маҳалла» ташкил этиш учун қуйидаги {{ c.subject_phrase }} бўйича буюртма берилмоқда.</p>
-<p>Объект номи: {{ c.title }}.{% if c.object_type %} Объект тури: {{ c.object_type }}.{% endif %}{% if c.season %} Мавсум: {{ c.season }}.{% endif %}<br>
-Жойлашув нуқтаси: {{ c.point }} (WGS84).<br>Етказиб берувчи: {{ c.supplier_name }}.</p>
-<table><thead><tr><th style="width:40px">Т/р</th><th>Маҳсулот ёки хизмат номи ва хусусияти</th><th style="width:110px">Миқдор</th><th style="width:110px">Ўлчов бирлиги</th></tr></thead>
+<p class="right">{% d "{0}га" c.supplier_name %}<br>{% d "{0}, {1}даги" c.region c.district %}<br>{% d "{0} номидан" c.mahalla_name %}</p>
+<h1>{% d "Буюртманома" %}</h1>
+<p>{% d "Рақами" %}: <b>{{ c.number }}</b> &nbsp;&nbsp; {% d "Сана" %}: <b>{{ c.date|default:"—" }}</b> &nbsp;&nbsp; {% d "Версия" %}: <b>{{ c.version_no }}</b></p>
+<p>{% d "Ўзбекистон Республикаси Президентининг 2026 йил 23 сентябрдаги ПФ-206-сон Фармонига асосан {0} манзилида, {1} жойлашув нуқтасидаги {2} гектар ҳудудда «Яшил маҳалла» ташкил этиш учун қуйидаги {3} бўйича буюртма берилмоқда." c.full_address c.point c.area_ha c.subject_phrase %}</p>
+<p>{% d "Объект номи: {0}." c.title %}{% if c.object_type %} {% d "Объект тури: {0}." c.object_type %}{% endif %}{% if c.season %} {% d "Мавсум: {0}." c.season %}{% endif %}<br>
+{% d "Жойлашув нуқтаси: {0} (WGS84)." c.point %}<br>{% d "Етказиб берувчи: {0}." c.supplier_name %}</p>
+<table><thead><tr><th style="width:40px">{% d "Т/р" %}</th><th>{% d "Маҳсулот ёки хизмат номи ва хусусияти" %}</th><th style="width:110px">{% d "Миқдор" %}</th><th style="width:110px">{% d "Ўлчов бирлиги" %}</th></tr></thead>
 <tbody>{% for l in c.lines %}<tr><td>{{ l.n }}</td><td>{{ l.name }}{% if l.attrs %} <span class="muted">({{ l.attrs }})</span>{% endif %}</td><td>{{ l.qty }}</td><td>{{ l.unit }}</td></tr>{% endfor %}</tbody></table>
-<p>Қўшимча маълумот: {{ c.extra_info|default:"—" }}.<br>Иловалар: {{ c.attachments_text }}.</p>
-<p><b>Буюртма берувчи</b><br>Маҳалла: {{ c.mahalla_name }}.<br>Ваколатли шахс: {{ c.signer.full_name|default:"—" }}.<br>Лавозими ва ваколат асоси: {{ c.signer.position|default:"—" }}{% if c.signer.authority %}, {{ c.signer.authority }}{% endif %}.<br>Алоқа рақами: {{ c.signer.phone|default:"—" }}.</p>
-<div class="sign"><b>Электрон тасдиқ</b><br>
-{% if signed %}Имзолаш усули: E-IMZO ({{ signature.mode }}).<br>Имзоланган сана ва вақт: {{ signature.signed_at|date:"d.m.Y H:i" }} (Asia/Tashkent).<br>Имзоловчи: {{ signature.signer_cn }}.<br>Ҳужжат IDси: {{ version.qr_token }} &nbsp; Имзо ҳолати: <span class="badge">Ҳақиқий</span>
-{% else %}Имзо ҳолати: <span class="badge">Имзоланмаган</span><br>Ҳужжат IDси: {{ version.qr_token }}{% endif %}
-<br><span class="muted">Текшириш: {{ verify_url }}</span></div>
-<p class="muted">Қавсдаги майдонлар тизим маълумотлари билан тўлдирилган. QR-код ва имзо реквизитлари электрон имзолаш натижасида қўйилади.</p>
+<p>{% d "Қўшимча маълумот: {0}." c.extra_info|default:"—" %}<br>{% d "Иловалар: {0}." c.attachments_text %}</p>
+<p><b>{% d "Буюртма берувчи" %}</b><br>{% d "Маҳалла: {0}." c.mahalla_name %}<br>{% d "Ваколатли шахс: {0}." c.signer.full_name|default:"—" %}<br>{% d "Лавозими ва ваколат асоси: {0}." signer_position %}<br>{% d "Алоқа рақами: {0}." c.signer.phone|default:"—" %}</p>
+<div class="sign"><b>{% d "Электрон тасдиқ" %}</b><br>
+{% if signed %}{% d "Имзолаш усули: E-IMZO ({0})." signature.mode %}<br>{% d "Имзоланган сана ва вақт: {0} (Asia/Tashkent)." signature.signed_at|date:"d.m.Y H:i" %}<br>{% d "Имзоловчи: {0}." signature.signer_cn %}<br>{% d "Ҳужжат IDси" %}: {{ version.qr_token }} &nbsp; {% d "Имзо ҳолати" %}: <span class="badge">{% d "Ҳақиқий" %}</span>
+{% else %}{% d "Имзо ҳолати" %}: <span class="badge">{% d "Имзоланмаган" %}</span><br>{% d "Ҳужжат IDси" %}: {{ version.qr_token }}{% endif %}
+<br><span class="muted">{% d "Текшириш" %}: {{ verify_url }}</span></div>
+<p class="muted">{% d "Қавсдаги майдонлар тизим маълумотлари билан тўлдирилган. QR-код ва имзо реквизитлари электрон имзолаш натижасида қўйилади." %}</p>
 </body></html>
