@@ -61,6 +61,10 @@ if [ -f "$SNAP" ]; then
     cp "$SNAP" "$WORK/snapshot.json"
     COMPARE="--compare /restore/snapshot.json"
 fi
+# Skript root sifatida ishlaydi (umask 077), app image esa UID 1000 bilan — tekshiruv konteyneri
+# nusxalarni o'qiy olishi uchun ish papkasini image foydalanuvchisiga beramiz
+APP_UID="${APP_UID:-$(docker run --rm --entrypoint id "$APP_IMAGE" -u)}"
+chown -R "$APP_UID" "$WORK"
 set +e
 docker run --rm --network "$NET" --env-file "$ROOT/.env" \
     -e DB_HOST="$PG" -e DB_PORT=5432 -e POSTGRES_DB=forest_restore -e POSTGRES_USER=forest_restore -e POSTGRES_PASSWORD="$DBPASS" \
