@@ -218,6 +218,70 @@ class ContractUpdateTest(ContractApiTestBase):
         self.assertIn("is_legal_entity", resp.data["renter"])
 
 
+class ContractNumberAndSharedRenterTest(ContractApiTestBase):
+    """Prod xatolari: eski takror raqam tufayli tahrir saqlanmasdi; umumiy ijarachi ikki shartnomani bog'lab qo'yardi."""
+
+    def full_patch(self, data, **renter):
+        payload = contract_payload(self.ref, contract_number=data["contract_number"])
+        payload["renter"] = {
+            "id": str(data["renter"]["id"]), "pinfl": data["renter"]["pinfl"], "stir": data["renter"]["stir"],
+            "full_name": data["renter"]["full_name"], "phone": data["renter"]["phone"], **renter,
+        }
+        for section in ("lands", "activities", "privileges", "action_products", "yearly_amounts"):
+            payload.pop(section)
+        return self.client.patch(f"{URL}{data['id']}/", payload, format="json")
+
+    def test_same_number_allowed_in_other_xojalik(self):
+        self.create(contract_number="5")
+        other = make_reference(code="11:11:11", inn="987654321", name="Boshqa DÒX")
+        resp = self.client.post(URL, contract_payload(other, contract_number="5", pinfl="22222222222222"), format="json")
+        self.assertEqual(resp.status_code, 201, resp.data)
+
+    def test_edit_saves_despite_legacy_duplicate_number(self):
+        a = self.create(contract_number="000031")
+        b = self.create(contract_number="TMP", pinfl="22222222222222")
+        Contract.objects.filter(id=b["id"]).update(contract_number="000031")  # importdan qolgan takror
+        b = self.client.get(f"{URL}{b['id']}/").data
+        resp = self.full_patch(b, phone="+998907776655")
+        self.assertEqual(resp.status_code, 200, resp.data)
+        resp = self.client.patch(f"{URL}{a['id']}/", {"contract": {"contract_number": "000031", "rent_area": "3"}}, format="json")
+        self.assertEqual(resp.status_code, 200, resp.data)
+
+    def test_changing_number_to_existing_in_same_xojalik_rejected(self):
+        self.create(contract_number="7")
+        b = self.create(contract_number="8", pinfl="22222222222222")
+        resp = self.client.patch(f"{URL}{b['id']}/", {"contract": {"contract_number": "7"}}, format="json")
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("contract_number", resp.data["errors"]["contract"])
+
+    def test_rename_of_shared_renter_via_one_contract_rejected(self):
+        a = self.create(contract_number="009")
+        b = self.create(contract_number="27")  # bir xil JSHSHIR — bitta ijarachi
+        self.assertEqual(a["renter"]["id"], b["renter"]["id"])
+        resp = self.full_patch(b, full_name="Dream taym logistika")
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("pinfl", resp.data["errors"]["renter"])
+        self.assertEqual(Renter.objects.get(id=a["renter"]["id"]).full_name, "Test Renter")
+
+    def test_shared_renter_with_new_identity_moves_only_this_contract(self):
+        a = self.create(contract_number="009")
+        b = self.create(contract_number="27")
+        resp = self.full_patch(b, pinfl="", stir="301234567", full_name="Dream taym logistika")
+        self.assertEqual(resp.status_code, 200, resp.data)
+        self.assertNotEqual(str(resp.data["renter"]["id"]), str(a["renter"]["id"]))
+        self.assertEqual(resp.data["renter"]["full_name"], "Dream taym logistika")
+        old = Renter.objects.get(id=a["renter"]["id"])
+        self.assertEqual((old.full_name, old.pinfl), ("Test Renter", "12345678901234"))
+        self.assertEqual(Contract.objects.get(id=a["id"]).renter_id, old.id)
+
+    def test_shared_renter_contact_update_still_applies(self):
+        a = self.create(contract_number="009")
+        b = self.create(contract_number="27")
+        resp = self.full_patch(b, phone="+998935554433")
+        self.assertEqual(resp.status_code, 200, resp.data)
+        self.assertEqual(Renter.objects.get(id=a["renter"]["id"]).phone, "+998935554433")
+
+
 class ContractListAndStatsTest(ContractApiTestBase):
     def setUp(self):
         super().setUp()
@@ -304,6 +368,11 @@ class ContractListAndStatsTest(ContractApiTestBase):
         self.assertEqual(row["debt"], 600.0)
         self.assertEqual(row["activity_name"], "ўрмон барпо қилиш")
         self.assertEqual(self.client.get(f"{URL}geo-list/", {"status": "all"}).data["count"], 1)  # b'da koordinata yo'q
+
+    def test_geo_list_summary_has_no_rows(self):
+        resp = self.client.get(f"{URL}geo-list/", {"summary": 1})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, {"count": 1, "results": []})
 
     def test_renters_and_reference_lists(self):
         resp = self.client.get(f"{BASE}/renters/", {"search": "Test"})

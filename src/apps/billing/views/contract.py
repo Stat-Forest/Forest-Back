@@ -245,9 +245,11 @@ class ContractViewSet(viewsets.GenericViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         if not request.query_params.get("status"):
             queryset = queryset.filter(status=Contract.Status.ACTIVE)
-        queryset = queryset.filter(
-            Q(latitude__isnull=False) | Q(boundary_geojson__isnull=False)
-        ).prefetch_related(Prefetch("activities", queryset=ContractActivity.objects.select_related("type")))
+        queryset = queryset.filter(Q(latitude__isnull=False) | Q(boundary_geojson__isnull=False))
+        # `?summary=1` — xarita filtrsiz ochilganda faqat soni (shartnomalar filtrdan keyin chiziladi)
+        if str(request.query_params.get("summary", "")).lower() in ("1", "true"):
+            return Response({"count": queryset.count(), "results": []})
+        queryset = queryset.prefetch_related(Prefetch("activities", queryset=ContractActivity.objects.select_related("type")))
 
         results = []
         for contract in queryset:

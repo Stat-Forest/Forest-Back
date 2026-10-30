@@ -87,13 +87,20 @@ class ContractWriteSerializer(serializers.ModelSerializer):
         ):
             errors["rent_area"] = "Ijara maydoni kiritilishi shart (0 dan katta)"
 
+        # Raqam xo'jalik ichida takrorlanmasin ("5", "20" kabi raqamlar turli xo'jaliklarda
+        # bor). Tahrirlashda raqam/xo'jalik o'zgarmagan bo'lsa tekshirilmaydi — import
+        # qilingan eski takrorlar tufayli shartnomani saqlab bo'lmay qolardi.
         contract_number = attrs.get("contract_number")
-        if contract_number:
-            clash = Contract.objects.filter(contract_number=contract_number)
+        number_changed = self.instance is None or (
+            contract_number != self.instance.contract_number
+            or (xojalik is not None and xojalik.id != self.instance.xojalik_id)
+        )
+        if contract_number and number_changed and xojalik is not None:
+            clash = Contract.objects.filter(contract_number=contract_number, xojalik=xojalik)
             if self.instance:
                 clash = clash.exclude(pk=self.instance.pk)
             if clash.exists():
-                errors["contract_number"] = "Bu raqamli shartnoma tizimda allaqachon mavjud"
+                errors["contract_number"] = "Bu raqamli shartnoma shu xo'jalikda allaqachon mavjud"
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
