@@ -234,6 +234,14 @@ def _claims_renter(renter: Renter, data: dict) -> bool:
     return bool(name) and name == _norm_text(renter.full_name)
 
 
+def _renamed(renter: Renter, data: dict) -> bool:
+    """So'rovdagi ism (yoki yuridik nom) ijarachinikidan farq qiladimi (registr/bo'shliqsiz)."""
+    for field in ("full_name", "legal_name"):
+        if field in data and _norm_text(data.get(field)) and _norm_text(data.get(field)) != _norm_text(getattr(renter, field)):
+            return True
+    return False
+
+
 def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
     """
     `id` berilsa — shu ijarachi yangilanadi; yaratishda pinfl/stir bo'yicha
@@ -261,6 +269,12 @@ def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
         obj.save(update_fields=["created_by", "updated_by"] if target is None else ["updated_by"])
         return obj
 
+    # Tahrirlash formasi joriy ijarachining id'sini ham yuboradi — u holda pastdagi
+    # "umumiy ijarachi" mantig'i ishlashi kerak: aks holda ijarachi joyida
+    # yangilanib, unga ulangan BOSHQA shartnomalarda ham ism/INN o'zgarib ketardi.
+    if renter_id and instance is not None and str(renter_id) == str(instance.renter_id):
+        renter_id = None
+
     if renter_id:
         renter = Renter.objects.filter(id=renter_id).first() if is_uuid(renter_id) else None
         if renter is None or not _renter_in_scope(renter, instance, user):
@@ -280,6 +294,17 @@ def resolve_renter(data, instance: Contract | None, user) -> Renter | None:
     current = instance.renter
     identity_changed = ("pinfl" in data and pinfl != current.pinfl) or ("stir" in data and stir != current.stir)
     is_shared = Contract.objects.filter(renter=current).exclude(id=instance.id).exists()
+    if is_shared and not identity_changed and _renamed(current, data):
+        # INN/JSHSHIR bitta — demak bitta ijarachi; uning nomini shu shartnoma orqali
+        # o'zgartirish boshqa shartnomalarni ham o'zgartirib yuborardi (ko'pincha
+        # boshqa tashkilot xato INN bilan kiritilgan bo'ladi).
+        others = Contract.objects.filter(renter=current).exclude(id=instance.id).count()
+        message = (
+            f"Bu INN/JSHSHIR yana {others} ta shartnomada «{current.legal_name or current.full_name}» nomi bilan "
+            "ishlatilgan. Boshqa ijarachi bo'lsa — uning o'z INN/JSHSHIRini kiriting."
+        )
+        raise BillingValidationError.field("renter", "pinfl" if current.pinfl else "stir", message)
+
     target = current
     if identity_changed and is_shared and (pinfl or stir):
         target = find_renter(pinfl, stir, exclude_id=current.id)
