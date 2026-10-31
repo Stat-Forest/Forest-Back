@@ -22,7 +22,7 @@ from apps.yashil.serializers import (
     SupplierSerializer,
     UnionUnitSerializer,
 )
-from apps.yashil.services import lang, rules
+from apps.yashil.services import lang, norms, rules
 from apps.yashil.services import scope as scope_service
 from apps.yashil.services.workdays import (
     add_workdays,
@@ -135,6 +135,7 @@ class SuppliersForMahallaView(YashilAPIView):
             "dm": {"options": SupplierSerializer(scope_service.dm_suppliers_for(mahalla), many=True).data},
             "union": UnionUnitSerializer(route.union_unit).data if route else None,
             "union_message": None if route else lang.tr(scope_service.NOT_ROUTED_UNION),
+            "map": {"bounds": norms.region_bounds(mahalla.region_id), "limits": norms.UZ_BOUNDS},
         })
 
 

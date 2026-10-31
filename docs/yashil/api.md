@@ -49,7 +49,7 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | 403 | Ваколат йўқ | `forbidden`, `cabinet_forbidden`, `not_member`, `cannot_prepare`, `cannot_sign`, `signer_mismatch` |
 | 404 | Объект топилмади ёки очиш ҳуқуқи йўқ | `not_found` |
 | 409 | Версия ёки ҳолат тўқнашуви | `version_conflict`, `state_conflict`, `idempotency_mismatch`, `act_in_progress`, `cancel_pending`, `acceptance_exists` |
-| 422 | Бизнес қоидаси | `qty_exceeds_remaining`, `norm_violation`, `stock_insufficient`, `reason_required`, `comment_required`, `import_has_errors`, … |
+| 422 | Бизнес қоидаси | `qty_exceeds_remaining`, `norm_violation`, `map_outside` (нуқта Ўзбекистондан ташқарида), `stock_insufficient`, `reason_required`, `comment_required`, `import_has_errors`, … |
 | 429 | Сўров лимити | `rate_limited`, `too_many_exports` |
 | 503 | Ташқи хизмат (E-IMZO) вақтинча ишламайди | `eimzo_unavailable` |
 
@@ -113,7 +113,7 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | GET | `/reference/object-types/` | Объект турлари |
 | GET | `/reference/regions/` | Вилоятлар |
 | GET | `/reference/seasons/` | Мавсумлар |
-| GET | `/suppliers/for-mahalla/{mahalla_id}/` | Маҳалла учун етказиб берувчилар (асосий, муқобил, ДМ, уюшма) |
+| GET | `/suppliers/for-mahalla/{mahalla_id}/` | Маҳалла учун етказиб берувчилар (асосий, муқобил, ДМ, уюшма); `map.bounds` — вилоят ўрмон хўжаликлари ҳудуди (харитани очиш учун, йўқ бўлса `null`), `map.limits` — нуқта қабул қилинадиган чегара |
 
 ### Буюртмалар
 
