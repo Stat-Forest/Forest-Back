@@ -6,7 +6,7 @@ ilovalar, ko'rib chiqish segmentlari (3 ish kuni), jarayon jurnali.
 Raqam `YM-YYYY-NNNNNN` birinchi yuborishda beriladi (services/numbering.py).
 """
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 from apps.base.models import AbstractBaseModel
@@ -15,6 +15,8 @@ from apps.yashil.models.reference import Mahalla, ObjectType, Season, SupplierPr
 from apps.yashil.models.catalog import CatalogItem
 from apps.yashil.models.membership import YashilMembership
 
+
+PHONE_VALIDATOR = RegexValidator(r"^\+?[0-9][0-9 ()-]{6,18}$", "Телефон рақами нотўғри (масалан: +998 90 123-45-67)")
 
 class OrderState(models.TextChoices):
     DRAFT = "draft", "Qoralama"
@@ -90,7 +92,8 @@ class Order(AbstractBaseModel):
     area_calc_ha = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
     area_note = models.CharField(max_length=500, blank=True)
     water_source = models.CharField(max_length=300, blank=True)
-    contact_person = models.CharField(max_length=300, blank=True)
+    contact_person = models.CharField(max_length=300, blank=True, verbose_name="Aloqa shaxsi (F.I.Sh.)")
+    contact_phone = models.CharField(max_length=20, blank=True, validators=[PHONE_VALIDATOR], verbose_name="Aloqa telefoni")
     extra_info = models.TextField(max_length=4000, blank=True)
     base_seedlings = models.PositiveIntegerField(null=True, blank=True, verbose_name="Asos ko'chatlar soni")
     problem_note = models.TextField(max_length=4000, blank=True, verbose_name="Xizmat uchun muammo tavsifi")

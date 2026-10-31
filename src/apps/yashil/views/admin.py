@@ -6,7 +6,9 @@ ishlaydi. Faqat `is_module_admin` (super_admin / superuser / `yashil.manage_modu
 Har o'zgarish `apps.logs` jurnaliga yoziladi (`_history_user`).
 """
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -37,7 +39,7 @@ from apps.yashil.serializers_admin import (
     UnionUnitAdminSerializer,
 )
 from apps.yashil.services import capacity as capacity_service
-from apps.yashil.services import imports, lang, rules
+from apps.yashil.services import import_templates, imports, lang, rules, supplier_sync
 
 User = get_user_model()
 AUDIT_MODELS = (
@@ -257,6 +259,29 @@ class SupplierAdminView(AdminCrudView):
         return qs
 
 
+class ForestCandidatesView(AdminView):
+    """GET admin/suppliers/forest-candidates/ — statdagi, hali yetkazib beruvchi bo'lmagan o'rmon xo'jaliklari."""
+
+    def get(self, request):
+        rows = [{"id": str(o.id), "name": o.name, "region": o.region, "stir": str(o.stir or "")}
+                for o in supplier_sync.forest_candidates()]
+        return Response({"results": rows, "count": len(rows)})
+
+
+class SyncForestsView(AdminView):
+    """POST admin/suppliers/sync-forests/ {organizations?: [id]} — tanlanganlarni (berilmasa hammasini) qo'shish."""
+
+    def post(self, request):
+        ids = request.data.get("organizations")
+        if ids is not None and not isinstance(ids, list):
+            raise invalid_format("organizations — ID'lar ro'yxati", "organizations")
+        try:
+            created = supplier_sync.sync_forests(ids, user=request.user)
+        except (ValueError, DjangoValidationError):
+            raise invalid_format("Нотўғри ташкилот ID", "organizations")
+        return Response({"created": len(created)})
+
+
 class SupplierAdminDetailView(AdminDetailView):
     model = SupplierProfile
     serializer_class = SupplierProfileAdminSerializer
@@ -416,32 +441,63 @@ def import_response(run):
     return Response(lang.tr_tree(result.to_dict(), keys=MESSAGE_KEYS))
 
 
+def template_response(kind: str, supplier_type: str | None = None):
+    """Import uchun namuna .xlsx (GET o'sha import manzilida)."""
+    response = HttpResponse(import_templates.template_xlsx(kind, supplier_type),
+                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = f'attachment; filename="yashil-{kind}-namuna.xlsx"'
+    return response
+
+
+def _doc_date(request):
+    raw = request.data.get("source_doc_date")
+    if not raw:
+        return None
+    try:
+        return imports.parse_date(raw)
+    except ValueError:
+        raise invalid_format("Сана YYYY-MM-DD кўринишида бўлиши керак", "source_doc_date")
+
+
 class _ImportView(AdminView):
     func = None
+    kind = ""
     extra_param = None  # ("source_ref" | "source_doc", kwarg nomi)
+    with_doc_date = False
+
+    def get(self, request):
+        return template_response(self.kind)
 
     def post(self, request):
         f = read_upload(request)
         kwargs = {"dry_run": is_dry_run(request), "partial": False, "user": request.user}
         if self.extra_param:
             kwargs[self.extra_param] = str(request.data.get(self.extra_param) or "")[:300]
+        if self.with_doc_date:
+            kwargs["source_doc_date"] = _doc_date(request)
         return import_response(lambda: type(self).func(f, **kwargs))
 
 
 class MahallaImportView(_ImportView):
     func = staticmethod(imports.import_mahallas)
+    kind = "mahallas"
 
 
 class AssignmentImportView(_ImportView):
     func = staticmethod(imports.import_assignments)
+    kind = "assignments"
     extra_param = "source_doc"
+    with_doc_date = True
 
 
 class RouteImportView(_ImportView):
     func = staticmethod(imports.import_routes)
+    kind = "routes"
     extra_param = "source_doc"
+    with_doc_date = True
 
 
 class CalendarImportView(_ImportView):
     func = staticmethod(imports.import_calendar)
+    kind = "calendar"
     extra_param = "source_ref"

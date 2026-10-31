@@ -226,7 +226,15 @@ class ServiceCapacityView(_StockBase):
 
 
 class StockOpeningImportView(_StockBase):
-    """POST stock/opening/import/ (multipart: file, dry_run) — boshlang'ich qoldiqlar Excel'dan (javob Е1)."""
+    """POST stock/opening/import/ (multipart: file, dry_run) — boshlang'ich qoldiqlar Excel'dan (javob Е1).
+    GET — namuna fayl."""
+
+    def get(self, request):
+        from apps.yashil.views.admin import template_response
+
+        cab = self.cabinet
+        org = cab.organization if cab is not None and cab.member_type == T.SUPPLIER else None
+        return template_response("opening", ledger.supplier_type_of(org) if org else None)
 
     def post(self, request):
         from apps.yashil.services import imports

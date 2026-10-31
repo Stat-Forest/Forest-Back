@@ -168,6 +168,7 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | PUT | `/stock/capacity/` | ДМ хизмат қувватини киритиш |
 | GET | `/stock/movements/` | Омбор ҳаракатлари |
 | POST | `/stock/opening/` | Бошланғич қолдиқ ¹ |
+| GET | `/stock/opening/import/` | Бошланғич қолдиқ импорти учун намуна файл (.xlsx) |
 | POST | `/stock/opening/import/` | Бошланғич қолдиқларни файлдан юклаш |
 | GET | `/stock/organizations/` | Омбори бор етказиб берувчилар |
 | POST | `/stock/receipts/` | Кирим ¹ |
@@ -221,12 +222,14 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | POST | `/admin/assignments/` | Бириктириш қўшиш |
 | PATCH | `/admin/assignments/{id}/` | Бириктиришни ўзгартириш |
 | DELETE | `/admin/assignments/{id}/` | Бириктиришни ўчириш |
+| GET | `/admin/assignments/import/` | Бириктириш импорти учун намуна файл (.xlsx) |
 | POST | `/admin/assignments/import/` | Бириктиришларни файлдан юклаш |
 | GET | `/admin/audit/` | Маъмурий ўзгаришлар журнали |
 | GET | `/admin/calendar/` | Календарь кунлари |
 | POST | `/admin/calendar/` | Календарь кунини қўшиш |
 | PATCH | `/admin/calendar/{id}/` | Календарь кунини ўзгартириш |
 | DELETE | `/admin/calendar/{id}/` | Календарь кунини ўчириш |
+| GET | `/admin/calendar/import/` | Календарь импорти учун намуна файл (.xlsx) |
 | POST | `/admin/calendar/import/` | Календарни файлдан юклаш |
 | GET | `/admin/capacity/` | ДМ хизмат қуввати (маъмур) |
 | PUT | `/admin/capacity/` | ДМ хизмат қувватини киритиш (маъмур) |
@@ -238,6 +241,7 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | POST | `/admin/mahallas/` | Маҳалла қўшиш |
 | PATCH | `/admin/mahallas/{id}/` | Маҳаллани ўзгартириш |
 | DELETE | `/admin/mahallas/{id}/` | Маҳаллани ўчириш (фаолсизлантириш) |
+| GET | `/admin/mahallas/import/` | Маҳалла импорти учун намуна файл (.xlsx) |
 | POST | `/admin/mahallas/import/` | Маҳаллаларни файлдан юклаш |
 | GET | `/admin/memberships/` | Кабинет аъзоликлари |
 | POST | `/admin/memberships/` | Аъзолик қўшиш |
@@ -248,11 +252,14 @@ python manage.py yashil_openapi --out ../docs/yashil/openapi-yashil.yaml --check
 | POST | `/admin/routes/` | Йўналиш қўшиш |
 | PATCH | `/admin/routes/{id}/` | Йўналишни ўзгартириш |
 | DELETE | `/admin/routes/{id}/` | Йўналишни ўчириш |
+| GET | `/admin/routes/import/` | Йўналиш импорти учун намуна файл (.xlsx) |
 | POST | `/admin/routes/import/` | Йўналишларни файлдан юклаш |
 | GET | `/admin/settings/` | Бизнес қоидалари ва сиёсатлар |
 | PUT | `/admin/settings/` | Қоида қийматини ўзгартириш (effective_from билан) |
 | GET | `/admin/suppliers/` | Етказиб берувчилар |
 | POST | `/admin/suppliers/` | Етказиб берувчи қўшиш |
+| GET | `/admin/suppliers/forest-candidates/` | Статдаги, ҳали етказиб берувчи бўлмаган ўрмон хўжаликлари |
+| POST | `/admin/suppliers/sync-forests/` | Ўрмон хўжаликларини етказиб берувчи қилиш (`organizations` — танланганлар, бўлмаса ҳаммаси) |
 | PATCH | `/admin/suppliers/{id}/` | Етказиб берувчини ўзгартириш |
 | DELETE | `/admin/suppliers/{id}/` | Етказиб берувчини ўчириш |
 | GET | `/admin/union-units/` | Уюшма бўлинмалари |

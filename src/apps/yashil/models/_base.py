@@ -58,3 +58,13 @@ def ensure_single_active(instance, *, field: str, label: str) -> None:
         qs = qs.exclude(pk=instance.pk)
     if qs.exists():
         raise ValidationError({"valid_from": f"{label} uchun bu davrda boshqa faol yozuv bor."})
+
+
+def next_sequence_code(model, field: str, prefix: str, width: int = 3) -> str:
+    """`prefix` + keyingi tartib raqam (mavjud kodlarning eng kattasidan bitta ortiq)."""
+    numbers = [0]
+    for code in model.objects.filter(**{f"{field}__startswith": prefix}).values_list(field, flat=True):
+        tail = code[len(prefix):]
+        if tail.isdigit():
+            numbers.append(int(tail))
+    return f"{prefix}{max(numbers) + 1:0{width}d}"

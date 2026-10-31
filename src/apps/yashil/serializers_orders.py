@@ -49,7 +49,7 @@ class OrderWriteSerializer(serializers.ModelSerializer):
         model = Order
         fields = (
             "route", "supplier_org", "title", "object_type", "object_note", "season", "address", "lat", "lon",
-            "polygon", "area_ha", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info",
+            "polygon", "area_ha", "area_calc_ha", "area_note", "water_source", "contact_person", "contact_phone", "extra_info",
             "base_seedlings", "problem_note", "linked_order", "repeat_reason", "lines", "version_no",
         )
         extra_kwargs = {f: {"required": False} for f in fields if f not in ("route", "supplier_org")}
@@ -220,7 +220,7 @@ class OrderDetailSerializer(OrderListSerializer):
     class Meta(OrderListSerializer.Meta):
         fields = OrderListSerializer.Meta.fields + (
             "mahalla", "supplier", "union_unit", "object_type", "object_note", "season", "address", "lat", "lon",
-            "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "extra_info", "base_seedlings",
+            "polygon", "area_calc_ha", "area_note", "water_source", "contact_person", "contact_phone", "extra_info", "base_seedlings",
             "problem_note", "linked_order", "repeat_reason", "first_submitted_at", "accepted_at", "executor_name",
             "lines", "versions", "documents", "events", "attachments", "actions", "last_return", "acceptance", "acts", "cancel_request", "closed_at",
         )

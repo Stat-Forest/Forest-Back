@@ -11,10 +11,11 @@ Qo'shadi (idempotent, bitta tranzaksiyada):
   kunlar har yili e'lon qilinadi — «Ma'muriyat → Kalendar» orqali qo'shiladi);
 - katalog va me'yorlar — PF-206 6-ilova namunasi (`yashil_seed_demo` bilan bir xil), mavsumlar, obyekt turlari;
 - bitta pilot mahalla (billing'dagi mavjud tumanda), shu tuman uchun uyushma bo'linmasi;
-- platformadagi mavjud tashkilotga o'rmon xo'jaligi profili, mahallani unga va bo'linmaga biriktirish.
+- platformadagi mavjud tashkilotga o'rmon xo'jaligi profili, mahallani unga va bo'linmaga biriktirish;
+  boshqa --forest bilan qayta ishga tushirilsa, eski biriktirma kechagi sana bilan yopiladi.
 Soxta tashkilot va foydalanuvchi yaratilmaydi; sinov hisoblari — `yashil_test_accounts`.
 """
-from datetime import date
+from datetime import date, timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
@@ -77,8 +78,7 @@ class Command(BaseCommand):
             if dm is not None:
                 self._profile(dm, SupplierProfile.SupplierType.DM)
             unit = self._union_unit(district)
-            if not SupplierAssignment.objects.filter(mahalla=mahalla, valid_to__isnull=True).exists():
-                SupplierAssignment.objects.create(mahalla=mahalla, organization=forest, valid_from=VALID_FROM, source_doc="Pilot")
+            self._assign(mahalla, forest)
             if not MahallaUnionRoute.objects.filter(mahalla=mahalla, valid_to__isnull=True).exists():
                 MahallaUnionRoute.objects.create(mahalla=mahalla, union_unit=unit, valid_from=VALID_FROM, source_doc="Pilot")
         self._done(mahalla)
@@ -149,6 +149,23 @@ class Command(BaseCommand):
         elif not profile.is_active_supplier:
             profile.is_active_supplier = True
             profile.save()
+
+    def _assign(self, mahalla, forest):
+        """Faol biriktirma boshqa xo'jalikka bo'lsa — kechagi sana bilan yopiladi, bugundan yangisi ochiladi."""
+        current = SupplierAssignment.objects.filter(mahalla=mahalla, valid_to__isnull=True).first()
+        if current is not None and current.organization_id == forest.id:
+            return
+        today = date.today()
+        if current is None:
+            SupplierAssignment.objects.create(mahalla=mahalla, organization=forest, valid_from=VALID_FROM, source_doc="Pilot")
+        elif current.valid_from >= today:
+            current.organization = forest
+            current.save()
+        else:
+            current.valid_to = today - timedelta(days=1)
+            current.save()
+            SupplierAssignment.objects.create(mahalla=mahalla, organization=forest, valid_from=today, source_doc="Pilot")
+        self.stdout.write(f"Biriktirildi: {mahalla.source_code} → {forest.name}")
 
     def _union_unit(self, district):
         unit = UnionUnit.objects.filter(district=district, level=UnionUnit.Level.DISTRICT, is_active=True).first()
