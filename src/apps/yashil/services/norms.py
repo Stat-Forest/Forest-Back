@@ -10,11 +10,36 @@ Qoidalar jadvali bo'sh bo'lsa (NormRule yo'q) — meyor tekshiruvi o'tkazilmaydi
 from datetime import date
 from decimal import Decimal
 
+from apps.billing.models import XojalikLocation
 from apps.yashil.models import CatalogItem, NormRule
 from apps.yashil.services.units import quantity_error
 
 AREA_TOLERANCE_PERCENT = Decimal("5")
 NORM_CATEGORIES = {CatalogItem.Category.FERTILIZER, CatalogItem.Category.MULCH}
+# O'zbekistonni o'rab turgan to'rtburchak [[janub, g'arb], [shimol, sharq]] — aniq chegara emas,
+# xaritada adashib boshqa davlat yoki 0/0 bosilganini ushlaydi
+UZ_BOUNDS = [[37.1, 55.9], [45.6, 73.2]]
+
+
+def inside_uzbekistan(lat, lon) -> bool:
+    (south, west), (north, east) = UZ_BOUNDS
+    return south <= float(lat) <= north and west <= float(lon) <= east
+
+
+def region_bounds(region_id):
+    """Viloyatdagi o'rmon xo'jaliklari hududlarini qamrovchi to'rtburchak (buyurtma xaritasini ochish uchun)."""
+    boxes = []
+    for b in XojalikLocation.objects.filter(region_id=region_id).values_list("bounds", flat=True):
+        try:
+            (s, w), (n, e) = b
+            boxes.append((float(s), float(w), float(n), float(e)))
+        except (TypeError, ValueError):
+            continue
+    if not boxes:
+        return None
+    (south, west), (north, east) = UZ_BOUNDS
+    return [[max(min(x[0] for x in boxes), south), max(min(x[1] for x in boxes), west)],
+            [min(max(x[2] for x in boxes), north), min(max(x[3] for x in boxes), east)]]
 
 
 class OrderValidationError(Exception):
@@ -78,6 +103,9 @@ def validate_for_submit(order) -> None:
         raise OrderValidationError("Ҳудуд манзили мажбурий", code="required", field="address")
     if order.lat is None or order.lon is None:
         raise OrderValidationError("Харитада жойлашув нуқтаси тасдиқланмаган", code="map_required", field="lat")
+    if not inside_uzbekistan(order.lat, order.lon):
+        raise OrderValidationError("Жойлашув нуқтаси Ўзбекистон ҳудудидан ташқарида — харитада қайта белгиланг",
+                                   code="map_outside", field="lat")
     if order.area_ha is None or order.area_ha <= 0:
         raise OrderValidationError("Майдон (га) мусбат сон бўлиши керак", code="required", field="area_ha")
     if order.object_type_id and order.object_type.requires_note and not (order.object_note or "").strip():
