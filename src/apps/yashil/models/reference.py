@@ -8,13 +8,13 @@ O'rmon xo'jaligi va DM — `general.Organization` + `SupplierProfile`.
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.yashil.models._base import PeriodMixin, ValidatedModel, ensure_single_active
+from apps.yashil.models._base import PeriodMixin, ValidatedModel, ensure_single_active, next_sequence_code
 
 
 class Mahalla(ValidatedModel, PeriodMixin):
     source_code = models.CharField(
         max_length=50, unique=True, null=True, blank=True, verbose_name="Manba kodi",
-        help_text="Rasmiy ro'yxatdagi kod (SOATO yagona kod emas)",
+        help_text="Rasmiy ro'yxatdagi kod; bo'sh qoldirilsa tuman kodi asosida avtomatik beriladi",
     )
     name = models.CharField(max_length=200, verbose_name="Nomi")
     region = models.ForeignKey("billing.Region", on_delete=models.PROTECT, related_name="yashil_mahallalar", verbose_name="Viloyat")
@@ -28,6 +28,11 @@ class Mahalla(ValidatedModel, PeriodMixin):
         verbose_name_plural = "Mahallalar"
         ordering = ["district__code", "name"]
         indexes = [models.Index(fields=["district", "name"])]
+
+    @staticmethod
+    def next_code(district) -> str:
+        """Tuman kodi + tartib raqam: 1703202-001, 1703202-002, ..."""
+        return next_sequence_code(Mahalla, "source_code", f"{district.code}-")
         constraints = [models.UniqueConstraint(fields=["district", "name"], name="yashil_mahalla_district_name_uniq")]
         permissions = [("manage_module", "Yashil mahalla modulini boshqarish")]
 
@@ -80,6 +85,7 @@ class MahallaUnionRoute(ValidatedModel, PeriodMixin):
     mahalla = models.ForeignKey(Mahalla, on_delete=models.CASCADE, related_name="union_routes")
     union_unit = models.ForeignKey(UnionUnit, on_delete=models.PROTECT, related_name="mahalla_routes")
     source_doc = models.CharField(max_length=200, blank=True, verbose_name="Asos")
+    source_doc_date = models.DateField(null=True, blank=True, verbose_name="Asos sanasi")
 
     class Meta:
         verbose_name = "Mahalla -> uyushma marshruti"
@@ -140,6 +146,7 @@ class SupplierAssignment(ValidatedModel, PeriodMixin):
     mahalla = models.ForeignKey(Mahalla, on_delete=models.CASCADE, related_name="supplier_assignments")
     organization = models.ForeignKey("general.Organization", on_delete=models.PROTECT, related_name="yashil_assignments", verbose_name="O'rmon xo'jaligi")
     source_doc = models.CharField(max_length=200, blank=True, verbose_name="Asos")
+    source_doc_date = models.DateField(null=True, blank=True, verbose_name="Asos sanasi")
 
     class Meta:
         verbose_name = "Mahalla -> xo'jalik biriktirishi"

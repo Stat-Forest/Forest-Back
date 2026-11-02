@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.yashil.models._base import ValidatedModel
+from apps.yashil.models._base import ValidatedModel, next_sequence_code
 from apps.yashil.models.reference import SupplierProfile
 from apps.yashil.services.units import UNIT_CHOICES, precision_for
 
@@ -52,6 +52,13 @@ class CatalogItem(ValidatedModel):
             raise ValidationError({"item_type": "Himoya xizmati — xizmat turi."})
         if self.item_type == self.ItemType.SERVICE and self.supplier_type != SupplierProfile.SupplierType.DM:
             raise ValidationError({"supplier_type": "Xizmatlar faqat DM yo'nalishida."})
+
+    CODE_PREFIX = {SupplierProfile.SupplierType.FOREST: "OX-", SupplierProfile.SupplierType.DM: "DM-"}
+
+    @classmethod
+    def next_code(cls, supplier_type) -> str:
+        """Yo'nalish bo'yicha tartib kod: OX-001 (o'rmon xo'jaligi), DM-001."""
+        return next_sequence_code(cls, "code", cls.CODE_PREFIX.get(supplier_type, "KT-"))
 
     def __str__(self):
         return f"{self.code} — {self.name_lat}"

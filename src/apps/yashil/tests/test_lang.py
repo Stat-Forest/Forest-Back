@@ -79,9 +79,10 @@ NOT_MESSAGES = {
     "маҳалла", "хўжалик", "ташкилот", "амал бошланиши", "амал тугаши", "уюшма бўлинмаси", "уюшма", "сана", "тури",
     "каталог коди", "позиция коди", "миқдор", "қолдиқ", "ҳужжат рақами", "асос ҳужжат", "ҳужжат санаси", "манзил", "изоҳ",
     "иш куни", "ишкуни", "кўчирилган иш куни", "байрам", "дам олиш", "дам олиш куни",
+    "ўрмон",  # tashkilot nomidan qidiruv namunasi (supplier_sync)
 }
 # Hujjatlashtirish, konsol buyruqlari va tekshiruv xabarlari (hujjat matni — DOC_RU, quyida tekshiriladi)
-SKIP_FILES = {"openapi.py", "schema.py", "acceptance.py", "conf.py", "admin.py",
+SKIP_FILES = {"openapi.py", "schema.py", "acceptance.py", "conf.py", "admin.py", "services/import_templates.py",
               "services/protocol.py", "services/readiness.py",
               "services/integrity.py", "services/lang.py", "services/lang_ru.py"}
 

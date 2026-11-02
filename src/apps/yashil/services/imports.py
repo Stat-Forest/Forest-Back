@@ -2,8 +2,8 @@
 Excel importlari (javoblar A1, A2, A4, Д1, Е1; plans §11.1-9, §11.1-10).
 
     import_mahallas(source, dry_run, partial, user)
-    import_assignments(source, dry_run, partial, user, source_doc)
-    import_routes(source, dry_run, partial, user, source_doc)
+    import_assignments(source, dry_run, partial, user, source_doc, source_doc_date)
+    import_routes(source, dry_run, partial, user, source_doc, source_doc_date)
     import_calendar(source, dry_run, partial, user, source_ref)
     import_opening_stock(source, cabinet, dry_run, partial)
 
@@ -12,6 +12,8 @@ yoziladi (oldingi qatorlar ta'siri — masalan davr kesishuvi — ko'rinadi), ke
 `dry_run` yoki (`partial=False` va xato bor) bo'lsa hammasi bekor qilinadi.
 API `partial=False` ishlatadi: fayl to'liq to'g'ri bo'lmaguncha hech narsa yozilmaydi.
 Buyruqlar (`manage.py yashil_import_*`) avvalgidek xatoli qatorlarni tashlab o'tadi.
+
+Namuna fayllar (sarlavha + namuna qator) — `import_templates.template_xlsx(kind)`.
 """
 import re
 import uuid
@@ -204,11 +206,12 @@ def _save(obj, user):
 
 # ----------------------------------------------------------------------------- mahallalar (A1)
 MAHALLA_HEADERS = {
-    "source_code": ["манба коди", "manba kodi", "код", "kod"],
     "region_code": ["вилоят коди", "viloyat kodi"],
     "district_code": ["туман коди", "tuman kodi"],
     "name": ["маҳалла номи", "mahalla nomi", "номи", "nomi"],
 }
+# Ixtiyoriy: bo'sh bo'lsa mahalla tuman + nom bo'yicha topiladi yoki kod avtomatik beriladi
+MAHALLA_CODE = ("маҳалла коди", "mahalla kodi", "манба коди", "manba kodi", "код", "kod")
 
 
 def import_mahallas(source, *, dry_run=False, partial=True, user=None) -> ImportResult:
@@ -222,7 +225,7 @@ def import_mahallas(source, *, dry_run=False, partial=True, user=None) -> Import
     districts = {d.code: d for d in District.objects.select_related("region")}
 
     def handle(row_no, row):
-        source_code = text(sheet.col(row, *H["source_code"], required=True))
+        source_code = text(sheet.col(row, *MAHALLA_CODE))
         region_code = text(sheet.col(row, *H["region_code"], required=True))
         district_code = text(sheet.col(row, *H["district_code"], required=True))
         name = text(sheet.col(row, *H["name"], required=True))
@@ -237,9 +240,12 @@ def import_mahallas(source, *, dry_run=False, partial=True, user=None) -> Import
         if valid_from:
             values["valid_from"] = valid_from
         values["valid_to"] = parse_date(sheet.col(row, "амал тугаши", "amal tugashi"))
-        existing = Mahalla.objects.filter(source_code=source_code).first()
+        if source_code:
+            existing = Mahalla.objects.filter(source_code=source_code).first()
+        else:
+            existing = Mahalla.objects.filter(district=district, name__iexact=name).first()
         if existing is None:
-            _save(Mahalla(source_code=source_code, **values), user)
+            _save(Mahalla(source_code=source_code or Mahalla.next_code(district), **values), user)
             result.created += 1
         elif any(getattr(existing, k) != v for k, v in values.items()):
             for k, v in values.items():
@@ -282,7 +288,7 @@ def _mahalla_by_code(code):
     return mahalla
 
 
-def import_assignments(source, *, dry_run=False, partial=True, user=None, source_doc="") -> ImportResult:
+def import_assignments(source, *, dry_run=False, partial=True, user=None, source_doc="", source_doc_date=None) -> ImportResult:
     from apps.yashil.models import SupplierAssignment
 
     H = ASSIGNMENT_HEADERS
@@ -303,7 +309,8 @@ def import_assignments(source, *, dry_run=False, partial=True, user=None, source
             else:
                 result.unchanged += 1
             return
-        _save(SupplierAssignment(mahalla=mahalla, organization=org, valid_from=valid_from, valid_to=valid_to, source_doc=source_doc), user)
+        _save(SupplierAssignment(mahalla=mahalla, organization=org, valid_from=valid_from, valid_to=valid_to,
+                                 source_doc=source_doc, source_doc_date=source_doc_date), user)
         result.created += 1
 
     return _run(sheet, result, handle)
@@ -330,7 +337,7 @@ def _find_unit(value: str):
     return unit
 
 
-def import_routes(source, *, dry_run=False, partial=True, user=None, source_doc="") -> ImportResult:
+def import_routes(source, *, dry_run=False, partial=True, user=None, source_doc="", source_doc_date=None) -> ImportResult:
     from apps.yashil.models import MahallaUnionRoute
 
     H = ROUTE_HEADERS
@@ -351,7 +358,8 @@ def import_routes(source, *, dry_run=False, partial=True, user=None, source_doc=
             else:
                 result.unchanged += 1
             return
-        _save(MahallaUnionRoute(mahalla=mahalla, union_unit=unit, valid_from=valid_from, valid_to=valid_to, source_doc=source_doc), user)
+        _save(MahallaUnionRoute(mahalla=mahalla, union_unit=unit, valid_from=valid_from, valid_to=valid_to,
+                                 source_doc=source_doc, source_doc_date=source_doc_date), user)
         result.created += 1
 
     return _run(sheet, result, handle)

@@ -26,4 +26,5 @@ STAT-URMON «Яшил маҳалла» модули (ТТ 8.0 таҳрир) бў
 | `yashil_acceptance_protocol --out <файл>` | Q01–Q36 синов баённомаси (DOCX) |
 | `yashil_openapi --out docs/yashil/openapi-yashil.yaml [--check]` | API тавсифини коддан яратиш ёки мослигини текшириш |
 | `yashil_recalc_deadlines` | Очиқ буюртмалар муддат устунларини қайта ҳисоблаш |
+| `yashil_sync_forests [--dry-run]` | Статдаги вилоят ўрмон хўжаликларини (номида «ўрмон») етказиб берувчи қилиш; такрорлаш хавфсиз |
 | `docker/prod/backup-hourly.sh`, `docker/prod/restore-test.sh` | Соатлик захира ва тиклаш синови |

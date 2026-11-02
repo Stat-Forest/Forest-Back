@@ -105,12 +105,26 @@ class MahallaAdminSerializer(AdminWriteMixin, serializers.ModelSerializer):
     class Meta:
         model = Mahalla
         fields = ("id", "source_code", "name", "district", "address", "is_active", "valid_from", "valid_to")
+        extra_kwargs = {"source_code": {"required": False, "allow_null": True, "allow_blank": True}}
 
     def validate(self, attrs):
         district = attrs.get("district")
         if district is not None:
             attrs["region"] = district.region
+        if "source_code" in attrs:
+            attrs["source_code"] = (attrs["source_code"] or "").strip() or None
         return attrs
+
+    def create(self, validated_data):
+        # Kod berilmasa tuman kodi asosida avtomatik (import va biriktirishlarda shu kod ishlatiladi)
+        if not validated_data.get("source_code") and validated_data.get("district") is not None:
+            validated_data["source_code"] = Mahalla.next_code(validated_data["district"])
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "source_code" in validated_data and not validated_data["source_code"]:
+            validated_data.pop("source_code")
+        return super().update(instance, validated_data)
 
     def _persist(self, instance, validated_data):
         region = validated_data.pop("region", None)
@@ -159,10 +173,11 @@ class AssignmentAdminSerializer(AdminWriteMixin, serializers.ModelSerializer):
     read_only_on_update = ("mahalla", "organization", "valid_from")
     valid_from = serializers.DateField(**ISO)
     valid_to = serializers.DateField(required=False, allow_null=True, **ISO)
+    source_doc_date = serializers.DateField(required=False, allow_null=True, **ISO)
 
     class Meta:
         model = SupplierAssignment
-        fields = ("id", "mahalla", "organization", "valid_from", "valid_to", "source_doc")
+        fields = ("id", "mahalla", "organization", "valid_from", "valid_to", "source_doc", "source_doc_date")
 
     def to_representation(self, obj):
         data = super().to_representation(obj)
@@ -176,10 +191,11 @@ class RouteAdminSerializer(AdminWriteMixin, serializers.ModelSerializer):
     read_only_on_update = ("mahalla", "union_unit", "valid_from")
     valid_from = serializers.DateField(**ISO)
     valid_to = serializers.DateField(required=False, allow_null=True, **ISO)
+    source_doc_date = serializers.DateField(required=False, allow_null=True, **ISO)
 
     class Meta:
         model = MahallaUnionRoute
-        fields = ("id", "mahalla", "union_unit", "valid_from", "valid_to", "source_doc")
+        fields = ("id", "mahalla", "union_unit", "valid_from", "valid_to", "source_doc", "source_doc_date")
 
     def to_representation(self, obj):
         data = super().to_representation(obj)
@@ -198,6 +214,13 @@ class CatalogAdminSerializer(AdminWriteMixin, serializers.ModelSerializer):
         fields = ("id", "code", "name_cyr", "name_lat", "supplier_type", "item_type", "category", "unit", "precision",
                   "attributes", "is_active", "effective_from", "version", "order")
         read_only_fields = ("precision", "version")
+        extra_kwargs = {"code": {"required": False, "allow_blank": True}}
+
+    def create(self, validated_data):
+        # Kod berilmasa yo'nalish bo'yicha tartib kod: OX-001 / DM-001
+        if not (validated_data.get("code") or "").strip():
+            validated_data["code"] = CatalogItem.next_code(validated_data.get("supplier_type"))
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         # Nomi/atributi o'zgarsa versiya oshadi (imzolangan hujjatlarda eski snapshot qoladi)

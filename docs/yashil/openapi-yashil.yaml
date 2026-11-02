@@ -1027,6 +1027,52 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
   /api/v1/yashil/admin/assignments/import/:
+    get:
+      operationId: yashil_admin_assignments_import_get
+      summary: Бириктириш импорти учун намуна файл (.xlsx)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
     post:
       operationId: yashil_admin_assignments_import_post
       summary: Бириктиришларни файлдан юклаш
@@ -1445,6 +1491,52 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
   /api/v1/yashil/admin/calendar/import/:
+    get:
+      operationId: yashil_admin_calendar_import_get
+      summary: Календарь импорти учун намуна файл (.xlsx)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
     post:
       operationId: yashil_admin_calendar_import_post
       summary: Календарни файлдан юклаш
@@ -2205,6 +2297,52 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
   /api/v1/yashil/admin/mahallas/import/:
+    get:
+      operationId: yashil_admin_mahallas_import_get
+      summary: Маҳалла импорти учун намуна файл (.xlsx)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
     post:
       operationId: yashil_admin_mahallas_import_post
       summary: Маҳаллаларни файлдан юклаш
@@ -2884,6 +3022,52 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
   /api/v1/yashil/admin/routes/import/:
+    get:
+      operationId: yashil_admin_routes_import_get
+      summary: Йўналиш импорти учун намуна файл (.xlsx)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
     post:
       operationId: yashil_admin_routes_import_post
       summary: Йўналишларни файлдан юклаш
@@ -3341,6 +3525,132 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+  /api/v1/yashil/admin/suppliers/forest-candidates/:
+    get:
+      operationId: yashil_admin_suppliers_forest_candidates_get
+      summary: Статдаги, ҳали етказиб берувчи бўлмаган ўрмон хўжаликлари
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+  /api/v1/yashil/admin/suppliers/sync-forests/:
+    post:
+      operationId: yashil_admin_suppliers_sync_forests_post
+      summary: Ўрмон хўжаликларини етказиб берувчи қилиш (танланганлар ёки ҳаммаси)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Маъмурий созламалар
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '422':
           content:
             application/json:
               schema:
@@ -7597,6 +7907,52 @@ paths:
                 $ref: '#/components/schemas/YashilError'
           description: ''
   /api/v1/yashil/stock/opening/import/:
+    get:
+      operationId: yashil_stock_opening_import_get
+      summary: Бошланғич қолдиқ импорти учун намуна файл (.xlsx)
+      parameters:
+      - in: header
+        name: X-Yashil-Cabinet
+        schema:
+          type: string
+          format: uuid
+        description: Фаол кабинет (аъзолик ID). Бўлмаса — биринчи фаол аъзолик.
+      tags:
+      - Омбор
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YashilError'
+          description: ''
     post:
       operationId: yashil_stock_opening_import_post
       summary: Бошланғич қолдиқларни файлдан юклаш
@@ -8689,6 +9045,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
       required:
       - id
       - mahalla
@@ -8717,6 +9077,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
       required:
       - mahalla
       - organization
@@ -9050,7 +9414,6 @@ components:
           minimum: 0
       required:
       - category
-      - code
       - id
       - name_cyr
       - name_lat
@@ -9065,7 +9428,6 @@ components:
       properties:
         code:
           type: string
-          minLength: 1
           title: Kodi
           maxLength: 40
         name_cyr:
@@ -9105,7 +9467,6 @@ components:
           minimum: 0
       required:
       - category
-      - code
       - name_cyr
       - name_lat
       - supplier_type
@@ -9343,7 +9704,11 @@ components:
         source_doc:
           type: string
           minLength: 1
-          description: Асос ҳужжат (бириктириш/йўналиш импорти)
+          description: Асос ҳужжат рақами (бириктириш/йўналиш импорти)
+        source_doc_date:
+          type: string
+          format: date
+          description: Асос ҳужжат санаси (бириктириш/йўналиш импорти)
         source_ref:
           type: string
           minLength: 1
@@ -9436,7 +9801,8 @@ components:
           type: string
           nullable: true
           title: Manba kodi
-          description: Rasmiy ro'yxatdagi kod (SOATO yagona kod emas)
+          description: Rasmiy ro'yxatdagi kod; bo'sh qoldirilsa tuman kodi asosida
+            avtomatik beriladi
           maxLength: 50
         name:
           type: string
@@ -9475,7 +9841,8 @@ components:
           type: string
           nullable: true
           title: Manba kodi
-          description: Rasmiy ro'yxatdagi kod (SOATO yagona kod emas)
+          description: Rasmiy ro'yxatdagi kod; bo'sh qoldirilsa tuman kodi asosida
+            avtomatik beriladi
           maxLength: 50
         name:
           type: string
@@ -9512,7 +9879,8 @@ components:
           type: string
           nullable: true
           title: Manba kodi
-          description: Rasmiy ro'yxatdagi kod (SOATO yagona kod emas)
+          description: Rasmiy ro'yxatdagi kod; bo'sh qoldirilsa tuman kodi asosida
+            avtomatik beriladi
           maxLength: 50
         name:
           type: string
@@ -9914,7 +10282,13 @@ components:
           maxLength: 300
         contact_person:
           type: string
+          title: Aloqa shaxsi (F.I.Sh.)
           maxLength: 300
+        contact_phone:
+          type: string
+          title: Aloqa telefoni
+          pattern: ^\+?[0-9][0-9 ()-]{6,18}$
+          maxLength: 20
         extra_info:
           type: string
           maxLength: 4000
@@ -10249,7 +10623,13 @@ components:
           maxLength: 300
         contact_person:
           type: string
+          title: Aloqa shaxsi (F.I.Sh.)
           maxLength: 300
+        contact_phone:
+          type: string
+          title: Aloqa telefoni
+          pattern: ^\+?[0-9][0-9 ()-]{6,18}$
+          maxLength: 20
         extra_info:
           type: string
           maxLength: 4000
@@ -10713,6 +11093,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
     PatchedCalendarDayAdminRequest:
       type: object
       description: 'create/update: model obyektini qo''lda yig''adi, `_history_user`
@@ -10740,7 +11124,6 @@ components:
       properties:
         code:
           type: string
-          minLength: 1
           title: Kodi
           maxLength: 40
         name_cyr:
@@ -10787,7 +11170,8 @@ components:
           type: string
           nullable: true
           title: Manba kodi
-          description: Rasmiy ro'yxatdagi kod (SOATO yagona kod emas)
+          description: Rasmiy ro'yxatdagi kod; bo'sh qoldirilsa tuman kodi asosida
+            avtomatik beriladi
           maxLength: 50
         name:
           type: string
@@ -10937,7 +11321,13 @@ components:
           maxLength: 300
         contact_person:
           type: string
+          title: Aloqa shaxsi (F.I.Sh.)
           maxLength: 300
+        contact_phone:
+          type: string
+          title: Aloqa telefoni
+          pattern: ^\+?[0-9][0-9 ()-]{6,18}$
+          maxLength: 20
         extra_info:
           type: string
           maxLength: 4000
@@ -10986,6 +11376,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
     PatchedSupplierProfileAdminRequest:
       type: object
       description: 'create/update: model obyektini qo''lda yig''adi, `_history_user`
@@ -11133,6 +11527,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
       required:
       - id
       - mahalla
@@ -11160,6 +11558,10 @@ components:
           type: string
           title: Asos
           maxLength: 200
+        source_doc_date:
+          type: string
+          format: date
+          nullable: true
       required:
       - mahalla
       - union_unit

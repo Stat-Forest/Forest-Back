@@ -1,5 +1,5 @@
 """Pilot boshlang'ich ma'lumotlari (yashil_pilot_setup): kalendar, katalog, bitta mahalla va mavjud xo'jalikka bog'lash."""
-from datetime import date
+from datetime import date, timedelta
 from io import StringIO
 from unittest.mock import patch
 
@@ -65,6 +65,19 @@ class PilotSetupTest(TestCase):
         self.assertEqual(SupplierAssignment.objects.count(), 1)
         self.assertEqual(MahallaUnionRoute.objects.count(), 1)
         self.assertEqual(CatalogItem.objects.count(), len(CATALOG))
+
+    def test_rerun_with_other_forest_reassigns_mahalla(self):
+        run(*self.setup_args())
+        other = make_org("Ўрмон хўжалигини рақамлаштириш маркази")
+        out = run("--district", self.district.code, "--mahalla-name", "Пилот маҳалла", "--forest", str(other.id))
+        today = date.today()
+        old, new = SupplierAssignment.objects.order_by("valid_from")
+        self.assertEqual((old.organization_id, old.valid_to), (self.org.id, today - timedelta(days=1)))
+        self.assertEqual((new.organization_id, new.valid_from, new.valid_to), (other.id, today, None))
+        self.assertEqual(SupplierProfile.objects.get(organization=other).supplier_type, "forest")
+        self.assertIn(other.name, out)
+        run("--district", self.district.code, "--mahalla-name", "Пилот маҳалла", "--forest", str(other.id))
+        self.assertEqual(SupplierAssignment.objects.count(), 2)
 
     def test_errors_change_nothing(self):
         with self.assertRaises(CommandError):

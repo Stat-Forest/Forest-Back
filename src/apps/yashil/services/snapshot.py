@@ -63,6 +63,7 @@ def build_snapshot(order, membership=None) -> dict:
         "polygon": order.polygon,
         "water_source": order.water_source,
         "contact_person": order.contact_person,
+        "contact_phone": order.contact_phone,
         "extra_info": order.extra_info,
         "base_seedlings": order.base_seedlings,
         "problem_note": order.problem_note,
